@@ -1,0 +1,14 @@
+[package]
+name = "db"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = "0.4.19"
+sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "mysql" ] }
+tokio = { version = "1.8", features = ["full"] }
+uuid = { version = "0.8", features = ["serde", "v4"] }
+lazy_static = "*"
+serde = "1.0.130"
+dotenv = "*"
+anyhow = "1.0.45"

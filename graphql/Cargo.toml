@@ -1,0 +1,12 @@
+[package]
+name = "graphql"
+version = "0.0.1"
+edition = "2021"
+publish = false
+
+[lib]
+name = "graphql"
+path = "src/lib.rs"
+
+[dependencies]
+async-graphql = "2.10.8"
