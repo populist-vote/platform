@@ -5,10 +5,15 @@ edition = "2021"
 
 [dependencies]
 chrono = "0.4.19"
-sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "mysql" ] }
+sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "postgres", "chrono", "uuid" ] }
 tokio = { version = "1.8", features = ["full"] }
 uuid = { version = "0.8", features = ["serde", "v4"] }
 lazy_static = "*"
 serde = "1.0.130"
+async-graphql = "2.10.8"
+
 dotenv = "*"
 anyhow = "1.0.45"
+strum = "0.22.0"
+strum_macros = "0.22.0"
+slugify = "0.1.0"

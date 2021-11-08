@@ -9,4 +9,7 @@ name = "graphql"
 path = "src/lib.rs"
 
 [dependencies]
-async-graphql = "2.10.8"
+async-graphql = { version = "2.10.8", features = ["uuid"] }
+db = { path = "../db" }
+sqlx = { version = "0.5.9", features = ["postgres"] }
+uuid = "0.8.2"

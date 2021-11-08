@@ -1,32 +1,16 @@
-use async_graphql::{Result, Error, Object};
+use async_graphql::{Object, MergedObject};
 
-use crate::types::{Organization, Politician};
+use super::{organization::OrganizationQuery, politician::PoliticianQuery};
 
 #[derive(Default)]
-pub struct Query;
+pub struct MainQuery;
 
 #[Object]
-impl Query {
+impl MainQuery {
     async fn health(&self) -> bool {
         true
     }
-
-    async fn politicians(&self, state: String) -> Result<Vec<Politician>> {
-        // Look up politician by state, office, etc, in the database
-        Ok(vec![])
-    }
-
-    async fn politician_by_id(&self, id: String) -> Result<Politician> {
-        // Look up politician by id in the database
-        todo!()
-    }
-
-    async fn politician_by_name(&self, query: String) -> Result<Option<Politician>, Error> {
-        // Fuzzy search for politician by full name
-        todo!()
-    }
-
-    async fn organizations(&self, state: String) -> Result<Vec<Organization>> {
-        Ok(vec![])
-    }
 }
+
+#[derive(MergedObject, Default)]
+pub struct Query(MainQuery, PoliticianQuery, OrganizationQuery);
