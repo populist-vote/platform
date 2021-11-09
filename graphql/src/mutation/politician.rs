@@ -1,8 +1,8 @@
 use async_graphql::*;
-use db::{CreateOrganizationInput, CreatePoliticianInput, Organization, Politician, UpdatePoliticianInput};
+use db::{CreatePoliticianInput, Politician, UpdatePoliticianInput};
 use sqlx::{Pool, Postgres};
 
-use crate::types::{OrganizationResult, PoliticianResult};
+use crate::types::PoliticianResult;
 #[derive(Default)]
 pub struct PoliticianMutation;
 

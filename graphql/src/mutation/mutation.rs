@@ -1,4 +1,6 @@
-use async_graphql::{MergedObject};
-use super::{organization::OrganizationMutation, politician::PoliticianMutation};
+use super::{
+    bill::BillMutation, organization::OrganizationMutation, politician::PoliticianMutation,
+};
+use async_graphql::MergedObject;
 #[derive(MergedObject, Default)]
-pub struct Mutation(PoliticianMutation, OrganizationMutation);
+pub struct Mutation(PoliticianMutation, OrganizationMutation, BillMutation);

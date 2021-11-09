@@ -1,5 +1,8 @@
-use async_graphql::{ComplexObject, Enum, SimpleObject, ID};
-use db::models::politician::Politician;
+use async_graphql::{ComplexObject, Context, Enum, FieldResult, SimpleObject, ID};
+use db::{models::politician::Politician, DateTime, State};
+use sqlx::{Pool, Postgres};
+
+use super::OrganizationResult;
 
 #[derive(Enum, Copy, Clone, Eq, PartialEq)]
 enum OfficeType {
@@ -15,7 +18,9 @@ pub struct PoliticianResult {
     first_name: String,
     middle_name: Option<String>,
     last_name: String,
-    home_state: String,
+    home_state: State,
+    created_at: DateTime,
+    updated_at: DateTime,
 }
 
 #[ComplexObject]
@@ -31,9 +36,19 @@ impl PoliticianResult {
             None => format!("{} {}", &self.first_name, &self.last_name),
         }
     }
+
+    async fn endorsements(&self, ctx: &Context<'_>) -> FieldResult<Vec<OrganizationResult>> {
+        let pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let records =
+            Politician::endorsements(pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
+        let results = records
+            .into_iter()
+            .map(|r| OrganizationResult::from(r))
+            .collect();
+        Ok(results)
+    }
 }
 
-// Why cant this just automatically happen?
 impl From<Politician> for PoliticianResult {
     fn from(p: Politician) -> Self {
         Self {
@@ -43,6 +58,8 @@ impl From<Politician> for PoliticianResult {
             middle_name: p.middle_name,
             last_name: p.last_name,
             home_state: p.home_state,
+            created_at: p.created_at,
+            updated_at: p.updated_at,
         }
     }
 }

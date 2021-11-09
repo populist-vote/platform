@@ -2,7 +2,7 @@ use async_graphql::{Context, FieldResult, Object};
 use db::{Organization, OrganizationSearch};
 use sqlx::{Pool, Postgres};
 
-use crate::types::{OrganizationResult};
+use crate::types::OrganizationResult;
 
 #[derive(Default)]
 pub struct OrganizationQuery;

@@ -1,6 +1,6 @@
 use crate::models::{organization::Organization, user::User};
 use crate::DateTime;
-use sqlx::Error;
+// use sqlx::Error;
 
 #[derive(sqlx::FromRow, Debug, Clone)]
 pub struct IssueTag {
@@ -15,25 +15,25 @@ pub struct IssueTag {
 }
 
 impl IssueTag {
-    pub async fn new(ctx: (), name: &str, description: &str) -> Result<Self, Error> {
-        let id = uuid::Uuid::new_v4();
-        todo!()
-        // let mut conn = ctx.pool.acquire().await?;
-        // let mut tx = conn.begin().await?;
+    // pub async fn new(ctx: (), name: &str, description: &str) -> Result<Self, Error> {
+    //     let id = uuid::Uuid::new_v4();
+    //     todo!()
+    // let mut conn = ctx.pool.acquire().await?;
+    // let mut tx = conn.begin().await?;
 
-        // let query = sqlx::query!(
-        //     "INSERT INTO issue_tag (id, name, description) VALUES ($1, $2, $3)",
-        //     id,
-        //     name,
-        //     description
-        // )
-        // .execute(ctx)
-        // .await?;
+    // let query = sqlx::query!(
+    //     "INSERT INTO issue_tag (id, name, description) VALUES ($1, $2, $3)",
+    //     id,
+    //     name,
+    //     description
+    // )
+    // .execute(ctx)
+    // .await?;
 
-        // let created_issue_tag = query.fetch_one(&mut tx).await?;
+    // let created_issue_tag = query.fetch_one(&mut tx).await?;
 
-        // tx.commit().await?;
+    // tx.commit().await?;
 
-        // Ok(created_issue_tag)
-    }
+    // Ok(created_issue_tag)
+    // }
 }

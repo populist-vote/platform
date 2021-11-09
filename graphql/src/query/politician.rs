@@ -1,8 +1,8 @@
-use async_graphql::{Context, Error, FieldResult, Object, Result};
+use async_graphql::{Context, FieldResult, Object};
 use db::{Politician, PoliticianSearch};
 use sqlx::{Pool, Postgres};
 
-use crate::types::{PoliticianResult};
+use crate::types::PoliticianResult;
 
 #[derive(Default)]
 pub struct PoliticianQuery;
@@ -33,17 +33,12 @@ impl PoliticianQuery {
         Ok(results)
     }
 
-    async fn politician_by_id(&self, ctx: &Context<'_>, id: String) -> FieldResult<PoliticianResult> {
-        // Look up politician by id in the database
-        todo!()
-    }
-
-    async fn politician_by_name(
+    async fn politician_by_id(
         &self,
-        ctx: &Context<'_>,
-        query: String,
-    ) -> Result<Option<PoliticianResult>, Error> {
-        // Fuzzy search for politician by full name
+        _ctx: &Context<'_>,
+        _id: String,
+    ) -> FieldResult<PoliticianResult> {
+        // Look up politician by id in the database
         todo!()
     }
 }

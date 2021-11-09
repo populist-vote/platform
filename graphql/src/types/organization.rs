@@ -20,7 +20,7 @@ impl From<Organization> for OrganizationResult {
             name: o.name,
             description: o.description,
             thumbnail_image_url: o.thumbnail_image_url,
-            website_url: o.website_url
+            website_url: o.website_url,
         }
     }
 }

@@ -1,7 +1,4 @@
-use crate::{
-    models::{issue_tag::IssueTag, user::User},
-    DateTime,
-};
+use crate::DateTime;
 use async_graphql::InputObject;
 use slugify::slugify;
 use sqlx::PgPool;
@@ -20,7 +17,6 @@ pub struct Organization {
     pub email: Option<String>,
     pub headquarters_phone: Option<String>,
     pub tax_classification: Option<String>,
-    // pub issue_tags: Vec<IssueTag>,
     // pub created_by: User,
     pub created_at: DateTime,
     pub updated_at: DateTime,
@@ -47,6 +43,8 @@ pub struct UpdateOrganizationInput {
 pub struct OrganizationSearch {
     name: Option<String>,
 }
+
+static _ORGANIZATION_COLUMNS: &'static str = "id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, tax_classification, created_at, updated_at";
 
 impl Organization {
     pub async fn create(

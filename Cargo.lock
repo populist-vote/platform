@@ -111,6 +111,7 @@ dependencies = [
  "async-stream",
  "async-trait",
  "bytes",
+ "chrono",
  "fnv",
  "futures-util",
  "http",
@@ -347,6 +348,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "const_format"
+version = "0.2.22"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22bc6cd49b0ec407b680c3e380182b6ac63b73991cb7602de350352fc309b614"
+dependencies = [
+ "const_format_proc_macros",
+]
+
+[[package]]
+name = "const_format_proc_macros"
+version = "0.2.22"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef196d5d972878a48da7decb7686eded338b4858fbabeed513d63a7c98b2b82d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-xid",
+]
+
+[[package]]
 name = "cpufeatures"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -487,6 +508,7 @@ dependencies = [
  "anyhow",
  "async-graphql",
  "chrono",
+ "const_format",
  "dotenv",
  "lazy_static",
  "serde",
@@ -1276,7 +1298,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
-name = "platform_rust"
+name = "platform"
 version = "0.1.0"
 dependencies = [
  "anyhow",
