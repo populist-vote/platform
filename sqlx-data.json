@@ -1,3 +1,1856 @@
 {
-  "db": "PostgreSQL"
+  "db": "PostgreSQL",
+  "286e51d2c7b46a0b05c66335a3309028208fedb524b6d2475c9b03ee43c5cd63": {
+    "query": "UPDATE politician \n            SET first_name = COALESCE($2, first_name),\n                middle_name = COALESCE($3, middle_name),\n                last_name = COALESCE($4, last_name),\n                nickname = COALESCE($5, nickname),\n                preferred_name = COALESCE($6, preferred_name),\n                ballot_name = COALESCE($7, ballot_name),\n                description = COALESCE($8, description),\n                thumbnail_image_url = COALESCE($9, thumbnail_image_url),\n                home_state= COALESCE($10, home_state),\n                website_url = COALESCE($11, website_url),\n                facebook_url = COALESCE($12, facebook_url),\n                twitter_url = COALESCE($13, twitter_url),\n                instagram_url = COALESCE($14, instagram_url),\n                office_party = COALESCE($15, office_party)\n            WHERE id=$1\n            RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS \"home_state:State\", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party, created_at, updated_at",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "first_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "middle_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "last_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "nickname",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "preferred_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "ballot_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "home_state:State",
+          "type_info": {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 10,
+          "name": "thumbnail_image_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 11,
+          "name": "website_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "facebook_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 13,
+          "name": "twitter_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 14,
+          "name": "instagram_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 15,
+          "name": "office_party",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 16,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 17,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          },
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "4cf9c05523dcba97c33717f0d670eed63be9814dbf3c9acc2ff778dd4fc059a5": {
+    "query": "DELETE FROM bill WHERE id=$1",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "53b1ecb789f3501802b1bac13aeb5f396729de5a2d59b233acb6df23e16ebf09": {
+    "query": "SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS \"home_state:State\", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party, created_at, updated_at FROM politician",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "first_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "middle_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "last_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "nickname",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "preferred_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "ballot_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "home_state:State",
+          "type_info": {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 10,
+          "name": "thumbnail_image_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 11,
+          "name": "website_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "facebook_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 13,
+          "name": "twitter_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 14,
+          "name": "instagram_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 15,
+          "name": "office_party",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 16,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 17,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": []
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "5bae4043b5c332f2765daa2af46e8ffbe47a623b56ec12b1c7df5adf70d48ce0": {
+    "query": "INSERT INTO organization (slug, name, description, thumbnail_image_url, website_url) \n            VALUES ($1, $2, $3, $4, $5) \n            RETURNING *",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "thumbnail_image_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "website_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "facebook_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "twitter_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "instagram_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "email",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 10,
+          "name": "headquarters_phone",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 11,
+          "name": "tax_classification",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 13,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "62e9991bed122998e7ec64b4e403cd43b74b8580e3033201312a7e6bd7708228": {
+    "query": "DELETE FROM organization WHERE id=$1",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "6deab34ba89af16d935f7803407023ab6261c8f29703f8d0f5b40c3554580bb7": {
+    "query": "INSERT INTO bill (slug, name, vote_status, description, official_summary, populist_summary, full_text_url) \n            VALUES ($1, $2, $3, $4, $5, $6, $7) \n            RETURNING id, slug, name, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, created_at, updated_at",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "vote_status:LegislationStatus",
+          "type_info": {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 4,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "official_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "populist_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "full_text_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 9,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          },
+          "Text",
+          "Text",
+          "Text",
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "862cc2da94c2f23d61e6652f7a42c4f3aacd63cf9e54090c1d04ab684782e453": {
+    "query": "SELECT id, slug, name, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM bill",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "vote_status:LegislationStatus",
+          "type_info": {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 4,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "official_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "populist_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "full_text_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 9,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": []
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "abbe10bd7ba576982cbca72488c1d77ec67c2b843fe8cdfe6943b265072a8e8f": {
+    "query": "SELECT * FROM organization\n             WHERE $1::text IS NULL OR levenshtein($1, name) <=5",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "thumbnail_image_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "website_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "facebook_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "twitter_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "instagram_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "email",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 10,
+          "name": "headquarters_phone",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 11,
+          "name": "tax_classification",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 13,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "bf27e8593d20a82c61d4836693cdf4c36aed2a0416d61236a691b2827035e356": {
+    "query": "SELECT id, slug, name, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM bill\n             WHERE $1::text IS NULL OR slug = $1\n             AND $2::text IS NULL OR levenshtein($2, name) <=5\n             AND $3::vote_status IS NULL OR vote_status = $3",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "vote_status:LegislationStatus",
+          "type_info": {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 4,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "official_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "populist_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "full_text_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 9,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "d4c7b63e70bc3f207c5689e49971d4970cfcdd14c2a739c678daac69b8ecd17f": {
+    "query": "\n            SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, tax_classification, created_at, updated_at  FROM organization o\n            JOIN politician_endorsements\n            ON politician_endorsements.organization_id = o.id\n            WHERE politician_endorsements.politician_id = $1\n        ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "thumbnail_image_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "website_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "facebook_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "twitter_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "instagram_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "email",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 10,
+          "name": "headquarters_phone",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 11,
+          "name": "tax_classification",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 13,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "dbda3f3dde8cab6aee4a71515793d8a9726cbace8d7dc52674bdb2a323a7d9d0": {
+    "query": "SELECT * FROM organization",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "thumbnail_image_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "website_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "facebook_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "twitter_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "instagram_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "email",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 10,
+          "name": "headquarters_phone",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 11,
+          "name": "tax_classification",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 13,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": []
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "df45eeeb2b071d053b62bb94aa162ed64a419139bc036ac022b191f039a3ce4c": {
+    "query": "UPDATE bill\n            SET slug = COALESCE($2, slug),\n                name = COALESCE($3, name),\n                vote_status = COALESCE($4, vote_status),\n                description = COALESCE($5, description),\n                official_summary = COALESCE($6, official_summary),\n                populist_summary = COALESCE($7, populist_summary),\n                full_text_url = COALESCE($8, full_text_url)\n            WHERE id=$1    \n            RETURNING id, slug, name, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, created_at, updated_at",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "vote_status:LegislationStatus",
+          "type_info": {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 4,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "official_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "populist_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "full_text_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 9,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          },
+          "Text",
+          "Text",
+          "Text",
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "e42a255e6916317a184adbd8530ffa79a10f0955ffa290471893e1b6a7c226af": {
+    "query": "DELETE FROM politician WHERE id=$1",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "ea961b5f4cdb1acd26d527efa8aa0fc896190b1985ddc67d1a96da4624e3dc05": {
+    "query": "INSERT INTO politician (slug, first_name, middle_name, last_name, home_state, office_party) \n            VALUES ($1, $2, $3, $4, $5, $6)\n            RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS \"home_state:State\", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party, created_at, updated_at",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "first_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "middle_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "last_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "nickname",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "preferred_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "ballot_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "home_state:State",
+          "type_info": {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 10,
+          "name": "thumbnail_image_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 11,
+          "name": "website_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "facebook_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 13,
+          "name": "twitter_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 14,
+          "name": "instagram_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 15,
+          "name": "office_party",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 16,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 17,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          },
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "f831a3d0a3bc0eedc19cb4dcdec1238b9ed253014700dfe849810d953aa3886c": {
+    "query": "SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state as \"home_state:State\", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party, created_at, updated_at FROM politician\n             WHERE $1::state IS NULL OR home_state = $1\n             AND $2::text IS NULL OR levenshtein($2, last_name) <=5\n             AND $3::text IS NULL OR office_party = $3",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "first_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "middle_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "last_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "nickname",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "preferred_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "ballot_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "home_state:State",
+          "type_info": {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 10,
+          "name": "thumbnail_image_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 11,
+          "name": "website_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "facebook_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 13,
+          "name": "twitter_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 14,
+          "name": "instagram_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 15,
+          "name": "office_party",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 16,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 17,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          },
+          "Text",
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "fb53305fdb12de267f6c7996653e9e51f784683efa0d41fb0edf532dabb4e402": {
+    "query": "UPDATE organization\n            SET slug = COALESCE($2, slug),\n                name = COALESCE($3, name),\n                description = COALESCE($4, description),\n                thumbnail_image_url = COALESCE($5, thumbnail_image_url),\n                website_url = COALESCE($6, website_url)\n            WHERE id=$1\n            RETURNING *",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "thumbnail_image_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "website_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "facebook_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "twitter_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "instagram_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "email",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 10,
+          "name": "headquarters_phone",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 11,
+          "name": "tax_classification",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 13,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  }
 }
