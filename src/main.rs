@@ -43,9 +43,12 @@ async fn main() -> Result<(), Error> {
         .at("/status", get(ping))
         .at("/", get(graphql_playground).post(GraphQL::new(schema)));
 
-    info!("Playground: http://localhost:3000");
 
-    let listener = TcpListener::bind("127.0.0.1:3000");
+    let port = std::env::var("PORT").unwrap_or("127.0.0.1:3000".to_string());
+
+    info!("GraphQL Playground live on port {}", &port);
+
+    let listener = TcpListener::bind(&port);
     let server = Server::new(listener).await?;
     server.run(app).await?;
     Ok(())
