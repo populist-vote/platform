@@ -28,9 +28,6 @@ Deploys happen automatically when changes are pushed or merged to the `main` bra
 
 
 
-
-
-
 [Rust installed]: https://www.rust-lang.org/tools/install
 [`sqlx-cli`]: https://crates.io/crates/sqlx-cli
 [Heroku datastore dashboard]: https://data.heroku.com/datastores/35cb347f-6fb1-488f-8f21-02bbd726f5a8#administration

@@ -123,22 +123,22 @@ CREATE TABLE politician_endorsements (
   organization_id uuid NOT NULL,
   CONSTRAINT fk_politician FOREIGN KEY(politician_id) REFERENCES politician(id),
   CONSTRAINT fk_organization FOREIGN KEY(organization_id) REFERENCES organization(id)
-)
+);
 
--- CREATE TABLE politician_legislation (
---   politician_id uuid
---   legislation_id uuid
---   PRIMARY KEY (politician_id, legislation_id)
---   CONSTRAINT fk_politician FOREIGN KEY(politician_id) REFERENCES politician(id)
---   CONSTRAINT fk_legislation FOREIGN KEY(legislation_id) REFERENCES legislation(id)
--- )
+CREATE TABLE politician_legislation (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  politician_id uuid NOT NULL,
+  legislation_id uuid NOT NULL,
+  CONSTRAINT fk_politician FOREIGN KEY(politician_id) REFERENCES politician(id),
+  CONSTRAINT fk_legislation FOREIGN KEY(legislation_id) REFERENCES legislation(id)
+);
 
--- CREATE TABLE organization_legislation (
---   organization_id uuid NOT NULL REFERENCES organization(id)
---   legislation_id uuid NOT NULL REFERENCES legislation(id)
---   PRIMARY KEY (organization_id, legislation_id)
---   CONSTRAINT fk_organization FOREIGN KEY(organization_id) REFERENCES organization(id)
---   CONSTRAINT fk_legislation FOREIGN KEY(legislation_id) REFERENCES legislation(id)
--- )
+CREATE TABLE organization_legislation (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  organization_id uuid NOT NULL, 
+  legislation_id uuid NOT NULL, 
+  CONSTRAINT fk_organization FOREIGN KEY(organization_id) REFERENCES organization(id),
+  CONSTRAINT fk_legislation FOREIGN KEY(legislation_id) REFERENCES legislation(id)
+);
 
 
