@@ -43,15 +43,10 @@ async fn main() -> Result<(), Error> {
         .at("/status", get(ping))
         .at("/", get(graphql_playground).post(GraphQL::new(schema)));
 
-    let environment = std::env::var("ENVIRONMENT").unwrap_or("production".to_string());
     let port = std::env::var("PORT").unwrap_or("3000".to_string());
-    let address = match environment.as_ref() {
-        "local" => format!("127.0.0.1:{}", port),
-        "production" => format!("80:{}", port),
-        _ => format!("80:{}", port),
-    };
+    let address = format!("0.0.0.0:{}", port);
 
-    info!("GraphQL Playground live at {}", &address);
+    info!("GraphQL Playground live on port {}", &port);
 
     let listener = TcpListener::bind(&address);
     let server = Server::new(listener).await?;
