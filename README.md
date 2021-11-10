@@ -3,7 +3,7 @@
 Populist Database Interface and GraphQL API Server
 
 ## Getting Started
-Make sure you have [Rust installed] on your machine.  Next, you'll need the [`sqlx-cli`] installed to manage the database connection and run migrations.  To do so, run `cargo install sqlx-cli --features postgres` 
+Make sure you have [Rust installed] on your machine.  Next, you'll need the [sqlx-cli] installed to manage the database connection and run migrations.  To do so, run `cargo install sqlx-cli --features postgres` 
 
 First copy the `.env.example` file to `.env` which is .gitignored.  
 `cp .env.example .env` For local development, you can then run `sqlx db create` to create a new Postgres database at the url defined in your new `.env` 
@@ -11,7 +11,7 @@ First copy the `.env.example` file to `.env` which is .gitignored.
 Next, you'll need to run the migrations with `sqlx migrate run`
 
 ## Database
-[`sqlx`] is used for managing asyncronous database operations.  This project relies heavily on compile-time query verification using `sqlx` macros, namely `query_as!`  If you do not have a DATABASE_URL specified in your .env file, you will not be able to compile the binary for this crate.  You can run sqlx in offline mode by setting SQLX_OFFLINE=true.  You can enable "offline mode" to cache the results of the SQL query analysis using the sqlx-cli.  If you make schema alterations, run the command `cargo sqlx prepare` which will write your query data to `sqlx-data.json` at the `/db` root.
+[sqlx] is used for managing asyncronous database operations.  This project relies heavily on compile-time query verification using `sqlx` macros, namely `query_as!`  If you do not have a DATABASE_URL specified in your .env file, you will not be able to compile the binary for this crate.  You can run sqlx in offline mode by setting SQLX_OFFLINE=true.  You can enable "offline mode" to cache the results of the SQL query analysis using the sqlx-cli.  If you make schema alterations, run the command `cargo sqlx prepare` which will write your query data to `sqlx-data.json` at the `/db` root.
 
 ## API Server
 To start the api server, run `cargo watch -x run` which will type check, compile, and run your code.  The GraphQL playground will then be live at http://localhost:3000 for you to execute queries and mutations against the specified database.  
