@@ -17,12 +17,13 @@ Next, you'll need to run the migrations with `sqlx migrate run`
 To start the api server, run `cargo watch -x run` which will type check, compile, and run your code.  The GraphQL playground will then be live at http://localhost:3000 for you to execute queries and mutations against the specified database.  
 
 ## Architecture
-
+todo!()
 
 ## Testing
+`cargo test`
 
 ## Deploying
-Deploys happen automatically when changes are pushed or merged to the `main` branch. Ultimately a staging environment will be setup with automatic deployments from the `xyz` branch.  
+Deploys happen automatically when changes are pushed or merged to the `main` branch. Ultimately a staging environment will be setup with automatic deployments from the `xyz` branch.  To run the migrations, **make sure you're on branch `main`** and set the `DATABASE_URL` to the URI found on our [Heroku datastore dashboard], under "View Credentials."  Then run `sqlx migrate run` from your local machine.  This is a temporary solution until we figure out how to automatically run the migrations on each deploy.
 
 
 
@@ -32,3 +33,4 @@ Deploys happen automatically when changes are pushed or merged to the `main` bra
 
 [Rust installed]: https://www.rust-lang.org/tools/install
 [`sqlx-cli`]: https://crates.io/crates/sqlx-cli
+[Heroku datastore dashboard]: https://data.heroku.com/datastores/35cb347f-6fb1-488f-8f21-02bbd726f5a8#administration
