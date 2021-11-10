@@ -1,4 +1,4 @@
-use crate::DateTime;
+use crate::{DateTime, State};
 use async_graphql::InputObject;
 use slugify::slugify;
 use sqlx::postgres::PgPool;
@@ -8,14 +8,23 @@ use super::legislation::LegislationStatus;
 
 #[derive(FromRow, Debug, Clone)]
 pub struct BallotMeasure {
+    // required fields
     pub id: uuid::Uuid,
     pub slug: String,
     pub name: String,
     pub vote_status: LegislationStatus,
+    pub election_id: uuid::Uuid,
+    pub state: State,
+    pub ballot_measure_code: String,
+    pub measure_type: String, //perhaps make enum later
+    pub definitions: String, // makrdown list of bulleted items
+
+    //optional fields
     pub description: Option<String>,
     pub official_summary: Option<String>,
     pub populist_summary: Option<String>,
     pub full_text_url: Option<String>,
+
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
@@ -50,20 +59,25 @@ pub struct BallotMeasureSearch {
 }
 
 impl BallotMeasure {
-    pub async fn create(db_pool: &PgPool, input: &CreateBallotMeasureInput) -> Result<Self, sqlx::Error> {
+    pub async fn create(db_pool: &PgPool, election_id: uuid::Uuid, input: &CreateBallotMeasureInput) -> Result<Self, sqlx::Error> {
         let slug = slugify!(&input.name); // TODO run a query and ensure this is Unique
         let record = sqlx::query_as!(
             BallotMeasure,
-            r#"INSERT INTO ballot_measure (slug, name, vote_status, description, official_summary, populist_summary, full_text_url) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7) 
-            RETURNING id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, created_at, updated_at"#,
+            r#"INSERT INTO ballot_measure (election_id, slug, name, vote_status, description, official_summary, populist_summary, full_text_url, state, ballot_measure_code, measure_type, definitions) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+            RETURNING id, election_id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, state, ballot_measure_code, measure_type, definitions, created_at, updated_at"#,
+            election_id,
             slug,
             input.name,
             input.vote_status as LegislationStatus,
             input.description,
             input.official_summary,
             input.populist_summary,
-            input.full_text_url
+            input.full_text_url,
+            input.state,
+            input.ballot_measure_code, 
+            input.measure_type, 
+            input.definitions
         )
         .fetch_one(db_pool)
         .await?;

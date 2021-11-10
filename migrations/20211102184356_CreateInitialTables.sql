@@ -96,6 +96,13 @@ CREATE TABLE organization (
     updated_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
 );
 
+CREATE TABLE election (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  election_date DATE NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT
+);
+
 CREATE TABLE legislation (
     id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     slug TEXT NOT NULL UNIQUE,
@@ -114,7 +121,12 @@ CREATE TABLE bill (
 ) INHERITS (legislation);
 
 CREATE TABLE ballot_measure (
-
+  election_id uuid NOT NULL,
+  ballot_state state NOT NULL,
+  ballot_measure_code TEXT NOT NULL UNIQUE,
+  measure_type TEXT NOT NULL,
+  definitions TEXT NOT NULL,
+  CONSTRAINT fk_election FOREIGN KEY(election_id) REFERENCES election(id)
 ) INHERITS (legislation);
 
 CREATE TABLE politician_endorsements (

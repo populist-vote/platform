@@ -1,4 +1,5 @@
 mod bill;
+mod ballot_measure;
 mod mutation;
 mod organization;
 mod politician;
