@@ -1,5 +1,6 @@
 mod bill;
 mod ballot_measure;
+mod election;
 mod organization;
 mod politician;
 mod query;

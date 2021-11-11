@@ -22,7 +22,8 @@ impl PoliticianQuery {
     async fn politicians(
         &self,
         ctx: &Context<'_>,
-        #[graphql(desc = "Search by homeState or lastName")] search: PoliticianSearch,
+        #[graphql(desc = "Search by homeState or lastName")] 
+        search: PoliticianSearch,
     ) -> FieldResult<Vec<PoliticianResult>> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let records = Politician::search(pool, &search).await?;

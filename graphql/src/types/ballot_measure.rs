@@ -1,8 +1,5 @@
 use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
-use db::{
-    models::{ballot_measure::BallotMeasure, legislation::LegislationStatus},
-    DateTime,
-};
+use db::{DateTime, State, models::{ballot_measure::BallotMeasure, legislation::LegislationStatus}};
 use sqlx::{Pool, Postgres};
 
 #[derive(SimpleObject)]
@@ -12,6 +9,11 @@ pub struct BallotMeasureResult {
     slug: String,
     name: String,
     vote_status: LegislationStatus,
+    election_id: ID,
+    ballot_state: State,
+    ballot_measure_code: String,
+    measure_type: String,
+    definitions: String,
     description: Option<String>,
     official_summary: Option<String>,
     populist_summary: Option<String>,
@@ -36,6 +38,11 @@ impl From<BallotMeasure> for BallotMeasureResult {
             slug: b.slug,
             name: b.name,
             vote_status: b.vote_status,
+            election_id: ID::from(b.election_id),
+            ballot_state: b.ballot_state,
+            ballot_measure_code: b.ballot_measure_code,
+            measure_type: b.measure_type,
+            definitions: b.definitions,
             description: b.description,
             official_summary: b.official_summary,
             populist_summary: b.populist_summary,

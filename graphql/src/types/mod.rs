@@ -1,8 +1,10 @@
 mod bill;
 mod ballot_measure;
+mod election;
 mod organization;
 mod politician;
 pub use bill::BillResult;
 pub use ballot_measure::BallotMeasureResult;
+pub use election::ElectionResult;
 pub use organization::OrganizationResult;
 pub use politician::PoliticianResult;

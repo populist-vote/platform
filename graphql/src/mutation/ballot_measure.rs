@@ -13,9 +13,9 @@ struct DeleteBallotMeasureResult {
 
 #[Object]
 impl BallotMeasureMutation {
-    async fn create_ballot_measure(&self, ctx: &Context<'_>, input: CreateBallotMeasureInput) -> Result<BallotMeasureResult> {
+    async fn create_ballot_measure(&self, ctx: &Context<'_>, election_id: uuid::Uuid, input: CreateBallotMeasureInput) -> Result<BallotMeasureResult> {
         let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let new_record = BallotMeasure::create(db_pool, &input).await?;
+        let new_record = BallotMeasure::create(db_pool, election_id, &input).await?;
         Ok(BallotMeasureResult::from(new_record))
     }
 

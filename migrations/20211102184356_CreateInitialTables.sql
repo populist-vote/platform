@@ -98,26 +98,28 @@ CREATE TABLE organization (
 
 CREATE TABLE election (
   id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  election_date DATE NOT NULL,
+  slug TEXT NOT NULL,
   title TEXT NOT NULL,
-  description TEXT
+  description TEXT,
+  election_date DATE NOT NULL
 );
 
 CREATE TABLE legislation (
-    id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-    slug TEXT NOT NULL UNIQUE,
-    name TEXT NOT NULL,
-    description TEXT,
-    vote_status vote_status NOT NULL,
-    official_summary TEXT,
-    populist_summary TEXT,
-    full_text_url TEXT,
-    created_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
-    updated_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  slug TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  description TEXT,
+  vote_status vote_status NOT NULL,
+  official_summary TEXT,
+  populist_summary TEXT,
+  full_text_url TEXT,
+  created_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
+  updated_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
 );
 
 CREATE TABLE bill (
-
+  legiscan_bill_id INT,
+  legiscan_data JSONB NOT NULL DEFAULT '{}'::jsonb
 ) INHERITS (legislation);
 
 CREATE TABLE ballot_measure (

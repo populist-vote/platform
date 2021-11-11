@@ -1,7 +1,9 @@
 use crate::DateTime;
 use async_graphql::InputObject;
+use serde_json::Value;
 use slugify::slugify;
 use sqlx::postgres::PgPool;
+use sqlx::types::Json;
 use sqlx::FromRow;
 
 use super::legislation::LegislationStatus;
@@ -16,6 +18,8 @@ pub struct Bill {
     pub official_summary: Option<String>,
     pub populist_summary: Option<String>,
     pub full_text_url: Option<String>,
+    pub legiscan_bill_id: Option<i32>,
+    pub legiscan_data: Value,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
@@ -56,7 +60,7 @@ impl Bill {
             Bill,
             r#"INSERT INTO bill (slug, name, vote_status, description, official_summary, populist_summary, full_text_url) 
             VALUES ($1, $2, $3, $4, $5, $6, $7) 
-            RETURNING id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, created_at, updated_at"#,
+            RETURNING id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at"#,
             slug,
             input.name,
             input.vote_status as LegislationStatus,
@@ -87,7 +91,7 @@ impl Bill {
                 populist_summary = COALESCE($7, populist_summary),
                 full_text_url = COALESCE($8, full_text_url)
             WHERE id=$1    
-            RETURNING id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, created_at, updated_at"#,
+            RETURNING id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at"#,
             id,
             input.slug,
             input.name,
@@ -108,7 +112,7 @@ impl Bill {
     }
 
     pub async fn index(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
-        let records = sqlx::query_as!(Bill, r#"SELECT id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM bill"#,)
+        let records = sqlx::query_as!(Bill, r#"SELECT id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at FROM bill"#,)
             .fetch_all(db_pool)
             .await?;
         Ok(records.into())
@@ -117,7 +121,7 @@ impl Bill {
     pub async fn search(db_pool: &PgPool, search: &BillSearch) -> Result<Vec<Self>, sqlx::Error> {
         let records = sqlx::query_as!(
             Bill,
-            r#"SELECT id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM bill
+            r#"SELECT id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at FROM bill
              WHERE $1::text IS NULL OR slug = $1
              AND $2::text IS NULL OR levenshtein($2, name) <=5
              AND $3::vote_status IS NULL OR vote_status = $3"#,
