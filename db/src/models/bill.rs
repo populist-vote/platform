@@ -3,7 +3,6 @@ use async_graphql::InputObject;
 use serde_json::Value;
 use slugify::slugify;
 use sqlx::postgres::PgPool;
-use sqlx::types::Json;
 use sqlx::FromRow;
 
 use super::legislation::LegislationStatus;

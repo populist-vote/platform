@@ -23,7 +23,9 @@ todo!()
 `cargo test`
 
 ## Deploying
-Deploys happen automatically when changes are pushed or merged to the `main` branch. Ultimately a staging environment will be setup with automatic deployments from the `xyz` branch.  To run the migrations, **make sure you're on branch `main`** and set the `DATABASE_URL` to the URI found on our [Heroku datastore dashboard], under "View Credentials."  Then run `sqlx migrate run` from your local machine.  This is a temporary solution until we figure out how to automatically run the migrations on each deploy.
+Deploys happen automatically when changes are pushed or merged to the `main` branch.   Be sure to run `cargo sqlx prepare` from the `/db` root and commit the changes to the `sqlx-data.json` file if you change the schema.  This file is used during build time to validate the SQL queries. 
+
+Ultimately a staging environment will be setup with automatic deployments from the `xyz` branch.  To run the migrations, **make sure you're on branch `main`** and set the `DATABASE_URL` to the URI found on our [Heroku datastore dashboard], under "View Credentials."  Then run `sqlx migrate run` from your local machine.  This is a temporary solution until we figure out how to automatically run the migrations on each deploy.
 
 
 

@@ -18,7 +18,7 @@ pub struct CreateElectionInput {
     pub slug: Option<String>,
     pub title: String,
     pub description: Option<String>,
-    // #[field(desc = "Must use format YYYY-MM-DD")]
+    // Must use format YYYY-MM-DD
     pub election_date: chrono::NaiveDate,
 }
 

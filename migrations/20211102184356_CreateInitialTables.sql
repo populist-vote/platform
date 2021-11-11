@@ -54,6 +54,7 @@ CREATE TYPE state AS ENUM (
     'WI',
     'WY'
 );
+CREATE TYPE political_party AS ENUM ('democratic', 'republican', 'libertarian', 'green', 'constitution' );
 
 CREATE TABLE politician (
     id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -71,7 +72,7 @@ CREATE TABLE politician (
     facebook_url TEXT,
     twitter_url TEXT,
     instagram_url TEXT,
-    office_party TEXT,
+    office_party political_party,
     vote_smart_candidate_id TEXT,
     vote_smart_candidate_data JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
