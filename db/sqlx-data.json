@@ -1722,6 +1722,51 @@
       ]
     }
   },
+  "ba642564cdc2aafa17d72751d558e1bfba54d0deed7b3f6ca89c4b6b25705836": {
+    "query": "SELECT id, slug, title, description, election_date FROM election\n            WHERE $1::text IS NULL OR slug = $1\n            AND $2::text IS NULL OR title = $2",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "election_date",
+          "type_info": "Date"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    }
+  },
   "c7d334512ec04000f7ddc5ca81545c401158fd59459fa240bf329ed12dc9676c": {
     "query": "SELECT id, slug, name, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at FROM bill",
     "describe": {
