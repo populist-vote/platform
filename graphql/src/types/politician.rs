@@ -1,5 +1,5 @@
 use async_graphql::{ComplexObject, Context, Enum, FieldResult, SimpleObject, ID};
-use db::{models::politician::Politician, DateTime, State};
+use db::{DateTime, PoliticalParty, State, models::politician::Politician};
 use sqlx::{Pool, Postgres};
 
 use super::OrganizationResult;
@@ -18,7 +18,16 @@ pub struct PoliticianResult {
     first_name: String,
     middle_name: Option<String>,
     last_name: String,
+    nickname: Option<String>,
+    preferred_name: Option<String>,
+    ballot_name: Option<String>,
+    description: Option<String>,
     home_state: State,
+    website_url: Option<String>,
+    twitter_url: Option<String>,
+    facebook_url: Option<String>,
+    instagram_url: Option<String>,
+    office_party: Option<PoliticalParty>,
     created_at: DateTime,
     updated_at: DateTime,
 }
@@ -57,7 +66,16 @@ impl From<Politician> for PoliticianResult {
             first_name: p.first_name,
             middle_name: p.middle_name,
             last_name: p.last_name,
+            nickname: p.nickname,
+            preferred_name: p.preferred_name,
+            ballot_name: p.ballot_name,
+            description: p.description,
             home_state: p.home_state,
+            website_url: p.website_url,
+            twitter_url: p.twitter_url,
+            facebook_url: p.facebook_url,
+            instagram_url: p.instagram_url,
+            office_party: p.office_party,
             created_at: p.created_at,
             updated_at: p.updated_at,
         }
