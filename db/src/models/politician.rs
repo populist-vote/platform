@@ -1,74 +1,9 @@
+use super::enums::{PoliticalParty, State};
 use crate::{DateTime, Organization};
-use async_graphql::{Enum, InputObject};
+use async_graphql::InputObject;
 use slugify::slugify;
 use sqlx::postgres::PgPool;
 use sqlx::FromRow;
-
-#[derive(Enum, Debug, Copy, Clone, Eq, PartialEq, sqlx::Type)]
-pub enum State {
-    AL,
-    AK,
-    AZ,
-    AR,
-    CA,
-    CO,
-    CT,
-    DC,
-    DE,
-    FL,
-    GA,
-    HI,
-    ID,
-    IL,
-    IN,
-    IA,
-    KS,
-    KY,
-    LA,
-    ME,
-    MD,
-    MA,
-    MI,
-    MN,
-    MS,
-    MO,
-    MT,
-    NE,
-    NV,
-    NH,
-    NJ,
-    NM,
-    NY,
-    NC,
-    ND,
-    OH,
-    OK,
-    OR,
-    PA,
-    RI,
-    SC,
-    SD,
-    TN,
-    TX,
-    UT,
-    VT,
-    VA,
-    WA,
-    WV,
-    WI,
-    WY,
-}
-
-#[derive(Enum, Debug, Copy, Clone, Eq, PartialEq, sqlx::Type)]
-#[sqlx(type_name = "political_party", rename_all = "lowercase")]
-pub enum PoliticalParty {
-    DEMOCRATIC,
-    REPUBLICAN,
-    LIBERTARIAN,
-    GREEN,
-    CONSTITUTION,
-}
-
 #[derive(FromRow, Debug, Clone)]
 pub struct Politician {
     pub id: uuid::Uuid,

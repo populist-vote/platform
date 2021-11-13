@@ -1,39 +1,141 @@
-use crate::models::{organization::Organization, user::User};
-use crate::DateTime;
-// use sqlx::Error;
+use crate::{DateTime, Politician, models::enums::{PoliticalParty, State}};
+use async_graphql::InputObject;
+use slugify::slugify;
+use sqlx::PgPool;
 
 #[derive(sqlx::FromRow, Debug, Clone)]
 pub struct IssueTag {
     pub id: uuid::Uuid,
+    pub slug: String,
     pub name: String,
     pub description: Option<String>,
-    pub politicians: Vec<uuid::Uuid>,
-    pub organizations: Vec<Organization>,
-    pub created_by: User,
+    // pub created_by: User,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
 
+#[derive(InputObject)]
+pub struct CreateIssueTagInput {
+    pub name: String,
+    pub slug: Option<String>,
+    pub description: Option<String>,
+}
+
+#[derive(InputObject)]
+pub struct UpdateIssueTagInput {
+    pub name: Option<String>,
+    pub slug: Option<String>,
+    pub description: Option<String>,
+}
+
+#[derive(InputObject)]
+pub struct IssueTagSearch {
+    pub name: Option<String>,
+}
+
 impl IssueTag {
-    // pub async fn new(ctx: (), name: &str, description: &str) -> Result<Self, Error> {
-    //     let id = uuid::Uuid::new_v4();
-    //     todo!()
-    // let mut conn = ctx.pool.acquire().await?;
-    // let mut tx = conn.begin().await?;
+    pub async fn create(
+        db_pool: &PgPool,
+        input: &CreateIssueTagInput,
+    ) -> Result<Self, sqlx::Error> {
+        let id = uuid::Uuid::new_v4();
+        let slug = slugify!(&input.name);
+        let record = sqlx::query_as!(
+            IssueTag,
+            r#"
+                INSERT INTO issue_tag (id, slug, name, description) VALUES ($1, $2, $3, $4)
+                RETURNING id, slug, name, description, created_at, updated_at
+            "#,
+            id,
+            slug,
+            input.name,
+            input.description
+        )
+        .fetch_one(db_pool)
+        .await?;
 
-    // let query = sqlx::query!(
-    //     "INSERT INTO issue_tag (id, name, description) VALUES ($1, $2, $3)",
-    //     id,
-    //     name,
-    //     description
-    // )
-    // .execute(ctx)
-    // .await?;
+        Ok(record.into())
+    }
 
-    // let created_issue_tag = query.fetch_one(&mut tx).await?;
+    pub async fn update(
+        db_pool: &PgPool,
+        id: uuid::Uuid,
+        input: &UpdateIssueTagInput,
+    ) -> Result<Self, sqlx::Error> {
+        let record = sqlx::query_as!(
+            IssueTag,
+            r#"
+                UPDATE issue_tag
+                SET slug = COALESCE($2, slug),
+                    name = COALESCE($3, name),
+                    description = COALESCE($4, description)
+                WHERE id = $1
+                RETURNING id, slug, name, description, created_at, updated_at           
+            "#,
+            id,
+            input.slug,
+            input.name,
+            input.description
+        )
+        .fetch_one(db_pool)
+        .await?;
 
-    // tx.commit().await?;
+        Ok(record.into())
+    }
 
-    // Ok(created_issue_tag)
-    // }
+    pub async fn delete(db_pool: &PgPool, id: uuid::Uuid) -> Result<(), sqlx::Error> {
+        sqlx::query!("DELETE FROM issue_tag WHERE id=$1", id)
+            .execute(db_pool)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn index(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
+        let records = sqlx::query_as!(
+            IssueTag,
+            r#"
+                SELECT id, slug, name, description, created_at, updated_at FROM issue_tag
+            "#,
+        )
+        .fetch_all(db_pool)
+        .await?;
+
+        Ok(records.into())
+    }
+
+    pub async fn search(
+        db_pool: &PgPool,
+        search: &IssueTagSearch,
+    ) -> Result<Vec<Self>, sqlx::Error> {
+        let records = sqlx::query_as!(
+            IssueTag,
+            r#"
+                SELECT id, slug, name, description, created_at, updated_at FROM issue_tag
+                WHERE $1::text IS NULL OR levenshtein($1, name) <= 3
+            "#,
+            search.name
+        )
+        .fetch_all(db_pool)
+        .await?;
+
+        Ok(records.into())
+
+    }
+
+    pub async fn politicians(
+        db_pool: &PgPool,
+        issue_tag_id: uuid::Uuid,
+    ) -> Result<Vec<Politician>, sqlx::Error> {
+        let records = sqlx::query_as!(
+            Politician,
+            r#"
+                SELECT p.id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", created_at, updated_at FROM politician p
+                JOIN politician_issue_tags
+                ON politician_issue_tags.politician_id = p.id
+                WHERE politician_issue_tags.issue_tag_id = $1
+            "#, issue_tag_id).fetch_all(db_pool).await?;
+
+        Ok(records.into())
+    }
 }

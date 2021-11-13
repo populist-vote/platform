@@ -1,9 +1,10 @@
-use crate::{DateTime, State};
+use crate::DateTime;
 use async_graphql::InputObject;
 use slugify::slugify;
 use sqlx::postgres::PgPool;
 use sqlx::FromRow;
 
+use super::enums::State;
 use super::legislation::LegislationStatus;
 
 #[derive(FromRow, Debug, Clone)]

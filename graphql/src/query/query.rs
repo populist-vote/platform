@@ -1,9 +1,6 @@
 use async_graphql::{MergedObject, Object};
 
-use super::{
-    ballot_measure::BallotMeasureQuery, bill::BillQuery, election::ElectionQuery,
-    organization::OrganizationQuery, politician::PoliticianQuery,
-};
+use super::{ballot_measure::BallotMeasureQuery, bill::BillQuery, election::ElectionQuery, issue_tag::IssueTagQuery, organization::OrganizationQuery, politician::PoliticianQuery};
 
 #[derive(Default)]
 pub struct MainQuery;
@@ -23,4 +20,5 @@ pub struct Query(
     BillQuery,
     BallotMeasureQuery,
     ElectionQuery,
+    IssueTagQuery
 );

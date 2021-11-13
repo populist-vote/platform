@@ -1,4 +1,9 @@
-CREATE EXTENSION fuzzystrmatch;
+-- Add up migration script here
+
+BEGIN;
+
+CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TYPE vote_status AS ENUM ('introduced', 'passed', 'signed', 'vetoed', 'unknown');
 CREATE TYPE state AS ENUM (
@@ -106,8 +111,6 @@ CREATE TABLE election (
 );
 
 CREATE TABLE legislation (
-  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  slug TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
   description TEXT,
   vote_status vote_status NOT NULL,
@@ -119,11 +122,15 @@ CREATE TABLE legislation (
 );
 
 CREATE TABLE bill (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  slug TEXT NOT NULL UNIQUE,
   legiscan_bill_id INT,
   legiscan_data JSONB NOT NULL DEFAULT '{}'::jsonb
 ) INHERITS (legislation);
 
 CREATE TABLE ballot_measure (
+  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  slug TEXT NOT NULL UNIQUE,
   election_id uuid NOT NULL,
   ballot_state state NOT NULL,
   ballot_measure_code TEXT NOT NULL UNIQUE,
@@ -140,20 +147,5 @@ CREATE TABLE politician_endorsements (
   CONSTRAINT fk_organization FOREIGN KEY(organization_id) REFERENCES organization(id)
 );
 
-CREATE TABLE politician_legislation (
-  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  politician_id uuid NOT NULL,
-  legislation_id uuid NOT NULL,
-  CONSTRAINT fk_politician FOREIGN KEY(politician_id) REFERENCES politician(id),
-  CONSTRAINT fk_legislation FOREIGN KEY(legislation_id) REFERENCES legislation(id)
-);
-
-CREATE TABLE organization_legislation (
-  id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  organization_id uuid NOT NULL, 
-  legislation_id uuid NOT NULL, 
-  CONSTRAINT fk_organization FOREIGN KEY(organization_id) REFERENCES organization(id),
-  CONSTRAINT fk_legislation FOREIGN KEY(legislation_id) REFERENCES legislation(id)
-);
-
+COMMIT;
 
