@@ -2,7 +2,12 @@ use async_graphql::*;
 use db::{CreatePoliticianInput, Politician, UpdatePoliticianInput};
 use sqlx::{Pool, Postgres};
 
-use crate::types::PoliticianResult;
+use crate::{
+    types::{PoliticianResult},
+    upload_to_s3, File,
+};
+
+use std::io::Read;
 #[derive(Default)]
 pub struct PoliticianMutation;
 
@@ -33,6 +38,27 @@ impl PoliticianMutation {
         let updated_record =
             Politician::update(db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
         Ok(PoliticianResult::from(updated_record))
+    }
+
+    // TODO make this generic and accept an associated model e.g Politician
+    async fn upload_politician_thumbnail(
+        &self,
+        ctx: &Context<'_>,
+        file: Upload,
+    ) -> Result<u16, Error> {
+        let upload = file.value(ctx).unwrap();
+        let mut content = Vec::new();
+        let filename = upload.filename.clone();
+        let mimetype = upload.content_type.clone();
+
+        upload.into_read().read_to_end(&mut content).unwrap();
+        let file_info = File {
+            id: ID::from(uuid::Uuid::new_v4()),
+            filename,
+            content, 
+            mimetype,
+        };
+        Ok(upload_to_s3(file_info).await?)
     }
 
     async fn delete_politician(

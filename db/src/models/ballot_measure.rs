@@ -37,7 +37,7 @@ pub struct CreateBallotMeasureInput {
     pub ballot_state: State,
     pub ballot_measure_code: String,
     pub measure_type: String,
-    pub definitions: String, 
+    pub definitions: String,
     pub description: Option<String>,
     pub official_summary: Option<String>,
     pub populist_summary: Option<String>,
@@ -57,7 +57,6 @@ pub struct UpdateBallotMeasureInput {
     pub official_summary: Option<String>,
     pub populist_summary: Option<String>,
     pub full_text_url: Option<String>,
-    
 }
 
 #[derive(InputObject)]

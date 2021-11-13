@@ -1,10 +1,12 @@
-mod bill;
 mod ballot_measure;
+mod bill;
 mod election;
 mod organization;
 mod politician;
-pub use bill::BillResult;
+mod upload;
 pub use ballot_measure::BallotMeasureResult;
+pub use bill::BillResult;
 pub use election::ElectionResult;
 pub use organization::OrganizationResult;
 pub use politician::PoliticianResult;
+pub use upload::FileInfo;

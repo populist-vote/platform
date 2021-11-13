@@ -1,5 +1,8 @@
 use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
-use db::{DateTime, State, models::{ballot_measure::BallotMeasure, legislation::LegislationStatus}};
+use db::{
+    models::{ballot_measure::BallotMeasure, legislation::LegislationStatus},
+    DateTime, State,
+};
 use sqlx::{Pool, Postgres};
 
 #[derive(SimpleObject)]
@@ -26,7 +29,7 @@ pub struct BallotMeasureResult {
 impl BallotMeasureResult {
     async fn arguments(&self, ctx: &Context<'_>) -> FieldResult<Vec<BallotMeasureResult>> {
         //Change to ArgumentResult once implemented
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let _pool = ctx.data_unchecked::<Pool<Postgres>>();
         todo!()
     }
 }

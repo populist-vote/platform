@@ -1,17 +1,53 @@
+mod errors;
 mod mutation;
 mod query;
 pub mod types;
-use async_graphql::{EmptySubscription, Schema, SchemaBuilder};
-use sqlx::PgPool;
 
 use crate::mutation::Mutation;
 use crate::query::Query;
+use async_graphql::{EmptySubscription, Schema, SchemaBuilder, ID};
+use dotenv::dotenv;
+use s3::bucket::Bucket;
+use s3::creds::Credentials;
+use sqlx::PgPool;
+
+pub use crate::errors::Error;
 
 pub fn new_schema(db_pool: PgPool) -> SchemaBuilder<Query, Mutation, EmptySubscription> {
-    Schema::build(
-        Query::default(),
-        Mutation::default(),
-        EmptySubscription, //Subscription::default(),
-    )
-    .data(db_pool)
+    Schema::build(Query::default(), Mutation::default(), EmptySubscription).data(db_pool)
+}
+
+pub struct File {
+    pub id: ID,
+    pub filename: String,
+    pub content: Vec<u8>,
+    pub mimetype: Option<String>,
+}
+
+pub async fn upload_to_s3(file: File) -> Result<u16, Error> {
+    dotenv().ok();
+    let accesss_key = std::env::var("AWS_ACCESS_KEY")?;
+    let secret_key = std::env::var("AWS_SECRET_KEY")?;
+
+    let bucket_name = "populist-platform";
+    let region = "us-east-2".parse()?;
+    let credentials = Credentials::new(
+        Some(&accesss_key.to_owned()),
+        Some(&secret_key.to_owned()),
+        None,
+        None,
+        None,
+    )?;
+    let bucket = Bucket::new(bucket_name, region, credentials)?;
+    let (_, code) = bucket
+        .put_object_with_content_type(
+            &file.filename,
+            &file.content,
+            &file.mimetype.unwrap_or("".to_string()),
+        )
+        .await?;
+
+    // TODO return s3 asset URL
+    println!("{}", code);
+    Ok(code)
 }

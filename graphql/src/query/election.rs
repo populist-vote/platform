@@ -33,15 +33,11 @@ impl ElectionQuery {
         Ok(results)
     }
 
-    async fn upcoming_elections(&self, ctx: &Context<'_>) -> FieldResult<Vec<ElectionResult>> {
+    async fn upcoming_elections(&self, _ctx: &Context<'_>) -> FieldResult<Vec<ElectionResult>> {
         todo!();
     }
 
-    async fn election_by_id(
-        &self,
-        _ctx: &Context<'_>,
-        _id: String,
-    ) -> FieldResult<ElectionResult> {
+    async fn election_by_id(&self, _ctx: &Context<'_>, _id: String) -> FieldResult<ElectionResult> {
         // Look up election by id in the database
         todo!()
     }

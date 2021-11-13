@@ -1,4 +1,4 @@
-use async_graphql::{ComplexObject, Context, FieldResult, ID, SimpleObject};
+use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
 use db::{
     models::{bill::Bill, legislation::LegislationStatus},
     DateTime,
@@ -25,7 +25,7 @@ pub struct BillResult {
 impl BillResult {
     async fn arguments(&self, ctx: &Context<'_>) -> FieldResult<Vec<BillResult>> {
         //Change to ArgumentResult once implemented
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let _pool = ctx.data_unchecked::<Pool<Postgres>>();
         todo!()
     }
 }

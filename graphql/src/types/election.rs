@@ -1,5 +1,5 @@
-use async_graphql::{ComplexObject, ID, SimpleObject};
-use db::{Election};
+use async_graphql::{ComplexObject, SimpleObject, ID};
+use db::Election;
 
 #[derive(SimpleObject)]
 #[graphql(complex)]
@@ -8,11 +8,11 @@ pub struct ElectionResult {
     slug: String,
     title: String,
     description: Option<String>,
-    election_date: chrono::NaiveDate
+    election_date: chrono::NaiveDate,
 }
 
 #[ComplexObject]
-impl ElectionResult { }
+impl ElectionResult {}
 
 impl From<Election> for ElectionResult {
     fn from(e: Election) -> Self {

@@ -10,6 +10,10 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
+graphql = { path = "graphql"}
+db = { path = "db"}
+
+
 tokio = { version = "1.8", features = ["full"] }
 poem = "1.0.13"
 async-graphql = "2.10.8"
@@ -21,8 +25,6 @@ slab = "0.4.5"
 tracing-subscriber = "0.2.24"
 dotenv = "*"
 
-graphql = { path = "graphql"}
-db = { path = "db"}
 anyhow = "1.0.45"
 sqlx = { version = "0.5.9", features = ["postgres", "offline"] }
 pretty_env_logger = "0.4.0"
