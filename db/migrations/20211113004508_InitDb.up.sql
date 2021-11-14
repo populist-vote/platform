@@ -5,6 +5,16 @@ BEGIN;
 CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+CREATE OR REPLACE FUNCTION set_updated_at()
+    RETURNS TRIGGER AS
+$$
+BEGIN
+    OLD.updated_at = NOW();
+    RETURN OLD;
+END;
+$$ LANGUAGE 'plpgsql'
+;
+
 CREATE TYPE vote_status AS ENUM ('introduced', 'passed', 'signed', 'vetoed', 'unknown');
 CREATE TYPE state AS ENUM (
     'AL',
@@ -84,6 +94,13 @@ CREATE TABLE politician (
     updated_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
 );
 
+CREATE TRIGGER set_updated_at
+    BEFORE UPDATE
+    ON politician
+    FOR EACH ROW
+EXECUTE PROCEDURE set_updated_at()
+;
+
 CREATE TABLE organization (
     id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     slug TEXT NOT NULL UNIQUE,
@@ -102,6 +119,14 @@ CREATE TABLE organization (
     updated_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
 );
 
+CREATE TRIGGER set_updated_at
+    BEFORE UPDATE
+    ON organization
+    FOR EACH ROW
+EXECUTE PROCEDURE set_updated_at()
+;
+
+
 CREATE TABLE election (
   id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   slug TEXT NOT NULL,
@@ -109,6 +134,14 @@ CREATE TABLE election (
   description TEXT,
   election_date DATE NOT NULL
 );
+
+CREATE TRIGGER set_updated_at
+    BEFORE UPDATE
+    ON election
+    FOR EACH ROW
+EXECUTE PROCEDURE set_updated_at()
+;
+
 
 CREATE TABLE legislation (
   name TEXT NOT NULL,
@@ -120,6 +153,14 @@ CREATE TABLE legislation (
   created_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
   updated_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
 );
+
+CREATE TRIGGER set_updated_at
+    BEFORE UPDATE
+    ON legislation
+    FOR EACH ROW
+EXECUTE PROCEDURE set_updated_at()
+;
+
 
 CREATE TABLE bill (
   id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -143,9 +184,18 @@ CREATE TABLE politician_endorsements (
   id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   politician_id uuid NOT NULL,
   organization_id uuid NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
+  updated_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
   CONSTRAINT fk_politician FOREIGN KEY(politician_id) REFERENCES politician(id),
   CONSTRAINT fk_organization FOREIGN KEY(organization_id) REFERENCES organization(id)
 );
+
+CREATE TRIGGER set_updated_at
+    BEFORE UPDATE
+    ON politician_endorsements
+    FOR EACH ROW
+EXECUTE PROCEDURE set_updated_at()
+;
 
 COMMIT;
 

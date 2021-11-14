@@ -1,5 +1,5 @@
 use super::enums::{PoliticalParty, State};
-use crate::{DateTime, Organization};
+use crate::{CreateOrConnectIssueTagInput, DateTime, IssueTag, Organization};
 use async_graphql::InputObject;
 use slugify::slugify;
 use sqlx::postgres::PgPool;
@@ -42,6 +42,7 @@ pub struct CreatePoliticianInput {
     pub twitter_url: Option<String>,
     pub instagram_url: Option<String>,
     pub office_party: Option<PoliticalParty>,
+    pub issue_tags: Option<CreateOrConnectIssueTagInput>,
 }
 
 #[derive(InputObject)]
@@ -60,6 +61,7 @@ pub struct UpdatePoliticianInput {
     pub twitter_url: Option<String>,
     pub instagram_url: Option<String>,
     pub office_party: Option<PoliticalParty>,
+    pub issue_tags: Option<CreateOrConnectIssueTagInput>,
 }
 
 #[derive(InputObject)]
@@ -68,8 +70,6 @@ pub struct PoliticianSearch {
     last_name: Option<String>,
     office_party: Option<PoliticalParty>,
 }
-
-static _POLITICIAN_COLUMNS: &'static str = "id, first_name, middle_name, last_name, home_state";
 
 impl CreatePoliticianInput {
     fn full_name(&self) -> String {
@@ -188,16 +188,57 @@ impl Politician {
         Ok(records.into())
     }
 
+    pub async fn connect_issue_tag(
+        db_pool: &PgPool,
+        politician_id: uuid::Uuid,
+        issue_tag_id: uuid::Uuid,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query_as!(
+            Politician,
+            r#"
+                INSERT INTO politician_issue_tags (politician_id, issue_tag_id) 
+                VALUES ($1, $2)
+            "#,
+            politician_id,
+            issue_tag_id
+        )
+        .execute(db_pool)
+        .await?;
+
+        Ok(())
+    }
+
     pub async fn endorsements(
         db_pool: &PgPool,
         politician_id: uuid::Uuid,
     ) -> Result<Vec<Organization>, sqlx::Error> {
-        let records = sqlx::query_as!(Organization, r#"
-            SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, tax_classification, created_at, updated_at  FROM organization o
-            JOIN politician_endorsements
-            ON politician_endorsements.organization_id = o.id
-            WHERE politician_endorsements.politician_id = $1
-        "#, politician_id).fetch_all(db_pool).await?;
+        let records = sqlx::query_as!(Organization,
+            r#"
+                SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, tax_classification, o.created_at, o.updated_at  FROM organization o
+                JOIN politician_endorsements
+                ON politician_endorsements.organization_id = o.id
+                WHERE politician_endorsements.politician_id = $1
+            "#, 
+        politician_id).fetch_all(db_pool).await?;
+
+        Ok(records.into())
+    }
+
+    pub async fn issue_tags(
+        db_pool: &PgPool,
+        politician_id: uuid::Uuid,
+    ) -> Result<Vec<IssueTag>, sqlx::Error> {
+        let records = sqlx::query_as!(IssueTag,
+            r#"
+                SELECT it.id, slug, name, description, it.created_at, it.updated_at FROM issue_tag it
+                JOIN politician_issue_tags
+                ON politician_issue_tags.issue_tag_id = it.id
+                WHERE politician_issue_tags.politician_id = $1
+            "#,
+            politician_id
+        )
+        .fetch_all(db_pool)
+        .await?;
 
         Ok(records.into())
     }

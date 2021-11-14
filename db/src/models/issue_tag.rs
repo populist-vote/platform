@@ -1,4 +1,7 @@
-use crate::{DateTime, Politician, models::enums::{PoliticalParty, State}};
+use crate::{
+    models::enums::{PoliticalParty, State},
+    DateTime, Politician,
+};
 use async_graphql::InputObject;
 use slugify::slugify;
 use sqlx::PgPool;
@@ -14,7 +17,7 @@ pub struct IssueTag {
     pub updated_at: DateTime,
 }
 
-#[derive(InputObject)]
+#[derive(InputObject, Debug)]
 pub struct CreateIssueTagInput {
     pub name: String,
     pub slug: Option<String>,
@@ -26,6 +29,12 @@ pub struct UpdateIssueTagInput {
     pub name: Option<String>,
     pub slug: Option<String>,
     pub description: Option<String>,
+}
+
+#[derive(InputObject)]
+pub struct CreateOrConnectIssueTagInput {
+    pub create: Option<Vec<CreateIssueTagInput>>,
+    pub connect: Option<Vec<String>>, //accepts UUIDs or slugs
 }
 
 #[derive(InputObject)]
@@ -104,6 +113,21 @@ impl IssueTag {
         Ok(records.into())
     }
 
+    pub async fn find_by_slug(db_pool: &PgPool, slug: String) -> Result<Self, sqlx::Error> {
+        let record = sqlx::query_as!(
+            IssueTag,
+            r#"
+                SELECT id, slug, name, description, created_at, updated_at FROM issue_tag
+                WHERE slug = $1
+            "#,
+            slug
+        )
+        .fetch_one(db_pool)
+        .await?;
+
+        Ok(record.into())
+    }
+
     pub async fn search(
         db_pool: &PgPool,
         search: &IssueTagSearch,
@@ -120,7 +144,6 @@ impl IssueTag {
         .await?;
 
         Ok(records.into())
-
     }
 
     pub async fn politicians(
@@ -130,7 +153,7 @@ impl IssueTag {
         let records = sqlx::query_as!(
             Politician,
             r#"
-                SELECT p.id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", created_at, updated_at FROM politician p
+                SELECT p.id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", p.created_at, p.updated_at FROM politician p
                 JOIN politician_issue_tags
                 ON politician_issue_tags.politician_id = p.id
                 WHERE politician_issue_tags.issue_tag_id = $1

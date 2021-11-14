@@ -1,5 +1,8 @@
 use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
-use db::{DateTime, models::{ballot_measure::BallotMeasure, enums::State, legislation::LegislationStatus}};
+use db::{
+    models::{ballot_measure::BallotMeasure, enums::State, legislation::LegislationStatus},
+    DateTime,
+};
 use sqlx::{Pool, Postgres};
 
 #[derive(SimpleObject)]

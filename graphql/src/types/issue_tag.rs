@@ -1,8 +1,7 @@
-use async_graphql::{ComplexObject, Context, FieldResult, ID, SimpleObject};
-use db::{DateTime, models::issue_tag::IssueTag};
+use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
+use db::{models::issue_tag::IssueTag, DateTime};
 
 use super::{BallotMeasureResult, BillResult, OrganizationResult, PoliticianResult};
-
 
 #[derive(SimpleObject)]
 #[graphql(complex)]
@@ -12,7 +11,7 @@ pub struct IssueTagResult {
     name: String,
     description: Option<String>,
     created_at: DateTime,
-    updated_at: DateTime
+    updated_at: DateTime,
 }
 
 #[ComplexObject]
@@ -39,10 +38,10 @@ impl From<IssueTag> for IssueTagResult {
         Self {
             id: ID::from(it.id),
             slug: it.slug,
-            name: it.name, 
+            name: it.name,
             description: it.description,
             created_at: it.created_at,
-            updated_at: it.updated_at
+            updated_at: it.updated_at,
         }
     }
 }

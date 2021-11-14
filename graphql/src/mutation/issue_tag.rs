@@ -31,8 +31,7 @@ impl IssueTagMutation {
         input: UpdateIssueTagInput,
     ) -> Result<IssueTagResult> {
         let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let updated_record =
-            IssueTag::update(db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
+        let updated_record = IssueTag::update(db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
         Ok(IssueTagResult::from(updated_record))
     }
 
@@ -45,5 +44,4 @@ impl IssueTagMutation {
         IssueTag::delete(db_pool, uuid::Uuid::parse_str(&id)?).await?;
         Ok(DeleteIssueTagResult { id })
     }
-
 }

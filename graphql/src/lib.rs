@@ -1,4 +1,3 @@
-mod errors;
 mod mutation;
 mod query;
 pub mod types;
@@ -11,7 +10,7 @@ use s3::bucket::Bucket;
 use s3::creds::Credentials;
 use sqlx::PgPool;
 
-pub use crate::errors::Error;
+use crate::types::Error;
 
 pub fn new_schema(db_pool: PgPool) -> SchemaBuilder<Query, Mutation, EmptySubscription> {
     Schema::build(Query::default(), Mutation::default(), EmptySubscription).data(db_pool)

@@ -926,8 +926,6 @@ dependencies = [
  "serde_json",
  "sqlx",
  "thiserror",
- "tokio",
- "tokio-util",
  "uuid",
 ]
 
