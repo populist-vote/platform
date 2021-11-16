@@ -188,6 +188,22 @@ impl Politician {
         Ok(records.into())
     }
 
+    pub async fn endorsements(
+        db_pool: &PgPool,
+        politician_id: uuid::Uuid,
+    ) -> Result<Vec<Organization>, sqlx::Error> {
+        let records = sqlx::query_as!(Organization,
+            r#"
+                SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, tax_classification, o.created_at, o.updated_at  FROM organization o
+                JOIN politician_endorsements
+                ON politician_endorsements.organization_id = o.id
+                WHERE politician_endorsements.politician_id = $1
+            "#, 
+        politician_id).fetch_all(db_pool).await?;
+
+        Ok(records.into())
+    }
+
     pub async fn connect_issue_tag(
         db_pool: &PgPool,
         politician_id: uuid::Uuid,
@@ -206,22 +222,6 @@ impl Politician {
         .await?;
 
         Ok(())
-    }
-
-    pub async fn endorsements(
-        db_pool: &PgPool,
-        politician_id: uuid::Uuid,
-    ) -> Result<Vec<Organization>, sqlx::Error> {
-        let records = sqlx::query_as!(Organization,
-            r#"
-                SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, tax_classification, o.created_at, o.updated_at  FROM organization o
-                JOIN politician_endorsements
-                ON politician_endorsements.organization_id = o.id
-                WHERE politician_endorsements.politician_id = $1
-            "#, 
-        politician_id).fetch_all(db_pool).await?;
-
-        Ok(records.into())
     }
 
     pub async fn issue_tags(
