@@ -10,6 +10,9 @@ pub struct ElectionQuery;
 #[Object]
 impl ElectionQuery {
     async fn all_elections(&self, ctx: &Context<'_>) -> FieldResult<Vec<ElectionResult>> {
+        let token = ctx.data_unchecked::<Option<String>>();
+        // let auth_claim = auth::validate_token(token.as_ref().unwrap()).await;
+        println!("{:?}", token);
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let records = Election::index(pool).await?;
         let results = records
