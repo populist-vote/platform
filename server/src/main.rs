@@ -2,7 +2,6 @@ use async_graphql::{
     http::{playground_source, GraphQLPlaygroundConfig},
     Request, Response,
 };
-use async_graphql_poem::GraphQL;
 use dotenv::dotenv;
 use graphql::{new_schema, PopulistSchema};
 use log::info;
@@ -12,7 +11,7 @@ use poem::{
     listener::TcpListener,
     post,
     web::{Data, Html, Json},
-    IntoResponse, Route, Server,
+    IntoResponse, Route, Server, EndpointExt
 };
 use serde_json::Value;
 use sqlx::postgres::PgPoolOptions;
@@ -25,8 +24,6 @@ fn ping() -> Json<Value> {
     }))
 }
 
-pub struct Token(String);
-
 #[handler]
 async fn graphql_handler(
     schema: Data<&PopulistSchema>,
@@ -36,7 +33,8 @@ async fn graphql_handler(
     let token = headers
         .get("Authorization")
         .and_then(|value| value.to_str().ok())
-        .map(|value| Token(value.to_string()));
+        .map(|value| value.to_string());
+
     Json(schema.execute(req.0.data(token)).await)
 }
 
@@ -62,7 +60,7 @@ async fn main() -> Result<(), Error> {
     let app = Route::new()
         .at("/status", get(ping))
         .at("/playground", get(graphql_playground))
-        .at("/", post(GraphQL::new(schema)));
+        .at("/", post(graphql_handler)).data(schema);
 
     let port = std::env::var("PORT").unwrap_or("3000".to_string());
     let address = format!("0.0.0.0:{}", port);

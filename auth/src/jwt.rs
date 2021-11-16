@@ -44,8 +44,9 @@ pub fn create_token_for_user(user_record: User) -> Result<String, Error> {
 
 pub fn validate_token(token: &str) -> Result<TokenData<Claims>, Error> {
     let key = std::env::var("JWT_SECRET")?;
+    
     let token_data = match decode::<Claims>(
-        &token,
+        &token.to_string(),
         &DecodingKey::from_secret(key.as_ref()),
         &Validation::default(),
     ) {
@@ -53,7 +54,7 @@ pub fn validate_token(token: &str) -> Result<TokenData<Claims>, Error> {
         Err(err) => match *err.kind() {
             ErrorKind::InvalidToken => panic!("Token is invalid"),
             ErrorKind::InvalidIssuer => panic!("Issuer is invalid"),
-            _ => panic!("Some other errors"),
+            _ => panic!("Something went wrong decoding a JWT"),
         },
     };
 

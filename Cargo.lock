@@ -1998,6 +1998,7 @@ dependencies = [
  "anyhow",
  "async-graphql",
  "async-graphql-poem",
+ "auth",
  "dotenv",
  "graphql",
  "log",
