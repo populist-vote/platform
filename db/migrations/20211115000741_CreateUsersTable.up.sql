@@ -1,4 +1,6 @@
 -- Add up migration script here
+CREATE EXTENSION IF NOT EXISTS postgis;
+
 CREATE TYPE user_role AS ENUM ('superuser', 'staff', 'premium', 'basic');
 
 CREATE TABLE address (

@@ -62,7 +62,7 @@ async fn main() -> Result<(), Error> {
         .at("/playground", get(graphql_playground))
         .at("/", post(graphql_handler)).data(schema);
 
-    let port = std::env::var("PORT").unwrap_or("3000".to_string());
+    let port = std::env::var("PORT").unwrap_or("1234".to_string());
     let address = format!("0.0.0.0:{}", port);
 
     info!("GraphQL Playground live on port {}", &port);
