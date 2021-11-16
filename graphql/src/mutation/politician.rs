@@ -25,6 +25,7 @@ async fn handle_nested_issue_tags(
     associated_record_id: uuid::Uuid,
     issue_tags_input: CreateOrConnectIssueTagInput,
 ) -> Result<(), Error> {
+    println!("this function is running");
     if issue_tags_input.create.is_some() {
         for input in issue_tags_input.create.unwrap() {
             let new_issue_tag = IssueTag::create(db_pool, &input).await?;
@@ -52,10 +53,14 @@ impl PoliticianMutation {
         ctx: &Context<'_>,
         input: CreatePoliticianInput,
     ) -> Result<PoliticianResult, Error> {
-        // println!("{:?}", ctx.data_unchecked::<Token>);
+
         let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
         let new_record = Politician::create(db_pool, &input).await?;
-        handle_nested_issue_tags(db_pool, new_record.id, input.issue_tags.unwrap()).await?;
+        // be sure to handle None inputs from GraphQL
+        if input.issue_tags.is_some() {
+            handle_nested_issue_tags(db_pool, new_record.id, input.issue_tags.unwrap()).await?;
+        }
+        
 
         Ok(PoliticianResult::from(new_record))
     }

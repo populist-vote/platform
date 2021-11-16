@@ -65,7 +65,7 @@ async fn main() -> Result<(), Error> {
     let port = std::env::var("PORT").unwrap_or("1234".to_string());
     let address = format!("0.0.0.0:{}", port);
 
-    info!("GraphQL Playground live on port {}", &port);
+    info!("GraphQL Playground live at {}/playground", &address);
 
     let listener = TcpListener::bind(&address);
     let server = Server::new(listener).await?;

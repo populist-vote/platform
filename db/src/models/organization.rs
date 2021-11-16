@@ -1,3 +1,4 @@
+use crate::CreateOrConnectIssueTagInput;
 use crate::DateTime;
 use crate::IssueTag;
 use async_graphql::InputObject;
@@ -29,6 +30,7 @@ pub struct CreateOrganizationInput {
     pub description: Option<String>,
     pub thumbnail_image_url: Option<String>,
     pub website_url: Option<String>,
+    pub issue_tags: Option<CreateOrConnectIssueTagInput>,
 }
 
 #[derive(InputObject)]
@@ -38,6 +40,7 @@ pub struct UpdateOrganizationInput {
     pub description: Option<String>,
     pub thumbnail_image_url: Option<String>,
     pub website_url: Option<String>,
+    pub issue_tags: Option<CreateOrConnectIssueTagInput>,
 }
 
 #[derive(InputObject)]
@@ -118,13 +121,35 @@ impl Organization {
     ) -> Result<Vec<Self>, sqlx::Error> {
         let records = sqlx::query_as!(
             Organization,
-            "SELECT * FROM organization
-             WHERE $1::text IS NULL OR levenshtein($1, name) <=5",
+            r#"
+                SELECT * FROM organization
+                WHERE $1::text IS NULL OR levenshtein($1, name) <=5
+             "#,
             search.name
         )
         .fetch_all(db_pool)
         .await?;
         Ok(records.into())
+    }
+
+    pub async fn connect_issue_tag(
+        db_pool: &PgPool,
+        organization_id: uuid::Uuid,
+        issue_tag_id: uuid::Uuid,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query_as!(
+            Organization,
+            r#"
+                INSERT INTO organization_issue_tags (organization_id, issue_tag_id) 
+                VALUES ($1, $2)
+            "#,
+            organization_id,
+            issue_tag_id
+        )
+        .execute(db_pool)
+        .await?;
+
+        Ok(())
     }
 
     pub async fn issue_tags(

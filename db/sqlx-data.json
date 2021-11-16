@@ -916,6 +916,19 @@
       ]
     }
   },
+  "4b20cbede62bbe5255101911bbaa8727f1a501ccca7bd88bedfe2de5d8fabb2e": {
+    "query": "\n                INSERT INTO organization_issue_tags (organization_id, issue_tag_id) \n                VALUES ($1, $2)\n            ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Uuid"
+        ]
+      },
+      "nullable": []
+    }
+  },
   "4cf9c05523dcba97c33717f0d670eed63be9814dbf3c9acc2ff778dd4fc059a5": {
     "query": "DELETE FROM bill WHERE id=$1",
     "describe": {
@@ -2565,104 +2578,6 @@
       ]
     }
   },
-  "abbe10bd7ba576982cbca72488c1d77ec67c2b843fe8cdfe6943b265072a8e8f": {
-    "query": "SELECT * FROM organization\n             WHERE $1::text IS NULL OR levenshtein($1, name) <=5",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "slug",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "name",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "description",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 4,
-          "name": "thumbnail_image_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 5,
-          "name": "website_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 6,
-          "name": "facebook_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 7,
-          "name": "twitter_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 8,
-          "name": "instagram_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 9,
-          "name": "email",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 10,
-          "name": "headquarters_phone",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 11,
-          "name": "tax_classification",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 12,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 13,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false
-      ]
-    }
-  },
   "ac9ab62ee180a40800124313ee12885502bcb3af99c61212dd03f92aaca70d85": {
     "query": "INSERT INTO election\n           (slug, title, description, election_date)\n           VALUES ($1, $2, $3, $4)\n           RETURNING id, slug, title, description, election_date",
     "describe": {
@@ -3800,6 +3715,104 @@
         true,
         true,
         false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "edae1b91fd96551cf002755006afac013d645b28506f7dd095473b2f5dd9b610": {
+    "query": "\n                SELECT * FROM organization\n                WHERE $1::text IS NULL OR levenshtein($1, name) <=5\n             ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "thumbnail_image_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "website_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "facebook_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "twitter_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "instagram_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "email",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 10,
+          "name": "headquarters_phone",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 11,
+          "name": "tax_classification",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 13,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
         true,
         true,
         true,
