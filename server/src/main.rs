@@ -1,12 +1,17 @@
-use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
+use async_graphql::{
+    http::{playground_source, GraphQLPlaygroundConfig},
+    Request, Response,
+};
 use async_graphql_poem::GraphQL;
 use dotenv::dotenv;
-use graphql::new_schema;
+use graphql::{new_schema, PopulistSchema};
 use log::info;
 use poem::{
     get, handler,
+    http::HeaderMap,
     listener::TcpListener,
-    web::{Html, Json},
+    post,
+    web::{Data, Html, Json},
     IntoResponse, Route, Server,
 };
 use serde_json::Value;
@@ -18,6 +23,21 @@ fn ping() -> Json<Value> {
     Json(serde_json::json!({
         "ok": true
     }))
+}
+
+pub struct Token(String);
+
+#[handler]
+async fn graphql_handler(
+    schema: Data<&PopulistSchema>,
+    req: Json<Request>,
+    headers: &HeaderMap,
+) -> Json<Response> {
+    let token = headers
+        .get("Authorization")
+        .and_then(|value| value.to_str().ok())
+        .map(|value| Token(value.to_string()));
+    Json(schema.execute(req.0.data(token)).await)
 }
 
 #[handler]
@@ -41,7 +61,8 @@ async fn main() -> Result<(), Error> {
 
     let app = Route::new()
         .at("/status", get(ping))
-        .at("/", get(graphql_playground).post(GraphQL::new(schema)));
+        .at("/playground", get(graphql_playground))
+        .at("/", post(GraphQL::new(schema)));
 
     let port = std::env::var("PORT").unwrap_or("3000".to_string());
     let address = format!("0.0.0.0:{}", port);

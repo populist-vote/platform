@@ -1,1 +1,1 @@
-web: ./target/release/platform
+web: ./target/release/server

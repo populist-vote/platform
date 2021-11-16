@@ -1,6 +1,6 @@
 use crate::{
     models::enums::{PoliticalParty, State},
-    DateTime, Politician,
+    DateTime, Organization, Politician,
 };
 use async_graphql::InputObject;
 use slugify::slugify;
@@ -157,6 +157,22 @@ impl IssueTag {
                 JOIN politician_issue_tags
                 ON politician_issue_tags.politician_id = p.id
                 WHERE politician_issue_tags.issue_tag_id = $1
+            "#, issue_tag_id).fetch_all(db_pool).await?;
+
+        Ok(records.into())
+    }
+
+    pub async fn organizations(
+        db_pool: &PgPool,
+        issue_tag_id: uuid::Uuid,
+    ) -> Result<Vec<Organization>, sqlx::Error> {
+        let records = sqlx::query_as!(
+            Organization,
+            r#"
+                SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, tax_classification, o.created_at, o.updated_at  FROM organization o
+                JOIN organization_issue_tags
+                ON organization_issue_tags.organization_id = o.id
+                WHERE organization_issue_tags.issue_tag_id = $1
             "#, issue_tag_id).fetch_all(db_pool).await?;
 
         Ok(records.into())

@@ -12,6 +12,8 @@ use sqlx::PgPool;
 
 use crate::types::Error;
 
+pub type PopulistSchema = Schema<Query, Mutation, EmptySubscription>;
+
 pub fn new_schema(db_pool: PgPool) -> SchemaBuilder<Query, Mutation, EmptySubscription> {
     Schema::build(Query::default(), Mutation::default(), EmptySubscription).data(db_pool)
 }

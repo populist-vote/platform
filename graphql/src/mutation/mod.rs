@@ -5,5 +5,6 @@ mod issue_tag;
 mod mutation;
 mod organization;
 mod politician;
+mod user;
 
 pub use mutation::*;

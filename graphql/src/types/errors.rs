@@ -11,4 +11,13 @@ pub enum Error {
 
     #[error(transparent)]
     VarError(#[from] std::env::VarError),
+
+    #[error("Your password was incorrect")]
+    PasswordError,
+
+    #[error("Your email or username was not found in our database")]
+    EmailOrUsernameNotFound(#[from] db::Error),
+
+    #[error(transparent)]
+    AuthError(#[from] auth::errors::Error),
 }

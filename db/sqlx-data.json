@@ -385,6 +385,104 @@
       ]
     }
   },
+  "28e46bb9fcf538dadc742c6424dfffffc24085b6ad8279ea51ec88e9b188670c": {
+    "query": "\n                SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, tax_classification, o.created_at, o.updated_at  FROM organization o\n                JOIN organization_issue_tags\n                ON organization_issue_tags.organization_id = o.id\n                WHERE organization_issue_tags.issue_tag_id = $1\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "thumbnail_image_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "website_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "facebook_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "twitter_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "instagram_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "email",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 10,
+          "name": "headquarters_phone",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 11,
+          "name": "tax_classification",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 13,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
   "3000efe162639aeb67972959f17f5ec0dde88df03712508761d1e7aec53c1681": {
     "query": "DELETE FROM issue_tag WHERE id=$1",
     "describe": {
@@ -1303,6 +1401,80 @@
       ]
     }
   },
+  "784268fe558a97987aade0a244151d888c66501fea92bb938988dec08b17b579": {
+    "query": "\n                SELECT id, email, username, password, role AS \"role:Role\", created_at, confirmed_at, updated_at FROM populist_user \n                WHERE $1 IN(email, username);\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "email",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "username",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "password",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "role:Role",
+          "type_info": {
+            "Custom": {
+              "name": "user_role",
+              "kind": {
+                "Enum": [
+                  "superuser",
+                  "staff",
+                  "premium",
+                  "basic"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 6,
+          "name": "confirmed_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 7,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    }
+  },
   "7b20ca721aec6b52b3b011dd340188a7169b67b054d615a2a8fc2113f7fd0b97": {
     "query": "\n                UPDATE issue_tag\n                SET slug = COALESCE($2, slug),\n                    name = COALESCE($3, name),\n                    description = COALESCE($4, description)\n                WHERE id = $1\n                RETURNING id, slug, name, description, created_at, updated_at           \n            ",
     "describe": {
@@ -1344,6 +1516,132 @@
           "Text",
           "Text",
           "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "7db67c3bf0997d69230161e76362906e3f28e4892e0fb9ab6c8a001ddf5a363a": {
+    "query": "\n                INSERT INTO populist_user (email, username, password)\n                VALUES ($1, $2, $3)\n                RETURNING id, email, username, password, role AS \"role:Role\", created_at, confirmed_at, updated_at\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "email",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "username",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "password",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "role:Role",
+          "type_info": {
+            "Custom": {
+              "name": "user_role",
+              "kind": {
+                "Enum": [
+                  "superuser",
+                  "staff",
+                  "premium",
+                  "basic"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 6,
+          "name": "confirmed_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 7,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    }
+  },
+  "80b2714d8a8841cd2608b4d2469db4e2376792758cd190155491f0e4dac6af48": {
+    "query": "\n                SELECT it.id, slug, name, description, it.created_at, it.updated_at FROM issue_tag it\n                JOIN organization_issue_tags\n                ON organization_issue_tags.issue_tag_id = it.id\n                WHERE organization_issue_tags.organization_id = $1\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 5,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
         ]
       },
       "nullable": [

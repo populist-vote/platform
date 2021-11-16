@@ -4,17 +4,15 @@ version = "0.0.1"
 edition = "2021"
 publish = false
 
-[lib]
-name = "graphql"
-path = "src/lib.rs"
-
 [dependencies]
 anyhow = "1.0.45"
 async-graphql = { version = "2.10.8", features = ["uuid", "chrono", "unblock"] }
 bytes = "1.1.0"
 chrono = "0.4.19"
+auth = { path = "../auth" }
 db = { path = "../db" }
 dotenv = "0.15.0"
+pwhash = "1.0.0"
 rust-s3 = "0.28.0"
 serde = "1.0.130"
 serde_json = "1.0.69"

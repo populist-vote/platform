@@ -1,4 +1,5 @@
 use crate::DateTime;
+use crate::IssueTag;
 use async_graphql::InputObject;
 use slugify::slugify;
 use sqlx::PgPool;
@@ -123,6 +124,25 @@ impl Organization {
         )
         .fetch_all(db_pool)
         .await?;
+        Ok(records.into())
+    }
+
+    pub async fn issue_tags(
+        db_pool: &PgPool,
+        organization_id: uuid::Uuid,
+    ) -> Result<Vec<IssueTag>, sqlx::Error> {
+        let records = sqlx::query_as!(IssueTag,
+            r#"
+                SELECT it.id, slug, name, description, it.created_at, it.updated_at FROM issue_tag it
+                JOIN organization_issue_tags
+                ON organization_issue_tags.issue_tag_id = it.id
+                WHERE organization_issue_tags.organization_id = $1
+            "#,
+            organization_id
+        )
+        .fetch_all(db_pool)
+        .await?;
+
         Ok(records.into())
     }
 }

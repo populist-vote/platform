@@ -52,9 +52,9 @@ impl PoliticianMutation {
         ctx: &Context<'_>,
         input: CreatePoliticianInput,
     ) -> Result<PoliticianResult, Error> {
+        // println!("{:?}", ctx.data_unchecked::<Token>);
         let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
         let new_record = Politician::create(db_pool, &input).await?;
-
         handle_nested_issue_tags(db_pool, new_record.id, input.issue_tags.unwrap()).await?;
 
         Ok(PoliticianResult::from(new_record))
@@ -71,7 +71,7 @@ impl PoliticianMutation {
             Politician::update(db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
 
         handle_nested_issue_tags(db_pool, updated_record.id, input.issue_tags.unwrap()).await?;
-        
+
         Ok(PoliticianResult::from(updated_record))
     }
 

@@ -8,7 +8,7 @@ use db::{
 };
 use sqlx::{Pool, Postgres};
 
-use super::OrganizationResult;
+use super::{IssueTagResult, OrganizationResult};
 
 #[derive(Enum, Copy, Clone, Eq, PartialEq)]
 enum OfficeType {
@@ -59,6 +59,17 @@ impl PoliticianResult {
         let results = records
             .into_iter()
             .map(|r| OrganizationResult::from(r))
+            .collect();
+        Ok(results)
+    }
+
+    async fn issue_tags(&self, ctx: &Context<'_>) -> FieldResult<Vec<IssueTagResult>> {
+        let pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let records =
+            Politician::issue_tags(pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
+        let results = records
+            .into_iter()
+            .map(|r| IssueTagResult::from(r))
             .collect();
         Ok(results)
     }
