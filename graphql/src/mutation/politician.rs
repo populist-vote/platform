@@ -75,7 +75,7 @@ impl PoliticianMutation {
             Politician::update(db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
 
         if input.issue_tags.is_some() {
-            handle_nested_issue_tags(db_pool, new_record.id, input.issue_tags.unwrap()).await?;
+            handle_nested_issue_tags(db_pool, updated_record.id, input.issue_tags.unwrap()).await?;
         }
 
         Ok(PoliticianResult::from(updated_record))
