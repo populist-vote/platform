@@ -7,10 +7,11 @@ use graphql::{new_schema, PopulistSchema};
 use log::info;
 use poem::{
     get, handler,
-    http::HeaderMap,
+    http::{HeaderMap, Method},
     listener::TcpListener,
     post,
     web::{Data, Html, Json},
+    middleware::{Cors},
     IntoResponse, Route, Server, EndpointExt
 };
 use serde_json::Value;
@@ -60,7 +61,10 @@ async fn main() -> Result<(), Error> {
     let app = Route::new()
         .at("/status", get(ping))
         .at("/playground", get(graphql_playground))
-        .at("/", post(graphql_handler)).data(schema);
+        .at("/", post(graphql_handler)).data(schema)
+        .with( Cors::new()
+        .allow_origin("localhost") 
+        .allow_method(Method::POST));
 
     let port = std::env::var("PORT").unwrap_or("1234".to_string());
     let address = format!("0.0.0.0:{}", port);
