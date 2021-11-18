@@ -9,7 +9,7 @@ use graphql::{new_schema, PopulistSchema};
 use log::info;
 use poem::{
     get, handler,
-    http::{HeaderMap, Method},
+    http::{header, HeaderMap, Method},
     listener::TcpListener,
     middleware::Cors,
     post,
@@ -64,23 +64,51 @@ async fn main() -> Result<(), Error> {
     let environment =
         Environment::from_str(&std::env::var("ENVIRONMENT").unwrap().to_string()).unwrap();
 
-    // let cors = Cors::new();
-    // let cors = match environment {
-    //     Environment::Local => cors.allow_origin("http://localhost:1234"),
-    //     Environment::Staging => cors
-    //         .allow_origin("https://populist-api-staging.herokuapp.com")
-    //         .allow_origin("http://localhost:3030"),
-    //     Environment::Production => cors.allow_origin("https://populist-api-production.herokuapp.com/"),
-    //     _ => Cors::new().allow_origin("https://populist.us"),
-    // };
+    let cors = Cors::default()
+        .allow_methods(vec![Method::GET, Method::POST])
+        .allow_headers(vec![
+            header::ACCEPT,
+            header::ACCEPT_ENCODING,
+            header::ACCEPT_LANGUAGE,
+            header::AUTHORIZATION,
+            header::ACCESS_CONTROL_ALLOW_ORIGIN,
+            header::ACCESS_CONTROL_ALLOW_HEADERS,
+            header::ACCESS_CONTROL_ALLOW_METHODS,
+            header::ACCESS_CONTROL_ALLOW_CREDENTIALS,
+            header::CONNECTION,
+            header::CONTENT_LENGTH,
+            header::CONTENT_TYPE,
+            header::HOST,
+            header::ORIGIN,
+            header::REFERER,
+            header::UPGRADE,
+            header::USER_AGENT,
+        ])
+        .expose_headers(vec![
+            header::ACCESS_CONTROL_ALLOW_ORIGIN,
+            header::ACCESS_CONTROL_ALLOW_METHODS,
+            header::ACCESS_CONTROL_ALLOW_HEADERS,
+            header::ACCESS_CONTROL_ALLOW_CREDENTIALS,
+        ]);
+
+    match environment {
+        Environment::Local => cors.allow_origin("http://localhost:1234"),
+        Environment::Staging => cors.allow_origins(vec![
+            "https://populist-api-staging.herokuapp.com",
+            "http://localhost:3030",
+        ]),
+        Environment::Production => {
+            cors.allow_origin("https://populist-api-production.herokuapp.com/")
+        }
+        _ => Cors::new().allow_origin("https://populist.us"),
+    };
 
     let app = Route::new()
         .at("/status", get(ping))
         .at("/playground", get(graphql_playground))
         .at("/", post(graphql_handler))
         .data(schema)
-        .with(Cors::default()
-    );
+        .with(Cors::default());
 
     let port = std::env::var("PORT").unwrap_or("1234".to_string());
     let address = format!("0.0.0.0:{}", port);
