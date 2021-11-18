@@ -818,6 +818,200 @@
       ]
     }
   },
+  "44c8f3ade269ba792cb7974b6929aad260caace65cf6b4d5fed4416774bfcdfc": {
+    "query": "\n                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS \"home_state:State\", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS \"office_party:PoliticalParty\", created_at, updated_at FROM politician\n                WHERE slug = $1\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "first_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "middle_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "last_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "nickname",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "preferred_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "ballot_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "home_state:State",
+          "type_info": {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 10,
+          "name": "thumbnail_image_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 11,
+          "name": "website_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "facebook_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 13,
+          "name": "twitter_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 14,
+          "name": "instagram_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 15,
+          "name": "office_party:PoliticalParty",
+          "type_info": {
+            "Custom": {
+              "name": "political_party",
+              "kind": {
+                "Enum": [
+                  "democratic",
+                  "republican",
+                  "libertarian",
+                  "green",
+                  "constitution"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 16,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 17,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
   "48ba9c23ac15ffa469c1894836d0e9ca6e9ff0f702844c25623a9922116e81f7": {
     "query": "\n                SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, tax_classification, o.created_at, o.updated_at  FROM organization o\n                JOIN politician_endorsements\n                ON politician_endorsements.organization_id = o.id\n                WHERE politician_endorsements.politician_id = $1\n            ",
     "describe": {
