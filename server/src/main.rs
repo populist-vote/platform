@@ -6,7 +6,7 @@ use async_graphql::{
 };
 use dotenv::dotenv;
 use graphql::{new_schema, PopulistSchema};
-use log::{debug, info};
+use log::info;
 use poem::{
     get, handler,
     http::{HeaderMap, Method},
@@ -64,11 +64,14 @@ async fn main() -> Result<(), Error> {
     let environment =
         Environment::from_str(&std::env::var("ENVIRONMENT").unwrap().to_string()).unwrap();
 
+    let cors = Cors::new();
     let cors = match environment {
-        Environment::Local => Cors::new().allow_origin("http://localhost:1234"),
-        Environment::Staging => Cors::new().allow_origin("https://populist-api-staging.herokuapp.com"),
-        Environment::Production => Cors::new().allow_origin("https://populist-api-production.herokuapp.com/"),
-        _ => Cors::new().allow_origin("https://populist.us")
+        Environment::Local => cors.allow_origin("http://localhost:1234"),
+        Environment::Staging => cors
+            .allow_origin("https://populist-api-staging.herokuapp.com")
+            .allow_origin("http://localhost:3030"),
+        Environment::Production => cors.allow_origin("https://populist-api-production.herokuapp.com/"),
+        _ => Cors::new().allow_origin("https://populist.us"),
     };
 
     let app = Route::new()
