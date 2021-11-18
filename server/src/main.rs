@@ -66,19 +66,19 @@ async fn main() -> Result<(), Error> {
 
     debug!("Environment: {}", environment);
 
-    let cors = match environment {
-        Environment::Local => Cors::default().allow_origin("http://localhost:1234"),
-        Environment::Staging => Cors::default().allow_origin("https://populist-api-staging.herokuapp.com/"),
-        Environment::Production => Cors::default().allow_origin("https://populist-api-production.herokuapp.com/"),
-        _ => Cors::new().allow_origin("http://localhost:1234")
-    };
+    // let cors = match environment {
+    //     Environment::Local => Cors::new().allow_origin("http://localhost:1234"),
+    //     Environment::Staging => Cors::new().allow_origin("https://populist-api-staging.herokuapp.com/"),
+    //     Environment::Production => Cors::new().allow_origin("https://populist-api-production.herokuapp.com/"),
+    //     _ => Cors::new().allow_origin("http://localhost:1234")
+    // };
 
     let app = Route::new()
         .at("/status", get(ping))
         .at("/playground", get(graphql_playground))
         .at("/", post(graphql_handler))
         .data(schema)
-        .with(cors.allow_method(Method::POST));
+        .with(Cors::new().allow_origin("https://populist-api-staging.herokuapp.com/").allow_method(Method::POST));
 
     let port = std::env::var("PORT").unwrap_or("1234".to_string());
     let address = format!("0.0.0.0:{}", port);
