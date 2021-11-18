@@ -63,7 +63,7 @@ async fn main() -> Result<(), Error> {
         .at("/playground", get(graphql_playground))
         .at("/", post(graphql_handler)).data(schema)
         .with( Cors::new()
-        .allow_origin("localhost") 
+        .allow_origin("http://localhost:1234") 
         .allow_method(Method::POST));
 
     let port = std::env::var("PORT").unwrap_or("1234".to_string());
