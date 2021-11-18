@@ -255,7 +255,3 @@ impl Politician {
         Ok(records.into())
     }
 }
-
-// impl PoliticianSearch {
-
-// }

@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use async_graphql::{
     http::{playground_source, GraphQLPlaygroundConfig},
     Request, Response,
@@ -11,11 +13,13 @@ use poem::{
     listener::TcpListener,
     post,
     web::{Data, Html, Json},
-    middleware::{Cors},
+    middleware::Cors,
     IntoResponse, Route, Server, EndpointExt
 };
 use serde_json::Value;
 use sqlx::postgres::PgPoolOptions;
+use server::{Environment, Error};
+
 
 // Simple server health check
 #[handler]
@@ -50,6 +54,7 @@ async fn main() -> Result<(), Error> {
     pretty_env_logger::init();
 
     let db_url = std::env::var("DATABASE_URL")?;
+    let environment = std::env::var("ENVIRONMENT");
 
     let pool = PgPoolOptions::new()
         .max_connections(16)
@@ -58,13 +63,18 @@ async fn main() -> Result<(), Error> {
 
     let schema = new_schema(pool).finish();
 
+    let cors = match Environment::from_str(&environment.unwrap().to_string()).unwrap() {
+        Environment::Staging => Cors::new().allow_origin("*"),
+        _ => Cors::new().allow_origin("https://populist.us")
+    };
+
     let app = Route::new()
         .at("/status", get(ping))
         .at("/playground", get(graphql_playground))
         .at("/", post(graphql_handler)).data(schema)
-        .with( Cors::new()
-        .allow_origin("http://localhost:1234") 
-        .allow_method(Method::POST));
+        .with( cors.allow_method(Method::POST));
+        
+    
 
     let port = std::env::var("PORT").unwrap_or("1234".to_string());
     let address = format!("0.0.0.0:{}", port);
@@ -75,16 +85,4 @@ async fn main() -> Result<(), Error> {
     let server = Server::new(listener).await?;
     server.run(app).await?;
     Ok(())
-}
-
-#[derive(thiserror::Error, Debug)]
-enum Error {
-    #[error(transparent)]
-    DbError(#[from] sqlx::Error),
-
-    #[error(transparent)]
-    IoError(#[from] std::io::Error),
-
-    #[error(transparent)]
-    VarError(#[from] std::env::VarError),
 }
