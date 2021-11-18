@@ -52,14 +52,12 @@ impl PoliticianMutation {
         ctx: &Context<'_>,
         input: CreatePoliticianInput,
     ) -> Result<PoliticianResult, Error> {
-
         let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
         let new_record = Politician::create(db_pool, &input).await?;
         // be sure to handle None inputs from GraphQL
         if input.issue_tags.is_some() {
             handle_nested_issue_tags(db_pool, new_record.id, input.issue_tags.unwrap()).await?;
         }
-        
 
         Ok(PoliticianResult::from(new_record))
     }

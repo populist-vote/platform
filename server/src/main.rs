@@ -6,20 +6,19 @@ use async_graphql::{
 };
 use dotenv::dotenv;
 use graphql::{new_schema, PopulistSchema};
-use log::info;
+use log::{debug, info};
 use poem::{
     get, handler,
     http::{HeaderMap, Method},
     listener::TcpListener,
+    middleware::Cors,
     post,
     web::{Data, Html, Json},
-    middleware::Cors,
-    IntoResponse, Route, Server, EndpointExt
+    EndpointExt, IntoResponse, Route, Server,
 };
 use serde_json::Value;
-use sqlx::postgres::PgPoolOptions;
 use server::{Environment, Error};
-
+use sqlx::postgres::PgPoolOptions;
 
 // Simple server health check
 #[handler]
@@ -54,7 +53,6 @@ async fn main() -> Result<(), Error> {
     pretty_env_logger::init();
 
     let db_url = std::env::var("DATABASE_URL")?;
-    let environment = std::env::var("ENVIRONMENT");
 
     let pool = PgPoolOptions::new()
         .max_connections(16)
@@ -63,18 +61,24 @@ async fn main() -> Result<(), Error> {
 
     let schema = new_schema(pool).finish();
 
-    let cors = match Environment::from_str(&environment.unwrap().to_string()).unwrap() {
-        Environment::Staging => Cors::new().allow_origin("*"),
-        _ => Cors::new().allow_origin("https://populist.us")
+    let environment =
+        Environment::from_str(&std::env::var("ENVIRONMENT").unwrap().to_string()).unwrap();
+
+    debug!("Environment: {}", environment);
+
+    let cors = match environment {
+        Environment::Local => Cors::default().allow_origin("http://localhost:1234"),
+        Environment::Staging => Cors::default().allow_origin("https://populist-api-staging.herokuapp.com/"),
+        Environment::Production => Cors::default().allow_origin("https://populist-api-production.herokuapp.com/"),
+        _ => Cors::new().allow_origin("http://localhost:1234")
     };
 
     let app = Route::new()
         .at("/status", get(ping))
         .at("/playground", get(graphql_playground))
-        .at("/", post(graphql_handler)).data(schema)
-        .with( cors.allow_method(Method::POST));
-        
-    
+        .at("/", post(graphql_handler))
+        .data(schema)
+        .with(cors.allow_method(Method::POST));
 
     let port = std::env::var("PORT").unwrap_or("1234".to_string());
     let address = format!("0.0.0.0:{}", port);

@@ -170,15 +170,14 @@ impl Politician {
     }
 
     pub async fn find_by_slug(db_pool: &PgPool, slug: String) -> Result<Self, sqlx::Error> {
-        let record = sqlx::query_as!(Politician, 
+        let record = sqlx::query_as!(Politician,
             r#"
                 SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", created_at, updated_at FROM politician
                 WHERE slug = $1
             "#, slug)
             .fetch_one(db_pool).await?;
 
-            Ok(record.into())
-    
+        Ok(record.into())
     }
 
     pub async fn search(

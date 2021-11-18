@@ -9,8 +9,11 @@ pub struct PoliticianQuery;
 
 #[Object]
 impl PoliticianQuery {
-
-    async fn politician_by_slug(&self, ctx: &Context<'_>, slug: String) -> FieldResult<PoliticianResult> {
+    async fn politician_by_slug(
+        &self,
+        ctx: &Context<'_>,
+        slug: String,
+    ) -> FieldResult<PoliticianResult> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let record = Politician::find_by_slug(pool, slug).await?;
 

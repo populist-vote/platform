@@ -1,5 +1,8 @@
 use async_graphql::*;
-use db::{CreateOrConnectIssueTagInput, CreateOrganizationInput, IssueTag, Organization, UpdateOrganizationInput};
+use db::{
+    CreateOrConnectIssueTagInput, CreateOrganizationInput, IssueTag, Organization,
+    UpdateOrganizationInput,
+};
 use sqlx::{Pool, Postgres};
 
 use crate::types::{Error, OrganizationResult};
@@ -19,7 +22,8 @@ async fn handle_nested_issue_tags(
     if issue_tags_input.create.is_some() {
         for input in issue_tags_input.create.unwrap() {
             let new_issue_tag = IssueTag::create(db_pool, &input).await?;
-            Organization::connect_issue_tag(db_pool, associated_record_id, new_issue_tag.id).await?;
+            Organization::connect_issue_tag(db_pool, associated_record_id, new_issue_tag.id)
+                .await?;
         }
     }
     if issue_tags_input.connect.is_some() {
@@ -35,7 +39,6 @@ async fn handle_nested_issue_tags(
     }
     Ok(())
 }
-
 
 #[Object]
 impl OrganizationMutation {
@@ -61,7 +64,8 @@ impl OrganizationMutation {
         input: UpdateOrganizationInput,
     ) -> Result<OrganizationResult, Error> {
         let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let updated_record = Organization::update(db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
+        let updated_record =
+            Organization::update(db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
 
         if input.issue_tags.is_some() {
             handle_nested_issue_tags(db_pool, updated_record.id, input.issue_tags.unwrap()).await?;
