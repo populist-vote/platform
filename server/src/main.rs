@@ -79,12 +79,8 @@ async fn main() -> Result<(), Error> {
         .at("/playground", get(graphql_playground))
         .at("/", post(graphql_handler))
         .data(schema)
-        .with(
-            Cors::default()
-                .allow_method(Method::POST)
-                .allow_method(Method::GET)
-                .allow_credentials(false),
-        );
+        .with(Cors::default()
+    );
 
     let port = std::env::var("PORT").unwrap_or("1234".to_string());
     let address = format!("0.0.0.0:{}", port);
