@@ -64,21 +64,19 @@ async fn main() -> Result<(), Error> {
     let environment =
         Environment::from_str(&std::env::var("ENVIRONMENT").unwrap().to_string()).unwrap();
 
-    debug!("Environment: {}", environment);
-
-    // let cors = match environment {
-    //     Environment::Local => Cors::new().allow_origin("http://localhost:1234"),
-    //     Environment::Staging => Cors::new().allow_origin("https://populist-api-staging.herokuapp.com/"),
-    //     Environment::Production => Cors::new().allow_origin("https://populist-api-production.herokuapp.com/"),
-    //     _ => Cors::new().allow_origin("http://localhost:1234")
-    // };
+    let cors = match environment {
+        Environment::Local => Cors::new().allow_origin("http://localhost:1234"),
+        Environment::Staging => Cors::new().allow_origin("https://populist-api-staging.herokuapp.com"),
+        Environment::Production => Cors::new().allow_origin("https://populist-api-production.herokuapp.com/"),
+        _ => Cors::new().allow_origin("https://populist.us")
+    };
 
     let app = Route::new()
         .at("/status", get(ping))
         .at("/playground", get(graphql_playground))
         .at("/", post(graphql_handler))
         .data(schema)
-        .with(Cors::new().allow_origin("https://populist-api-staging.herokuapp.com/").allow_method(Method::POST));
+        .with(cors.allow_method(Method::POST).allow_method(Method::GET));
 
     let port = std::env::var("PORT").unwrap_or("1234".to_string());
     let address = format!("0.0.0.0:{}", port);
