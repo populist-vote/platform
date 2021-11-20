@@ -62,7 +62,7 @@ async fn main() -> Result<(), Error> {
     let schema = new_schema(pool).finish();
 
     let environment =
-        Environment::from_str(&std::env::var("ENVIRONMENT").unwrap().to_string()).unwrap();
+        Environment::from_str(&std::env::var("ENVIRONMENT").unwrap()).unwrap();
 
     let cors = Cors::default()
         .allow_methods(vec![Method::GET, Method::POST])
@@ -110,7 +110,7 @@ async fn main() -> Result<(), Error> {
         .data(schema)
         .with(Cors::default());
 
-    let port = std::env::var("PORT").unwrap_or("1234".to_string());
+    let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
     let address = format!("0.0.0.0:{}", port);
 
     info!("GraphQL Playground live at {}/playground", &address);

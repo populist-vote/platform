@@ -1,5 +1,5 @@
-mod mutation;
-mod query;
+pub mod mutation;
+pub mod query;
 pub mod types;
 
 use crate::mutation::Mutation;

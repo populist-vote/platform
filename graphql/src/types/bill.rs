@@ -28,7 +28,7 @@ impl BillResult {
         let records = Bill::arguments(pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
         let results = records
             .into_iter()
-            .map(|r| ArgumentResult::from(r))
+            .map(ArgumentResult::from)
             .collect();
         Ok(results)
     }

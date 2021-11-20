@@ -2,11 +2,10 @@ use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, Union, ID
 use db::{models::argument::Argument, DateTime};
 use sqlx::{Pool, Postgres};
 
-use super::{OrganizationResult, PoliticianResult, UserResult};
+use super::{OrganizationResult, PoliticianResult};
 
 #[derive(Union)]
 enum AuthorResult {
-    User(UserResult),
     Politician(PoliticianResult),
     Organization(OrganizationResult),
 }

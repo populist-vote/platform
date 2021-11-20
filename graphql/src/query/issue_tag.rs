@@ -25,7 +25,7 @@ impl IssueTagQuery {
         let records = IssueTag::index(pool).await?;
         let results = records
             .into_iter()
-            .map(|r| IssueTagResult::from(r))
+            .map(IssueTagResult::from)
             .collect();
         Ok(results)
     }
@@ -39,7 +39,7 @@ impl IssueTagQuery {
         let records = IssueTag::search(pool, &search).await?;
         let results = records
             .into_iter()
-            .map(|r| IssueTagResult::from(r))
+            .map(IssueTagResult::from)
             .collect();
         Ok(results)
     }

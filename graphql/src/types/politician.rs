@@ -58,7 +58,7 @@ impl PoliticianResult {
             Politician::endorsements(pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
         let results = records
             .into_iter()
-            .map(|r| OrganizationResult::from(r))
+            .map(OrganizationResult::from)
             .collect();
         Ok(results)
     }
@@ -69,7 +69,7 @@ impl PoliticianResult {
             Politician::issue_tags(pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
         let results = records
             .into_iter()
-            .map(|r| IssueTagResult::from(r))
+            .map(IssueTagResult::from)
             .collect();
         Ok(results)
     }

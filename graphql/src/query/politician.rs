@@ -25,7 +25,7 @@ impl PoliticianQuery {
         let records = Politician::index(pool).await?;
         let results = records
             .into_iter()
-            .map(|r| PoliticianResult::from(r))
+            .map(PoliticianResult::from)
             .collect();
         Ok(results)
     }
@@ -39,7 +39,7 @@ impl PoliticianQuery {
         let records = Politician::search(pool, &search).await?;
         let results = records
             .into_iter()
-            .map(|r| PoliticianResult::from(r))
+            .map(PoliticianResult::from)
             .collect();
         Ok(results)
     }

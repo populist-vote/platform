@@ -17,7 +17,7 @@ impl ElectionQuery {
         let records = Election::index(pool).await?;
         let results = records
             .into_iter()
-            .map(|r| ElectionResult::from(r))
+            .map(ElectionResult::from)
             .collect();
         Ok(results)
     }
@@ -31,7 +31,7 @@ impl ElectionQuery {
         let records = Election::search(pool, &search).await?;
         let results = records
             .into_iter()
-            .map(|r| ElectionResult::from(r))
+            .map(ElectionResult::from)
             .collect();
         Ok(results)
     }

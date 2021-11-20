@@ -14,7 +14,7 @@ impl OrganizationQuery {
         let records = Organization::index(pool).await?;
         let results = records
             .into_iter()
-            .map(|r| OrganizationResult::from(r))
+            .map(OrganizationResult::from)
             .collect();
         Ok(results)
     }
@@ -28,7 +28,7 @@ impl OrganizationQuery {
         let records = Organization::search(pool, &search).await?;
         let results = records
             .into_iter()
-            .map(|r| OrganizationResult::from(r))
+            .map(OrganizationResult::from)
             .collect();
         Ok(results)
     }

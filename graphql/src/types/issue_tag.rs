@@ -26,7 +26,7 @@ impl IssueTagResult {
         let records = IssueTag::organizations(pool, uuid::Uuid::parse_str(&self.id)?).await?;
         let results = records
             .into_iter()
-            .map(|o| OrganizationResult::from(o))
+            .map(OrganizationResult::from)
             .collect();
         Ok(results)
     }

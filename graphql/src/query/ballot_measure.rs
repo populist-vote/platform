@@ -17,7 +17,7 @@ impl BallotMeasureQuery {
         let records = BallotMeasure::index(pool).await?;
         let results = records
             .into_iter()
-            .map(|r| BallotMeasureResult::from(r))
+            .map(BallotMeasureResult::from)
             .collect();
         Ok(results)
     }
@@ -31,7 +31,7 @@ impl BallotMeasureQuery {
         let records = BallotMeasure::search(pool, &search).await?;
         let results = records
             .into_iter()
-            .map(|r| BallotMeasureResult::from(r))
+            .map(BallotMeasureResult::from)
             .collect();
         Ok(results)
     }
