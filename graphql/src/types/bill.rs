@@ -1,6 +1,9 @@
 use crate::types::ArgumentResult;
 use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
-use db::{models::{bill::Bill, legislation::LegislationStatus}, DateTime};
+use db::{
+    models::{bill::Bill, legislation::LegislationStatus},
+    DateTime,
+};
 use sqlx::{Pool, Postgres};
 #[derive(SimpleObject)]
 #[graphql(complex)]

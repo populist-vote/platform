@@ -18,7 +18,13 @@ async fn handle_nested_arguments(
 ) -> Result<(), Error> {
     if !arguments_input.is_empty() {
         for input in arguments_input {
-            Bill::create_bill_argument(db_pool, bill_id, uuid::Uuid::parse_str(&input.author_id)?, &input).await?;
+            Bill::create_bill_argument(
+                db_pool,
+                bill_id,
+                uuid::Uuid::parse_str(&input.author_id)?,
+                &input,
+            )
+            .await?;
         }
     }
     Ok(())
