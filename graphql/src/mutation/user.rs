@@ -35,7 +35,9 @@ impl UserMutation {
 
         if password_is_valid {
             let token = create_token_for_user(user_record)?;
-            Ok(LoginResult { access_token: token })
+            Ok(LoginResult {
+                access_token: token,
+            })
         } else {
             Err(Error::PasswordError)
         }
