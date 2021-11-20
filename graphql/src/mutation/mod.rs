@@ -1,3 +1,4 @@
+mod argument;
 mod ballot_measure;
 mod bill;
 mod election;

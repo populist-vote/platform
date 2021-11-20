@@ -48,8 +48,6 @@ pub struct OrganizationSearch {
     name: Option<String>,
 }
 
-static _ORGANIZATION_COLUMNS: &'static str = "id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, tax_classification, created_at, updated_at";
-
 impl Organization {
     pub async fn create(
         db_pool: &PgPool,
@@ -70,7 +68,7 @@ impl Organization {
         .fetch_one(db_pool)
         .await?;
 
-        Ok(record.into())
+        Ok(record)
     }
 
     pub async fn update(
@@ -98,7 +96,7 @@ impl Organization {
         .fetch_one(db_pool)
         .await?;
 
-        Ok(record.into())
+        Ok(record)
     }
 
     pub async fn delete(db_pool: &PgPool, id: uuid::Uuid) -> Result<(), sqlx::Error> {
@@ -112,7 +110,7 @@ impl Organization {
         let records = sqlx::query_as!(Organization, "SELECT * FROM organization")
             .fetch_all(db_pool)
             .await?;
-        Ok(records.into())
+        Ok(records)
     }
 
     pub async fn search(
@@ -129,7 +127,37 @@ impl Organization {
         )
         .fetch_all(db_pool)
         .await?;
-        Ok(records.into())
+        Ok(records)
+    }
+
+    pub async fn find_by_id(db_pool: &PgPool, id: uuid::Uuid) -> Result<Self, sqlx::Error> {
+        let record = sqlx::query_as!(
+            Organization,
+            r#"
+                SELECT * FROM organization
+                WHERE id = $1
+            "#,
+            id
+        )
+        .fetch_one(db_pool)
+        .await?;
+
+        Ok(record)
+    }
+
+    pub async fn find_by_slug(db_pool: &PgPool, slug: String) -> Result<Self, sqlx::Error> {
+        let record = sqlx::query_as!(
+            Organization,
+            r#"
+                SELECT * FROM organization
+                WHERE slug = $1
+            "#,
+            slug
+        )
+        .fetch_one(db_pool)
+        .await?;
+
+        Ok(record)
     }
 
     pub async fn connect_issue_tag(
@@ -168,6 +196,6 @@ impl Organization {
         .fetch_all(db_pool)
         .await?;
 
-        Ok(records.into())
+        Ok(records)
     }
 }

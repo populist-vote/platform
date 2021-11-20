@@ -63,7 +63,7 @@ impl IssueTag {
         .fetch_one(db_pool)
         .await?;
 
-        Ok(record.into())
+        Ok(record)
     }
 
     pub async fn update(
@@ -89,7 +89,7 @@ impl IssueTag {
         .fetch_one(db_pool)
         .await?;
 
-        Ok(record.into())
+        Ok(record)
     }
 
     pub async fn delete(db_pool: &PgPool, id: uuid::Uuid) -> Result<(), sqlx::Error> {
@@ -110,7 +110,7 @@ impl IssueTag {
         .fetch_all(db_pool)
         .await?;
 
-        Ok(records.into())
+        Ok(records)
     }
 
     pub async fn find_by_slug(db_pool: &PgPool, slug: String) -> Result<Self, sqlx::Error> {
@@ -125,7 +125,7 @@ impl IssueTag {
         .fetch_one(db_pool)
         .await?;
 
-        Ok(record.into())
+        Ok(record)
     }
 
     pub async fn search(
@@ -143,7 +143,7 @@ impl IssueTag {
         .fetch_all(db_pool)
         .await?;
 
-        Ok(records.into())
+        Ok(records)
     }
 
     pub async fn politicians(
@@ -159,7 +159,7 @@ impl IssueTag {
                 WHERE politician_issue_tags.issue_tag_id = $1
             "#, issue_tag_id).fetch_all(db_pool).await?;
 
-        Ok(records.into())
+        Ok(records)
     }
 
     pub async fn organizations(
@@ -175,6 +175,6 @@ impl IssueTag {
                 WHERE organization_issue_tags.issue_tag_id = $1
             "#, issue_tag_id).fetch_all(db_pool).await?;
 
-        Ok(records.into())
+        Ok(records)
     }
 }

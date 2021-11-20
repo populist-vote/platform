@@ -1,4 +1,4 @@
-use crate::DateTime;
+use crate::{Argument, ArgumentPosition, CreateArgumentInput, DateTime, IssueTag};
 use async_graphql::InputObject;
 use serde_json::Value;
 use slugify::slugify;
@@ -32,6 +32,7 @@ pub struct CreateBillInput {
     pub official_summary: Option<String>,
     pub populist_summary: Option<String>,
     pub full_text_url: Option<String>,
+    pub arguments: Option<Vec<CreateArgumentInput>>,
 }
 
 #[derive(InputObject)]
@@ -43,6 +44,7 @@ pub struct UpdateBillInput {
     pub official_summary: Option<String>,
     pub populist_summary: Option<String>,
     pub full_text_url: Option<String>,
+    pub arguments: Option<Vec<CreateArgumentInput>>,
 }
 
 #[derive(InputObject)]
@@ -57,9 +59,11 @@ impl Bill {
         let slug = slugify!(&input.name); // TODO run a query and ensure this is Unique
         let record = sqlx::query_as!(
             Bill,
-            r#"INSERT INTO bill (slug, name, vote_status, description, official_summary, populist_summary, full_text_url) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7) 
-            RETURNING id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at"#,
+            r#"
+                INSERT INTO bill (slug, name, vote_status, description, official_summary, populist_summary, full_text_url) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7) 
+                RETURNING id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at
+            "#,
             slug,
             input.name,
             input.vote_status as LegislationStatus,
@@ -71,7 +75,7 @@ impl Bill {
         .fetch_one(db_pool)
         .await?;
 
-        Ok(record.into())
+        Ok(record)
     }
 
     pub async fn update(
@@ -100,7 +104,7 @@ impl Bill {
             input.populist_summary,
             input.full_text_url
         ).fetch_one(db_pool).await?;
-        Ok(record.into())
+        Ok(record)
     }
 
     pub async fn delete(db_pool: &PgPool, id: uuid::Uuid) -> Result<(), sqlx::Error> {
@@ -114,7 +118,7 @@ impl Bill {
         let records = sqlx::query_as!(Bill, r#"SELECT id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at FROM bill"#,)
             .fetch_all(db_pool)
             .await?;
-        Ok(records.into())
+        Ok(records)
     }
 
     pub async fn search(db_pool: &PgPool, search: &BillSearch) -> Result<Vec<Self>, sqlx::Error> {
@@ -130,7 +134,93 @@ impl Bill {
         )
         .fetch_all(db_pool)
         .await?;
-        Ok(records.into())
+        Ok(records)
+    }
+
+    pub async fn issue_tags(
+        db_pool: &PgPool,
+        bill_id: uuid::Uuid,
+    ) -> Result<Vec<IssueTag>, sqlx::Error> {
+        let records = sqlx::query_as!(IssueTag,
+            r#"
+                SELECT it.id, slug, name, description, it.created_at, it.updated_at FROM issue_tag it
+                JOIN bill_issue_tags
+                ON bill_issue_tags.issue_tag_id = it.id
+                WHERE bill_issue_tags.bill_id = $1
+            "#,
+            bill_id
+        )
+        .fetch_all(db_pool)
+        .await?;
+
+        Ok(records)
+    }
+
+    pub async fn create_bill_argument(
+        db_pool: &PgPool,
+        bill_id: uuid::Uuid,
+        author_id: uuid::Uuid,
+        input: &CreateArgumentInput,
+    ) -> Result<Argument, sqlx::Error> {
+        let record = sqlx::query_as!(
+            Argument,
+            r#"
+                WITH ins_argument AS (
+                    INSERT INTO argument (title, author_id, position, body) 
+                    VALUES ($2, $3, $4, $5) 
+                    RETURNING id, title, author_id, position AS "position:ArgumentPosition", body, created_at, updated_at
+                ),
+                ins_bill_argument AS (
+                    INSERT INTO bill_arguments (bill_id, argument_id) 
+                    VALUES ($1, (SELECT id FROM ins_argument))
+                )
+                SELECT ins_argument.* FROM ins_argument
+            "#,
+            bill_id,
+            input.title,
+            author_id,
+            input.position as ArgumentPosition,
+            input.body,
+        ).fetch_one(db_pool).await?;
+
+        Ok(record)
+    }
+
+    pub async fn arguments(
+        db_pool: &PgPool,
+        bill_id: uuid::Uuid,
+    ) -> Result<Vec<Argument>, sqlx::Error> {
+        let records = sqlx::query_as!(Argument,
+            r#"
+                SELECT a.id, author_id, title, position AS "position:ArgumentPosition", body, a.created_at, a.updated_at FROM argument a
+                JOIN bill_arguments
+                ON bill_arguments.argument_id = a.id
+                WHERE bill_arguments.bill_id = $1
+            "#,
+            bill_id
+        ).fetch_all(db_pool).await?;
+
+        Ok(records)
+    }
+
+    pub async fn connect_issue_tag(
+        db_pool: &PgPool,
+        bill_id: uuid::Uuid,
+        issue_tag_id: uuid::Uuid,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query_as!(
+            Bill,
+            r#"
+                INSERT INTO bill_issue_tags (bill_id, issue_tag_id) 
+                VALUES ($1, $2)
+            "#,
+            bill_id,
+            issue_tag_id
+        )
+        .execute(db_pool)
+        .await?;
+
+        Ok(())
     }
 }
 

@@ -1,10 +1,7 @@
+use crate::types::ArgumentResult;
 use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
-use db::{
-    models::{bill::Bill, legislation::LegislationStatus},
-    DateTime,
-};
+use db::{models::{bill::Bill, legislation::LegislationStatus}, DateTime};
 use sqlx::{Pool, Postgres};
-
 #[derive(SimpleObject)]
 #[graphql(complex)]
 pub struct BillResult {
@@ -23,10 +20,14 @@ pub struct BillResult {
 
 #[ComplexObject]
 impl BillResult {
-    async fn arguments(&self, ctx: &Context<'_>) -> FieldResult<Vec<BillResult>> {
-        //Change to ArgumentResult once implemented
-        let _pool = ctx.data_unchecked::<Pool<Postgres>>();
-        todo!()
+    async fn arguments(&self, ctx: &Context<'_>) -> FieldResult<Vec<ArgumentResult>> {
+        let pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let records = Bill::arguments(pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
+        let results = records
+            .into_iter()
+            .map(|r| ArgumentResult::from(r))
+            .collect();
+        Ok(results)
     }
 }
 

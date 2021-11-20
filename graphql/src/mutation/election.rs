@@ -16,7 +16,7 @@ impl ElectionMutation {
     async fn create_election(
         &self,
         ctx: &Context<'_>,
-        #[graphql(desc = "Date must use format YYYY-MM-DD")] input: CreateElectionInput,
+        input: CreateElectionInput,
     ) -> Result<ElectionResult> {
         let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
         let new_record = Election::create(db_pool, &input).await?;

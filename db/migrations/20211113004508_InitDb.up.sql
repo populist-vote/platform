@@ -12,8 +12,7 @@ BEGIN
     OLD.updated_at = NOW();
     RETURN OLD;
 END;
-$$ LANGUAGE 'plpgsql'
-;
+$$ LANGUAGE 'plpgsql';
 
 CREATE TYPE vote_status AS ENUM ('introduced', 'passed', 'signed', 'vetoed', 'unknown');
 CREATE TYPE state AS ENUM (
@@ -98,8 +97,7 @@ CREATE TRIGGER set_updated_at
     BEFORE UPDATE
     ON politician
     FOR EACH ROW
-EXECUTE PROCEDURE set_updated_at()
-;
+EXECUTE PROCEDURE set_updated_at();
 
 CREATE TABLE organization (
     id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -123,9 +121,7 @@ CREATE TRIGGER set_updated_at
     BEFORE UPDATE
     ON organization
     FOR EACH ROW
-EXECUTE PROCEDURE set_updated_at()
-;
-
+EXECUTE PROCEDURE set_updated_at();
 
 CREATE TABLE election (
   id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -139,9 +135,7 @@ CREATE TRIGGER set_updated_at
     BEFORE UPDATE
     ON election
     FOR EACH ROW
-EXECUTE PROCEDURE set_updated_at()
-;
-
+EXECUTE PROCEDURE set_updated_at();
 
 CREATE TABLE legislation (
   name TEXT NOT NULL,
@@ -158,9 +152,7 @@ CREATE TRIGGER set_updated_at
     BEFORE UPDATE
     ON legislation
     FOR EACH ROW
-EXECUTE PROCEDURE set_updated_at()
-;
-
+EXECUTE PROCEDURE set_updated_at();
 
 CREATE TABLE bill (
   id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -168,6 +160,12 @@ CREATE TABLE bill (
   legiscan_bill_id INT,
   legiscan_data JSONB NOT NULL DEFAULT '{}'::jsonb
 ) INHERITS (legislation);
+
+CREATE TRIGGER set_updated_at
+    BEFORE UPDATE
+    ON bill
+    FOR EACH ROW
+EXECUTE PROCEDURE set_updated_at();
 
 CREATE TABLE ballot_measure (
   id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -179,6 +177,12 @@ CREATE TABLE ballot_measure (
   definitions TEXT NOT NULL,
   CONSTRAINT fk_election FOREIGN KEY(election_id) REFERENCES election(id)
 ) INHERITS (legislation);
+
+CREATE TRIGGER set_updated_at
+    BEFORE UPDATE
+    ON ballot_measure
+    FOR EACH ROW
+EXECUTE PROCEDURE set_updated_at();
 
 CREATE TABLE politician_endorsements (
   id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -194,8 +198,7 @@ CREATE TRIGGER set_updated_at
     BEFORE UPDATE
     ON politician_endorsements
     FOR EACH ROW
-EXECUTE PROCEDURE set_updated_at()
-;
+EXECUTE PROCEDURE set_updated_at();
 
 COMMIT;
 

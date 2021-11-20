@@ -56,6 +56,3 @@ CREATE TRIGGER set_updated_at
     ON user_profile
     FOR EACH ROW
 EXECUTE PROCEDURE set_updated_at();
-
-
-

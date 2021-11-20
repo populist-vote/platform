@@ -2,6 +2,12 @@ use async_graphql::{SimpleObject, ID};
 use db::User;
 
 #[derive(SimpleObject)]
+pub struct UserResult {
+    username: String,
+    id: ID,
+}
+
+#[derive(SimpleObject)]
 pub struct CreateUserResult {
     id: ID,
 }

@@ -90,12 +90,23 @@ impl Politician {
         db_pool: &PgPool,
         input: &CreatePoliticianInput,
     ) -> Result<Self, sqlx::Error> {
-        let slug = slugify!(&CreatePoliticianInput::full_name(&input)); // TODO run a query and ensure this is Unique
+        let slug = slugify!(&CreatePoliticianInput::full_name(input));
+
         let record = sqlx::query_as!(
             Politician,
-            r#"INSERT INTO politician (slug, first_name, middle_name, last_name, home_state, office_party) 
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", created_at, updated_at"#,
+            r#"
+                WITH ins_author AS (
+                    INSERT INTO author (author_type) VALUES ('politician')
+                    ON CONFLICT DO NOTHING
+                    RETURNING id AS author_id
+                ),
+                p AS (
+                    INSERT INTO politician (id, slug, first_name, middle_name, last_name, home_state, office_party) 
+                    VALUES ((SELECT author_id FROM ins_author), $1, $2, $3, $4, $5, $6)
+                    RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", created_at, updated_at
+                )
+                SELECT p.* FROM p
+            "#,
             slug,
             input.first_name,
             input.middle_name,
@@ -106,7 +117,7 @@ impl Politician {
         .fetch_one(db_pool)
         .await?;
 
-        Ok(record.into())
+        Ok(record)
     }
 
     pub async fn update(
@@ -152,7 +163,7 @@ impl Politician {
         .fetch_one(db_pool)
         .await?;
 
-        Ok(record.into())
+        Ok(record)
     }
 
     pub async fn delete(db_pool: &PgPool, id: uuid::Uuid) -> Result<(), sqlx::Error> {
@@ -166,7 +177,18 @@ impl Politician {
         let records = sqlx::query_as!(Politician, r#"SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", created_at, updated_at FROM politician"#,)
             .fetch_all(db_pool)
             .await?;
-        Ok(records.into())
+        Ok(records)
+    }
+
+    pub async fn find_by_id(db_pool: &PgPool, id: uuid::Uuid) -> Result<Self, sqlx::Error> {
+        let record = sqlx::query_as!(Politician,
+            r#"
+                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", created_at, updated_at FROM politician
+                WHERE id = $1
+            "#, id)
+            .fetch_one(db_pool).await?;
+
+        Ok(record)
     }
 
     pub async fn find_by_slug(db_pool: &PgPool, slug: String) -> Result<Self, sqlx::Error> {
@@ -177,7 +199,7 @@ impl Politician {
             "#, slug)
             .fetch_one(db_pool).await?;
 
-        Ok(record.into())
+        Ok(record)
     }
 
     pub async fn search(
@@ -196,7 +218,7 @@ impl Politician {
         )
         .fetch_all(db_pool)
         .await?;
-        Ok(records.into())
+        Ok(records)
     }
 
     pub async fn endorsements(
@@ -212,7 +234,7 @@ impl Politician {
             "#, 
         politician_id).fetch_all(db_pool).await?;
 
-        Ok(records.into())
+        Ok(records)
     }
 
     pub async fn connect_issue_tag(
@@ -251,6 +273,6 @@ impl Politician {
         .fetch_all(db_pool)
         .await?;
 
-        Ok(records.into())
+        Ok(records)
     }
 }

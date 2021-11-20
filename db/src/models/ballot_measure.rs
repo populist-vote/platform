@@ -99,7 +99,7 @@ impl BallotMeasure {
         .fetch_one(db_pool)
         .await?;
 
-        Ok(record.into())
+        Ok(record)
     }
 
     pub async fn update(
@@ -136,7 +136,7 @@ impl BallotMeasure {
             input.populist_summary,
             input.full_text_url
         ).fetch_one(db_pool).await?;
-        Ok(record.into())
+        Ok(record)
     }
 
     pub async fn delete(db_pool: &PgPool, id: uuid::Uuid) -> Result<(), sqlx::Error> {
@@ -150,7 +150,7 @@ impl BallotMeasure {
         let records = sqlx::query_as!(BallotMeasure, r#"SELECT id, election_id, slug, name, vote_status AS "vote_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure"#,)
             .fetch_all(db_pool)
             .await?;
-        Ok(records.into())
+        Ok(records)
     }
 
     pub async fn search(
@@ -171,7 +171,7 @@ impl BallotMeasure {
         )
         .fetch_all(db_pool)
         .await?;
-        Ok(records.into())
+        Ok(records)
     }
 }
 

@@ -1,3 +1,4 @@
+pub mod argument;
 pub mod ballot_measure;
 pub mod bill;
 pub mod election;

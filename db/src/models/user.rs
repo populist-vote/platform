@@ -48,7 +48,7 @@ impl User {
             hash,
         ).fetch_one(db_pool).await?;
 
-        Ok(record.into())
+        Ok(record)
     }
 
     pub async fn find_by_email_or_username(

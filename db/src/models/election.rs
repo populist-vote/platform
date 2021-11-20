@@ -18,7 +18,7 @@ pub struct CreateElectionInput {
     pub slug: Option<String>,
     pub title: String,
     pub description: Option<String>,
-    // Must use format YYYY-MM-DD
+    /// Must use format YYYY-MM-DD
     pub election_date: chrono::NaiveDate,
 }
 
@@ -27,6 +27,7 @@ pub struct UpdateElectionInput {
     pub slug: Option<String>,
     pub title: Option<String>,
     pub description: Option<String>,
+    /// Must use format YYYY-MM-DD
     pub election_date: Option<chrono::NaiveDate>,
 }
 
@@ -56,7 +57,7 @@ impl Election {
         .fetch_one(db_pool)
         .await?;
 
-        Ok(record.into())
+        Ok(record)
     }
 
     pub async fn update(
@@ -82,7 +83,7 @@ impl Election {
         .fetch_one(db_pool)
         .await?;
 
-        Ok(record.into())
+        Ok(record)
     }
 
     pub async fn delete(db_pool: &PgPool, id: uuid::Uuid) -> Result<(), sqlx::Error> {
@@ -99,7 +100,7 @@ impl Election {
         )
         .fetch_all(db_pool)
         .await?;
-        Ok(records.into())
+        Ok(records)
     }
 
     pub async fn search(
@@ -117,6 +118,6 @@ impl Election {
         .fetch_all(db_pool)
         .await?;
 
-        Ok(records.into())
+        Ok(records)
     }
 }
