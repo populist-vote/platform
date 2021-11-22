@@ -1322,6 +1322,104 @@
       ]
     }
   },
+  "543d173875300cc8d644526034188e505742626f2700441dcadb640268d4c6ea": {
+    "query": "\n                WITH ins_argument AS (\n                    INSERT INTO argument (author_id, title, position, body) \n                    VALUES ($2, $3, $4, $5) \n                    RETURNING id, author_id, title, position, body, created_at, updated_at\n                ),\n                ins_bill_argument AS (\n                    INSERT INTO bill_arguments (bill_id, argument_id) \n                    VALUES ($1, (SELECT id FROM ins_argument))\n                )\n                SELECT ins_argument.id, ins_argument.author_id, a.author_type AS \"author_type:AuthorType\", ins_argument.title, ins_argument.position AS \"position:ArgumentPosition\", ins_argument.body, ins_argument.created_at, ins_argument.updated_at\n                FROM ins_argument JOIN author AS a ON a.id = ins_argument.author_id\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "author_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 2,
+          "name": "author_type:AuthorType",
+          "type_info": {
+            "Custom": {
+              "name": "author_type",
+              "kind": {
+                "Enum": [
+                  "politician",
+                  "organization"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 3,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "position:ArgumentPosition",
+          "type_info": {
+            "Custom": {
+              "name": "argument_position",
+              "kind": {
+                "Enum": [
+                  "support",
+                  "neutral",
+                  "oppose"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "body",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 7,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Uuid",
+          "Text",
+          {
+            "Custom": {
+              "name": "argument_position",
+              "kind": {
+                "Enum": [
+                  "support",
+                  "neutral",
+                  "oppose"
+                ]
+              }
+            }
+          },
+          "Text"
+        ]
+      },
+      "nullable": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    }
+  },
   "56e879fd7e88d1b61a9fd9504aa06f16ecf2b09efa2542a1c1c2ea5cb2c82ccb": {
     "query": "\n                SELECT it.id, slug, name, description, it.created_at, it.updated_at FROM issue_tag it\n                JOIN politician_issue_tags\n                ON politician_issue_tags.issue_tag_id = it.id\n                WHERE politician_issue_tags.politician_id = $1\n            ",
     "describe": {
@@ -1727,87 +1825,6 @@
         true,
         true,
         true,
-        true,
-        false,
-        false
-      ]
-    }
-  },
-  "6075792530ecb6db4bfcb9ab5803edfc8f831a36160122b52fdf4ae8a530d051": {
-    "query": "\n                UPDATE argument\n                SET title = COALESCE($2, title),\n                    position = COALESCE($3, position),\n                    body = COALESCE($4, body)\n                WHERE id=$1    \n                RETURNING id, title, author_id, position AS \"position:ArgumentPosition\", body, created_at, updated_at\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "title",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "author_id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 3,
-          "name": "position:ArgumentPosition",
-          "type_info": {
-            "Custom": {
-              "name": "argument_position",
-              "kind": {
-                "Enum": [
-                  "support",
-                  "neutral",
-                  "oppose"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 4,
-          "name": "body",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 5,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 6,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Text",
-          {
-            "Custom": {
-              "name": "argument_position",
-              "kind": {
-                "Enum": [
-                  "support",
-                  "neutral",
-                  "oppose"
-                ]
-              }
-            }
-          },
-          "Text"
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
         true,
         false,
         false
@@ -2578,87 +2595,6 @@
       ]
     }
   },
-  "a288a64eff9c7dc108cf87595bad34707b6d5e3f5690fc166e6cd5871920a86f": {
-    "query": "\n                INSERT INTO argument (title, author_id, position, body) \n                VALUES ($1, $2, $3, $4) \n                RETURNING id, title, author_id, position AS \"position:ArgumentPosition\", body, created_at, updated_at\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "title",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "author_id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 3,
-          "name": "position:ArgumentPosition",
-          "type_info": {
-            "Custom": {
-              "name": "argument_position",
-              "kind": {
-                "Enum": [
-                  "support",
-                  "neutral",
-                  "oppose"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 4,
-          "name": "body",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 5,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 6,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Uuid",
-          {
-            "Custom": {
-              "name": "argument_position",
-              "kind": {
-                "Enum": [
-                  "support",
-                  "neutral",
-                  "oppose"
-                ]
-              }
-            }
-          },
-          "Text"
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        true,
-        false,
-        false
-      ]
-    }
-  },
   "a6142f25869bb1ebe6cd23db34f2053eec610ba11ae69708ec762c9b8ea0425d": {
     "query": "UPDATE politician \n            SET first_name = COALESCE($2, first_name),\n                middle_name = COALESCE($3, middle_name),\n                last_name = COALESCE($4, last_name),\n                nickname = COALESCE($5, nickname),\n                preferred_name = COALESCE($6, preferred_name),\n                ballot_name = COALESCE($7, ballot_name),\n                description = COALESCE($8, description),\n                thumbnail_image_url = COALESCE($9, thumbnail_image_url),\n                home_state= COALESCE($10, home_state),\n                website_url = COALESCE($11, website_url),\n                facebook_url = COALESCE($12, facebook_url),\n                twitter_url = COALESCE($13, twitter_url),\n                instagram_url = COALESCE($14, instagram_url),\n                office_party = COALESCE($15, office_party)\n            WHERE id=$1\n            RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS \"home_state:State\", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS \"office_party:PoliticalParty\", created_at, updated_at",
     "describe": {
@@ -2939,8 +2875,8 @@
       ]
     }
   },
-  "a754f4968875b12ddf26754440041bd308a2a17b38884db97f67f9e189d65440": {
-    "query": "\n                SELECT a.id, author_id, title, position AS \"position:ArgumentPosition\", body, a.created_at, a.updated_at FROM argument a\n                JOIN bill_arguments\n                ON bill_arguments.argument_id = a.id\n                WHERE bill_arguments.bill_id = $1\n            ",
+  "a73af3cb0fae38b252aa357e76cf37a8d28eadcc62a7298454a7882d8aa81e0d": {
+    "query": "\n                UPDATE argument\n                SET title = COALESCE($2, arg.title),\n                    position = COALESCE($3, arg.position),\n                    body = COALESCE($4, arg.body)\n                FROM argument AS arg JOIN author ON author.id = arg.author_id\n                WHERE arg.id=$1     \n                RETURNING arg.id, arg.title, arg.author_id, author_type AS \"author_type:AuthorType\", arg.position AS \"position:ArgumentPosition\", arg.body, arg.created_at, arg.updated_at\n            ",
     "describe": {
       "columns": [
         {
@@ -2950,16 +2886,31 @@
         },
         {
           "ordinal": 1,
-          "name": "author_id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 2,
           "name": "title",
           "type_info": "Text"
         },
         {
+          "ordinal": 2,
+          "name": "author_id",
+          "type_info": "Uuid"
+        },
+        {
           "ordinal": 3,
+          "name": "author_type:AuthorType",
+          "type_info": {
+            "Custom": {
+              "name": "author_type",
+              "kind": {
+                "Enum": [
+                  "politician",
+                  "organization"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 4,
           "name": "position:ArgumentPosition",
           "type_info": {
             "Custom": {
@@ -2975,27 +2926,42 @@
           }
         },
         {
-          "ordinal": 4,
+          "ordinal": 5,
           "name": "body",
           "type_info": "Text"
         },
         {
-          "ordinal": 5,
+          "ordinal": 6,
           "name": "created_at",
           "type_info": "Timestamptz"
         },
         {
-          "ordinal": 6,
+          "ordinal": 7,
           "name": "updated_at",
           "type_info": "Timestamptz"
         }
       ],
       "parameters": {
         "Left": [
-          "Uuid"
+          "Uuid",
+          "Text",
+          {
+            "Custom": {
+              "name": "argument_position",
+              "kind": {
+                "Enum": [
+                  "support",
+                  "neutral",
+                  "oppose"
+                ]
+              }
+            }
+          },
+          "Text"
         ]
       },
       "nullable": [
+        false,
         false,
         false,
         false,
@@ -3657,88 +3623,6 @@
         ]
       },
       "nullable": []
-    }
-  },
-  "d1b5a7e85f6056a90d8e0d513876cd6024e9813a477adebd630043b93c2e6460": {
-    "query": "\n                WITH ins_argument AS (\n                    INSERT INTO argument (title, author_id, position, body) \n                    VALUES ($2, $3, $4, $5) \n                    RETURNING id, title, author_id, position AS \"position:ArgumentPosition\", body, created_at, updated_at\n                ),\n                ins_bill_argument AS (\n                    INSERT INTO bill_arguments (bill_id, argument_id) \n                    VALUES ($1, (SELECT id FROM ins_argument))\n                )\n                SELECT ins_argument.* FROM ins_argument\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "title",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "author_id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 3,
-          "name": "position:ArgumentPosition",
-          "type_info": {
-            "Custom": {
-              "name": "argument_position",
-              "kind": {
-                "Enum": [
-                  "support",
-                  "neutral",
-                  "oppose"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 4,
-          "name": "body",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 5,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 6,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Text",
-          "Uuid",
-          {
-            "Custom": {
-              "name": "argument_position",
-              "kind": {
-                "Enum": [
-                  "support",
-                  "neutral",
-                  "oppose"
-                ]
-              }
-            }
-          },
-          "Text"
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        true,
-        false,
-        false
-      ]
     }
   },
   "d66f05d6eff775d540bb1011455ca96fcf11f2c3700d74c366d3a9e36b989d59": {
@@ -4788,6 +4672,89 @@
         true,
         true,
         true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "f2b7326a32aa9bbfeb18d9907c736455d073b915acb0a2f7ceee327f95a6c905": {
+    "query": "\n                SELECT arg.id, arg.author_id, author.author_type AS \"author_type:AuthorType\", title, position AS \"position:ArgumentPosition\", body, arg.created_at, arg.updated_at \n                FROM argument AS arg\n                JOIN author ON author.id = arg.author_id\n                JOIN bill_arguments ON bill_arguments.argument_id = arg.id\n                WHERE bill_arguments.bill_id = $1\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "author_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 2,
+          "name": "author_type:AuthorType",
+          "type_info": {
+            "Custom": {
+              "name": "author_type",
+              "kind": {
+                "Enum": [
+                  "politician",
+                  "organization"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 3,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "position:ArgumentPosition",
+          "type_info": {
+            "Custom": {
+              "name": "argument_position",
+              "kind": {
+                "Enum": [
+                  "support",
+                  "neutral",
+                  "oppose"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "body",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 7,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
         true,
         false,
         false
