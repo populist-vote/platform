@@ -1,5 +1,5 @@
 use async_graphql::*;
-use db::{Argument, CreateArgumentInput, UpdateArgumentInput};
+use db::{Argument, UpdateArgumentInput};
 use sqlx::{Pool, Postgres};
 
 use crate::types::ArgumentResult;

@@ -30,6 +30,12 @@ pub struct CreateOrganizationInput {
     pub description: Option<String>,
     pub thumbnail_image_url: Option<String>,
     pub website_url: Option<String>,
+    pub facebook_url: Option<String>,
+    pub twitter_url: Option<String>,
+    pub instagram_url: Option<String>,
+    pub email: Option<String>,
+    pub headquarters_phone: Option<String>,
+    pub tax_classification: Option<String>,
     pub issue_tags: Option<CreateOrConnectIssueTagInput>,
 }
 
@@ -40,6 +46,12 @@ pub struct UpdateOrganizationInput {
     pub description: Option<String>,
     pub thumbnail_image_url: Option<String>,
     pub website_url: Option<String>,
+    pub facebook_url: Option<String>,
+    pub twitter_url: Option<String>,
+    pub instagram_url: Option<String>,
+    pub email: Option<String>,
+    pub headquarters_phone: Option<String>,
+    pub tax_classification: Option<String>,
     pub issue_tags: Option<CreateOrConnectIssueTagInput>,
 }
 
@@ -56,14 +68,30 @@ impl Organization {
         let slug = slugify!(&input.name); // TODO run a query and ensure this is Unique
         let record = sqlx::query_as!(
             Organization,
-            "INSERT INTO organization (slug, name, description, thumbnail_image_url, website_url) 
-            VALUES ($1, $2, $3, $4, $5) 
-            RETURNING *",
+            r#"
+                WITH ins_author AS (
+                    INSERT INTO author (author_type) VALUES ('organization')
+                    ON CONFLICT DO NOTHING
+                    RETURNING id AS author_id
+                ),
+                o AS (
+                    INSERT INTO organization (id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, tax_classification) 
+                    VALUES ((SELECT author_id FROM ins_author), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                    RETURNING id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, tax_classification, created_at, updated_at
+                )
+                SELECT o.* FROM o
+            "#,
             slug,
             input.name,
             input.description,
             input.thumbnail_image_url,
-            input.website_url
+            input.website_url,
+            input.facebook_url,
+            input.twitter_url,
+            input.instagram_url,
+            input.email,
+            input.headquarters_phone,
+            input.tax_classification
         )
         .fetch_one(db_pool)
         .await?;
@@ -83,7 +111,13 @@ impl Organization {
                 name = COALESCE($3, name),
                 description = COALESCE($4, description),
                 thumbnail_image_url = COALESCE($5, thumbnail_image_url),
-                website_url = COALESCE($6, website_url)
+                website_url = COALESCE($6, website_url),
+                facebook_url = COALESCE($7, facebook_url),
+                twitter_url = COALESCE($8, twitter_url),
+                instagram_url = COALESCE($9, instagram_url),
+                email = COALESCE($10, email),
+                headquarters_phone = COALESCE($11, headquarters_phone),
+                tax_classification = COALESCE($12, tax_classification)
             WHERE id=$1
             RETURNING *",
             id,
@@ -91,7 +125,13 @@ impl Organization {
             input.name,
             input.description,
             input.thumbnail_image_url,
-            input.website_url
+            input.website_url,
+            input.facebook_url,
+            input.twitter_url,
+            input.instagram_url,
+            input.email,
+            input.headquarters_phone,
+            input.tax_classification
         )
         .fetch_one(db_pool)
         .await?;
