@@ -24,10 +24,7 @@ impl IssueTagResult {
     async fn organizations(&self, ctx: &Context<'_>) -> FieldResult<Vec<OrganizationResult>> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let records = IssueTag::organizations(pool, uuid::Uuid::parse_str(&self.id)?).await?;
-        let results = records
-            .into_iter()
-            .map(OrganizationResult::from)
-            .collect();
+        let results = records.into_iter().map(OrganizationResult::from).collect();
         Ok(results)
     }
 

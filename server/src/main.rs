@@ -61,8 +61,7 @@ async fn main() -> Result<(), Error> {
 
     let schema = new_schema(pool).finish();
 
-    let environment =
-        Environment::from_str(&std::env::var("ENVIRONMENT").unwrap()).unwrap();
+    let environment = Environment::from_str(&std::env::var("ENVIRONMENT").unwrap()).unwrap();
 
     let cors = Cors::default()
         .allow_methods(vec![Method::GET, Method::POST])

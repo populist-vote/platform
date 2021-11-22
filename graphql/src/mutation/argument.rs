@@ -13,17 +13,6 @@ struct DeleteArgumentResult {
 
 #[Object]
 impl ArgumentMutation {
-    async fn create_argument(
-        &self,
-        ctx: &Context<'_>,
-        input: CreateArgumentInput,
-    ) -> Result<ArgumentResult> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let new_record =
-            Argument::create(db_pool, uuid::Uuid::parse_str(&input.author_id)?, &input).await?;
-        Ok(ArgumentResult::from(new_record))
-    }
-
     async fn update_argument(
         &self,
         ctx: &Context<'_>,

@@ -23,10 +23,7 @@ impl PoliticianQuery {
     async fn all_politicians(&self, ctx: &Context<'_>) -> FieldResult<Vec<PoliticianResult>> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let records = Politician::index(pool).await?;
-        let results = records
-            .into_iter()
-            .map(PoliticianResult::from)
-            .collect();
+        let results = records.into_iter().map(PoliticianResult::from).collect();
         Ok(results)
     }
 
@@ -37,10 +34,7 @@ impl PoliticianQuery {
     ) -> FieldResult<Vec<PoliticianResult>> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let records = Politician::search(pool, &search).await?;
-        let results = records
-            .into_iter()
-            .map(PoliticianResult::from)
-            .collect();
+        let results = records.into_iter().map(PoliticianResult::from).collect();
         Ok(results)
     }
 

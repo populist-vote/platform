@@ -26,10 +26,7 @@ impl BillResult {
     async fn arguments(&self, ctx: &Context<'_>) -> FieldResult<Vec<ArgumentResult>> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let records = Bill::arguments(pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
-        let results = records
-            .into_iter()
-            .map(ArgumentResult::from)
-            .collect();
+        let results = records.into_iter().map(ArgumentResult::from).collect();
         Ok(results)
     }
 }

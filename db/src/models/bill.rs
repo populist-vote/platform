@@ -1,4 +1,4 @@
-use crate::{Argument, ArgumentPosition, CreateArgumentInput, DateTime, IssueTag};
+use crate::{Argument, ArgumentPosition, AuthorType, CreateArgumentInput, DateTime, IssueTag};
 use async_graphql::InputObject;
 use serde_json::Value;
 use slugify::slugify;
@@ -162,23 +162,24 @@ impl Bill {
         author_id: uuid::Uuid,
         input: &CreateArgumentInput,
     ) -> Result<Argument, sqlx::Error> {
-        let record = sqlx::query_as!(
+        let record = sqlx::query_as_unchecked!(
             Argument,
             r#"
                 WITH ins_argument AS (
-                    INSERT INTO argument (title, author_id, position, body) 
+                    INSERT INTO argument (author_id, title, position, body) 
                     VALUES ($2, $3, $4, $5) 
-                    RETURNING id, title, author_id, position AS "position:ArgumentPosition", body, created_at, updated_at
+                    RETURNING id, author_id, title, position, body, created_at, updated_at
                 ),
                 ins_bill_argument AS (
                     INSERT INTO bill_arguments (bill_id, argument_id) 
                     VALUES ($1, (SELECT id FROM ins_argument))
                 )
-                SELECT ins_argument.* FROM ins_argument
+                SELECT ins_argument.id, ins_argument.author_id, a.author_type AS "author_type:AuthorType", ins_argument.title, ins_argument.position AS "position:ArgumentPosition", ins_argument.body, ins_argument.created_at, ins_argument.updated_at
+                FROM ins_argument JOIN author AS a ON a.id = ins_argument.author_id
             "#,
             bill_id,
-            input.title,
             author_id,
+            input.title,
             input.position as ArgumentPosition,
             input.body,
         ).fetch_one(db_pool).await?;
@@ -192,9 +193,10 @@ impl Bill {
     ) -> Result<Vec<Argument>, sqlx::Error> {
         let records = sqlx::query_as!(Argument,
             r#"
-                SELECT a.id, author_id, title, position AS "position:ArgumentPosition", body, a.created_at, a.updated_at FROM argument a
-                JOIN bill_arguments
-                ON bill_arguments.argument_id = a.id
+                SELECT arg.id, arg.author_id, author.author_type AS "author_type:AuthorType", title, position AS "position:ArgumentPosition", body, arg.created_at, arg.updated_at 
+                FROM argument AS arg
+                JOIN author ON author.id = arg.author_id
+                JOIN bill_arguments ON bill_arguments.argument_id = arg.id
                 WHERE bill_arguments.bill_id = $1
             "#,
             bill_id

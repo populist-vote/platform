@@ -1,7 +1,7 @@
 use async_graphql::*;
 use db::Organization;
 
-#[derive(SimpleObject)]
+#[derive(SimpleObject, Debug, Clone)]
 pub struct OrganizationResult {
     id: ID,
     slug: String,

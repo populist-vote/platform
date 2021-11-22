@@ -23,10 +23,7 @@ impl IssueTagQuery {
     async fn all_issue_tags(&self, ctx: &Context<'_>) -> FieldResult<Vec<IssueTagResult>> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let records = IssueTag::index(pool).await?;
-        let results = records
-            .into_iter()
-            .map(IssueTagResult::from)
-            .collect();
+        let results = records.into_iter().map(IssueTagResult::from).collect();
         Ok(results)
     }
 
@@ -37,10 +34,7 @@ impl IssueTagQuery {
     ) -> FieldResult<Vec<IssueTagResult>> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let records = IssueTag::search(pool, &search).await?;
-        let results = records
-            .into_iter()
-            .map(IssueTagResult::from)
-            .collect();
+        let results = records.into_iter().map(IssueTagResult::from).collect();
         Ok(results)
     }
 }

@@ -15,10 +15,7 @@ impl ElectionQuery {
         println!("{:?}", token);
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let records = Election::index(pool).await?;
-        let results = records
-            .into_iter()
-            .map(ElectionResult::from)
-            .collect();
+        let results = records.into_iter().map(ElectionResult::from).collect();
         Ok(results)
     }
 
@@ -29,10 +26,7 @@ impl ElectionQuery {
     ) -> FieldResult<Vec<ElectionResult>> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let records = Election::search(pool, &search).await?;
-        let results = records
-            .into_iter()
-            .map(ElectionResult::from)
-            .collect();
+        let results = records.into_iter().map(ElectionResult::from).collect();
         Ok(results)
     }
 

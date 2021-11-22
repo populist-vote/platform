@@ -16,7 +16,7 @@ enum OfficeType {
     Senate,
 }
 
-#[derive(SimpleObject)]
+#[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
 pub struct PoliticianResult {
     id: ID,
@@ -56,10 +56,7 @@ impl PoliticianResult {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let records =
             Politician::endorsements(pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
-        let results = records
-            .into_iter()
-            .map(OrganizationResult::from)
-            .collect();
+        let results = records.into_iter().map(OrganizationResult::from).collect();
         Ok(results)
     }
 
@@ -67,10 +64,7 @@ impl PoliticianResult {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let records =
             Politician::issue_tags(pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
-        let results = records
-            .into_iter()
-            .map(IssueTagResult::from)
-            .collect();
+        let results = records.into_iter().map(IssueTagResult::from).collect();
         Ok(results)
     }
 }

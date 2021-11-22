@@ -7,10 +7,8 @@ use strum_macros::Display;
 #[derive(Enum, Debug, Display, Copy, Clone, Eq, PartialEq, sqlx::Type)]
 #[sqlx(type_name = "author_type", rename_all = "lowercase")]
 pub enum AuthorType {
-    USER,
     POLITICIAN,
     ORGANIZATION,
-    OTHER,
 }
 
 #[derive(Enum, Display, Debug, Copy, Clone, Eq, PartialEq, sqlx::Type)]
@@ -25,6 +23,7 @@ pub enum ArgumentPosition {
 pub struct Argument {
     pub id: uuid::Uuid,
     pub author_id: uuid::Uuid,
+    pub author_type: AuthorType,
     pub title: String,
     pub position: ArgumentPosition,
     pub body: Option<String>,
@@ -48,29 +47,6 @@ pub struct UpdateArgumentInput {
 }
 
 impl Argument {
-    pub async fn create(
-        db_pool: &PgPool,
-        author_id: uuid::Uuid,
-        input: &CreateArgumentInput,
-    ) -> Result<Self, sqlx::Error> {
-        let record = sqlx::query_as!(
-            Argument,
-            r#"
-                INSERT INTO argument (title, author_id, position, body) 
-                VALUES ($1, $2, $3, $4) 
-                RETURNING id, title, author_id, position AS "position:ArgumentPosition", body, created_at, updated_at
-            "#,
-            input.title,
-            author_id,
-            input.position as ArgumentPosition,
-            input.body,
-        )
-        .fetch_one(db_pool)
-        .await?;
-
-        Ok(record)
-    }
-
     pub async fn update(
         db_pool: &PgPool,
         id: uuid::Uuid,
@@ -80,11 +56,12 @@ impl Argument {
             Argument,
             r#"
                 UPDATE argument
-                SET title = COALESCE($2, title),
-                    position = COALESCE($3, position),
-                    body = COALESCE($4, body)
-                WHERE id=$1    
-                RETURNING id, title, author_id, position AS "position:ArgumentPosition", body, created_at, updated_at
+                SET title = COALESCE($2, arg.title),
+                    position = COALESCE($3, arg.position),
+                    body = COALESCE($4, arg.body)
+                FROM argument AS arg JOIN author ON author.id = arg.author_id
+                WHERE arg.id=$1     
+                RETURNING arg.id, arg.title, arg.author_id, author_type AS "author_type:AuthorType", arg.position AS "position:ArgumentPosition", arg.body, arg.created_at, arg.updated_at
             "#,
             id,
             input.title,

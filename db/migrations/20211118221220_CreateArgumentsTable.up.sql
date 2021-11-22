@@ -8,10 +8,10 @@ CREATE TABLE author (
 );
 
 ALTER TABLE politician
-ADD CONSTRAINT fk_author_politician FOREIGN KEY (id) REFERENCES author(id);
+ADD CONSTRAINT fk_author_politician FOREIGN KEY (id) REFERENCES author(id) ON DELETE CASCADE;
 
 ALTER TABLE organization
-ADD CONSTRAINT fk_author_organization FOREIGN KEY (id) references author(id);
+ADD CONSTRAINT fk_author_organization FOREIGN KEY (id) references author(id) ON DELETE CASCADE;
 
 CREATE TABLE argument (
     id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
