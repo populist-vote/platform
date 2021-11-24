@@ -8,6 +8,7 @@ mod organization;
 mod politician;
 mod upload;
 mod user;
+
 pub use argument::ArgumentResult;
 pub use ballot_measure::BallotMeasureResult;
 pub use bill::BillResult;

@@ -2,15 +2,7 @@ use async_graphql::Enum;
 
 use crate::DateTime;
 
-#[derive(Enum, Debug, Copy, Clone, Eq, PartialEq, sqlx::Type)]
-#[sqlx(type_name = "vote_status", rename_all = "lowercase")]
-pub enum LegislationStatus {
-    INTRODUCED,
-    PASSED,
-    SIGNED,
-    VETOED,
-    UNKNOWN,
-}
+use super::enums::LegislationStatus;
 
 #[derive(sqlx::FromRow, Debug, Clone)]
 pub struct Legislation {

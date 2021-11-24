@@ -6,13 +6,12 @@ CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE OR REPLACE FUNCTION set_updated_at()
-    RETURNS TRIGGER AS
-$$
+RETURNS TRIGGER AS $$
 BEGIN
-    OLD.updated_at = NOW();
-    RETURN OLD;
+  NEW.updated_at = NOW();
+  RETURN NEW;
 END;
-$$ LANGUAGE 'plpgsql';
+$$ LANGUAGE plpgsql;
 
 CREATE TYPE vote_status AS ENUM ('introduced', 'passed', 'signed', 'vetoed', 'unknown');
 CREATE TYPE state AS ENUM (

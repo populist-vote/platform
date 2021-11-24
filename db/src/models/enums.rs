@@ -1,4 +1,5 @@
 use async_graphql::Enum;
+use strum_macros::Display;
 
 #[derive(Enum, Debug, Copy, Clone, Eq, PartialEq, sqlx::Type)]
 pub enum State {
@@ -63,4 +64,29 @@ pub enum PoliticalParty {
     LIBERTARIAN,
     GREEN,
     CONSTITUTION,
+}
+
+#[derive(Enum, Debug, Display, Copy, Clone, Eq, PartialEq, sqlx::Type)]
+#[sqlx(type_name = "author_type", rename_all = "lowercase")]
+pub enum AuthorType {
+    POLITICIAN,
+    ORGANIZATION,
+}
+
+#[derive(Enum, Display, Debug, Copy, Clone, Eq, PartialEq, sqlx::Type)]
+#[sqlx(type_name = "argument_position", rename_all = "lowercase")]
+pub enum ArgumentPosition {
+    SUPPORT,
+    NEUTRAL,
+    OPPOSE,
+}
+
+#[derive(Enum, Debug, Copy, Clone, Eq, PartialEq, sqlx::Type)]
+#[sqlx(type_name = "vote_status", rename_all = "lowercase")]
+pub enum LegislationStatus {
+    INTRODUCED,
+    PASSED,
+    SIGNED,
+    VETOED,
+    UNKNOWN,
 }

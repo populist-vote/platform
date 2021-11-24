@@ -3463,8 +3463,8 @@
       ]
     }
   },
-  "c23801dadd5adc109af76df08f789db487112bce368faefdc012f5f7878cb5dd": {
-    "query": "\n                INSERT INTO bill (slug, name, vote_status, description, official_summary, populist_summary, full_text_url) \n                VALUES ($1, $2, $3, $4, $5, $6, $7) \n                RETURNING id, slug, name, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at\n            ",
+  "c273f6931ce9af87ca3ef07c34dd307922fccfe5040ee16b72397b31d8273c49": {
+    "query": "\n                UPDATE bill\n                SET slug = COALESCE($3, slug),\n                    name = COALESCE($4, name),\n                    vote_status = COALESCE($5, vote_status),\n                    description = COALESCE($6, description),\n                    official_summary = COALESCE($7, official_summary),\n                    populist_summary = COALESCE($8, populist_summary),\n                    full_text_url = COALESCE($9, full_text_url),\n                    legiscan_bill_id = COALESCE($10, legiscan_bill_id),\n                    legiscan_data = COALESCE($11, legiscan_data)\n                WHERE id=$1\n                OR legiscan_bill_id=$2    \n                RETURNING id, slug, name, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at\n            ",
     "describe": {
       "columns": [
         {
@@ -3543,6 +3543,8 @@
       ],
       "parameters": {
         "Left": [
+          "Uuid",
+          "Int4",
           "Text",
           "Text",
           {
@@ -3562,7 +3564,9 @@
           "Text",
           "Text",
           "Text",
-          "Text"
+          "Text",
+          "Int4",
+          "Jsonb"
         ]
       },
       "nullable": [
@@ -4148,8 +4152,20 @@
       ]
     }
   },
-  "e365fb43b72d56b50c350b2cc48806ec5c92ef48e64980c240eef44478809e98": {
-    "query": "UPDATE bill\n            SET slug = COALESCE($2, slug),\n                name = COALESCE($3, name),\n                vote_status = COALESCE($4, vote_status),\n                description = COALESCE($5, description),\n                official_summary = COALESCE($6, official_summary),\n                populist_summary = COALESCE($7, populist_summary),\n                full_text_url = COALESCE($8, full_text_url)\n            WHERE id=$1    \n            RETURNING id, slug, name, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at",
+  "e42a255e6916317a184adbd8530ffa79a10f0955ffa290471893e1b6a7c226af": {
+    "query": "DELETE FROM politician WHERE id=$1",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": []
+    }
+  },
+  "e4d55d60b4b145c881d843b3803b6d13aab531a63a4e376e34c557717f7a66fb": {
+    "query": "\n                INSERT INTO bill (slug, name, vote_status, description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data) \n                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) \n                RETURNING id, slug, name, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at\n            ",
     "describe": {
       "columns": [
         {
@@ -4228,7 +4244,6 @@
       ],
       "parameters": {
         "Left": [
-          "Uuid",
           "Text",
           "Text",
           {
@@ -4248,7 +4263,9 @@
           "Text",
           "Text",
           "Text",
-          "Text"
+          "Text",
+          "Int4",
+          "Jsonb"
         ]
       },
       "nullable": [
@@ -4265,18 +4282,6 @@
         false,
         false
       ]
-    }
-  },
-  "e42a255e6916317a184adbd8530ffa79a10f0955ffa290471893e1b6a7c226af": {
-    "query": "DELETE FROM politician WHERE id=$1",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      },
-      "nullable": []
     }
   },
   "ed3b37afcaf97c1378b1a8321883c84497509d5a42c05a3917c51fb83915c113": {

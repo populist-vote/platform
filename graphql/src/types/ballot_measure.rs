@@ -1,6 +1,9 @@
 use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
 use db::{
-    models::{ballot_measure::BallotMeasure, enums::State, legislation::LegislationStatus},
+    models::{
+        ballot_measure::BallotMeasure,
+        enums::{LegislationStatus, State},
+    },
     DateTime,
 };
 use sqlx::{Pool, Postgres};

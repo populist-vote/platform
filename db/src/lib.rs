@@ -1,5 +1,6 @@
 pub mod errors;
 pub mod models;
+pub mod pool;
 
 pub type DateTime = chrono::DateTime<chrono::Utc>;
 
@@ -13,3 +14,4 @@ pub use models::issue_tag::*;
 pub use models::organization::*;
 pub use models::politician::*;
 pub use models::user::*;
+pub use pool::*;

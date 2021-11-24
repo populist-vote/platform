@@ -40,6 +40,7 @@ pub async fn upload_to_s3(file: File) -> Result<u16, Error> {
         None,
     )?;
     let bucket = Bucket::new(bucket_name, region, credentials)?;
+
     let (_, code) = bucket
         .put_object_with_content_type(
             &file.filename,

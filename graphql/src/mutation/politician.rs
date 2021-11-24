@@ -97,6 +97,7 @@ impl PoliticianMutation {
             content,
             mimetype,
         };
+
         Ok(upload_to_s3(file_info).await?)
     }
 

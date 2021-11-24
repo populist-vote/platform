@@ -1,23 +1,8 @@
+use crate::models::enums::{ArgumentPosition, AuthorType};
 use crate::DateTime;
-use async_graphql::{Enum, InputObject};
+use async_graphql::InputObject;
 use sqlx::postgres::PgPool;
 use sqlx::FromRow;
-use strum_macros::Display;
-
-#[derive(Enum, Debug, Display, Copy, Clone, Eq, PartialEq, sqlx::Type)]
-#[sqlx(type_name = "author_type", rename_all = "lowercase")]
-pub enum AuthorType {
-    POLITICIAN,
-    ORGANIZATION,
-}
-
-#[derive(Enum, Display, Debug, Copy, Clone, Eq, PartialEq, sqlx::Type)]
-#[sqlx(type_name = "argument_position", rename_all = "lowercase")]
-pub enum ArgumentPosition {
-    SUPPORT,
-    NEUTRAL,
-    OPPOSE,
-}
 
 #[derive(FromRow, Debug, Clone)]
 pub struct Argument {

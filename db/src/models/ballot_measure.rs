@@ -4,8 +4,7 @@ use slugify::slugify;
 use sqlx::postgres::PgPool;
 use sqlx::FromRow;
 
-use super::enums::State;
-use super::legislation::LegislationStatus;
+use super::enums::{LegislationStatus, State};
 
 #[derive(FromRow, Debug, Clone)]
 pub struct BallotMeasure {

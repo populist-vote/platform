@@ -44,11 +44,19 @@ impl BillMutation {
     async fn update_bill(
         &self,
         ctx: &Context<'_>,
-        id: String,
+        id: Option<String>,
+        legiscan_bill_id: Option<i32>,
         input: UpdateBillInput,
     ) -> Result<BillResult> {
+        if id.is_none() && legiscan_bill_id.is_none() {
+            panic!("Please provide a populist bill ID or legiscan bill id")
+        }
+        let id = match id {
+            Some(id) => Some(uuid::Uuid::parse_str(&id).unwrap()),
+            _ => None,
+        };
         let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let updated_record = Bill::update(db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
+        let updated_record = Bill::update(db_pool, id, legiscan_bill_id, &input).await?;
         if input.arguments.is_some() {
             handle_nested_arguments(db_pool, updated_record.id, input.arguments.unwrap()).await?;
         }

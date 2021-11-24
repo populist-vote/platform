@@ -3,5 +3,6 @@ members = [
     "auth",
     "db",
     "graphql",
+    "proxy",
     "server"
 ]

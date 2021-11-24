@@ -1,4 +1,4 @@
-use async_graphql::InputObject;
+use async_graphql::{InputObject, validators::Email};
 use pwhash::bcrypt;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool, Type};
@@ -19,6 +19,7 @@ pub struct User {
 
 #[derive(InputObject)]
 pub struct CreateUserInput {
+    #[graphql(validator(Email))]
     email: String,
     username: String,
     password: String,

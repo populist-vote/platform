@@ -1,5 +1,7 @@
-use super::enums::{PoliticalParty, State};
-use crate::{CreateOrConnectIssueTagInput, DateTime, IssueTag, Organization};
+use crate::{
+    models::enums::{PoliticalParty, State},
+    CreateOrConnectIssueTagInput, DateTime, IssueTag, Organization,
+};
 use async_graphql::InputObject;
 use slugify::slugify;
 use sqlx::postgres::PgPool;

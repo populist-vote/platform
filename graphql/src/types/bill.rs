@@ -1,7 +1,7 @@
 use crate::types::ArgumentResult;
 use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
 use db::{
-    models::{bill::Bill, legislation::LegislationStatus},
+    models::{bill::Bill, enums::LegislationStatus},
     DateTime,
 };
 use sqlx::{Pool, Postgres};
@@ -16,6 +16,7 @@ pub struct BillResult {
     official_summary: Option<String>,
     populist_summary: Option<String>,
     full_text_url: Option<String>,
+    legiscan_bill_id: Option<i32>,
     legiscan_data: serde_json::Value,
     created_at: DateTime,
     updated_at: DateTime,
@@ -42,6 +43,7 @@ impl From<Bill> for BillResult {
             official_summary: b.official_summary,
             populist_summary: b.populist_summary,
             full_text_url: b.full_text_url,
+            legiscan_bill_id: b.legiscan_bill_id,
             legiscan_data: b.legiscan_data,
             created_at: b.created_at,
             updated_at: b.updated_at,

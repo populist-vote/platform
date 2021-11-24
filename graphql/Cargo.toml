@@ -19,3 +19,4 @@ serde_json = "1.0.69"
 sqlx = { version = "0.5.9", features = ["postgres"] }
 thiserror = "1.0.30"
 uuid = "0.8.2"
+http = "0.2.5"

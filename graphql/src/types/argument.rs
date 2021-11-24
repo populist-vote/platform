@@ -1,5 +1,5 @@
 use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, Union, ID};
-use db::{models::argument::Argument, AuthorType, DateTime, Organization, Politician};
+use db::{models::enums::AuthorType, Argument, DateTime, Organization, Politician};
 use sqlx::{Pool, Postgres};
 
 use super::{OrganizationResult, PoliticianResult};
