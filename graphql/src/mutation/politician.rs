@@ -70,7 +70,7 @@ impl PoliticianMutation {
     ) -> Result<PoliticianResult, Error> {
         let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
         let updated_record =
-            Politician::update(db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
+            Politician::update(db_pool, Some(uuid::Uuid::parse_str(&id)?), None, &input).await?;
 
         if input.issue_tags.is_some() {
             handle_nested_issue_tags(db_pool, updated_record.id, input.issue_tags.unwrap()).await?;

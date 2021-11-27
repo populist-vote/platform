@@ -120,7 +120,7 @@ impl VotesmartProxy {
 
     pub async fn get_candidate_bio(
         &self,
-        candidate_id: String,
+        candidate_id: i32,
     ) -> Result<serde_json::Value, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&candidateId={candidate_id}&o=JSON",

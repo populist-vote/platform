@@ -160,7 +160,7 @@ impl Bill {
         Ok(records)
     }
 
-    pub async fn find_by_id(db_pool: &PgPool) -> Result<Self, sqlx::Error> {
+    pub async fn find_by_id(_db_pool: &PgPool) -> Result<Self, sqlx::Error> {
         todo!()
     }
 

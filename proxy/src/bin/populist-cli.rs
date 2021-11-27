@@ -62,7 +62,7 @@ struct GetBillArgs {
 #[derive(Clone, Debug, StructOpt)]
 struct GetBillTextArgs {
     #[structopt(about = "Legiscan bill ID")]
-    bill_id: String,
+    bill_id: i32,
     #[structopt(short, long, about = "Update populist record")]
     update_populist_record: bool,
     #[structopt(short, long, about = "Print fetched JSON data to console")]
@@ -78,7 +78,7 @@ enum VoteSmartAction {
 #[derive(Clone, Debug, StructOpt)]
 struct GetCandidateBioArgs {
     #[structopt(about = "Votesmart candidate ID")]
-    candidate_id: String,
+    candidate_id: i32,
     #[structopt(short, long, about = "Update populist record")]
     create_or_update_populist_record: bool,
     #[structopt(short, long, about = "Print fetched JSON data to console")]
