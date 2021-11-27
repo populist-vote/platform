@@ -1595,6 +1595,301 @@
       ]
     }
   },
+  "60c0e15290d49746a7d4a82d8fddd3325fcec7106033d51f05c7a506c73b0c88": {
+    "query": "\n                WITH pol_row AS (\n                    INSERT INTO politician AS p (id, votesmart_candidate_id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, thumbnail_image_url, home_state, website_url, facebook_url, twitter_url, instagram_url, office_party, votesmart_candidate_bio) \n                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)\n                    ON CONFLICT(id, votesmart_candidate_id) DO UPDATE\n                    SET votesmart_candidate_id = COALESCE($2, p.votesmart_candidate_id),\n                        slug = COALESCE($3, p.slug),\n                        first_name = COALESCE($4, p.first_name),\n                        middle_name = COALESCE($5, p.middle_name),\n                        last_name = COALESCE($6, p.last_name),\n                        nickname = COALESCE($7, p.nickname),\n                        preferred_name = COALESCE($8, p.preferred_name),\n                        ballot_name = COALESCE($9, p.ballot_name),\n                        description = COALESCE($10, p.description),\n                        thumbnail_image_url = COALESCE($11, p.thumbnail_image_url),\n                        home_state = COALESCE($12, p.home_state),\n                        website_url = COALESCE($13, p.website_url),\n                        facebook_url = COALESCE($14, p.facebook_url),\n                        twitter_url = COALESCE($15, p.twitter_url),\n                        instagram_url = COALESCE($16, p.instagram_url),\n                        office_party = COALESCE($17, p.office_party),\n                        votesmart_candidate_bio = COALESCE($18, p.votesmart_candidate_bio)\n                    RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS \"home_state:State\", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS \"office_party:PoliticalParty\", votesmart_candidate_id, votesmart_candidate_bio, created_at, updated_at\n                ),\n                ins_author AS (\n                    INSERT INTO author (id, author_type) VALUES ((SELECT id FROM pol_row), 'politician')\n                    ON CONFLICT DO NOTHING\n                    RETURNING id AS author_id\n                )\n                SELECT pol_row.* FROM pol_row\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "first_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "middle_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "last_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "nickname",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "preferred_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "ballot_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "home_state:State",
+          "type_info": {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 10,
+          "name": "thumbnail_image_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 11,
+          "name": "website_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "facebook_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 13,
+          "name": "twitter_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 14,
+          "name": "instagram_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 15,
+          "name": "office_party:PoliticalParty",
+          "type_info": {
+            "Custom": {
+              "name": "political_party",
+              "kind": {
+                "Enum": [
+                  "democratic",
+                  "republican",
+                  "libertarian",
+                  "green",
+                  "constitution"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 16,
+          "name": "votesmart_candidate_id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 17,
+          "name": "votesmart_candidate_bio",
+          "type_info": "Jsonb"
+        },
+        {
+          "ordinal": 18,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 19,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Int4",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          },
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "political_party",
+              "kind": {
+                "Enum": [
+                  "democratic",
+                  "republican",
+                  "libertarian",
+                  "green",
+                  "constitution"
+                ]
+              }
+            }
+          },
+          "Jsonb"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false
+      ]
+    }
+  },
   "62e9991bed122998e7ec64b4e403cd43b74b8580e3033201312a7e6bd7708228": {
     "query": "DELETE FROM organization WHERE id=$1",
     "describe": {

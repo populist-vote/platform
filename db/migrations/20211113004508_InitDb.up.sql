@@ -87,7 +87,7 @@ CREATE TABLE politician (
     instagram_url TEXT,
     office_party political_party,
     vote_smart_candidate_id TEXT,
-    votesmart_candidate_bio JSONB NOT NULL DEFAULT '{}'::jsonb,
+    vote_smart_candidate_bio JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
     updated_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
 );
