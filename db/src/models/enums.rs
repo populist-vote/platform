@@ -90,3 +90,7 @@ pub enum LegislationStatus {
     VETOED,
     UNKNOWN,
 }
+
+impl Default for LegislationStatus {
+    fn default() -> Self { LegislationStatus::INTRODUCED }
+}

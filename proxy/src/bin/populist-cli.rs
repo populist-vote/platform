@@ -1,7 +1,7 @@
-use db::UpdateBillInput;
+use db::{UpdateBillInput, UpdatePoliticianInput};
 use structopt::StructOpt;
 
-use proxy::{Error, LegiscanProxy};
+use proxy::{Error, LegiscanProxy, VotesmartProxy};
 
 static POPULIST: &'static str = r#"
 8888888b.   .d88888b.  8888888b.  888     888 888      8888888 .d8888b. 88888888888 
@@ -11,7 +11,7 @@ static POPULIST: &'static str = r#"
 8888888P"  888     888 8888888P"  888     888 888        888      "Y88b.    888     
 888        888     888 888        888     888 888        888        "888    888     
 888        Y88b. .d88P 888        Y88b. .d88P 888        888  Y88b  d88P    888     
-888         "Y88888P"  888         "Y88888P"  88888888 8888888 "Y8888P"     WMC      
+888         "Y88888P"  888         "Y8WMC8P"  POPULIST 88CLI88 "Y8888P"     888      
 "#;
 
 #[derive(Clone, Debug, StructOpt)]
@@ -51,17 +51,17 @@ enum LegiscanAction {
 
 #[derive(Clone, Debug, StructOpt)]
 struct GetBillArgs {
-    #[structopt(about = "Legiscan bill id")]
+    #[structopt(about = "Legiscan bill ID")]
     bill_id: i32,
-    #[structopt(short, long, about = "Update populist record")]
-    update_populist_record: bool,
+    #[structopt(short, long, about = "Create or update Populist bill record")]
+    create_or_update_populist_record: bool,
     #[structopt(short, long, about = "Print fetched JSON data to console")]
     pretty_print: bool,
 }
 
 #[derive(Clone, Debug, StructOpt)]
 struct GetBillTextArgs {
-    #[structopt(about = "Legiscan bill id")]
+    #[structopt(about = "Legiscan bill ID")]
     bill_id: String,
     #[structopt(short, long, about = "Update populist record")]
     update_populist_record: bool,
@@ -71,7 +71,18 @@ struct GetBillTextArgs {
 
 #[derive(Clone, Debug, StructOpt)]
 enum VoteSmartAction {
-    GetCandidate { candidate_id: String },
+    /// Get candidate bio from Votesmart
+    GetCandidateBio(GetCandidateBioArgs),
+}
+
+#[derive(Clone, Debug, StructOpt)]
+struct GetCandidateBioArgs {
+    #[structopt(about = "Votesmart candidate ID")]
+    candidate_id: String,
+    #[structopt(short, long, about = "Update populist record")]
+    create_or_update_populist_record: bool,
+    #[structopt(short, long, about = "Print fetched JSON data to console")]
+    pretty_print: bool,
 }
 
 #[tokio::main]
@@ -100,15 +111,21 @@ async fn main() -> Result<(), Error> {
         }
     }
 
-    async fn get_bill(args: GetBillArgs) -> Result<(), Error> {
+    async fn handle_votesmart_action(action: VoteSmartAction) -> Result<(), Error> {
+        match action {
+            VoteSmartAction::GetCandidateBio(args) => get_candidate_bio(args).await,
+        }
+    }
+
+    async fn get_candidate_bio(args: GetCandidateBioArgs) -> Result<(), Error> {
         println!(
-            "\n▶️ FETCHING BILL DATA FROM LEGISCAN\n  📖 bill_id: {}",
-            args.bill_id
+            "\n▶️ FETCHING CANDIDATE BIO FROM LEGISCAN\n  📖 candidate_id: {}",
+            args.candidate_id
         );
 
-        let data = LegiscanProxy::new()
+        let data = VotesmartProxy::new()
             .unwrap()
-            .get_bill("234444".to_string())
+            .get_candidate_bio(args.candidate_id)
             .await;
 
         let data = data.unwrap().clone();
@@ -117,7 +134,36 @@ async fn main() -> Result<(), Error> {
             println!("{}", serde_json::to_string_pretty(&data).unwrap());
         }
 
-        if args.update_populist_record {
+        if args.create_or_update_populist_record {
+            let pool = db::pool().await;
+            let input = UpdatePoliticianInput {
+                votesmart_candidate_bio: Some(data.clone()),
+                ..Default::default()
+            };
+            let updated_record = db::Politician::update(&pool.connection, None, Some(args.candidate_id), &input).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn get_bill(args: GetBillArgs) -> Result<(), Error> {
+        println!(
+            "\n▶️ FETCHING BILL DATA FROM LEGISCAN\n  📖 bill_id: {}",
+            args.bill_id
+        );
+
+        let data = LegiscanProxy::new()
+            .unwrap()
+            .get_bill(args.bill_id.to_string())
+            .await;
+
+        let data = data.unwrap().clone();
+
+        if args.pretty_print {
+            println!("{}", serde_json::to_string_pretty(&data).unwrap());
+        }
+
+        if args.create_or_update_populist_record {
             let pool = db::pool().await;
             let input = UpdateBillInput {
                 legiscan_data: Some(data.clone()),
@@ -125,7 +171,11 @@ async fn main() -> Result<(), Error> {
             };
             let updated_record =
                 db::Bill::update(&pool.connection, None, Some(args.bill_id), &input).await?;
-            println!("\n Populist bill record has been updated with legiscan data \n Populist bill: {}", updated_record.id);
+
+            println!(
+                "\n✅ Populist bill with id {} has been updated with legiscan data",
+                updated_record.id
+            );
         }
 
         Ok(())
@@ -134,10 +184,6 @@ async fn main() -> Result<(), Error> {
     async fn get_bill_text(args: GetBillTextArgs) -> Result<(), Error> {
         println!("{:?}", args.bill_id);
         Ok(())
-    }
-
-    async fn handle_votesmart_action(action: VoteSmartAction) -> Result<(), Error> {
-        todo!()
     }
 
     Ok(())

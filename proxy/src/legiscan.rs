@@ -24,7 +24,7 @@ struct GetBillTextResponse {
 }
 
 impl LegiscanProxy {
-    pub fn new() -> Result<LegiscanProxy, Error> {
+    pub fn new() -> Result<Self, Error> {
         dotenv::dotenv().ok();
         let api_key = std::env::var("LEGISCAN_API_KEY")?;
         let client = reqwest::Client::new();

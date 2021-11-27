@@ -153,7 +153,7 @@ impl IssueTag {
         let records = sqlx::query_as!(
             Politician,
             r#"
-                SELECT p.id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", p.created_at, p.updated_at FROM politician p
+                SELECT p.id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, p.created_at, p.updated_at FROM politician p
                 JOIN politician_issue_tags
                 ON politician_issue_tags.politician_id = p.id
                 WHERE politician_issue_tags.issue_tag_id = $1

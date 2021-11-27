@@ -5,8 +5,8 @@ use crate::{
 use async_graphql::InputObject;
 use serde_json::Value;
 use slugify::slugify;
-use sqlx::{postgres::PgPool, types::Json};
 use sqlx::FromRow;
+use sqlx::{postgres::PgPool};
 
 #[derive(FromRow, Debug, Clone)]
 pub struct Bill {
@@ -63,7 +63,10 @@ impl Bill {
     pub async fn create(db_pool: &PgPool, input: &CreateBillInput) -> Result<Self, sqlx::Error> {
         let slug = slugify!(&input.name); // TODO run a query and ensure this is Unique
 
-        let legiscan_data = input.legiscan_data.clone().unwrap_or(serde_json::from_str("{}").unwrap());
+        let legiscan_data = input
+            .legiscan_data
+            .clone()
+            .unwrap_or(serde_json::from_str("{}").unwrap());
 
         let record = sqlx::query_as!(
             Bill,
@@ -125,6 +128,7 @@ impl Bill {
         ).fetch_one(db_pool).await?;
         Ok(record)
     }
+
 
     pub async fn delete(db_pool: &PgPool, id: uuid::Uuid) -> Result<(), sqlx::Error> {
         sqlx::query!("DELETE FROM bill WHERE id=$1", id)

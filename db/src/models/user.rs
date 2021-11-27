@@ -1,4 +1,4 @@
-use async_graphql::{InputObject, validators::Email};
+use async_graphql::{validators::Email, InputObject};
 use pwhash::bcrypt;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool, Type};

@@ -24,6 +24,8 @@ pub struct Politician {
     pub twitter_url: Option<String>,
     pub instagram_url: Option<String>,
     pub office_party: Option<PoliticalParty>,
+    pub votesmart_candidate_id: Option<i32>,
+    pub votesmart_candidate_bio: serde_json::Value,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
@@ -47,7 +49,7 @@ pub struct CreatePoliticianInput {
     pub issue_tags: Option<CreateOrConnectIssueTagInput>,
 }
 
-#[derive(InputObject)]
+#[derive(InputObject, Default)]
 pub struct UpdatePoliticianInput {
     pub first_name: Option<String>,
     pub middle_name: Option<String>,
@@ -64,6 +66,8 @@ pub struct UpdatePoliticianInput {
     pub instagram_url: Option<String>,
     pub office_party: Option<PoliticalParty>,
     pub issue_tags: Option<CreateOrConnectIssueTagInput>,
+    pub votesmart_candidate_id: Option<i32>,
+    pub votesmart_candidate_bio: Option<serde_json::Value>,
 }
 
 #[derive(InputObject)]
@@ -105,7 +109,7 @@ impl Politician {
                 p AS (
                     INSERT INTO politician (id, slug, first_name, middle_name, last_name, home_state, office_party) 
                     VALUES ((SELECT author_id FROM ins_author), $1, $2, $3, $4, $5, $6)
-                    RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", created_at, updated_at
+                    RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, created_at, updated_at
                 )
                 SELECT p.* FROM p
             "#,
@@ -124,7 +128,8 @@ impl Politician {
 
     pub async fn update(
         db_pool: &PgPool,
-        id: uuid::Uuid,
+        id: Option<uuid::Uuid>,
+        votesmart_candidate_id: Option<i32>,
         input: &UpdatePoliticianInput,
     ) -> Result<Self, sqlx::Error> {
         let record = sqlx::query_as!(
@@ -145,7 +150,8 @@ impl Politician {
                 instagram_url = COALESCE($14, instagram_url),
                 office_party = COALESCE($15, office_party)
             WHERE id=$1
-            RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", created_at, updated_at"#,
+            OR votesmart_candidate_id = $16
+            RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, created_at, updated_at"#,
             id,
             input.first_name,
             input.middle_name,
@@ -161,12 +167,14 @@ impl Politician {
             input.twitter_url,
             input.instagram_url,
             input.office_party as Option<PoliticalParty>,
+            votesmart_candidate_id
         )
         .fetch_one(db_pool)
         .await?;
 
         Ok(record)
     }
+
 
     pub async fn delete(db_pool: &PgPool, id: uuid::Uuid) -> Result<(), sqlx::Error> {
         sqlx::query!("DELETE FROM politician WHERE id=$1", id)
@@ -176,7 +184,7 @@ impl Politician {
     }
 
     pub async fn index(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
-        let records = sqlx::query_as!(Politician, r#"SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", created_at, updated_at FROM politician"#,)
+        let records = sqlx::query_as!(Politician, r#"SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, created_at, updated_at FROM politician"#,)
             .fetch_all(db_pool)
             .await?;
         Ok(records)
@@ -185,18 +193,17 @@ impl Politician {
     pub async fn find_by_id(db_pool: &PgPool, id: uuid::Uuid) -> Result<Self, sqlx::Error> {
         let record = sqlx::query_as!(Politician,
             r#"
-                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", created_at, updated_at FROM politician
+                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, created_at, updated_at FROM politician
                 WHERE id = $1
             "#, id)
             .fetch_one(db_pool).await?;
-
         Ok(record)
     }
 
     pub async fn find_by_slug(db_pool: &PgPool, slug: String) -> Result<Self, sqlx::Error> {
         let record = sqlx::query_as!(Politician,
             r#"
-                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", created_at, updated_at FROM politician
+                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, created_at, updated_at FROM politician
                 WHERE slug = $1
             "#, slug)
             .fetch_one(db_pool).await?;
@@ -210,7 +217,7 @@ impl Politician {
     ) -> Result<Vec<Self>, sqlx::Error> {
         let records = sqlx::query_as!(
             Politician,
-            r#"SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", created_at, updated_at FROM politician
+            r#"SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, created_at, updated_at FROM politician
              WHERE $1::state IS NULL OR home_state = $1
              AND $2::text IS NULL OR levenshtein($2, last_name) <=5
              AND $3::political_party IS NULL OR office_party = $3"#,
