@@ -137,10 +137,16 @@ async fn main() -> Result<(), Error> {
         if args.create_or_update_populist_record {
             let pool = db::pool().await;
             let input = UpdatePoliticianInput {
-                votesmart_candidate_bio: Some(data.clone()),
+                votesmart_candidate_bio: Some(data.clone().into()),
                 ..Default::default()
             };
-            let updated_record = db::Politician::update(&pool.connection, None, Some(args.candidate_id), &input).await?;
+            let updated_record =
+                db::Politician::update(&pool.connection, None, Some(args.candidate_id), &input)
+                    .await?;
+            println!(
+                "\n✅ Populist politician with id {} has been updated with Votesmart data",
+                updated_record.id
+            );
         }
 
         Ok(())

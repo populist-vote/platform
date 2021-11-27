@@ -47,6 +47,8 @@ pub struct CreatePoliticianInput {
     pub instagram_url: Option<String>,
     pub office_party: Option<PoliticalParty>,
     pub issue_tags: Option<CreateOrConnectIssueTagInput>,
+    pub votesmart_candidate_id: Option<i32>,
+    pub votesmart_candidate_bio: Option<serde_json::Value>,
 }
 
 #[derive(InputObject, Default)]
@@ -107,8 +109,8 @@ impl Politician {
                     RETURNING id AS author_id
                 ),
                 p AS (
-                    INSERT INTO politician (id, slug, first_name, middle_name, last_name, home_state, office_party) 
-                    VALUES ((SELECT author_id FROM ins_author), $1, $2, $3, $4, $5, $6)
+                    INSERT INTO politician (id, slug, first_name, middle_name, last_name, home_state, office_party, votesmart_candidate_id, votesmart_candidate_bio) 
+                    VALUES ((SELECT author_id FROM ins_author), $1, $2, $3, $4, $5, $6, $7, $8)
                     RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, created_at, updated_at
                 )
                 SELECT p.* FROM p
@@ -119,6 +121,8 @@ impl Politician {
             input.last_name,
             input.home_state as State,
             input.office_party as Option<PoliticalParty>,
+            input.votesmart_candidate_id,
+            input.votesmart_candidate_bio
         )
         .fetch_one(db_pool)
         .await?;
@@ -134,25 +138,29 @@ impl Politician {
     ) -> Result<Self, sqlx::Error> {
         let record = sqlx::query_as!(
             Politician,
-            r#"UPDATE politician 
-            SET first_name = COALESCE($2, first_name),
-                middle_name = COALESCE($3, middle_name),
-                last_name = COALESCE($4, last_name),
-                nickname = COALESCE($5, nickname),
-                preferred_name = COALESCE($6, preferred_name),
-                ballot_name = COALESCE($7, ballot_name),
-                description = COALESCE($8, description),
-                thumbnail_image_url = COALESCE($9, thumbnail_image_url),
-                home_state= COALESCE($10, home_state),
-                website_url = COALESCE($11, website_url),
-                facebook_url = COALESCE($12, facebook_url),
-                twitter_url = COALESCE($13, twitter_url),
-                instagram_url = COALESCE($14, instagram_url),
-                office_party = COALESCE($15, office_party)
-            WHERE id=$1
-            OR votesmart_candidate_id = $16
-            RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, created_at, updated_at"#,
+            r#"
+                UPDATE politician 
+                SET first_name = COALESCE($3, first_name),
+                    middle_name = COALESCE($4, middle_name),
+                    last_name = COALESCE($5, last_name),
+                    nickname = COALESCE($6, nickname),
+                    preferred_name = COALESCE($7, preferred_name),
+                    ballot_name = COALESCE($8, ballot_name),
+                    description = COALESCE($9, description),
+                    thumbnail_image_url = COALESCE($10, thumbnail_image_url),
+                    home_state= COALESCE($11, home_state),
+                    website_url = COALESCE($12, website_url),
+                    facebook_url = COALESCE($13, facebook_url),
+                    twitter_url = COALESCE($14, twitter_url),
+                    instagram_url = COALESCE($15, instagram_url),
+                    office_party = COALESCE($16, office_party),
+                    votesmart_candidate_bio = COALESCE($17, votesmart_candidate_bio)
+                WHERE id=$1
+                OR votesmart_candidate_id = $2
+                RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, created_at, updated_at
+            "#,
             id,
+            votesmart_candidate_id,
             input.first_name,
             input.middle_name,
             input.last_name,
@@ -167,14 +175,13 @@ impl Politician {
             input.twitter_url,
             input.instagram_url,
             input.office_party as Option<PoliticalParty>,
-            votesmart_candidate_id
+            input.votesmart_candidate_bio
         )
         .fetch_one(db_pool)
         .await?;
 
         Ok(record)
     }
-
 
     pub async fn delete(db_pool: &PgPool, id: uuid::Uuid) -> Result<(), sqlx::Error> {
         sqlx::query!("DELETE FROM politician WHERE id=$1", id)

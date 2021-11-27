@@ -118,10 +118,7 @@ impl VotesmartProxy {
         })
     }
 
-    pub async fn get_candidate_bio(
-        &self,
-        candidate_id: i32,
-    ) -> Result<serde_json::Value, Error> {
+    pub async fn get_candidate_bio(&self, candidate_id: i32) -> Result<serde_json::Value, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&candidateId={candidate_id}&o=JSON",
             base_url = self.base_url,
@@ -132,7 +129,7 @@ impl VotesmartProxy {
 
         let response = self.client.get(url).send().await.unwrap();
         let json: serde_json::Value = response.json().await?;
-        // let bio: GetCandidateBioResponse = serde_json::from_value(json).unwrap();
-        Ok(json)
+        let bio = &json["bio"];
+        Ok(bio.to_owned())
     }
 }

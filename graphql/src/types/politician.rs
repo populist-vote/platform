@@ -34,6 +34,8 @@ pub struct PoliticianResult {
     facebook_url: Option<String>,
     instagram_url: Option<String>,
     office_party: Option<PoliticalParty>,
+    votesmart_candidate_id: i32,
+    votesmart_candidate_bio: serde_json::Value,
     created_at: DateTime,
     updated_at: DateTime,
 }
@@ -87,6 +89,8 @@ impl From<Politician> for PoliticianResult {
             facebook_url: p.facebook_url,
             instagram_url: p.instagram_url,
             office_party: p.office_party,
+            votesmart_candidate_id: p.votesmart_candidate_id.unwrap(),
+            votesmart_candidate_bio: p.votesmart_candidate_bio,
             created_at: p.created_at,
             updated_at: p.updated_at,
         }
