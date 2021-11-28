@@ -2,10 +2,10 @@ use crate::{
     models::enums::{PoliticalParty, State},
     CreateOrConnectIssueTagInput, DateTime, IssueTag, Organization,
 };
-use async_graphql::InputObject;
+use async_graphql::{InputObject, ID};
 use serde_json::Value;
 use slugify::slugify;
-use sqlx::{FromRow, postgres::PgPool};
+use sqlx::{postgres::PgPool, FromRow};
 
 #[derive(FromRow, Debug, Clone)]
 pub struct Politician {
@@ -26,16 +26,17 @@ pub struct Politician {
     pub instagram_url: Option<String>,
     pub office_party: Option<PoliticalParty>,
     pub votesmart_candidate_id: Option<i32>,
-    pub votesmart_candidate_bio: serde_json::Value,
+    pub votesmart_candidate_bio: Value,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
 
-#[derive(InputObject)]
+#[derive(InputObject, Default)]
 pub struct CreatePoliticianInput {
     pub first_name: String,
     pub middle_name: Option<String>,
     pub last_name: String,
+    pub slug: String,
     pub nickname: Option<String>,
     pub preferred_name: Option<String>,
     pub ballot_name: Option<String>,
@@ -57,29 +58,7 @@ pub struct UpdatePoliticianInput {
     pub first_name: Option<String>,
     pub middle_name: Option<String>,
     pub last_name: Option<String>,
-    pub nickname: Option<String>,
-    pub preferred_name: Option<String>,
-    pub ballot_name: Option<String>,
-    pub description: Option<String>,
-    pub home_state: Option<State>,
-    pub thumbnail_image_url: Option<String>,
-    pub website_url: Option<String>,
-    pub facebook_url: Option<String>,
-    pub twitter_url: Option<String>,
-    pub instagram_url: Option<String>,
-    pub office_party: Option<PoliticalParty>,
-    pub issue_tags: Option<CreateOrConnectIssueTagInput>,
-    pub votesmart_candidate_id: Option<i32>,
-    pub votesmart_candidate_bio: Option<Value>,
-}
-
-#[derive(InputObject, Default)]
-pub struct UpsertPoliticianInput {
-    pub id: Option<String>,
     pub slug: Option<String>,
-    pub first_name: Option<String>,
-    pub middle_name: Option<String>,
-    pub last_name: Option<String>,
     pub nickname: Option<String>,
     pub preferred_name: Option<String>,
     pub ballot_name: Option<String>,
@@ -185,68 +164,6 @@ impl Politician {
             "#,
             id,
             votesmart_candidate_id,
-            input.first_name,
-            input.middle_name,
-            input.last_name,
-            input.nickname,
-            input.preferred_name,
-            input.ballot_name,
-            input.description,
-            input.thumbnail_image_url,
-            input.home_state as Option<State>,
-            input.website_url,
-            input.facebook_url,
-            input.twitter_url,
-            input.instagram_url,
-            input.office_party as Option<PoliticalParty>,
-            input.votesmart_candidate_bio
-        )
-        .fetch_one(db_pool)
-        .await?;
-
-        Ok(record)
-    }
-
-    pub async fn upsert(
-        db_pool: &PgPool,
-        input: UpsertPoliticianInput,
-    ) -> Result<Self, sqlx::Error> {
-        let record = sqlx::query_as!(
-            Politician,
-            r#"
-                WITH pol_row AS (
-                    INSERT INTO politician AS p (id, votesmart_candidate_id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, thumbnail_image_url, home_state, website_url, facebook_url, twitter_url, instagram_url, office_party, votesmart_candidate_bio) 
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
-                    ON CONFLICT(id, votesmart_candidate_id) DO UPDATE
-                    SET votesmart_candidate_id = COALESCE($2, p.votesmart_candidate_id),
-                        slug = COALESCE($3, p.slug),
-                        first_name = COALESCE($4, p.first_name),
-                        middle_name = COALESCE($5, p.middle_name),
-                        last_name = COALESCE($6, p.last_name),
-                        nickname = COALESCE($7, p.nickname),
-                        preferred_name = COALESCE($8, p.preferred_name),
-                        ballot_name = COALESCE($9, p.ballot_name),
-                        description = COALESCE($10, p.description),
-                        thumbnail_image_url = COALESCE($11, p.thumbnail_image_url),
-                        home_state = COALESCE($12, p.home_state),
-                        website_url = COALESCE($13, p.website_url),
-                        facebook_url = COALESCE($14, p.facebook_url),
-                        twitter_url = COALESCE($15, p.twitter_url),
-                        instagram_url = COALESCE($16, p.instagram_url),
-                        office_party = COALESCE($17, p.office_party),
-                        votesmart_candidate_bio = COALESCE($18, p.votesmart_candidate_bio)
-                    RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, created_at, updated_at
-                ),
-                ins_author AS (
-                    INSERT INTO author (id, author_type) VALUES ((SELECT id FROM pol_row), 'politician')
-                    ON CONFLICT DO NOTHING
-                    RETURNING id AS author_id
-                )
-                SELECT pol_row.* FROM pol_row
-            "#,
-            uuid::Uuid::parse_str(&input.id.unwrap()).unwrap(),
-            input.votesmart_candidate_id,
-            input.slug,
             input.first_name,
             input.middle_name,
             input.last_name,

@@ -5,7 +5,7 @@ use crate::{
 use async_graphql::InputObject;
 use serde_json::Value;
 use slugify::slugify;
-use sqlx::{FromRow, postgres::PgPool};
+use sqlx::{postgres::PgPool, FromRow};
 
 #[derive(FromRow, Debug, Clone)]
 pub struct Bill {
@@ -127,7 +127,6 @@ impl Bill {
         ).fetch_one(db_pool).await?;
         Ok(record)
     }
-
 
     pub async fn delete(db_pool: &PgPool, id: uuid::Uuid) -> Result<(), sqlx::Error> {
         sqlx::query!("DELETE FROM bill WHERE id=$1", id)

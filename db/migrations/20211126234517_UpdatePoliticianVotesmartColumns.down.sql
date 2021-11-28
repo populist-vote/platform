@@ -7,3 +7,9 @@ ALTER TABLE politician
 
 ALTER TABLE politician
     RENAME COLUMN votesmart_candidate_bio TO vote_smart_candidate_bio;
+
+ALTER TABLE politician
+    DROP CONSTRAINT votesmart_unique;
+
+ALTER TABLE politician   
+    DROP UNIQUE (id, votesmart_candidate_id);

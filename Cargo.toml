@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "auth",
+    "cli",
     "db",
     "graphql",
     "proxy",

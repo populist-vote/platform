@@ -4,4 +4,4 @@ mod votesmart;
 
 pub use errors::Error;
 pub use legiscan::LegiscanProxy;
-pub use votesmart::VotesmartProxy;
+pub use votesmart::{GetCandidateBioResponse, VotesmartProxy};

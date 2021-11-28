@@ -1,0 +1,14 @@
+[package]
+name = "cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+db = { path = "../db" }
+proxy = { path = "../proxy" }
+dotenv = "0.15.0"
+structopt = "0.3.25"
+serde_json = "1.0.71"
+tokio = { version = "1.8", features = ["full"] }
+sqlx = { version = "0.5.9", features = ["postgres", "offline"] }
+slugify = "0.1.0"

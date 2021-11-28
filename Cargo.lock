@@ -460,6 +460,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "cli"
+version = "0.1.0"
+dependencies = [
+ "db",
+ "dotenv",
+ "proxy",
+ "serde_json",
+ "slugify",
+ "sqlx",
+ "structopt",
+ "tokio",
+]
+
+[[package]]
 name = "concurrent-queue"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -624,6 +638,7 @@ dependencies = [
  "dotenv",
  "lazy_static",
  "once_cell",
+ "proxy",
  "pwhash",
  "serde",
  "serde_json",
@@ -1794,7 +1809,6 @@ dependencies = [
 name = "proxy"
 version = "0.1.0"
 dependencies = [
- "db",
  "dotenv",
  "enum-utils",
  "reqwest",

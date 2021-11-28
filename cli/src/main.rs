@@ -1,4 +1,10 @@
-use db::{UpdateBillInput, UpdatePoliticianInput};
+use slugify::slugify;
+use std::str::FromStr;
+
+use db::{
+    models::enums::{PoliticalParty, State},
+    CreatePoliticianInput, UpdateBillInput, UpdatePoliticianInput,
+};
 use structopt::StructOpt;
 
 use proxy::{Error, LegiscanProxy, VotesmartProxy};
@@ -53,8 +59,10 @@ enum LegiscanAction {
 struct GetBillArgs {
     #[structopt(about = "Legiscan bill ID")]
     bill_id: i32,
-    #[structopt(short, long, about = "Create or update Populist bill record")]
-    create_or_update_populist_record: bool,
+    #[structopt(short, long, about = "Create populist record")]
+    create_record: bool,
+    #[structopt(short, long, about = "Update populist record")]
+    update_record: bool,
     #[structopt(short, long, about = "Print fetched JSON data to console")]
     pretty_print: bool,
 }
@@ -63,8 +71,10 @@ struct GetBillArgs {
 struct GetBillTextArgs {
     #[structopt(about = "Legiscan bill ID")]
     bill_id: i32,
+    #[structopt(short, long, about = "Create populist record")]
+    create_record: bool,
     #[structopt(short, long, about = "Update populist record")]
-    update_populist_record: bool,
+    update_record: bool,
     #[structopt(short, long, about = "Print fetched JSON data to console")]
     pretty_print: bool,
 }
@@ -79,8 +89,10 @@ enum VoteSmartAction {
 struct GetCandidateBioArgs {
     #[structopt(about = "Votesmart candidate ID")]
     candidate_id: i32,
+    #[structopt(short, long, about = "Create populist record")]
+    create_record: bool,
     #[structopt(short, long, about = "Update populist record")]
-    create_or_update_populist_record: bool,
+    update_record: bool,
     #[structopt(short, long, about = "Print fetched JSON data to console")]
     pretty_print: bool,
 }
@@ -130,19 +142,71 @@ async fn main() -> Result<(), Error> {
 
         let data = data.unwrap().clone();
 
+        // guard to ensure there is data before proceeding
+
         if args.pretty_print {
             println!("{}", serde_json::to_string_pretty(&data).unwrap());
         }
 
-        if args.create_or_update_populist_record {
+        if args.create_record {
             let pool = db::pool().await;
+            let vs_id = data["candidate"]["candidateId"]
+                .as_str()
+                .unwrap()
+                .parse::<i32>()
+                .unwrap();
+            let first_name = data["candidate"]["firstName"].as_str().unwrap().to_string();
+            let middle_name = Some(
+                data["candidate"]["middleName"]
+                    .as_str()
+                    .unwrap()
+                    .to_string(),
+            );
+            let last_name = data["candidate"]["lastName"].as_str().unwrap().to_string();
+            let full_name = format!(
+                "{:?} {:?}",
+                data["candidate"]["firstName"], data["candidate"]["lastName"]
+            );
+            let slug = slugify!(&full_name);
+            let home_state =
+                State::from_str(&data["candidate"]["homeState"].as_str().unwrap()).unwrap();
+            let office_party = Some(
+                PoliticalParty::from_str(&data["office"]["parties"].as_str().unwrap_or_else(|| ""))
+                    .unwrap_or_default(),
+            );
+
+            let input = CreatePoliticianInput {
+                first_name,
+                middle_name,
+                last_name,
+                slug,
+                home_state,
+                office_party,
+                votesmart_candidate_id: Some(vs_id),
+                votesmart_candidate_bio: Some(serde_json::to_value(data.clone()).unwrap()),
+                ..Default::default()
+            };
+
+            let new_record = db::Politician::create(&pool.connection, &input).await?;
+            println!(
+                "\n✅ Populist politician with id {} has been create and seeded with Votesmart data",
+                new_record.id
+            );
+        }
+
+        if args.update_record {
+            let pool = db::pool().await;
+            let vs_id = data["candidate"]["candidateId"]
+                .to_string()
+                .parse::<i32>()
+                .unwrap();
+
             let input = UpdatePoliticianInput {
-                votesmart_candidate_bio: Some(data.clone().into()),
+                votesmart_candidate_bio: Some(serde_json::to_value(data.clone()).unwrap()),
                 ..Default::default()
             };
             let updated_record =
-                db::Politician::update(&pool.connection, None, Some(args.candidate_id), &input)
-                    .await?;
+                db::Politician::update(&pool.connection, None, Some(vs_id), &input).await?;
             println!(
                 "\n✅ Populist politician with id {} has been updated with Votesmart data",
                 updated_record.id
@@ -169,7 +233,7 @@ async fn main() -> Result<(), Error> {
             println!("{}", serde_json::to_string_pretty(&data).unwrap());
         }
 
-        if args.create_or_update_populist_record {
+        if args.update_record {
             let pool = db::pool().await;
             let input = UpdateBillInput {
                 legiscan_data: Some(data.clone()),

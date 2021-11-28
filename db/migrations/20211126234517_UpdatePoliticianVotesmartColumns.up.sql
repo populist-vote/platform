@@ -8,6 +8,11 @@ ALTER TABLE politician
 ALTER TABLE politician    
     ALTER COLUMN votesmart_candidate_id TYPE INT USING (trim(votesmart_candidate_id)::integer);
 
+ALTER TABLE politician
+    ADD CONSTRAINT votesmart_unique UNIQUE (votesmart_candidate_id);
+
 ALTER TABLE politician   
     ADD UNIQUE (id, votesmart_candidate_id);
+
+ALTER TYPE political_party ADD VALUE 'unknown';
 
