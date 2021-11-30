@@ -16,3 +16,4 @@ strum_macros = "0.23.1"
 thiserror = "1.0.30"
 tokio = { version = "1.8", features = ["full"] }
 sqlx = { version = "0.5.9", features = ["postgres", "offline"] }
+async-graphql = { version = "3.0.10", features = ["uuid", "chrono", "unblock"] }

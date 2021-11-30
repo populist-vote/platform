@@ -208,16 +208,13 @@ async fn main() -> Result<(), Error> {
 
         let data = data.unwrap().clone();
 
-        match data {
-            serde_json::Value::Null => {
+        if data == serde_json::Value::Null {
                 println!(
                     "Bill with bill_id: {} does not exist in the Legiscan API",
                     args.bill_id
                 );
                 std::process::exit(0);
             }
-            _ => (),
-        }
 
         if args.pretty_print {
             println!("{}", serde_json::to_string_pretty(&data).unwrap());

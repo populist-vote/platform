@@ -6,6 +6,7 @@ use db::{
     },
     DateTime,
 };
+use proxy::GetCandidateBioResponse;
 use sqlx::{Pool, Postgres};
 
 use super::{IssueTagResult, OrganizationResult};
@@ -35,7 +36,7 @@ pub struct PoliticianResult {
     instagram_url: Option<String>,
     office_party: Option<PoliticalParty>,
     votesmart_candidate_id: i32,
-    votesmart_candidate_bio: serde_json::Value,
+    votesmart_candidate_bio: GetCandidateBioResponse,
     created_at: DateTime,
     updated_at: DateTime,
 }
@@ -90,7 +91,7 @@ impl From<Politician> for PoliticianResult {
             instagram_url: p.instagram_url,
             office_party: p.office_party,
             votesmart_candidate_id: p.votesmart_candidate_id.unwrap(),
-            votesmart_candidate_bio: p.votesmart_candidate_bio,
+            votesmart_candidate_bio: serde_json::from_value(p.votesmart_candidate_bio.to_owned()).unwrap(),
             created_at: p.created_at,
             updated_at: p.updated_at,
         }

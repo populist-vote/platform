@@ -227,10 +227,12 @@ impl Politician {
     ) -> Result<Vec<Self>, sqlx::Error> {
         let records = sqlx::query_as!(
             Politician,
-            r#"SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, created_at, updated_at FROM politician
-             WHERE $1::state IS NULL OR home_state = $1
-             AND $2::text IS NULL OR levenshtein($2, last_name) <=5
-             AND $3::political_party IS NULL OR office_party = $3"#,
+            r#"
+                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, created_at, updated_at FROM politician
+                WHERE ($1::state IS NULL OR home_state = $1)
+                AND ($2::text IS NULL OR levenshtein($2, last_name) <=2)
+                AND ($3::political_party IS NULL OR office_party = $3)
+            "#,
             search.home_state as Option<State>,
             search.last_name,
             search.office_party as Option<PoliticalParty>,

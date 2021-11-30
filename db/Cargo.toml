@@ -12,7 +12,7 @@ tokio = { version = "1.8", features = ["full"] }
 uuid = { version = "0.8", features = ["serde", "v4"] }
 lazy_static = "*"
 serde = "1.0.130"
-async-graphql = { version = "2.10.8", features = ["chrono"] }
+async-graphql = { version = "3.0.10", features = ["chrono"] }
 dotenv = "*"
 anyhow = "1.0.45"
 strum = "0.22.0"
