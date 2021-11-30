@@ -2,7 +2,7 @@ use crate::{
     models::enums::{PoliticalParty, State},
     CreateOrConnectIssueTagInput, DateTime, IssueTag, Organization,
 };
-use async_graphql::{InputObject, ID};
+use async_graphql::InputObject;
 use serde_json::Value;
 use slugify::slugify;
 use sqlx::{postgres::PgPool, FromRow};
