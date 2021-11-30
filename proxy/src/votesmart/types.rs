@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct GetCandidateBioResponse {
     pub general_info: GeneralInfo,
     pub candidate: Candidate,
-    pub office: Option<Office>
+    pub office: Option<Office>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]

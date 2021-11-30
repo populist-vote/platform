@@ -137,20 +137,21 @@ async fn main() -> Result<(), Error> {
 
         if args.create_record {
             let pool = db::pool().await;
-            let vs_id = data.candidate.candidate_id.to_owned()
+            let vs_id = data
+                .candidate
+                .candidate_id
+                .to_owned()
                 .parse::<i32>()
                 .unwrap();
             let first_name = data.candidate.first_name.to_owned();
-            let middle_name = Some(
-                data.candidate.middle_name.to_owned(),
-            );
+            let middle_name = Some(data.candidate.middle_name.to_owned());
             let last_name = data.candidate.last_name.to_owned();
-            let full_name = format!( "{:?} {:?}",
+            let full_name = format!(
+                "{:?} {:?}",
                 data.candidate.first_name, data.candidate.last_name
             );
             let slug = slugify!(&full_name);
-            let home_state =
-                State::from_str(&data.candidate.home_state).unwrap();
+            let home_state = State::from_str(&data.candidate.home_state).unwrap();
             let office_party = Some(
                 PoliticalParty::from_str(&data.office.to_owned().unwrap().parties)
                     .unwrap_or_default(),
@@ -177,9 +178,7 @@ async fn main() -> Result<(), Error> {
 
         if args.update_record {
             let pool = db::pool().await;
-            let vs_id = data.candidate.candidate_id
-                .parse::<i32>()
-                .unwrap();
+            let vs_id = data.candidate.candidate_id.parse::<i32>().unwrap();
 
             let input = UpdatePoliticianInput {
                 votesmart_candidate_bio: Some(serde_json::to_value(data.clone()).unwrap()),
