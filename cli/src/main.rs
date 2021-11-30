@@ -1,3 +1,4 @@
+#[rustfmt::skip]
 mod populist;
 use slugify::slugify;
 use std::str::FromStr;
@@ -89,7 +90,7 @@ struct GetCandidateBioArgs {
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     populist::headline();
-    
+
     db::init_pool().await.unwrap();
     let args = Args::from_args();
 
@@ -130,47 +131,28 @@ async fn main() -> Result<(), Error> {
 
         let data = data.unwrap().clone();
 
-        // guard to ensure there is data before proceeding
-
-        match data {
-            serde_json::Value::Null => {
-                println!(
-                    "Politician with candidate_id: {} does not exist in the Votesmart API",
-                    args.candidate_id
-                );
-                std::process::exit(0);
-            }
-            _ => (),
-        }
-
         if args.pretty_print {
             println!("{}", serde_json::to_string_pretty(&data).unwrap());
         }
 
         if args.create_record {
             let pool = db::pool().await;
-            let vs_id = data["candidate"]["candidateId"]
-                .as_str()
-                .unwrap()
+            let vs_id = data.candidate.candidate_id.to_owned()
                 .parse::<i32>()
                 .unwrap();
-            let first_name = data["candidate"]["firstName"].as_str().unwrap().to_string();
+            let first_name = data.candidate.first_name.to_owned();
             let middle_name = Some(
-                data["candidate"]["middleName"]
-                    .as_str()
-                    .unwrap()
-                    .to_string(),
+                data.candidate.middle_name.to_owned(),
             );
-            let last_name = data["candidate"]["lastName"].as_str().unwrap().to_string();
-            let full_name = format!(
-                "{:?} {:?}",
-                data["candidate"]["firstName"], data["candidate"]["lastName"]
+            let last_name = data.candidate.last_name.to_owned();
+            let full_name = format!( "{:?} {:?}",
+                data.candidate.first_name, data.candidate.last_name
             );
             let slug = slugify!(&full_name);
             let home_state =
-                State::from_str(&data["candidate"]["homeState"].as_str().unwrap()).unwrap();
+                State::from_str(&data.candidate.home_state).unwrap();
             let office_party = Some(
-                PoliticalParty::from_str(&data["office"]["parties"].as_str().unwrap_or_else(|| ""))
+                PoliticalParty::from_str(&data.office.to_owned().unwrap().parties)
                     .unwrap_or_default(),
             );
 
@@ -195,9 +177,7 @@ async fn main() -> Result<(), Error> {
 
         if args.update_record {
             let pool = db::pool().await;
-            let vs_id = data["candidate"]["candidateId"]
-                .as_str()
-                .unwrap()
+            let vs_id = data.candidate.candidate_id
                 .parse::<i32>()
                 .unwrap();
 

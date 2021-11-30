@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
-
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetCandidateBioResponse {
     pub general_info: GeneralInfo,
     pub candidate: Candidate,
+    pub office: Option<Office>
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -86,4 +86,24 @@ pub struct Political {
 #[serde(rename_all = "camelCase")]
 pub struct OrgMembership {
     pub experience: Vec<Experience>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Office {
+    pub name: Vec<String>,
+    #[serde(rename = "type")]
+    pub type_field: String,
+    pub title: String,
+    pub status: String,
+    pub parties: String,
+    pub state_id: String,
+    pub term_end: String,
+    pub district: String,
+    pub last_elect: String,
+    pub next_elect: String,
+    pub term_start: String,
+    pub district_id: String,
+    pub first_elect: String,
+    pub short_title: String,
 }

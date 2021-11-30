@@ -22,7 +22,7 @@ impl VotesmartProxy {
         })
     }
 
-    pub async fn get_candidate_bio(&self, candidate_id: i32) -> Result<serde_json::Value, Error> {
+    pub async fn get_candidate_bio(&self, candidate_id: i32) -> Result<GetCandidateBioResponse, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&candidateId={candidate_id}&o=JSON",
             base_url = self.base_url,
@@ -32,9 +32,20 @@ impl VotesmartProxy {
         );
 
         let response = self.client.get(url).send().await.unwrap();
-        let json: serde_json::Value = response.json().await?;
-        let bio = &json["bio"];
 
-        Ok(serde_json::from_value(bio.to_owned()).unwrap())
+        if response.status().is_success() {
+            let json: serde_json::Value = response.json().await?;
+            let bio = &json["bio"];
+            match bio {
+                serde_json::Value::Null => {
+                    println!("Candidate with id {} does not exist in the Votesmart API", candidate_id);
+                    std::process::exit(0)
+                }
+                _ => Ok(serde_json::from_value(bio.to_owned()).unwrap())
+            }
+            
+        } else {
+            Err(Error::ApiError)
+        }
     }
 }
