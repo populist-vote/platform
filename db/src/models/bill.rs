@@ -65,7 +65,7 @@ impl Bill {
         let legiscan_data = input
             .legiscan_data
             .clone()
-            .unwrap_or(serde_json::from_str("{}").unwrap());
+            .unwrap_or_else(|| serde_json::from_str("{}").unwrap());
 
         let record = sqlx::query_as!(
             Bill,

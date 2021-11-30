@@ -91,7 +91,8 @@ impl From<Politician> for PoliticianResult {
             instagram_url: p.instagram_url,
             office_party: p.office_party,
             votesmart_candidate_id: p.votesmart_candidate_id.unwrap(),
-            votesmart_candidate_bio: serde_json::from_value(p.votesmart_candidate_bio.to_owned()).unwrap(),
+            votesmart_candidate_bio: serde_json::from_value(p.votesmart_candidate_bio.to_owned())
+                .unwrap(),
             created_at: p.created_at,
             updated_at: p.updated_at,
         }

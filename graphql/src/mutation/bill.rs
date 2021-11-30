@@ -51,10 +51,7 @@ impl BillMutation {
         if id.is_none() && legiscan_bill_id.is_none() {
             panic!("Please provide a populist bill ID or legiscan bill id")
         }
-        let id = match id {
-            Some(id) => Some(uuid::Uuid::parse_str(&id).unwrap()),
-            _ => None,
-        };
+        let id = id.map(|id| uuid::Uuid::parse_str(&id).unwrap());
         let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
         let updated_record = Bill::update(db_pool, id, legiscan_bill_id, &input).await?;
         if input.arguments.is_some() {
