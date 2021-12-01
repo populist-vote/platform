@@ -3,6 +3,7 @@ use crate::{
     CreateOrConnectIssueTagInput, DateTime, IssueTag, Organization,
 };
 use async_graphql::InputObject;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use slugify::slugify;
 use sqlx::{postgres::PgPool, FromRow};
@@ -31,7 +32,7 @@ pub struct Politician {
     pub updated_at: DateTime,
 }
 
-#[derive(InputObject, Default)]
+#[derive(InputObject, Default, Debug, Serialize, Deserialize)]
 pub struct CreatePoliticianInput {
     pub first_name: String,
     pub middle_name: Option<String>,

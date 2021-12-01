@@ -11,7 +11,6 @@ pub struct OrganizationResult {
     website_url: Option<String>,
 }
 
-// Why cant this just automatically happen?
 impl From<Organization> for OrganizationResult {
     fn from(o: Organization) -> Self {
         Self {

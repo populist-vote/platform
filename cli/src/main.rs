@@ -1,5 +1,5 @@
 #[rustfmt::skip]
-mod populist;
+mod utils;
 use slugify::slugify;
 use std::str::FromStr;
 
@@ -89,7 +89,7 @@ struct GetCandidateBioArgs {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    populist::headline();
+    utils::headline();
 
     db::init_pool().await.unwrap();
     let args = Args::from_args();

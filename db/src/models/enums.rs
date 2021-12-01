@@ -1,7 +1,10 @@
 use async_graphql::Enum;
+use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumString};
 
-#[derive(Enum, Debug, Copy, Clone, Eq, PartialEq, EnumString, sqlx::Type)]
+#[derive(
+    Enum, Debug, Copy, Clone, Eq, PartialEq, EnumString, sqlx::Type, Serialize, Deserialize,
+)]
 pub enum State {
     AL,
     AK,
@@ -62,7 +65,9 @@ impl Default for State {
     }
 }
 
-#[derive(Enum, Debug, Copy, Clone, Eq, PartialEq, EnumString, sqlx::Type)]
+#[derive(
+    Enum, Debug, Copy, Clone, Eq, PartialEq, EnumString, sqlx::Type, Serialize, Deserialize,
+)]
 #[strum(ascii_case_insensitive)]
 #[sqlx(type_name = "political_party", rename_all = "lowercase")]
 pub enum PoliticalParty {

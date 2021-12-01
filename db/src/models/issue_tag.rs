@@ -3,6 +3,7 @@ use crate::{
     DateTime, Organization, Politician,
 };
 use async_graphql::InputObject;
+use serde::{Deserialize, Serialize};
 use slugify::slugify;
 use sqlx::PgPool;
 
@@ -17,7 +18,7 @@ pub struct IssueTag {
     pub updated_at: DateTime,
 }
 
-#[derive(InputObject, Debug)]
+#[derive(InputObject, Debug, Serialize, Deserialize)]
 pub struct CreateIssueTagInput {
     pub name: String,
     pub slug: Option<String>,
@@ -31,7 +32,7 @@ pub struct UpdateIssueTagInput {
     pub description: Option<String>,
 }
 
-#[derive(InputObject)]
+#[derive(InputObject, Debug, Serialize, Deserialize)]
 pub struct CreateOrConnectIssueTagInput {
     pub create: Option<Vec<CreateIssueTagInput>>,
     pub connect: Option<Vec<String>>, //accepts UUIDs or slugs

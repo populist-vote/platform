@@ -12,5 +12,5 @@ pub fn headline() {
     eprintln!("{}", POPULIST_2.white());
     eprintln!("{}", POPULIST_3.blue());
     eprintln!("{}", POPULIST_4.bright_red());
-    eprintln!("{}", POPULIST_5.white());
+    eprintln!("{}\n", POPULIST_5.white());
 }

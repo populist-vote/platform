@@ -1,6 +1,6 @@
 # Populist Platform
 
-Populist Database Interface and GraphQL API Server
+Populist Database Interface, GraphQL API Server, and Command Line Utility
 
 ## Getting Started
 Make sure you have [Rust installed] on your machine.  Next, you'll need the [sqlx-cli] installed to manage the database connection and run migrations.  To do so, run `cargo install sqlx-cli --features postgres` 
@@ -15,6 +15,24 @@ Next, you'll need to run the migrations with `sqlx migrate run`
 
 ## API Server
 To start the api server, run `cargo watch -x run` which will type check, compile, and run your code.  The GraphQL playground will then be live at http://localhost:1234 for you to execute queries and mutations against the specified database.  
+
+## Command Line
+The `/cli` crate compiles an executable binary that serves as the Populist CLI.  You can run the cli locally and learn more about usage with `./target/debug/cli --help`
+
+Here are a few example commands to get you started:
+
+```bash
+./target/debug/cli proxy votesmart get-politician-bio 169020 --create-record --pretty-print
+```
+
+This will fetch the candidate bio data from Votesmart for Cori Bush, the Democratic Representative from Missouri, with the Votesmart candidate_id of 169020.  The `--create--record` flag, or `-c` for short, will create a new record for the fetched politician and write the votesmart data to the `votesmart_candidate_bio` jsonb column in the candidate table.  The `--pretty-print` flag, or `-p` for short, will simply print the fetched json data to the console once it has been fetched.  
+
+If a politician already exists in our database but does not yet have `votesmart_candidate_bio` data, you can add their votesmart_candidate_id to their row in the politician table, and run the above command with the `--update-record flag`, or `-u` for short.  (Instead of the `-c` flag)
+
+If you want to explore the command line api proxy utility further, you can run: 
+```bash
+./target/debug/cli proxy --help
+```
 
 ## Architecture
 todo!()
@@ -31,5 +49,6 @@ Ultimately a staging environment will be setup with automatic deployments from t
 
 
 [Rust installed]: https://www.rust-lang.org/tools/install
-[`sqlx-cli`]: https://crates.io/crates/sqlx-cli
+[sqlx-cli]: https://crates.io/crates/sqlx-cli
+[sqlx]: https://crates.io/crates/sqlx
 [Heroku datastore dashboard]: https://data.heroku.com/datastores/35cb347f-6fb1-488f-8f21-02bbd726f5a8#administration
