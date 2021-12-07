@@ -26,8 +26,8 @@ async fn example() -> Result<(), Box<dyn Error>> {
         match new_politician_record {
             Err(_) => {
                 println!("Politician already exists");
-            },
-            Ok(_) => println!("Politician seeded successfully")
+            }
+            Ok(_) => println!("Politician seeded successfully"),
         }
         // Figure out how to implememnt recoverable errors here so that we can continue if we run into foreign key
         // constraint errors OR implement an upsert for the politician

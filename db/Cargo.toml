@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 proxy = { path = "../proxy" }
-csv = "1.1"
 chrono = "0.4.19"
 sqlx = { version = "0.5.9", features = [ "runtime-tokio-rustls", "postgres", "chrono", "uuid", "json", "offline" ] }
 tokio = { version = "1.8", features = ["full"] }
