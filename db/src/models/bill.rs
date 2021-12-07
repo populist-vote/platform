@@ -145,10 +145,12 @@ impl Bill {
     pub async fn search(db_pool: &PgPool, search: &BillSearch) -> Result<Vec<Self>, sqlx::Error> {
         let records = sqlx::query_as!(
             Bill,
-            r#"SELECT id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at FROM bill
-             WHERE $1::text IS NULL OR slug = $1
-             AND $2::text IS NULL OR levenshtein($2, name) <=5
-             AND $3::vote_status IS NULL OR vote_status = $3"#,
+            r#"
+                SELECT id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at FROM bill
+                WHERE $1::text IS NULL OR slug = $1
+                AND $2::text IS NULL OR levenshtein($2, name) <=5
+                AND $3::vote_status IS NULL OR vote_status = $3
+            "#,
             search.slug,
             search.name,
             search.vote_status as Option<LegislationStatus>

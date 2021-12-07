@@ -1,5 +1,8 @@
-use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, Union, ID};
-use db::{models::enums::AuthorType, Argument, DateTime, Organization, Politician};
+use async_graphql::{ComplexObject, Context, FieldResult, Result, SimpleObject, Union, ID};
+use db::{
+    models::{enums::AuthorType, vote::Vote},
+    Argument, DateTime, Organization, Politician,
+};
 use sqlx::{Pool, Postgres};
 
 use super::{OrganizationResult, PoliticianResult};
@@ -39,6 +42,12 @@ impl ArgumentResult {
         };
 
         Ok(result)
+    }
+
+    async fn votes(&self, ctx: &Context<'_>) -> Result<i64> {
+        let pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let total = Vote::count(pool, uuid::Uuid::parse_str(self.id.as_str())?).await?;
+        Ok(total)
     }
 }
 

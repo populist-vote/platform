@@ -1,9 +1,11 @@
 pub mod mutation;
 pub mod query;
+pub mod subscription;
 pub mod types;
 
 use crate::mutation::Mutation;
 use crate::query::Query;
+// use crate::subscription::Subscription;
 use async_graphql::{EmptySubscription, Schema, SchemaBuilder, ID};
 use dotenv::dotenv;
 use s3::bucket::Bucket;
