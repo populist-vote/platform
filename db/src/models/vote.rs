@@ -1,4 +1,3 @@
-use async_graphql::futures_util::TryFutureExt;
 use sqlx::PgPool;
 use strum_macros::{Display, EnumString};
 

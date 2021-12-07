@@ -45,10 +45,12 @@ impl Election {
         let slug = slugify!(&input.title);
         let record = sqlx::query_as!(
             Election,
-            r#"INSERT INTO election
-           (slug, title, description, election_date)
-           VALUES ($1, $2, $3, $4)
-           RETURNING id, slug, title, description, election_date"#,
+            r#"
+                INSERT INTO election
+                (slug, title, description, election_date)
+                VALUES ($1, $2, $3, $4)
+                RETURNING id, slug, title, description, election_date
+            "#,
             slug,
             input.title,
             input.description,
@@ -67,13 +69,15 @@ impl Election {
     ) -> Result<Self, sqlx::Error> {
         let record = sqlx::query_as!(
             Election,
-            r#"UPDATE election
-            SET slug = COALESCE($2, slug),
-                title = COALESCE($3, title),
-                description = COALESCE($4, description),
-                election_date = COALESCE($5, election_date)
-            WHERE id=$1    
-            RETURNING id, slug, title, description, election_date"#,
+            r#"
+                UPDATE election
+                SET slug = COALESCE($2, slug),
+                    title = COALESCE($3, title),
+                    description = COALESCE($4, description),
+                    election_date = COALESCE($5, election_date)
+                WHERE id=$1    
+                RETURNING id, slug, title, description, election_date
+            "#,
             id,
             input.slug,
             input.title,
@@ -109,9 +113,11 @@ impl Election {
     ) -> Result<Vec<Self>, sqlx::Error> {
         let records = sqlx::query_as!(
             Election,
-            r#"SELECT id, slug, title, description, election_date FROM election
-            WHERE $1::text IS NULL OR slug = $1
-            AND $2::text IS NULL OR title = $2"#,
+            r#"
+                SELECT id, slug, title, description, election_date FROM election
+                WHERE $1::text IS NULL OR slug = $1
+                AND $2::text IS NULL OR title = $2
+            "#,
             search.slug,
             search.title,
         )

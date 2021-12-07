@@ -76,12 +76,14 @@ impl BallotMeasure {
         let slug = slugify!(&input.name); // TODO run a query and ensure this is Unique
         let record = sqlx::query_as!(
             BallotMeasure,
-            r#"INSERT INTO ballot_measure 
-            (election_id, slug, name, vote_status, description, official_summary, 
-            populist_summary, full_text_url, ballot_state, ballot_measure_code, 
-            measure_type, definitions) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
-            RETURNING id, election_id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, created_at, updated_at"#,
+            r#"
+                INSERT INTO ballot_measure 
+                (election_id, slug, name, vote_status, description, official_summary, 
+                populist_summary, full_text_url, ballot_state, ballot_measure_code, 
+                measure_type, definitions) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+                RETURNING id, election_id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, created_at, updated_at
+            "#,
             election_id,
             slug,
             input.name,
@@ -108,20 +110,22 @@ impl BallotMeasure {
     ) -> Result<Self, sqlx::Error> {
         let record = sqlx::query_as!(
             BallotMeasure,
-            r#"UPDATE ballot_measure
-            SET slug = COALESCE($2, slug),
-                name = COALESCE($3, name),
-                vote_status = COALESCE($4, vote_status),
-                ballot_state = COALESCE($5, ballot_state),
-                ballot_measure_code = COALESCE($6, ballot_measure_code),
-                measure_type = COALESCE($7, measure_type),
-                definitions = COALESCE($8, definitions),
-                description = COALESCE($9, description),
-                official_summary = COALESCE($10, official_summary),
-                populist_summary = COALESCE($11, populist_summary),
-                full_text_url = COALESCE($12, full_text_url)
-            WHERE id=$1    
-            RETURNING id, election_id, slug, name, vote_status AS "vote_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at"#,
+            r#"
+                UPDATE ballot_measure
+                SET slug = COALESCE($2, slug),
+                    name = COALESCE($3, name),
+                    vote_status = COALESCE($4, vote_status),
+                    ballot_state = COALESCE($5, ballot_state),
+                    ballot_measure_code = COALESCE($6, ballot_measure_code),
+                    measure_type = COALESCE($7, measure_type),
+                    definitions = COALESCE($8, definitions),
+                    description = COALESCE($9, description),
+                    official_summary = COALESCE($10, official_summary),
+                    populist_summary = COALESCE($11, populist_summary),
+                    full_text_url = COALESCE($12, full_text_url)
+                WHERE id=$1    
+                RETURNING id, election_id, slug, name, vote_status AS "vote_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at
+            "#,
             id,
             input.slug,
             input.name,
@@ -158,11 +162,13 @@ impl BallotMeasure {
     ) -> Result<Vec<Self>, sqlx::Error> {
         let records = sqlx::query_as!(
             BallotMeasure,
-            r#"SELECT id, election_id, slug, name, vote_status AS "vote_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure
-             WHERE $1::text IS NULL OR slug = $1
-             AND $2::text IS NULL OR levenshtein($2, name) <=5
-             AND $3::state IS NULL OR ballot_state = $3
-             AND $4::vote_status IS NULL OR vote_status = $4"#,
+            r#"
+                SELECT id, election_id, slug, name, vote_status AS "vote_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure
+                WHERE $1::text IS NULL OR slug = $1
+                AND $2::text IS NULL OR levenshtein($2, name) <=5
+                AND $3::state IS NULL OR ballot_state = $3
+                AND $4::vote_status IS NULL OR vote_status = $4
+            "#,
             search.slug,
             search.name,
             search.ballot_state as Option<State>,
