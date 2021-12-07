@@ -4,7 +4,6 @@ use std::process;
 
 use db::CreatePoliticianInput;
 use db::Politician;
-use db::UpdatePoliticianInput;
 use proxy::VotesmartProxy;
 
 async fn example() -> Result<(), Box<dyn Error>> {
@@ -24,19 +23,14 @@ async fn example() -> Result<(), Box<dyn Error>> {
             Some(serde_json::to_value(vs_candidate_bio_data.unwrap()).unwrap());
         let new_politician_record = Politician::create(&pool.connection, &new_record_input).await;
 
-        // match new_politician_record {
-        //     Err(_) => {
-        //         println!("Database didnt like this");
-        //         let mut update_record_input: UpdatePoliticianInput = result?;
-        //     },
-        //     Ok(_) => println!("WOOOOOHOOO")
-        // }
+        match new_politician_record {
+            Err(_) => {
+                println!("Politician already exists");
+            },
+            Ok(_) => println!("Politician seeded successfully")
+        }
         // Figure out how to implememnt recoverable errors here so that we can continue if we run into foreign key
         // constraint errors OR implement an upsert for the politician
-        // println!(
-        //     "New politician record created {:?} {:?}",
-        //     new_politician_record.first_name.to_string(), new_politician_record.last_name.to_string()
-        // );
     }
     Ok(())
 }
