@@ -72,7 +72,7 @@ impl VotesmartProxy {
 
         if response.status().is_success() {
             let json: serde_json::Value = response.json().await?;
-            Ok(serde_json::from_value(json.to_owned()).unwrap())
+            Ok(serde_json::from_value(json).unwrap())
         } else {
             Err(Error::ApiError)
         }
