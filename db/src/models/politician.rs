@@ -54,7 +54,7 @@ pub struct CreatePoliticianInput {
     pub votesmart_candidate_bio: Option<Value>,
 }
 
-#[derive(InputObject, Default)]
+#[derive(InputObject, Default, Serialize, Deserialize)]
 pub struct UpdatePoliticianInput {
     pub first_name: Option<String>,
     pub middle_name: Option<String>,
@@ -113,8 +113,8 @@ impl Politician {
                     RETURNING id AS author_id
                 ),
                 p AS (
-                    INSERT INTO politician (id, slug, first_name, middle_name, last_name, home_state, office_party, votesmart_candidate_id, votesmart_candidate_bio) 
-                    VALUES ((SELECT author_id FROM ins_author), $1, $2, $3, $4, $5, $6, $7, $8)
+                    INSERT INTO politician (id, slug, first_name, middle_name, last_name, home_state, office_party, votesmart_candidate_id, votesmart_candidate_bio, website_url) 
+                    VALUES ((SELECT author_id FROM ins_author), $1, $2, $3, $4, $5, $6, $7, $8, $9)
                     RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, created_at, updated_at
                 )
                 SELECT p.* FROM p
@@ -126,7 +126,8 @@ impl Politician {
             input.home_state as State,
             input.office_party as Option<PoliticalParty>,
             input.votesmart_candidate_id,
-            input.votesmart_candidate_bio
+            input.votesmart_candidate_bio,
+            input.website_url
         )
         .fetch_one(db_pool)
         .await?;

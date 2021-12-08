@@ -73,6 +73,8 @@ struct GetBillTextArgs {
 enum VoteSmartAction {
     /// Get candidate bio from Votesmart
     GetCandidateBio(GetCandidateBioArgs),
+    /// Get candidate voting record from Votesmart
+    GetCandidateVotingRecord(GetCandidateVotingRecordArgs),
 }
 
 #[derive(Clone, Debug, StructOpt)]
@@ -83,6 +85,14 @@ struct GetCandidateBioArgs {
     create_record: bool,
     #[structopt(short, long, about = "Update populist record")]
     update_record: bool,
+    #[structopt(short, long, about = "Print fetched JSON data to console")]
+    pretty_print: bool,
+}
+
+#[derive(Clone, Debug, StructOpt)]
+struct GetCandidateVotingRecordArgs {
+    #[structopt(about = "Votesmart candidate ID")]
+    candidate_id: i32,
     #[structopt(short, long, about = "Print fetched JSON data to console")]
     pretty_print: bool,
 }
@@ -115,6 +125,9 @@ async fn main() -> Result<(), Error> {
     async fn handle_votesmart_action(action: VoteSmartAction) -> Result<(), Error> {
         match action {
             VoteSmartAction::GetCandidateBio(args) => get_candidate_bio(args).await,
+            VoteSmartAction::GetCandidateVotingRecord(args) => {
+                get_candidate_voting_record(args).await
+            }
         }
     }
 
@@ -190,6 +203,26 @@ async fn main() -> Result<(), Error> {
                 "\n✅ Populist politician with id {} has been updated with Votesmart data",
                 updated_record.id
             );
+        }
+
+        Ok(())
+    }
+
+    async fn get_candidate_voting_record(args: GetCandidateVotingRecordArgs) -> Result<(), Error> {
+        println!(
+            "\n▶️ FETCHING CANDIDATE VOTING RECORD FROM VOTESMART\n  📖 candidate_id: {}",
+            args.candidate_id
+        );
+
+        let data = VotesmartProxy::new()
+            .unwrap()
+            .get_candidate_voting_record(args.candidate_id)
+            .await;
+
+        let data = data.unwrap().clone();
+
+        if args.pretty_print {
+            println!("{}", serde_json::to_string_pretty(&data).unwrap());
         }
 
         Ok(())
