@@ -486,6 +486,7 @@ dependencies = [
  "sqlx",
  "structopt",
  "tokio",
+ "uuid",
 ]
 
 [[package]]

@@ -19,7 +19,7 @@ impl BillQuery {
     async fn bills(
         &self,
         ctx: &Context<'_>,
-        #[graphql(desc = "Search by voteStatus, name, or slug")] search: BillSearch,
+        #[graphql(desc = "Search by voteStatus, title, or slug")] search: BillSearch,
     ) -> FieldResult<Vec<BillResult>> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let records = Bill::search(pool, &search).await?;

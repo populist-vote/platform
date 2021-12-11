@@ -1,11 +1,12 @@
 #[rustfmt::skip]
 mod utils;
 use slugify::slugify;
+use sqlx::Executor;
 use std::str::FromStr;
 
 use db::{
-    models::enums::{PoliticalParty, State},
-    CreatePoliticianInput, UpdateBillInput, UpdatePoliticianInput,
+    models::enums::{LegislationStatus, PoliticalParty, State},
+    CreateBillInput, CreatePoliticianInput, UpdateBillInput, UpdatePoliticianInput,
 };
 use structopt::StructOpt;
 
@@ -95,6 +96,8 @@ struct GetCandidateVotingRecordArgs {
     candidate_id: i32,
     #[structopt(short, long, about = "Print fetched JSON data to console")]
     pretty_print: bool,
+    #[structopt(short, long, about = "Create bill records and joins")]
+    create_record: bool,
 }
 
 #[tokio::main]
@@ -225,6 +228,87 @@ async fn main() -> Result<(), Error> {
             println!("{}", serde_json::to_string_pretty(&data).unwrap());
         }
 
+        if args.create_record {
+            let pool = db::pool().await;
+
+            // Find the populist politician
+            let politician_id = sqlx::query!(
+                r#"SELECT id FROM politician WHERE votesmart_candidate_id = $1"#,
+                args.candidate_id
+            )
+            .fetch_one(&pool.connection)
+            .await?
+            .id;
+
+            // Create all of the populist bill objects
+            for bill in data.bills.bill.into_iter() {
+                let vote_status = match bill.stage.as_ref() {
+                    "Introduced" => LegislationStatus::INTRODUCED,
+                    "Passage" => LegislationStatus::PASSED,
+                    "Amendment Vote" => LegislationStatus::SIGNED,
+                    "Concurrence Vote" => LegislationStatus::SIGNED,
+                    "Conference Report Vote" => LegislationStatus::UNKNOWN,
+                    "Motion Vote" => LegislationStatus::UNKNOWN,
+                    _ => LegislationStatus::UNKNOWN,
+                };
+
+                let bill_input = CreateBillInput {
+                    slug: Some(slugify!(&bill.bill_number)),
+                    title: bill.title,
+                    bill_number: bill.bill_number,
+                    description: None,
+                    vote_status,
+                    official_summary: None,
+                    populist_summary: None,
+                    full_text_url: None,
+                    legiscan_bill_id: None,
+                    votesmart_bill_id: Some(bill.bill_id.parse::<i32>().unwrap()),
+                    legiscan_data: None,
+                    arguments: None,
+                };
+
+                let new_bill_record = db::Bill::create(&pool.connection, &bill_input).await;
+
+                match new_bill_record {
+                    Err(e) => {
+                        let bill_row = sqlx::query!(
+                            r#"
+                                SELECT id FROM bill WHERE votesmart_bill_id = $1
+                            "#,
+                            bill.bill_id.parse::<i32>().unwrap()
+                        )
+                        .fetch_one(&pool.connection)
+                        .await?;
+
+                        sqlx::query!(
+                            r#"
+                            INSERT INTO politician_bills (politician_id, bill_id, vote)
+                            VALUES ($1, $2, $3);
+                        "#,
+                            politician_id,
+                            bill_row.id,
+                            bill.vote
+                        )
+                        .fetch_optional(&pool.connection)
+                        .await?;
+                    }
+                    Ok(_) => {
+                        // Create the joins between our found politician and the bills they voted on
+                        sqlx::query!(
+                            r#"
+                                INSERT INTO politician_bills (politician_id, bill_id, vote)
+                                VALUES ($1, $2, $3);
+                            "#,
+                            politician_id,
+                            new_bill_record.unwrap().id,
+                            bill.vote
+                        )
+                        .fetch_optional(&pool.connection)
+                        .await?;
+                    }
+                }
+            }
+        }
         Ok(())
     }
 

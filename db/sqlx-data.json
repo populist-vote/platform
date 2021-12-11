@@ -404,6 +404,141 @@
       ]
     }
   },
+  "07ebde53f9afe390b9280cbe58cdf36087489619960c3488306fa9b708c7d7b9": {
+    "query": "\n                UPDATE bill\n                SET slug = COALESCE($3, slug),\n                    title = COALESCE($4, title),\n                    bill_number = COALESCE($5,bill_number),\n                    vote_status = COALESCE($6, vote_status),\n                    description = COALESCE($7, description),\n                    official_summary = COALESCE($8, official_summary),\n                    populist_summary = COALESCE($9, populist_summary),\n                    full_text_url = COALESCE($10, full_text_url),\n                    legiscan_bill_id = COALESCE($11, legiscan_bill_id), \n                    legiscan_data = COALESCE($12, legiscan_data)\n                WHERE id=$1\n                OR legiscan_bill_id=$2\n                RETURNING id, slug, title, bill_number, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, votesmart_bill_id, created_at, updated_at\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "bill_number",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "vote_status:LegislationStatus",
+          "type_info": {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "official_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "populist_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "full_text_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "legiscan_bill_id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 10,
+          "name": "legiscan_data",
+          "type_info": "Jsonb"
+        },
+        {
+          "ordinal": 11,
+          "name": "votesmart_bill_id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 12,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 13,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Int4",
+          "Text",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          },
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Int4",
+          "Jsonb"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        false,
+        false
+      ]
+    }
+  },
   "133452b9e3e79b701affdb4775335e28117019e5ea2891b22e7dbe97db8f6f7c": {
     "query": "\n                SELECT * FROM organization\n                WHERE id = $1\n            ",
     "describe": {
@@ -845,6 +980,139 @@
       "nullable": []
     }
   },
+  "423f3ab9a92f154dc2bb1e4b57216d7a7928ff20e8ad2760a1698587ed85ec28": {
+    "query": "\n                INSERT INTO bill (slug, title, bill_number, vote_status, description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data) \n                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) \n                ON CONFLICT (id, legiscan_bill_id, votesmart_bill_id) DO UPDATE\n                SET slug = COALESCE($1, bill.slug),\n                    title = COALESCE($2, bill.title),\n                    bill_number = COALESCE($3, bill.bill_number),\n                    vote_status = COALESCE($4, bill.vote_status),\n                    description = COALESCE($5, bill.description),\n                    official_summary = COALESCE($6, bill.official_summary),\n                    populist_summary = COALESCE($7, bill.populist_summary),\n                    full_text_url = COALESCE($8, bill.full_text_url),\n                    legiscan_bill_id = COALESCE($9, bill.legiscan_bill_id), \n                    legiscan_data = COALESCE($10, bill.legiscan_data)\n                RETURNING id, slug, title, bill_number, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, votesmart_bill_id, created_at, updated_at\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "bill_number",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "vote_status:LegislationStatus",
+          "type_info": {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "official_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "populist_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "full_text_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "legiscan_bill_id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 10,
+          "name": "legiscan_data",
+          "type_info": "Jsonb"
+        },
+        {
+          "ordinal": 11,
+          "name": "votesmart_bill_id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 12,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 13,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          },
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Int4",
+          "Jsonb"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        false,
+        false
+      ]
+    }
+  },
   "482de4d392e7b7d273bdb2ed37aaf0b0d55e15c9b38d7cbdd4249ac019eb3905": {
     "query": "UPDATE organization\n            SET slug = COALESCE($2, slug),\n                name = COALESCE($3, name),\n                description = COALESCE($4, description),\n                thumbnail_image_url = COALESCE($5, thumbnail_image_url),\n                website_url = COALESCE($6, website_url),\n                facebook_url = COALESCE($7, facebook_url),\n                twitter_url = COALESCE($8, twitter_url),\n                instagram_url = COALESCE($9, instagram_url),\n                email = COALESCE($10, email),\n                headquarters_phone = COALESCE($11, headquarters_phone),\n                tax_classification = COALESCE($12, tax_classification)\n            WHERE id=$1\n            RETURNING *",
     "describe": {
@@ -1240,6 +1508,180 @@
       ]
     }
   },
+  "57d705dbab4248660e8d70d0a10a4fda7e2c0f157cd55e8073a51ab538d12557": {
+    "query": "SELECT id, election_id, slug, title, vote_status AS \"vote_status:LegislationStatus\", ballot_state AS \"ballot_state:State\", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "election_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 2,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "vote_status:LegislationStatus",
+          "type_info": {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "ballot_state:State",
+          "type_info": {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 6,
+          "name": "ballot_measure_code",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "measure_type",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "definitions",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 10,
+          "name": "official_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 11,
+          "name": "populist_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "full_text_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 13,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 14,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": []
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
   "5b8d20296ba132fed12a8c39705d973d9a2ed99895e12363f23cb9dcbdb7fd01": {
     "query": "\n                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS \"home_state:State\", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS \"office_party:PoliticalParty\", votesmart_candidate_id, votesmart_candidate_bio, created_at, updated_at FROM politician\n                WHERE ($1::state IS NULL OR home_state = $1)\n                AND ($2::text IS NULL OR levenshtein($2, last_name) <=2)\n                AND ($3::political_party IS NULL OR office_party = $3)\n            ",
     "describe": {
@@ -1522,6 +1964,132 @@
       ]
     }
   },
+  "5ebd6f159c88180ec02abfe409f8aec5dd120387ab9d055e1b5829f198cfe00b": {
+    "query": "\n                SELECT id, slug, title, bill_number, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, votesmart_bill_id, created_at, updated_at FROM bill\n                WHERE $1::text IS NULL OR slug = $1\n                AND $2::text IS NULL OR levenshtein($2, title) <=5\n                AND $3::vote_status IS NULL OR vote_status = $3\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "bill_number",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "vote_status:LegislationStatus",
+          "type_info": {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "official_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "populist_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "full_text_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "legiscan_bill_id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 10,
+          "name": "legiscan_data",
+          "type_info": "Jsonb"
+        },
+        {
+          "ordinal": 11,
+          "name": "votesmart_bill_id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 12,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 13,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        false,
+        false
+      ]
+    }
+  },
   "62e9991bed122998e7ec64b4e403cd43b74b8580e3033201312a7e6bd7708228": {
     "query": "DELETE FROM organization WHERE id=$1",
     "describe": {
@@ -1532,6 +2100,265 @@
         ]
       },
       "nullable": []
+    }
+  },
+  "6ab31eabfe9bec1d9d0d5ca9c0e51e3e46eb5979f1adacaa7111c669f10e7fbf": {
+    "query": "\n                UPDATE ballot_measure\n                SET slug = COALESCE($2, slug),\n                    title = COALESCE($3, title),\n                    vote_status = COALESCE($4, vote_status),\n                    ballot_state = COALESCE($5, ballot_state),\n                    ballot_measure_code = COALESCE($6, ballot_measure_code),\n                    measure_type = COALESCE($7, measure_type),\n                    definitions = COALESCE($8, definitions),\n                    description = COALESCE($9, description),\n                    official_summary = COALESCE($10, official_summary),\n                    populist_summary = COALESCE($11, populist_summary),\n                    full_text_url = COALESCE($12, full_text_url)\n                WHERE id=$1    \n                RETURNING id, election_id, slug, title, vote_status AS \"vote_status:LegislationStatus\", ballot_state AS \"ballot_state:State\", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "election_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 2,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "vote_status:LegislationStatus",
+          "type_info": {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "ballot_state:State",
+          "type_info": {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 6,
+          "name": "ballot_measure_code",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "measure_type",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "definitions",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 10,
+          "name": "official_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 11,
+          "name": "populist_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "full_text_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 13,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 14,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          },
+          {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          },
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
     }
   },
   "6f85dfc80a70d9abe7d305b309c1b490003d3f2bb9bfeaeca6266064fa452aa6": {
@@ -2123,302 +2950,6 @@
       ]
     }
   },
-  "86900d056f05234face22f0a42f1d921e2d37d076b59bbb697f8e992fd5895f5": {
-    "query": "SELECT id, election_id, slug, name, vote_status AS \"vote_status:LegislationStatus\", ballot_state AS \"ballot_state:State\", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "election_id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 2,
-          "name": "slug",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "name",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 4,
-          "name": "vote_status:LegislationStatus",
-          "type_info": {
-            "Custom": {
-              "name": "vote_status",
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "passed",
-                  "signed",
-                  "vetoed",
-                  "unknown"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 5,
-          "name": "ballot_state:State",
-          "type_info": {
-            "Custom": {
-              "name": "state",
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 6,
-          "name": "ballot_measure_code",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 7,
-          "name": "measure_type",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 8,
-          "name": "definitions",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 9,
-          "name": "description",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 10,
-          "name": "official_summary",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 11,
-          "name": "populist_summary",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 12,
-          "name": "full_text_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 13,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 14,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": []
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false
-      ]
-    }
-  },
-  "88edab493eee36a22a84d7fd3d0aaf1041bd767def5073d6485807a7f9d74058": {
-    "query": "\n                UPDATE bill\n                SET slug = COALESCE($3, slug),\n                    name = COALESCE($4, name),\n                    vote_status = COALESCE($5, vote_status),\n                    description = COALESCE($6, description),\n                    official_summary = COALESCE($7, official_summary),\n                    populist_summary = COALESCE($8, populist_summary),\n                    full_text_url = COALESCE($9, full_text_url),\n                    legiscan_bill_id = COALESCE($10, legiscan_bill_id), \n                    legiscan_data = COALESCE($11, legiscan_data)\n                WHERE id=$1\n                OR legiscan_bill_id=$2\n                RETURNING id, slug, name, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "slug",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "name",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "vote_status:LegislationStatus",
-          "type_info": {
-            "Custom": {
-              "name": "vote_status",
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "passed",
-                  "signed",
-                  "vetoed",
-                  "unknown"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 4,
-          "name": "description",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 5,
-          "name": "official_summary",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 6,
-          "name": "populist_summary",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 7,
-          "name": "full_text_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 8,
-          "name": "legiscan_bill_id",
-          "type_info": "Int4"
-        },
-        {
-          "ordinal": 9,
-          "name": "legiscan_data",
-          "type_info": "Jsonb"
-        },
-        {
-          "ordinal": 10,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 11,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Int4",
-          "Text",
-          "Text",
-          {
-            "Custom": {
-              "name": "vote_status",
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "passed",
-                  "signed",
-                  "vetoed",
-                  "unknown"
-                ]
-              }
-            }
-          },
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Int4",
-          "Jsonb"
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        false
-      ]
-    }
-  },
   "890e2d21948df6aa4803a354b772de56882fe1441648bc013d00954c5281a7d0": {
     "query": "DELETE FROM argument WHERE id=$1",
     "describe": {
@@ -2472,265 +3003,6 @@
         false,
         false,
         true,
-        false
-      ]
-    }
-  },
-  "8ac44cd866bfb542273350561a809160d65c7602e23c6de1d21a48f8e3195b81": {
-    "query": "\n                UPDATE ballot_measure\n                SET slug = COALESCE($2, slug),\n                    name = COALESCE($3, name),\n                    vote_status = COALESCE($4, vote_status),\n                    ballot_state = COALESCE($5, ballot_state),\n                    ballot_measure_code = COALESCE($6, ballot_measure_code),\n                    measure_type = COALESCE($7, measure_type),\n                    definitions = COALESCE($8, definitions),\n                    description = COALESCE($9, description),\n                    official_summary = COALESCE($10, official_summary),\n                    populist_summary = COALESCE($11, populist_summary),\n                    full_text_url = COALESCE($12, full_text_url)\n                WHERE id=$1    \n                RETURNING id, election_id, slug, name, vote_status AS \"vote_status:LegislationStatus\", ballot_state AS \"ballot_state:State\", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "election_id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 2,
-          "name": "slug",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "name",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 4,
-          "name": "vote_status:LegislationStatus",
-          "type_info": {
-            "Custom": {
-              "name": "vote_status",
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "passed",
-                  "signed",
-                  "vetoed",
-                  "unknown"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 5,
-          "name": "ballot_state:State",
-          "type_info": {
-            "Custom": {
-              "name": "state",
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 6,
-          "name": "ballot_measure_code",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 7,
-          "name": "measure_type",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 8,
-          "name": "definitions",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 9,
-          "name": "description",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 10,
-          "name": "official_summary",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 11,
-          "name": "populist_summary",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 12,
-          "name": "full_text_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 13,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 14,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Text",
-          "Text",
-          {
-            "Custom": {
-              "name": "vote_status",
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "passed",
-                  "signed",
-                  "vetoed",
-                  "unknown"
-                ]
-              }
-            }
-          },
-          {
-            "Custom": {
-              "name": "state",
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              }
-            }
-          },
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text"
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        false,
         false
       ]
     }
@@ -2934,6 +3206,265 @@
         true,
         true,
         true,
+        false,
+        false,
+        false
+      ]
+    }
+  },
+  "907d1cc085e624e5765adddb93028b57b73bb9783e9be385466aba0f22706fce": {
+    "query": "\n                INSERT INTO ballot_measure \n                (election_id, slug, title, vote_status, description, official_summary, \n                populist_summary, full_text_url, ballot_state, ballot_measure_code, \n                measure_type, definitions) \n                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) \n                RETURNING id, election_id, slug, title, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, ballot_state AS \"ballot_state:State\", ballot_measure_code, measure_type, definitions, created_at, updated_at\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "election_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 2,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "vote_status:LegislationStatus",
+          "type_info": {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "official_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "populist_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "full_text_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "ballot_state:State",
+          "type_info": {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 10,
+          "name": "ballot_measure_code",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 11,
+          "name": "measure_type",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "definitions",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 13,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 14,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          },
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          },
+          "Text",
+          "Text",
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
         false,
         false,
         false
@@ -3228,6 +3759,257 @@
       ]
     }
   },
+  "9a1745a542921cc3ad5ba4de970410e32a35e75991852838d4789c4f4d825624": {
+    "query": "\n                SELECT id, election_id, slug, title, vote_status AS \"vote_status:LegislationStatus\", ballot_state AS \"ballot_state:State\", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure\n                WHERE $1::text IS NULL OR slug = $1\n                AND $2::text IS NULL OR levenshtein($2, title) <=5\n                AND $3::state IS NULL OR ballot_state = $3\n                AND $4::vote_status IS NULL OR vote_status = $4\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "election_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 2,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "vote_status:LegislationStatus",
+          "type_info": {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "ballot_state:State",
+          "type_info": {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 6,
+          "name": "ballot_measure_code",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "measure_type",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "definitions",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 10,
+          "name": "official_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 11,
+          "name": "populist_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "full_text_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 13,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 14,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          },
+          {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
   "a73af3cb0fae38b252aa357e76cf37a8d28eadcc62a7298454a7882d8aa81e0d": {
     "query": "\n                UPDATE argument\n                SET title = COALESCE($2, arg.title),\n                    position = COALESCE($3, arg.position),\n                    body = COALESCE($4, arg.body)\n                FROM argument AS arg JOIN author ON author.id = arg.author_id\n                WHERE arg.id=$1     \n                RETURNING arg.id, arg.title, arg.author_id, author_type AS \"author_type:AuthorType\", arg.position AS \"position:ArgumentPosition\", arg.body, arg.created_at, arg.updated_at\n            ",
     "describe": {
@@ -3325,516 +4107,6 @@
       ]
     }
   },
-  "a8f1129ac29154628f20cd4f54bef2bb21598eba51f8b8c1b497e9235573c687": {
-    "query": "\n                INSERT INTO ballot_measure \n                (election_id, slug, name, vote_status, description, official_summary, \n                populist_summary, full_text_url, ballot_state, ballot_measure_code, \n                measure_type, definitions) \n                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) \n                RETURNING id, election_id, slug, name, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, ballot_state AS \"ballot_state:State\", ballot_measure_code, measure_type, definitions, created_at, updated_at\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "election_id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 2,
-          "name": "slug",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "name",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 4,
-          "name": "vote_status:LegislationStatus",
-          "type_info": {
-            "Custom": {
-              "name": "vote_status",
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "passed",
-                  "signed",
-                  "vetoed",
-                  "unknown"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 5,
-          "name": "description",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 6,
-          "name": "official_summary",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 7,
-          "name": "populist_summary",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 8,
-          "name": "full_text_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 9,
-          "name": "ballot_state:State",
-          "type_info": {
-            "Custom": {
-              "name": "state",
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 10,
-          "name": "ballot_measure_code",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 11,
-          "name": "measure_type",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 12,
-          "name": "definitions",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 13,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 14,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Text",
-          "Text",
-          {
-            "Custom": {
-              "name": "vote_status",
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "passed",
-                  "signed",
-                  "vetoed",
-                  "unknown"
-                ]
-              }
-            }
-          },
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          {
-            "Custom": {
-              "name": "state",
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              }
-            }
-          },
-          "Text",
-          "Text",
-          "Text"
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false
-      ]
-    }
-  },
-  "b77864c555fb624ce27af0a060255d1cfffb84b4c6b222714c9ff10971890f53": {
-    "query": "\n                SELECT id, election_id, slug, name, vote_status AS \"vote_status:LegislationStatus\", ballot_state AS \"ballot_state:State\", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure\n                WHERE $1::text IS NULL OR slug = $1\n                AND $2::text IS NULL OR levenshtein($2, name) <=5\n                AND $3::state IS NULL OR ballot_state = $3\n                AND $4::vote_status IS NULL OR vote_status = $4\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "election_id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 2,
-          "name": "slug",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "name",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 4,
-          "name": "vote_status:LegislationStatus",
-          "type_info": {
-            "Custom": {
-              "name": "vote_status",
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "passed",
-                  "signed",
-                  "vetoed",
-                  "unknown"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 5,
-          "name": "ballot_state:State",
-          "type_info": {
-            "Custom": {
-              "name": "state",
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 6,
-          "name": "ballot_measure_code",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 7,
-          "name": "measure_type",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 8,
-          "name": "definitions",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 9,
-          "name": "description",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 10,
-          "name": "official_summary",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 11,
-          "name": "populist_summary",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 12,
-          "name": "full_text_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 13,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 14,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text",
-          {
-            "Custom": {
-              "name": "state",
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              }
-            }
-          },
-          {
-            "Custom": {
-              "name": "vote_status",
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "passed",
-                  "signed",
-                  "vetoed",
-                  "unknown"
-                ]
-              }
-            }
-          }
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false
-      ]
-    }
-  },
   "b9ae4b1a7a9d3d947de908a6752e00284c9a4b4def15d1b1c2fd78b20b354833": {
     "query": "SELECT id, slug, title, description, election_date FROM election",
     "describe": {
@@ -3877,8 +4149,8 @@
       ]
     }
   },
-  "c7d334512ec04000f7ddc5ca81545c401158fd59459fa240bf329ed12dc9676c": {
-    "query": "SELECT id, slug, name, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at FROM bill",
+  "c29b5c8fd5b8a484e5be5e3937290432f94d253ef06bd39d7b96141ba7a762cb": {
+    "query": "\n            SELECT id, slug, title, bill_number, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data,  votesmart_bill_id, created_at, updated_at FROM bill",
     "describe": {
       "columns": [
         {
@@ -3893,11 +4165,16 @@
         },
         {
           "ordinal": 2,
-          "name": "name",
+          "name": "title",
           "type_info": "Text"
         },
         {
           "ordinal": 3,
+          "name": "bill_number",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
           "name": "vote_status:LegislationStatus",
           "type_info": {
             "Custom": {
@@ -3915,42 +4192,47 @@
           }
         },
         {
-          "ordinal": 4,
+          "ordinal": 5,
           "name": "description",
           "type_info": "Text"
         },
         {
-          "ordinal": 5,
+          "ordinal": 6,
           "name": "official_summary",
           "type_info": "Text"
         },
         {
-          "ordinal": 6,
+          "ordinal": 7,
           "name": "populist_summary",
           "type_info": "Text"
         },
         {
-          "ordinal": 7,
+          "ordinal": 8,
           "name": "full_text_url",
           "type_info": "Text"
         },
         {
-          "ordinal": 8,
+          "ordinal": 9,
           "name": "legiscan_bill_id",
           "type_info": "Int4"
         },
         {
-          "ordinal": 9,
+          "ordinal": 10,
           "name": "legiscan_data",
           "type_info": "Jsonb"
         },
         {
-          "ordinal": 10,
+          "ordinal": 11,
+          "name": "votesmart_bill_id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 12,
           "name": "created_at",
           "type_info": "Timestamptz"
         },
         {
-          "ordinal": 11,
+          "ordinal": 13,
           "name": "updated_at",
           "type_info": "Timestamptz"
         }
@@ -3963,12 +4245,147 @@
         false,
         false,
         false,
+        false,
         true,
         true,
         true,
         true,
         true,
         false,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "c95bb09f00286a5e74a99b96aa1d5b3dd7ccbf869bdc0404815cb65922115b3e": {
+    "query": "\n                INSERT INTO bill (slug, title, bill_number, vote_status, description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data) \n                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) \n                RETURNING id, slug, title, bill_number, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, votesmart_bill_id, created_at, updated_at\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "bill_number",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "vote_status:LegislationStatus",
+          "type_info": {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "official_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "populist_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "full_text_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "legiscan_bill_id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 10,
+          "name": "legiscan_data",
+          "type_info": "Jsonb"
+        },
+        {
+          "ordinal": 11,
+          "name": "votesmart_bill_id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 12,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 13,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "vote_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed",
+                  "signed",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          },
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Int4",
+          "Jsonb"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
         false,
         false
       ]
@@ -4195,126 +4612,6 @@
         ]
       },
       "nullable": []
-    }
-  },
-  "e4d55d60b4b145c881d843b3803b6d13aab531a63a4e376e34c557717f7a66fb": {
-    "query": "\n                INSERT INTO bill (slug, name, vote_status, description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data) \n                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) \n                RETURNING id, slug, name, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "slug",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "name",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "vote_status:LegislationStatus",
-          "type_info": {
-            "Custom": {
-              "name": "vote_status",
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "passed",
-                  "signed",
-                  "vetoed",
-                  "unknown"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 4,
-          "name": "description",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 5,
-          "name": "official_summary",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 6,
-          "name": "populist_summary",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 7,
-          "name": "full_text_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 8,
-          "name": "legiscan_bill_id",
-          "type_info": "Int4"
-        },
-        {
-          "ordinal": 9,
-          "name": "legiscan_data",
-          "type_info": "Jsonb"
-        },
-        {
-          "ordinal": 10,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 11,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text",
-          {
-            "Custom": {
-              "name": "vote_status",
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "passed",
-                  "signed",
-                  "vetoed",
-                  "unknown"
-                ]
-              }
-            }
-          },
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Int4",
-          "Jsonb"
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        false
-      ]
     }
   },
   "edae1b91fd96551cf002755006afac013d645b28506f7dd095473b2f5dd9b610": {
@@ -4938,120 +5235,6 @@
         false,
         true,
         true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        false
-      ]
-    }
-  },
-  "fb196502ff6c7cd075559d683d7bbf57232b95d5221698bfd00d696569809e85": {
-    "query": "\n                SELECT id, slug, name, vote_status AS \"vote_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at FROM bill\n                WHERE $1::text IS NULL OR slug = $1\n                AND $2::text IS NULL OR levenshtein($2, name) <=5\n                AND $3::vote_status IS NULL OR vote_status = $3\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "slug",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "name",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "vote_status:LegislationStatus",
-          "type_info": {
-            "Custom": {
-              "name": "vote_status",
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "passed",
-                  "signed",
-                  "vetoed",
-                  "unknown"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 4,
-          "name": "description",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 5,
-          "name": "official_summary",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 6,
-          "name": "populist_summary",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 7,
-          "name": "full_text_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 8,
-          "name": "legiscan_bill_id",
-          "type_info": "Int4"
-        },
-        {
-          "ordinal": 9,
-          "name": "legiscan_data",
-          "type_info": "Jsonb"
-        },
-        {
-          "ordinal": 10,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 11,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text",
-          {
-            "Custom": {
-              "name": "vote_status",
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "passed",
-                  "signed",
-                  "vetoed",
-                  "unknown"
-                ]
-              }
-            }
-          }
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
         true,
         true,
         true,

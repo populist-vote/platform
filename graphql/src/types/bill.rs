@@ -10,7 +10,7 @@ use sqlx::{Pool, Postgres};
 pub struct BillResult {
     id: ID,
     slug: String,
-    name: String,
+    title: String,
     vote_status: LegislationStatus,
     description: Option<String>,
     official_summary: Option<String>,
@@ -37,7 +37,7 @@ impl From<Bill> for BillResult {
         Self {
             id: ID::from(b.id),
             slug: b.slug,
-            name: b.name,
+            title: b.title,
             vote_status: b.vote_status,
             description: b.description,
             official_summary: b.official_summary,

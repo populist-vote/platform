@@ -11,7 +11,7 @@ pub struct BallotMeasure {
     // required fields
     pub id: uuid::Uuid,
     pub slug: String,
-    pub name: String,
+    pub title: String,
     pub vote_status: LegislationStatus,
     pub election_id: uuid::Uuid,
     pub ballot_state: State,
@@ -32,7 +32,7 @@ pub struct BallotMeasure {
 #[derive(InputObject)]
 pub struct CreateBallotMeasureInput {
     pub slug: Option<String>,
-    pub name: String,
+    pub title: String,
     pub vote_status: LegislationStatus,
     pub ballot_state: State,
     pub ballot_measure_code: String,
@@ -47,7 +47,7 @@ pub struct CreateBallotMeasureInput {
 #[derive(InputObject)]
 pub struct UpdateBallotMeasureInput {
     pub slug: Option<String>,
-    pub name: Option<String>,
+    pub title: Option<String>,
     pub vote_status: Option<LegislationStatus>,
     pub ballot_state: Option<State>,
     pub ballot_measure_code: Option<String>,
@@ -62,7 +62,7 @@ pub struct UpdateBallotMeasureInput {
 #[derive(InputObject)]
 pub struct BallotMeasureSearch {
     slug: Option<String>,
-    name: Option<String>,
+    title: Option<String>,
     ballot_state: Option<State>,
     vote_status: Option<LegislationStatus>,
 }
@@ -73,20 +73,20 @@ impl BallotMeasure {
         election_id: uuid::Uuid,
         input: &CreateBallotMeasureInput,
     ) -> Result<Self, sqlx::Error> {
-        let slug = slugify!(&input.name); // TODO run a query and ensure this is Unique
+        let slug = slugify!(&input.title); // TODO run a query and ensure this is Unique
         let record = sqlx::query_as!(
             BallotMeasure,
             r#"
                 INSERT INTO ballot_measure 
-                (election_id, slug, name, vote_status, description, official_summary, 
+                (election_id, slug, title, vote_status, description, official_summary, 
                 populist_summary, full_text_url, ballot_state, ballot_measure_code, 
                 measure_type, definitions) 
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
-                RETURNING id, election_id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, created_at, updated_at
+                RETURNING id, election_id, slug, title, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, created_at, updated_at
             "#,
             election_id,
             slug,
-            input.name,
+            input.title,
             input.vote_status as LegislationStatus,
             input.description,
             input.official_summary,
@@ -113,7 +113,7 @@ impl BallotMeasure {
             r#"
                 UPDATE ballot_measure
                 SET slug = COALESCE($2, slug),
-                    name = COALESCE($3, name),
+                    title = COALESCE($3, title),
                     vote_status = COALESCE($4, vote_status),
                     ballot_state = COALESCE($5, ballot_state),
                     ballot_measure_code = COALESCE($6, ballot_measure_code),
@@ -124,11 +124,11 @@ impl BallotMeasure {
                     populist_summary = COALESCE($11, populist_summary),
                     full_text_url = COALESCE($12, full_text_url)
                 WHERE id=$1    
-                RETURNING id, election_id, slug, name, vote_status AS "vote_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at
+                RETURNING id, election_id, slug, title, vote_status AS "vote_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at
             "#,
             id,
             input.slug,
-            input.name,
+            input.title,
             input.vote_status as Option<LegislationStatus>,
             input.ballot_state as Option<State>,
             input.ballot_measure_code,
@@ -150,7 +150,7 @@ impl BallotMeasure {
     }
 
     pub async fn index(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
-        let records = sqlx::query_as!(BallotMeasure, r#"SELECT id, election_id, slug, name, vote_status AS "vote_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure"#,)
+        let records = sqlx::query_as!(BallotMeasure, r#"SELECT id, election_id, slug, title, vote_status AS "vote_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure"#,)
             .fetch_all(db_pool)
             .await?;
         Ok(records)
@@ -163,14 +163,14 @@ impl BallotMeasure {
         let records = sqlx::query_as!(
             BallotMeasure,
             r#"
-                SELECT id, election_id, slug, name, vote_status AS "vote_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure
+                SELECT id, election_id, slug, title, vote_status AS "vote_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure
                 WHERE $1::text IS NULL OR slug = $1
-                AND $2::text IS NULL OR levenshtein($2, name) <=5
+                AND $2::text IS NULL OR levenshtein($2, title) <=5
                 AND $3::state IS NULL OR ballot_state = $3
                 AND $4::vote_status IS NULL OR vote_status = $4
             "#,
             search.slug,
-            search.name,
+            search.title,
             search.ballot_state as Option<State>,
             search.vote_status as Option<LegislationStatus>
         )
@@ -185,7 +185,7 @@ impl BallotMeasure {
 //         BallotMeasure {
 //             id: uuid::Uuid::new_v4(),
 //             slug: "some-piece-of-legislation".to_string(),
-//             name: "Some Piece of Legislation".to_string(),
+//             title: "Some Piece of Legislation".to_string(),
 //             vote_status: LegislationStatus::UNDECIDED,
 //             description: None,
 //             official_summary: None,

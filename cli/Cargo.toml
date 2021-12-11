@@ -14,3 +14,4 @@ sqlx = { version = "0.5.9", features = ["postgres", "offline"] }
 slugify = "0.1.0"
 colored = "2.0.0"
 csv = "1.1"
+uuid = "0.8.2"
