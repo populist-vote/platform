@@ -37,9 +37,21 @@ pub struct VotesmartProxy {
 }
 
 impl VotesmartProxy {
+    /// Instantiate new VotesmartProxy API client from .env api key
     pub fn new() -> Result<Self, Error> {
         dotenv::dotenv().ok();
         let api_key = std::env::var("VOTESMART_API_KEY")?;
+        let client = reqwest::Client::new();
+
+        Ok(VotesmartProxy {
+            client,
+            base_url: reqwest::Url::parse(VOTESMART_BASE_URL).unwrap(),
+            api_key,
+        })
+    }
+
+    /// Instantiate new VotesmartProxy API client by passing api key to this function
+    pub fn new_from_key(api_key: String) -> Result<Self, Error> {
         let client = reqwest::Client::new();
 
         Ok(VotesmartProxy {
