@@ -22,3 +22,7 @@ if response.status().is_success() {
     panic!("Something went wrong fetching Joe Biden's bio");
 }
 ```
+
+## Types
+This is a work in progress, but eventually all of the Votesmart object responses will be typed out into their own structs.  See [src/types](src/types/candidate_bio.rs) as an example.  Unfortunately, some Votesmart responses are not always consistent in their return types depending on what you query for, so certain ambigious fields can be typed as `serde_json::Value` 
+ 
