@@ -1,4 +1,5 @@
-use crate::errors::Error;
+mod errors;
+use errors::Error;
 use serde::{Deserialize, Serialize};
 
 const LEGISCAN_BASE_URL: &str = "https://api.legiscan.com/";

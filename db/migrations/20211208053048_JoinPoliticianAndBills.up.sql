@@ -1,15 +1,7 @@
 -- Add up migration script here
 
-CREATE TABLE politician_bills (
-    id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-    politician_id uuid NOT NULL,
-    bill_id uuid NOT NULL,
-    vote VARCHAR(1), -- TODO: perhaps make this a proper type with all possible vote types yea, nea, etc.
-    created_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
-    updated_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
-    CONSTRAINT fk_politician FOREIGN KEY(politician_id) REFERENCES politician(id),
-    CONSTRAINT fk_bill FOREIGN KEY(bill_id) REFERENCES bill(id)
-);
+ALTER TABLE bill
+ADD COLUMN history JSONB NOT NULL DEFAULT '[]'::jsonb;
 
 ALTER TABLE legislation
 RENAME COLUMN name TO title;

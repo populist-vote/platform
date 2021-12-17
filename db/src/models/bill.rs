@@ -21,6 +21,7 @@ pub struct Bill {
     pub votesmart_bill_id: Option<i32>,
     pub legiscan_bill_id: Option<i32>,
     pub legiscan_data: Value,
+    pub history: Value,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
@@ -83,7 +84,7 @@ impl Bill {
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                 ON CONFLICT (slug) DO UPDATE
                 SET title = $2
-                RETURNING id, slug, title, bill_number, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, votesmart_bill_id, created_at, updated_at
+                RETURNING id, slug, title, bill_number, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at
             "#,
             slug,
             input.title,
@@ -125,7 +126,7 @@ impl Bill {
                     legiscan_data = COALESCE($12, legiscan_data)
                 WHERE id=$1
                 OR legiscan_bill_id=$2
-                RETURNING id, slug, title, bill_number, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, votesmart_bill_id, created_at, updated_at
+                RETURNING id, slug, title, bill_number, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at
             "#,
             id,
             legiscan_bill_id,
@@ -152,7 +153,7 @@ impl Bill {
 
     pub async fn index(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
         let records = sqlx::query_as!(Bill, r#"
-            SELECT id, slug, title, bill_number, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data,  votesmart_bill_id, created_at, updated_at FROM bill"#,)
+            SELECT id, slug, title, bill_number, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at FROM bill"#,)
             .fetch_all(db_pool)
             .await?;
         Ok(records)
@@ -162,7 +163,7 @@ impl Bill {
         let records = sqlx::query_as!(
             Bill,
             r#"
-                SELECT id, slug, title, bill_number, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, votesmart_bill_id, created_at, updated_at FROM bill
+                SELECT id, slug, title, bill_number, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at FROM bill
                 WHERE $1::text IS NULL OR slug = $1
                 AND $2::text IS NULL OR levenshtein($2, title) <=5
                 AND $3::vote_status IS NULL OR vote_status = $3

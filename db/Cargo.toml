@@ -4,8 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-proxy = { path = "../proxy" }
-chrono = "0.4.19"
+legiscan = { path = "../legiscan" }
+votesmart = { path = "../votesmart" }
+chrono = { version = "0.4.19", features = ["serde"] }
 sqlx = { version = "0.5.9", features = [ "runtime-tokio-rustls", "postgres", "chrono", "uuid", "json", "offline" ] }
 tokio = { version = "1.8", features = ["full"] }
 uuid = { version = "0.8", features = ["serde", "v4"] }

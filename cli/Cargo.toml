@@ -5,7 +5,8 @@ edition = "2021"
 
 [dependencies]
 db = { path = "../db" }
-proxy = { path = "../proxy" }
+legiscan = { path = "../legiscan" }
+votesmart = { path = "../votesmart" }
 dotenv = "0.15.0"
 structopt = "0.3.25"
 serde_json = "1.0.71"
@@ -15,3 +16,5 @@ slugify = "0.1.0"
 colored = "2.0.0"
 csv = "1.1"
 uuid = "0.8.2"
+chrono = { version = "0.4.19", features = ["serde"] }
+anyhow = "1.0.45"
