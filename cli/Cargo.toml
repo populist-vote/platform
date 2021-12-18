@@ -2,6 +2,7 @@
 name = "cli"
 version = "0.1.0"
 edition = "2021"
+publish = false
 
 [dependencies]
 db = { path = "../db" }
@@ -11,7 +12,7 @@ dotenv = "0.15.0"
 structopt = "0.3.25"
 serde_json = "1.0.71"
 tokio = { version = "1.8", features = ["full"] }
-sqlx = { version = "0.5.9", features = ["postgres", "offline"] }
+sqlx = { version = "0.5.9", features = ["postgres"] }
 slugify = "0.1.0"
 colored = "2.0.0"
 csv = "1.1"
