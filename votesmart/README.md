@@ -1,7 +1,10 @@
 # Votesmart 
 A rust wrapper around the Votesmart REST API
 
-## Getting Started
+## Docs
+https://docs.rs/votesmart/latest/votesmart/
+
+## Quick Start
 To get started, you'll need to instantiate a VotesmartProxy in your program. You have two options:
 ```rust
 use votesmart::VotesmartProxy
@@ -25,4 +28,4 @@ if response.status().is_success() {
 
 ## Types
 This is a work in progress, but eventually all of the Votesmart object responses will be typed out into their own structs.  See [src/types](src/types/candidate_bio.rs) as an example.  Unfortunately, some Votesmart responses are not always consistent in their return types depending on what you query for, so certain ambigious fields can be typed as `serde_json::Value` 
- 
+
