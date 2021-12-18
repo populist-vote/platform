@@ -194,9 +194,9 @@ checksum = "e91831deabf0d6d7ec49552e489aed63b7456a7a3c46cff62adad428110b0af0"
 
 [[package]]
 name = "async-trait"
-version = "0.1.51"
+version = "0.1.52"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44318e776df68115a881de9a8fd1b9e53368d7a4a5ce4cc48517da3393233a5e"
+checksum = "061a7acccaa286c011ddc30970520b98fa40e00c9d644633fb26b5fc63a265e3"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -444,6 +444,7 @@ dependencies = [
  "libc",
  "num-integer",
  "num-traits",
+ "serde",
  "time",
  "winapi",
 ]
@@ -476,16 +477,20 @@ dependencies = [
 name = "cli"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "chrono",
  "colored",
  "csv",
  "db",
  "dotenv",
- "proxy",
+ "legiscan",
  "serde_json",
  "slugify",
  "sqlx",
  "structopt",
  "tokio",
+ "uuid",
+ "votesmart",
 ]
 
 [[package]]
@@ -685,8 +690,8 @@ dependencies = [
  "const_format",
  "dotenv",
  "lazy_static",
+ "legiscan",
  "once_cell",
- "proxy",
  "pwhash",
  "serde",
  "serde_json",
@@ -697,6 +702,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "uuid",
+ "votesmart",
 ]
 
 [[package]]
@@ -1018,7 +1024,7 @@ dependencies = [
  "db",
  "dotenv",
  "http",
- "proxy",
+ "legiscan",
  "pwhash",
  "rust-s3",
  "serde",
@@ -1026,6 +1032,7 @@ dependencies = [
  "sqlx",
  "thiserror",
  "uuid",
+ "votesmart",
 ]
 
 [[package]]
@@ -1309,6 +1316,24 @@ name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
+
+[[package]]
+name = "legiscan"
+version = "0.1.0"
+dependencies = [
+ "async-graphql",
+ "chrono",
+ "dotenv",
+ "enum-utils",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "structopt",
+ "strum_macros 0.23.1",
+ "thiserror",
+ "tokio",
+]
 
 [[package]]
 name = "libc"
@@ -1852,23 +1877,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba508cc11742c0dc5c1659771673afbab7a0efab23aa17e854cbab0837ed0b43"
 dependencies = [
  "unicode-xid",
-]
-
-[[package]]
-name = "proxy"
-version = "0.1.0"
-dependencies = [
- "async-graphql",
- "dotenv",
- "enum-utils",
- "reqwest",
- "serde",
- "serde_json",
- "sqlx",
- "structopt",
- "strum_macros 0.23.1",
- "thiserror",
- "tokio",
 ]
 
 [[package]]
@@ -2950,6 +2958,21 @@ name = "version_check"
 version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5fecdca9a5291cc2b8dcf7dc02453fee791a280f3743cb0905f8822ae463b3fe"
+
+[[package]]
+name = "votesmart"
+version = "0.1.2"
+dependencies = [
+ "async-graphql",
+ "chrono",
+ "dotenv",
+ "enum-utils",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+]
 
 [[package]]
 name = "waker-fn"

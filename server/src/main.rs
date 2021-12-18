@@ -12,13 +12,21 @@ use poem::{
     http::{header, HeaderMap, Method},
     listener::TcpListener,
     middleware::Cors,
-    post,
     web::{Data, Html, Json},
     EndpointExt, IntoResponse, Route, Server,
 };
 use serde_json::Value;
 use server::{Environment, Error};
 use sqlx::postgres::PgPoolOptions;
+
+#[handler]
+fn root() -> impl IntoResponse {
+    Html(
+        r#"
+        <h1>Populist API Docs</h1>
+    "#,
+    )
+}
 
 // Simple server health check
 #[handler]
@@ -103,9 +111,7 @@ async fn main() -> Result<(), Error> {
     };
 
     let app = Route::new()
-        .at("/status", get(ping))
-        .at("/playground", get(graphql_playground))
-        .at("/", post(graphql_handler))
+        .at("/", get(graphql_playground).post(graphql_handler))
         .data(schema)
         .with(Cors::default());
 

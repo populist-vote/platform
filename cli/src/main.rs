@@ -1,15 +1,16 @@
 #[rustfmt::skip]
 mod utils;
+use anyhow::{anyhow, Error};
 use slugify::slugify;
 use std::str::FromStr;
-
-use db::{
-    models::enums::{PoliticalParty, State},
-    CreatePoliticianInput, UpdateBillInput, UpdatePoliticianInput,
-};
 use structopt::StructOpt;
 
-use proxy::{Error, LegiscanProxy, VotesmartProxy};
+use db::{
+    models::enums::{LegislationStatus, PoliticalParty, State},
+    CreateBillInput, CreatePoliticianInput, UpdateBillInput, UpdatePoliticianInput,
+};
+use legiscan::LegiscanProxy;
+use votesmart::{GetCandidateBioResponse, GetCandidateVotingRecordResponse, VotesmartProxy};
 #[derive(Clone, Debug, StructOpt)]
 #[structopt(
     name = "Populist Command Line",
@@ -95,12 +96,13 @@ struct GetCandidateVotingRecordArgs {
     candidate_id: i32,
     #[structopt(short, long, about = "Print fetched JSON data to console")]
     pretty_print: bool,
+    #[structopt(short, long, about = "Create bill records and joins")]
+    create_record: bool,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     utils::headline();
-
     db::init_pool().await.unwrap();
     let args = Args::from_args();
 
@@ -137,75 +139,95 @@ async fn main() -> Result<(), Error> {
             args.candidate_id
         );
 
-        let data = VotesmartProxy::new()
-            .unwrap()
-            .get_candidate_bio(args.candidate_id)
-            .await;
+        let proxy = VotesmartProxy::new().unwrap();
+        let response = proxy
+            .candidate_bio()
+            .get_detailed_bio(args.candidate_id)
+            .await?;
 
-        let data = data.unwrap().clone();
-
-        if args.pretty_print {
-            println!("{}", serde_json::to_string_pretty(&data).unwrap());
-        }
-
-        if args.create_record {
-            let pool = db::pool().await;
-            let vs_id = data
-                .candidate
-                .candidate_id
-                .to_owned()
-                .parse::<i32>()
-                .unwrap();
-            let first_name = data.candidate.first_name.to_owned();
-            let middle_name = Some(data.candidate.middle_name.to_owned());
-            let last_name = data.candidate.last_name.to_owned();
-            let full_name = format!(
-                "{:?} {:?}",
-                data.candidate.first_name, data.candidate.last_name
-            );
-            let slug = slugify!(&full_name);
-            let home_state = State::from_str(&data.candidate.home_state).unwrap();
-            let office_party = Some(
-                PoliticalParty::from_str(&data.office.to_owned().unwrap().parties)
-                    .unwrap_or_default(),
-            );
-
-            let input = CreatePoliticianInput {
-                first_name,
-                middle_name,
-                last_name,
-                slug,
-                home_state,
-                office_party,
-                votesmart_candidate_id: Some(vs_id),
-                votesmart_candidate_bio: Some(serde_json::to_value(data.clone()).unwrap()),
-                ..Default::default()
+        if response.status().is_success() {
+            let json: serde_json::Value = response.json().await?;
+            let bio = &json["bio"];
+            let data: GetCandidateBioResponse = match bio {
+                serde_json::Value::Null => {
+                    println!(
+                        "Candidate with id {} does not exist in the Votesmart API",
+                        args.candidate_id
+                    );
+                    std::process::exit(0)
+                }
+                _ => serde_json::from_value(bio.to_owned()).unwrap(),
             };
 
-            let new_record = db::Politician::create(&pool.connection, &input).await?;
-            println!(
+            let data = data.clone();
+
+            if args.pretty_print {
+                println!("{}", serde_json::to_string_pretty(&data).unwrap());
+            }
+
+            if args.create_record {
+                let pool = db::pool().await;
+                let vs_id = data
+                    .candidate
+                    .candidate_id
+                    .to_owned()
+                    .parse::<i32>()
+                    .unwrap();
+                let first_name = data.candidate.first_name.to_owned();
+                let middle_name = Some(data.candidate.middle_name.to_owned());
+                let last_name = data.candidate.last_name.to_owned();
+                let full_name = format!(
+                    "{:?} {:?}",
+                    data.candidate.first_name, data.candidate.last_name
+                );
+                let slug = slugify!(&full_name);
+                let home_state = State::from_str(&data.candidate.home_state).unwrap();
+                let office_party = Some(
+                    PoliticalParty::from_str(&data.office.to_owned().unwrap().parties)
+                        .unwrap_or_default(),
+                );
+
+                let input = CreatePoliticianInput {
+                    first_name,
+                    middle_name,
+                    last_name,
+                    slug,
+                    home_state,
+                    office_party,
+                    votesmart_candidate_id: Some(vs_id),
+                    votesmart_candidate_bio: Some(serde_json::to_value(data.clone()).unwrap()),
+                    ..Default::default()
+                };
+
+                let new_record = db::Politician::create(&pool.connection, &input).await?;
+                println!(
                 "\n✅ Populist politician {} {} has been created and seeded with Votesmart data",
                 new_record.first_name, new_record.last_name
             );
+            }
+
+            if args.update_record {
+                let pool = db::pool().await;
+                let vs_id = data.candidate.candidate_id.parse::<i32>().unwrap();
+
+                let input = UpdatePoliticianInput {
+                    votesmart_candidate_bio: Some(serde_json::to_value(data.clone()).unwrap()),
+                    ..Default::default()
+                };
+                let updated_record =
+                    db::Politician::update(&pool.connection, None, Some(vs_id), &input).await?;
+                println!(
+                    "\n✅ Populist politician with id {} has been updated with Votesmart data",
+                    updated_record.id
+                );
+            }
+
+            Ok(())
+        } else {
+            Err(anyhow!(
+                "Something went wrong fetching votesmart candidate bio"
+            ))
         }
-
-        if args.update_record {
-            let pool = db::pool().await;
-            let vs_id = data.candidate.candidate_id.parse::<i32>().unwrap();
-
-            let input = UpdatePoliticianInput {
-                votesmart_candidate_bio: Some(serde_json::to_value(data.clone()).unwrap()),
-                ..Default::default()
-            };
-            let updated_record =
-                db::Politician::update(&pool.connection, None, Some(vs_id), &input).await?;
-            println!(
-                "\n✅ Populist politician with id {} has been updated with Votesmart data",
-                updated_record.id
-            );
-        }
-
-        Ok(())
     }
 
     async fn get_candidate_voting_record(args: GetCandidateVotingRecordArgs) -> Result<(), Error> {
@@ -214,18 +236,134 @@ async fn main() -> Result<(), Error> {
             args.candidate_id
         );
 
-        let data = VotesmartProxy::new()
-            .unwrap()
-            .get_candidate_voting_record(args.candidate_id)
-            .await;
+        let proxy = VotesmartProxy::new().unwrap();
+        let response = proxy
+            .votes()
+            .get_by_official(args.candidate_id, None, None, None)
+            .await?;
 
-        let data = data.unwrap().clone();
+        if response.status().is_success() {
+            let json: serde_json::Value = response.json().await?;
+            let data: GetCandidateVotingRecordResponse = serde_json::from_value(json).unwrap();
+            let data = data.clone();
+            if args.pretty_print {
+                println!("{}", serde_json::to_string_pretty(&data).unwrap());
+            }
 
-        if args.pretty_print {
-            println!("{}", serde_json::to_string_pretty(&data).unwrap());
+            if args.create_record {
+                let pool = db::pool().await;
+
+                // Find the populist politician
+                let politician_id = sqlx::query!(
+                    r#"SELECT id FROM politician WHERE votesmart_candidate_id = $1"#,
+                    args.candidate_id
+                )
+                .fetch_one(&pool.connection)
+                .await?
+                .id;
+
+                // Create all of the populist bill objects
+                for bill in data.bills.bill.into_iter() {
+                    let vote_status = match bill.stage.as_ref() {
+                        "Introduced" => LegislationStatus::Introduced,
+                        "Passage" => LegislationStatus::PassedBothChambers,
+                        "Amendment Vote" => LegislationStatus::Unknown,
+                        "Concurrence Vote" => LegislationStatus::Unknown,
+                        "Conference Report Vote" => LegislationStatus::Unknown,
+                        "Motion Vote" => LegislationStatus::Unknown,
+                        _ => LegislationStatus::Unknown,
+                    };
+
+                    let bill_input = CreateBillInput {
+                        slug: Some(slugify!(&bill.bill_number)),
+                        title: bill.title,
+                        bill_number: bill.bill_number,
+                        description: None,
+                        vote_status,
+                        official_summary: None,
+                        populist_summary: None,
+                        full_text_url: None,
+                        legiscan_bill_id: None,
+                        votesmart_bill_id: Some(bill.bill_id.parse::<i32>().unwrap()),
+                        legiscan_data: None,
+                        arguments: None,
+                    };
+
+                    let new_bill_record = db::Bill::create(&pool.connection, &bill_input).await;
+
+                    // Going to need to get date from vote action :(
+
+                    // let history_record = match bill.vote.as_ref() {
+                    //     "P" => LegislationAction::BecameLawSigned {
+                    //         date: todo!(),
+                    //         politician_id,
+                    //     },
+                    //     "V" => LegislationAction::Vetoed {
+                    //         date: todo!(),
+                    //         politician_id,
+                    //         is_pocket_veto: false,
+                    //     },
+                    //     "Y" => LegislationAction::BecameLawSigned {
+                    //         date: todo!(),
+                    //         politician_id
+                    //     },
+                    //     "N" => LegislationAction::Vetoed {
+                    //         date: todo!(),
+                    //         politician_id,
+                    //         is_pocket_veto: false,
+                    //     },
+                    //     _ => LegislationAction::Introduced {
+                    //         date: todo!(),
+                    //         sponsor_id: uuid::Uuid
+                    //     }
+                    // };
+
+                    match new_bill_record {
+                        // Bill record already exists
+                        Err(e) => {
+                            let bill_row = sqlx::query!(
+                                r#"
+                                SELECT id FROM bill WHERE votesmart_bill_id = $1
+                            "#,
+                                bill.bill_id.parse::<i32>().unwrap()
+                            )
+                            .fetch_one(&pool.connection)
+                            .await?;
+
+                            sqlx::query!(
+                                r#"
+                            UPDATE bill
+                            SET history = history || '["newString"]'::jsonb
+                            WHERE id = $1
+                        "#,
+                                bill_row.id,
+                            )
+                            .fetch_optional(&pool.connection)
+                            .await?;
+                        }
+                        Ok(_) => {
+                            // Create the joins between our found politician and the bills they voted on
+                            // TODO: parse bill.vote here and create true history on bill record
+                            sqlx::query!(
+                                r#"
+                            UPDATE bill
+                            SET history = history || '["newString"]'::jsonb
+                            WHERE id = $1
+                        "#,
+                                new_bill_record.unwrap().id,
+                            )
+                            .fetch_optional(&pool.connection)
+                            .await?;
+                        }
+                    }
+                }
+            }
+            Ok(())
+        } else {
+            Err(anyhow!(
+                "Something went wrong fetching candidate voting record"
+            ))
         }
-
-        Ok(())
     }
 
     async fn get_bill(args: GetBillArgs) -> Result<(), Error> {

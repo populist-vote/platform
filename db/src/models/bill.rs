@@ -11,14 +11,17 @@ use sqlx::{postgres::PgPool, FromRow};
 pub struct Bill {
     pub id: uuid::Uuid,
     pub slug: String,
-    pub name: String,
+    pub title: String,
+    pub bill_number: String,
     pub vote_status: LegislationStatus,
     pub description: Option<String>,
     pub official_summary: Option<String>,
     pub populist_summary: Option<String>,
     pub full_text_url: Option<String>,
+    pub votesmart_bill_id: Option<i32>,
     pub legiscan_bill_id: Option<i32>,
     pub legiscan_data: Value,
+    pub history: Value,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
@@ -26,7 +29,8 @@ pub struct Bill {
 #[derive(InputObject)]
 pub struct CreateBillInput {
     pub slug: Option<String>,
-    pub name: String,
+    pub title: String,
+    pub bill_number: String,
     pub vote_status: LegislationStatus,
     pub description: Option<String>,
     pub official_summary: Option<String>,
@@ -34,13 +38,15 @@ pub struct CreateBillInput {
     pub full_text_url: Option<String>,
     pub legiscan_bill_id: Option<i32>,
     pub legiscan_data: Option<Value>,
+    pub votesmart_bill_id: Option<i32>,
     pub arguments: Option<Vec<CreateArgumentInput>>,
 }
 
 #[derive(InputObject, Default)]
 pub struct UpdateBillInput {
     pub slug: Option<String>,
-    pub name: Option<String>,
+    pub title: Option<String>,
+    pub bill_number: String,
     pub vote_status: Option<LegislationStatus>,
     pub description: Option<String>,
     pub official_summary: Option<String>,
@@ -54,13 +60,17 @@ pub struct UpdateBillInput {
 #[derive(InputObject)]
 pub struct BillSearch {
     slug: Option<String>,
-    name: Option<String>,
+    title: Option<String>,
+    bill_number: Option<String>,
     vote_status: Option<LegislationStatus>,
 }
 
 impl Bill {
     pub async fn create(db_pool: &PgPool, input: &CreateBillInput) -> Result<Self, sqlx::Error> {
-        let slug = slugify!(&input.name); // TODO run a query and ensure this is Unique
+        let slug = match input.slug.clone() {
+            None => slugify!(&input.title),
+            Some(slug) => slug,
+        };
 
         let legiscan_data = input
             .legiscan_data
@@ -70,19 +80,23 @@ impl Bill {
         let record = sqlx::query_as!(
             Bill,
             r#"
-                INSERT INTO bill (slug, name, vote_status, description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data) 
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
-                RETURNING id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at
+                INSERT INTO bill (slug, title, bill_number, vote_status, description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, votesmart_bill_id) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                ON CONFLICT (slug) DO UPDATE
+                SET title = $2
+                RETURNING id, slug, title, bill_number, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at
             "#,
             slug,
-            input.name,
+            input.title,
+            input.bill_number,
             input.vote_status as LegislationStatus,
             input.description,
             input.official_summary,
             input.populist_summary,
             input.full_text_url,
             input.legiscan_bill_id,
-            legiscan_data
+            legiscan_data,
+            input.votesmart_bill_id
         )
         .fetch_one(db_pool)
         .await?;
@@ -101,22 +115,24 @@ impl Bill {
             r#"
                 UPDATE bill
                 SET slug = COALESCE($3, slug),
-                    name = COALESCE($4, name),
-                    vote_status = COALESCE($5, vote_status),
-                    description = COALESCE($6, description),
-                    official_summary = COALESCE($7, official_summary),
-                    populist_summary = COALESCE($8, populist_summary),
-                    full_text_url = COALESCE($9, full_text_url),
-                    legiscan_bill_id = COALESCE($10, legiscan_bill_id), 
-                    legiscan_data = COALESCE($11, legiscan_data)
+                    title = COALESCE($4, title),
+                    bill_number = COALESCE($5,bill_number),
+                    vote_status = COALESCE($6, vote_status),
+                    description = COALESCE($7, description),
+                    official_summary = COALESCE($8, official_summary),
+                    populist_summary = COALESCE($9, populist_summary),
+                    full_text_url = COALESCE($10, full_text_url),
+                    legiscan_bill_id = COALESCE($11, legiscan_bill_id), 
+                    legiscan_data = COALESCE($12, legiscan_data)
                 WHERE id=$1
                 OR legiscan_bill_id=$2
-                RETURNING id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at
+                RETURNING id, slug, title, bill_number, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at
             "#,
             id,
             legiscan_bill_id,
             input.slug,
-            input.name,
+            input.title,
+            input.bill_number,
             input.vote_status as Option<LegislationStatus>,
             input.description,
             input.official_summary,
@@ -136,7 +152,8 @@ impl Bill {
     }
 
     pub async fn index(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
-        let records = sqlx::query_as!(Bill, r#"SELECT id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at FROM bill"#,)
+        let records = sqlx::query_as!(Bill, r#"
+            SELECT id, slug, title, bill_number, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at FROM bill"#,)
             .fetch_all(db_pool)
             .await?;
         Ok(records)
@@ -146,13 +163,13 @@ impl Bill {
         let records = sqlx::query_as!(
             Bill,
             r#"
-                SELECT id, slug, name, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, created_at, updated_at FROM bill
+                SELECT id, slug, title, bill_number, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at FROM bill
                 WHERE $1::text IS NULL OR slug = $1
-                AND $2::text IS NULL OR levenshtein($2, name) <=5
+                AND $2::text IS NULL OR levenshtein($2, title) <=5
                 AND $3::vote_status IS NULL OR vote_status = $3
             "#,
             search.slug,
-            search.name,
+            search.title,
             search.vote_status as Option<LegislationStatus>
         )
         .fetch_all(db_pool)
@@ -258,7 +275,7 @@ impl Bill {
 //         Bill {
 //             id: uuid::Uuid::new_v4(),
 //             slug: "some-piece-of-legislation".to_string(),
-//             name: "Some Piece of Legislation".to_string(),
+//             title: "Some Piece of Legislation".to_string(),
 //             vote_status: LegislationStatus::UNDECIDED,
 //             description: None,
 //             official_summary: None,

@@ -4,6 +4,7 @@ members = [
     "cli",
     "db",
     "graphql",
-    "proxy",
+    "legiscan",
+    "votesmart",
     "server"
 ]

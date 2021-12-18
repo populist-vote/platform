@@ -31,11 +31,11 @@ impl ArgumentResult {
     async fn author(&self, ctx: &Context<'_>) -> FieldResult<AuthorResult> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let result = match self.author_type {
-            AuthorType::POLITICIAN => AuthorResult::PoliticianResult(PoliticianResult::from(
+            AuthorType::Politician => AuthorResult::PoliticianResult(PoliticianResult::from(
                 Politician::find_by_id(pool, uuid::Uuid::parse_str(self.author_id.as_str())?)
                     .await?,
             )),
-            AuthorType::ORGANIZATION => AuthorResult::OrganizationResult(OrganizationResult::from(
+            AuthorType::Organization => AuthorResult::OrganizationResult(OrganizationResult::from(
                 Organization::find_by_id(pool, uuid::Uuid::parse_str(self.author_id.as_str())?)
                     .await?,
             )),

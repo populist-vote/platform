@@ -6,8 +6,8 @@ use db::{
     },
     DateTime,
 };
-use proxy::GetCandidateBioResponse;
 use sqlx::{Pool, Postgres};
+use votesmart::GetCandidateBioResponse;
 
 use super::{IssueTagResult, OrganizationResult};
 

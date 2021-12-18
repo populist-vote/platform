@@ -13,7 +13,7 @@ use sqlx::{Pool, Postgres};
 pub struct BallotMeasureResult {
     id: ID,
     slug: String,
-    name: String,
+    title: String,
     vote_status: LegislationStatus,
     election_id: ID,
     ballot_state: State,
@@ -42,7 +42,7 @@ impl From<BallotMeasure> for BallotMeasureResult {
         Self {
             id: ID::from(b.id),
             slug: b.slug,
-            name: b.name,
+            title: b.title,
             vote_status: b.vote_status,
             election_id: ID::from(b.election_id),
             ballot_state: b.ballot_state,
