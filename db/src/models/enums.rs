@@ -105,14 +105,14 @@ pub enum ArgumentPosition {
 #[sqlx(type_name = "vote_status", rename_all = "lowercase")]
 pub enum LegislationStatus {
     Introduced,
-    PassedOneChamber,
-    PassedBothChambers,
-    Tabled,
+    PassedHouse,
+    PassedSenate,
+    FailedHouse, 
+    FailedSenate,
+    ResolvingDifferences,
     SentToExecutive,
-    BecameLawSigned,
-    BecameLawUnsigned,
+    BecameLaw,
     Vetoed,
-    Failed,
     Unknown,
 }
 

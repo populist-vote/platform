@@ -266,7 +266,7 @@ async fn main() -> Result<(), Error> {
                 for bill in data.bills.bill.into_iter() {
                     let vote_status = match bill.stage.as_ref() {
                         "Introduced" => LegislationStatus::Introduced,
-                        "Passage" => LegislationStatus::PassedBothChambers,
+                        "Passage" => LegislationStatus::BecameLaw,
                         "Amendment Vote" => LegislationStatus::Unknown,
                         "Concurrence Vote" => LegislationStatus::Unknown,
                         "Conference Report Vote" => LegislationStatus::Unknown,
