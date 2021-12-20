@@ -107,7 +107,7 @@ pub enum LegislationStatus {
     Introduced,
     PassedHouse,
     PassedSenate,
-    FailedHouse, 
+    FailedHouse,
     FailedSenate,
     ResolvingDifferences,
     SentToExecutive,

@@ -259,3 +259,38 @@ impl Votes<'_> {
         self.0.client.get(url).send().await
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::VotesmartProxy;
+
+    #[tokio::test]
+    async fn test_get_categories() {
+        let proxy = VotesmartProxy::new().unwrap();
+        let response = proxy.votes().get_categories(2020, None).await.unwrap();
+        assert_eq!(response.status().is_success(), true);
+        let json: serde_json::Value = response.json().await.unwrap();
+        assert_eq!(json["categories"]["category"][0]["name"], "Abortion");
+    }
+
+    #[tokio::test]
+    async fn test_get_bill() {
+        let proxy = VotesmartProxy::new().unwrap();
+        let response = proxy.votes().get_bill(32020).await.unwrap();
+        assert_eq!(response.status().is_success(), true);
+        let json: serde_json::Value = response.json().await.unwrap();
+        assert_eq!(
+            json["bill"]["title"],
+            "Joint resolution relating to increasing the debt limit"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_get_bill_action() {
+        let proxy = VotesmartProxy::new().unwrap();
+        let response = proxy.votes().get_bill_action(83811).await.unwrap();
+        assert_eq!(response.status().is_success(), true);
+        let json: serde_json::Value = response.json().await.unwrap();
+        assert_eq!(json["action"]["billId"], "32020");
+    }
+}

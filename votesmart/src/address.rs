@@ -87,3 +87,26 @@ impl Address<'_> {
         self.0.client.get(url).send().await
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::VotesmartProxy;
+
+    #[tokio::test]
+    async fn test_get_campaign() {
+        let proxy = VotesmartProxy::new().unwrap();
+        let response = proxy.address().get_campaign(53279).await.unwrap();
+        assert_eq!(response.status().is_success(), true);
+    }
+
+    #[tokio::test]
+    async fn test_get_campaign_web_address() {
+        let proxy = VotesmartProxy::new().unwrap();
+        let response = proxy
+            .address()
+            .get_campaign_web_address(53279)
+            .await
+            .unwrap();
+        assert_eq!(response.status().is_success(), true);
+    }
+}
