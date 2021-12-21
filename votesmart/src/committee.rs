@@ -19,16 +19,16 @@ impl Committee<'_> {
     /// Returns the list of committees that fit the criteria
     pub async fn get_committees_by_type_state(
         &self,
-        committee_type_id: Option<String>,
-        state_id: Option<String>,
+        committee_type_id: Option<&str>,
+        state_id: Option<&str>,
     ) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&committeeTypeId={committee_type_id}&stateId={state_id}&o=JSON",
             base_url = &self.0.base_url,
             key = &self.0.api_key,
             operation = "Committee.getCommitteesByTypeState",
-            committee_type_id = committee_type_id.unwrap_or("All".to_string()),
-            state_id = state_id.unwrap_or("NA(fed)".to_string())
+            committee_type_id = committee_type_id.unwrap_or(""),
+            state_id = state_id.unwrap_or("")
         );
 
         self.0.client.get(url).send().await

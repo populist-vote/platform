@@ -21,7 +21,7 @@ impl Officials<'_> {
     pub async fn get_by_office_state(
         &self,
         office_id: i32,
-        state_id: Option<String>,
+        state_id: Option<&str>,
     ) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&officeId={office_id}&stateId={state_id}&o=JSON",
@@ -29,7 +29,7 @@ impl Officials<'_> {
             key = &self.0.api_key,
             operation = "Officials.getByOfficeState",
             office_id = office_id,
-            state_id = state_id.unwrap_or("NA".to_string()),
+            state_id = state_id.unwrap_or(""),
         );
 
         self.0.client.get(url).send().await
@@ -39,7 +39,7 @@ impl Officials<'_> {
     pub async fn get_by_office_type_state(
         &self,
         office_type_id: i32,
-        state_id: Option<String>,
+        state_id: Option<&str>,
     ) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&officeTypeId={office_type_id}&stateId={state_id}&o=JSON",
@@ -47,7 +47,7 @@ impl Officials<'_> {
             key = &self.0.api_key,
             operation = "Officials.getByOfficeTypeState",
             office_type_id = office_type_id,
-            state_id = state_id.unwrap_or("NA".to_string()),
+            state_id = state_id.unwrap_or(""),
         );
 
         self.0.client.get(url).send().await
@@ -93,14 +93,14 @@ impl Officials<'_> {
     }
 
     /// This method grabs a list of officials according to the zip code they represent.
-    pub async fn get_by_zip(&self, zip5: i32, zip4: Option<String>) -> Result<Response, Error> {
+    pub async fn get_by_zip(&self, zip5: i32, zip4: Option<&str>) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&zip5={zip5}&zip4={zip4}&o=JSON",
             base_url = &self.0.base_url,
             key = &self.0.api_key,
             operation = "Officials.getByZip",
             zip5 = zip5,
-            zip4 = zip4.unwrap_or("NULL".to_string())
+            zip4 = zip4.unwrap_or("")
         );
 
         self.0.client.get(url).send().await

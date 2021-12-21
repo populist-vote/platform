@@ -8,7 +8,7 @@ impl Votes<'_> {
     pub async fn get_categories(
         &self,
         year: i32,
-        state_id: Option<String>,
+        state_id: Option<&str>,
     ) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&year={year}&stateId={state_id}&o=JSON",
@@ -16,7 +16,7 @@ impl Votes<'_> {
             key = &self.0.api_key,
             operation = "Votes.getCategories",
             year = year,
-            state_id = state_id.unwrap_or("NA".to_string())
+            state_id = state_id.unwrap_or("")
         );
 
         self.0.client.get(url).send().await
@@ -97,7 +97,7 @@ impl Votes<'_> {
         &self,
         category_id: i32,
         year: i32,
-        state_id: Option<String>,
+        state_id: Option<&str>,
     ) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&categoryId={category_id}&year={year}&stateId={state_id}&o=JSON",
@@ -106,7 +106,7 @@ impl Votes<'_> {
             operation = "Votes.getBillsByCategoryYearState",
             category_id = category_id,
             year = year,
-            state_id = state_id.unwrap_or("NA".to_string())
+            state_id = state_id.unwrap_or("")
         );
 
         self.0.client.get(url).send().await
@@ -116,7 +116,7 @@ impl Votes<'_> {
     pub async fn get_bills_by_year_state(
         &self,
         year: i32,
-        state_id: Option<String>,
+        state_id: Option<&str>,
     ) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&year={year}&stateId={state_id}&o=JSON",
@@ -124,7 +124,7 @@ impl Votes<'_> {
             key = &self.0.api_key,
             operation = "Votes.getBillsByYearState",
             year = year,
-            state_id = state_id.unwrap_or("NA".to_string())
+            state_id = state_id.unwrap_or("")
         );
 
         self.0.client.get(url).send().await
@@ -135,7 +135,7 @@ impl Votes<'_> {
         &self,
         candidate_id: i32,
         year: i32,
-        office_id: Option<String>,
+        office_id: Option<&str>,
     ) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&candidateId={candidate_id}&year={year}&officeId={office_id}&o=JSON",
@@ -144,7 +144,7 @@ impl Votes<'_> {
             operation = "Votes.getByBillNumber",
             candidate_id = candidate_id,
             year = year,
-            office_id = office_id.unwrap_or("NULL".to_string())
+            office_id = office_id.unwrap_or("")
         );
 
         self.0.client.get(url).send().await
@@ -155,7 +155,7 @@ impl Votes<'_> {
         &self,
         candidate_id: i32,
         category_id: i32,
-        office_id: Option<String>,
+        office_id: Option<&str>,
     ) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&candidateId={candidate_id}&categoryId={category_id}&officeId={office_id}&o=JSON",
@@ -164,7 +164,7 @@ impl Votes<'_> {
             operation = "Votes.getBillsByOfficialCategoryOffice",
             candidate_id = candidate_id,
             category_id = category_id,
-            office_id = office_id.unwrap_or("NULL".to_string())
+            office_id = office_id.unwrap_or("")
         );
 
         self.0.client.get(url).send().await
@@ -174,9 +174,9 @@ impl Votes<'_> {
     pub async fn get_by_official(
         &self,
         candidate_id: i32,
-        office_id: Option<String>,
-        category_id: Option<String>,
-        year: Option<String>,
+        office_id: Option<&str>,
+        category_id: Option<&str>,
+        year: Option<&str>,
     ) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&candidateId={candidate_id}&categoryId={category_id}&officeId={office_id}&year={year}&o=JSON",
@@ -184,9 +184,9 @@ impl Votes<'_> {
             key = &self.0.api_key,
             operation = "Votes.getByOfficial",
             candidate_id = candidate_id,
-            category_id = category_id.unwrap_or("NULL".to_string()),
-            office_id = office_id.unwrap_or("NULL".to_string()),
-            year = year.unwrap_or("NULL".to_string())
+            category_id = category_id.unwrap_or(""),
+            office_id = office_id.unwrap_or(""),
+            year = year.unwrap_or("")
         );
 
         self.0.client.get(url).send().await

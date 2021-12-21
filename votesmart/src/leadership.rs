@@ -20,7 +20,7 @@ impl Leadership<'_> {
     pub async fn get_officials(
         &self,
         leadership_id: i32,
-        state_id: Option<String>,
+        state_id: Option<&str>,
     ) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&leadershipId={leadership_id}&stateId={state_id}&o=JSON",
@@ -28,7 +28,7 @@ impl Leadership<'_> {
             key = &self.0.api_key,
             operation = "Leadership.getOfficials",
             leadership_id = leadership_id,
-            state_id = state_id.unwrap_or("NA".to_string())
+            state_id = state_id.unwrap_or("")
         );
 
         self.0.client.get(url).send().await

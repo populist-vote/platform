@@ -244,6 +244,7 @@ async fn main() -> Result<(), Error> {
 
         if response.status().is_success() {
             let json: serde_json::Value = response.json().await?;
+            println!("{}", json);
             let data: GetCandidateVotingRecordResponse = serde_json::from_value(json).unwrap();
             let data = data.clone();
             if args.pretty_print {

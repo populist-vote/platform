@@ -9,7 +9,7 @@ impl District<'_> {
         &self,
         office_id: i32,
         state_id: String,
-        district_name: Option<String>,
+        district_name: Option<&str>,
     ) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&officeId={office_id}&stateId={state_id}&districtName={district_name}&o=JSON",
@@ -18,21 +18,21 @@ impl District<'_> {
             operation = "District.getByOfficeState",
             office_id = office_id,
             state_id = state_id,
-            district_name = district_name.unwrap_or("NULL".to_string())
+            district_name = district_name.unwrap_or("")
         );
 
         self.0.client.get(url).send().await
     }
 
     /// This method grabs district IDs according to the zip code.
-    pub async fn get_by_zip(&self, zip5: i32, zip4: Option<String>) -> Result<Response, Error> {
+    pub async fn get_by_zip(&self, zip5: i32, zip4: Option<&str>) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&zip5={zip5}&zip4={zip4}&o=JSON",
             base_url = &self.0.base_url,
             key = &self.0.api_key,
             operation = "District.getByZip",
             zip5 = zip5,
-            zip4 = zip4.unwrap_or("NULL".to_string()),
+            zip4 = zip4.unwrap_or(""),
         );
 
         self.0.client.get(url).send().await

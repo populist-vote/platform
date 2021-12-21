@@ -73,7 +73,7 @@ impl Address<'_> {
     pub async fn get_office_by_office_state(
         &self,
         office_id: i32,
-        state_id: Option<String>,
+        state_id: Option<&str>,
     ) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&officeId={office_id}&stateId={state_id}&o=JSON",
@@ -81,7 +81,7 @@ impl Address<'_> {
             key = &self.0.api_key,
             operation = "Address.getOfficeByOfficeState",
             office_id = office_id,
-            state_id = state_id.unwrap_or("NA".to_string())
+            state_id = state_id.unwrap_or("")
         );
 
         self.0.client.get(url).send().await
