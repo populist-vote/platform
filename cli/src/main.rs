@@ -35,7 +35,7 @@ enum Service {
     /// Interact with Legiscan API data
     Legiscan(LegiscanAction),
     /// Interact with Votesmart API data
-    Votesmart(VoteSmartAction),
+    Votesmart(VotesmartAction),
 }
 
 #[derive(Clone, Debug, StructOpt)]
@@ -71,11 +71,25 @@ struct GetBillTextArgs {
 }
 
 #[derive(Clone, Debug, StructOpt)]
-enum VoteSmartAction {
+struct GetBillActionArgs {
+    #[structopt(about = "Legiscan action ID")]
+    action_id: i32,
+    #[structopt(short, long, about = "Create populist record")]
+    create_record: bool,
+    #[structopt(short, long, about = "Update populist record")]
+    update_record: bool,
+    #[structopt(short, long, about = "Print fetched JSON data to console")]
+    pretty_print: bool,
+}
+
+#[derive(Clone, Debug, StructOpt)]
+enum VotesmartAction {
     /// Get candidate bio from Votesmart
     GetCandidateBio(GetCandidateBioArgs),
     /// Get candidate voting record from Votesmart
     GetCandidateVotingRecord(GetCandidateVotingRecordArgs),
+    /// Get bill action
+    GetBillAction(GetBillActionArgs),
 }
 
 #[derive(Clone, Debug, StructOpt)]
@@ -124,18 +138,19 @@ async fn main() -> Result<(), Error> {
         }
     }
 
-    async fn handle_votesmart_action(action: VoteSmartAction) -> Result<(), Error> {
+    async fn handle_votesmart_action(action: VotesmartAction) -> Result<(), Error> {
         match action {
-            VoteSmartAction::GetCandidateBio(args) => get_candidate_bio(args).await,
-            VoteSmartAction::GetCandidateVotingRecord(args) => {
+            VotesmartAction::GetCandidateBio(args) => get_candidate_bio(args).await,
+            VotesmartAction::GetCandidateVotingRecord(args) => {
                 get_candidate_voting_record(args).await
             }
+            VotesmartAction::GetBillAction(args) => get_bill_action(args).await,
         }
     }
 
     async fn get_candidate_bio(args: GetCandidateBioArgs) -> Result<(), Error> {
         println!(
-            "\n▶️ FETCHING CANDIDATE BIO FROM LEGISCAN\n  📖 candidate_id: {}",
+            "\n🧜‍♀️ Fetching candidate bio from Votesmart\n  📖 candidate_id: {}",
             args.candidate_id
         );
 
@@ -232,7 +247,7 @@ async fn main() -> Result<(), Error> {
 
     async fn get_candidate_voting_record(args: GetCandidateVotingRecordArgs) -> Result<(), Error> {
         println!(
-            "\n▶️ FETCHING CANDIDATE VOTING RECORD FROM VOTESMART\n  📖 candidate_id: {}",
+            "\n🧞‍♂️ Fetching candidate voting record from Votesmart\n  📖 candidate_id: {}",
             args.candidate_id
         );
 
@@ -368,7 +383,7 @@ async fn main() -> Result<(), Error> {
 
     async fn get_bill(args: GetBillArgs) -> Result<(), Error> {
         println!(
-            "\n▶️ FETCHING BILL DATA FROM LEGISCAN\n  📖 bill_id: {}",
+            "\n🧚  Fetching bill data from Legiscan\n  📖 bill_id: {}",
             args.bill_id
         );
 
@@ -411,6 +426,27 @@ async fn main() -> Result<(), Error> {
 
     async fn get_bill_text(args: GetBillTextArgs) -> Result<(), Error> {
         println!("{:?}", args.bill_id);
+        Ok(())
+    }
+
+    async fn get_bill_action(args: GetBillActionArgs) -> Result<(), Error> {
+        println!(
+            "\n🌥➞ Fetching bill action data from Votesmart\n📖 action_id: {}",
+            args.action_id
+        );
+
+        let proxy = VotesmartProxy::new().unwrap();
+        let response = proxy.votes().get_bill_action(args.action_id).await?;
+
+        if response.status().is_success() {
+            let json: serde_json::Value = response.json().await?;
+            let data = json.clone();
+
+            if args.pretty_print {
+                println!("{}", serde_json::to_string_pretty(&data).unwrap());
+            }
+        }
+
         Ok(())
     }
 
