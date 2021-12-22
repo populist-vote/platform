@@ -338,8 +338,8 @@ async fn main() -> Result<(), Error> {
                         Err(_e) => {
                             let bill_row = sqlx::query!(
                                 r#"
-                                SELECT id FROM bill WHERE votesmart_bill_id = $1
-                            "#,
+                                    SELECT id FROM bill WHERE votesmart_bill_id = $1
+                                "#,
                                 bill.bill_id.parse::<i32>().unwrap()
                             )
                             .fetch_one(&pool.connection)
@@ -347,10 +347,10 @@ async fn main() -> Result<(), Error> {
 
                             sqlx::query!(
                                 r#"
-                            UPDATE bill
-                            SET history = history || '["newString"]'::jsonb
-                            WHERE id = $1
-                        "#,
+                                    UPDATE bill
+                                    SET history = history || '["newString"]'::jsonb
+                                    WHERE id = $1
+                                "#,
                                 bill_row.id,
                             )
                             .fetch_optional(&pool.connection)
@@ -361,10 +361,10 @@ async fn main() -> Result<(), Error> {
                             // TODO: parse bill.vote here and create true history on bill record
                             sqlx::query!(
                                 r#"
-                            UPDATE bill
-                            SET history = history || '["newString"]'::jsonb
-                            WHERE id = $1
-                        "#,
+                                    UPDATE bill
+                                    SET history = history || '["newString"]'::jsonb
+                                    WHERE id = $1
+                                "#,
                                 new_bill_record.unwrap().id,
                             )
                             .fetch_optional(&pool.connection)
