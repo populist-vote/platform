@@ -20,7 +20,7 @@ impl Candidates<'_> {
             operation = "Candidates.getByOfficeState",
             office_id = office_id,
             state_id = state_id.unwrap_or(""),
-            election_year = election_year.unwrap_or(chrono::Utc::now().year()),
+            election_year = election_year.unwrap_or_else(|| chrono::Utc::now().year()),
             stage_id = stage_id.unwrap_or("")
         );
 
@@ -42,7 +42,7 @@ impl Candidates<'_> {
             operation = "Candidates.getByOfficeStateType",
             office_type_id = office_type_id,
             state_id = state_id.unwrap_or(""),
-            election_year = election_year.unwrap_or(chrono::Utc::now().year()),
+            election_year = election_year.unwrap_or_else(|| chrono::Utc::now().year()),
             stage_id = stage_id.unwrap_or("")
         );
 
@@ -62,7 +62,7 @@ impl Candidates<'_> {
             key = &self.0.api_key,
             operation = "Candidates.getByLastName",
             last_name = last_name,
-            election_year = election_year.unwrap_or(chrono::Utc::now().year()),
+            election_year = election_year.unwrap_or_else(|| chrono::Utc::now().year()),
             stage_id = stage_id.unwrap_or("")
         );
 
@@ -82,7 +82,7 @@ impl Candidates<'_> {
             key = &self.0.api_key,
             operation = "Candidates.getByLevenshtein",
             last_name = last_name,
-            election_year = election_year.unwrap_or(chrono::Utc::now().year()),
+            election_year = election_year.unwrap_or_else(|| chrono::Utc::now().year()),
             stage_id = stage_id.unwrap_or("")
         );
 
@@ -120,7 +120,7 @@ impl Candidates<'_> {
             key = &self.0.api_key,
             operation = "Candidates.getByDistrict",
             district_id = district_id,
-            election_year = election_year.unwrap_or(chrono::Utc::now().year()),
+            election_year = election_year.unwrap_or_else(|| chrono::Utc::now().year()),
             stage_id = stage_id.unwrap_or("")
         );
 

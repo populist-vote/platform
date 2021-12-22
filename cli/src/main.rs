@@ -83,6 +83,7 @@ struct GetBillActionArgs {
 }
 
 #[derive(Clone, Debug, StructOpt)]
+#[allow(clippy::enum_variant_names)]
 enum VotesmartAction {
     /// Get candidate bio from Votesmart
     GetCandidateBio(GetCandidateBioArgs),
@@ -440,7 +441,7 @@ async fn main() -> Result<(), Error> {
 
         if response.status().is_success() {
             let json: serde_json::Value = response.json().await?;
-            let data = json.clone();
+            let data = json;
 
             if args.pretty_print {
                 println!("{}", serde_json::to_string_pretty(&data).unwrap());

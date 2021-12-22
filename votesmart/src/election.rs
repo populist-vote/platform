@@ -50,7 +50,7 @@ impl Election<'_> {
             operation = "Election.getElectionByZip",
             zip5 = zip5,
             zip4 = zip4.unwrap_or(""),
-            year = year.unwrap_or(chrono::Utc::now().year()),
+            year = year.unwrap_or_else(|| chrono::Utc::now().year()),
         );
 
         self.0.client.get(url).send().await
