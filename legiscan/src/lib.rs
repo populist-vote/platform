@@ -125,7 +125,7 @@ impl LegiscanProxy {
 
     /// Retrieve master bill list for a session
     // 1 hour
-    pub async fn get_master_list_by_session(&self, session_id: i32) {
+    pub async fn get_master_list_by_session(&self, _session_id: i32) {
         todo!()
     }
 

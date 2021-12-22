@@ -269,7 +269,7 @@ async fn main() -> Result<(), Error> {
                 let pool = db::pool().await;
 
                 // Find the populist politician
-                let politician_id = sqlx::query!(
+                let _politician_id = sqlx::query!(
                     r#"SELECT id FROM politician WHERE votesmart_candidate_id = $1"#,
                     args.candidate_id
                 )
@@ -335,7 +335,7 @@ async fn main() -> Result<(), Error> {
 
                     match new_bill_record {
                         // Bill record already exists
-                        Err(e) => {
+                        Err(_e) => {
                             let bill_row = sqlx::query!(
                                 r#"
                                 SELECT id FROM bill WHERE votesmart_bill_id = $1
