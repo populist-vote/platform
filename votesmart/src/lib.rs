@@ -1,6 +1,6 @@
+mod api;
 mod errors;
 mod types;
-mod api;
 use api::*;
 use errors::Error;
 pub use types::{GetCandidateBioResponse, GetCandidateVotingRecordResponse};
