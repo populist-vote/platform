@@ -1,31 +1,9 @@
-pub mod address;
-pub mod candidate_bio;
-pub mod candidates;
-pub mod committee;
-pub mod district;
-pub mod election;
 mod errors;
-pub mod leadership;
-pub mod office;
-pub mod officials;
-pub mod rating;
-pub mod state;
 mod types;
-pub mod votes;
-use address::Address;
-use candidate_bio::CandidateBio;
-use candidates::Candidates;
-use committee::Committee;
-use district::District;
-use election::Election;
+mod api;
+use api::*;
 use errors::Error;
-use leadership::Leadership;
-use office::Office;
-use officials::Officials;
-use rating::Rating;
-use state::State;
 pub use types::{GetCandidateBioResponse, GetCandidateVotingRecordResponse};
-use votes::Votes;
 
 const VOTESMART_BASE_URL: &str = "http://api.votesmart.org/";
 
