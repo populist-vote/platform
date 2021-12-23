@@ -309,7 +309,7 @@ async fn main() -> Result<(), Error> {
 
                     // Going to need to get date from vote action :(
 
-                    // let history_record = match bill.vote.as_ref() {
+                    // let history_record = match bill.vote.as_str() {
                     //     "P" => LegislationAction::BecameLawSigned {
                     //         date: todo!(),
                     //         politician_id,
@@ -388,14 +388,12 @@ async fn main() -> Result<(), Error> {
             args.bill_id
         );
 
-        let data = LegiscanProxy::new()
-            .unwrap()
-            .get_bill(args.bill_id.to_string())
-            .await;
+        let data = LegiscanProxy::new().unwrap().get_bill(args.bill_id).await;
 
         let data = data.unwrap().clone();
+        let json = serde_json::to_value(data).unwrap();
 
-        if data == serde_json::Value::Null {
+        if json == serde_json::Value::Null {
             println!(
                 "Bill with bill_id: {} does not exist in the Legiscan API",
                 args.bill_id
@@ -404,13 +402,13 @@ async fn main() -> Result<(), Error> {
         }
 
         if args.pretty_print {
-            println!("{}", serde_json::to_string_pretty(&data).unwrap());
+            println!("{}", serde_json::to_string_pretty(&json).unwrap());
         }
 
         if args.update_record {
             let pool = db::pool().await;
             let input = UpdateBillInput {
-                legiscan_data: Some(data.clone()),
+                legiscan_data: Some(json),
                 ..Default::default()
             };
             let updated_record =

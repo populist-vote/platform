@@ -698,7 +698,7 @@ dependencies = [
  "slugify",
  "sqlx",
  "strum",
- "strum_macros 0.22.0",
+ "strum_macros",
  "thiserror",
  "tokio",
  "uuid",
@@ -1321,16 +1321,10 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 name = "legiscan"
 version = "0.1.0"
 dependencies = [
- "async-graphql",
- "chrono",
  "dotenv",
- "enum-utils",
  "reqwest",
  "serde",
  "serde_json",
- "sqlx",
- "structopt",
- "strum_macros 0.23.1",
  "thiserror",
  "tokio",
 ]
@@ -2120,12 +2114,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rustversion"
-version = "1.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61b3909d758bb75c79f23d4736fac9433868679d3ad2ea7a61e3c25cfda9a088"
-
-[[package]]
 name = "ryu"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2551,19 +2539,6 @@ dependencies = [
  "heck",
  "proc-macro2",
  "quote",
- "syn",
-]
-
-[[package]]
-name = "strum_macros"
-version = "0.23.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5bb0dc7ee9c15cea6199cde9a127fa16a4c5819af85395457ad72d68edc85a38"
-dependencies = [
- "heck",
- "proc-macro2",
- "quote",
- "rustversion",
  "syn",
 ]
 

@@ -1,3 +1,7 @@
 [submodule "votesmart"]
 	path = votesmart
 	url = https://github.com/populist-vote/votesmart.git
+
+[submodule "legiscan"]
+	path = legiscan
+	url = https://github.com/populist-vote/legiscan.git
