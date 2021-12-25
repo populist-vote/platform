@@ -1,4 +1,5 @@
 mod api;
+pub use api::*;
 #[allow(clippy::module_inception)]
 mod errors;
 use errors::{Error, LegiscanErrorResponse};

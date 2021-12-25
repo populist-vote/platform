@@ -8,7 +8,7 @@ struct GetMasterListResponse {
 }
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct MasterListBill {
-    pub bill_id: i64,
+    pub bill_id: i32,
     pub number: String,
     pub change_hash: String,
     pub url: String,

@@ -161,7 +161,7 @@ impl Organization {
             Organization,
             r#"
                 SELECT * FROM organization
-                WHERE $1::text IS NULL OR levenshtein($1, name) <=5
+                WHERE ($1::text IS NULL OR levenshtein($1, name) <=5)
              "#,
             search.name
         )

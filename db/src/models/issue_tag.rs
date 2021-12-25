@@ -137,7 +137,7 @@ impl IssueTag {
             IssueTag,
             r#"
                 SELECT id, slug, name, description, created_at, updated_at FROM issue_tag
-                WHERE $1::text IS NULL OR levenshtein($1, name) <= 3
+                WHERE ($1::text IS NULL OR levenshtein($1, name) <= 3)
             "#,
             search.name
         )

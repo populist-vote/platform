@@ -1,4 +1,5 @@
 use crate::{Error, LegiscanProxy};
+use async_graphql::FieldResult;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -8,6 +9,11 @@ struct GetBillResponse {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(
+    feature = "async-graphql",
+    derive(async_graphql::SimpleObject),
+    graphql(complex)
+)]
 pub struct Bill {
     pub bill_id: i32,
     pub change_hash: String,
@@ -16,6 +22,8 @@ pub struct Bill {
     pub url: String,
     pub state_link: String,
     pub completed: i32,
+    /// Can be cast to its BillStatus with
+    /// `BillStatus::try_from(status).unwrap()`
     pub status: i32,
     pub status_date: String,
     pub progress: Vec<Progress>,
@@ -29,7 +37,7 @@ pub struct Bill {
     pub current_body: String,
     pub current_body_id: i32,
     pub title: String,
-    pub committee: serde_json::Value, // sometimes a Commitee, sometimes and empty array :(
+    pub committee: serde_json::Value, // sometimes a Commitee, sometimes an empty array :(
     pub referrals: Option<Vec<Referral>>,
     pub pending_committee_id: i32,
     pub history: Vec<History>,
@@ -43,7 +51,35 @@ pub struct Bill {
     pub calendar: Vec<Calendar>,
 }
 
+#[cfg_attr(feature = "async-graphql", async_graphql::ComplexObject)]
+impl Bill {
+    async fn status_type(&self) -> FieldResult<String> {
+        Ok(BillStatus::try_from(self.status).unwrap().to_string())
+    }
+}
+
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    num_enum::TryFromPrimitive,
+    strum_macros::Display,
+)]
+#[repr(i32)]
+pub enum BillStatus {
+    Introduced = 1,
+    Engrossed = 2,
+    Enrolled = 3,
+    Passed = 4,
+    Vetoed = 5,
+    /// Limited support based on state
+    Failed = 6,
+}
+
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "async-graphql", derive(async_graphql::SimpleObject))]
 pub struct Session {
     pub session_id: i32,
     pub session_name: String,
@@ -54,12 +90,14 @@ pub struct Session {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "async-graphql", derive(async_graphql::SimpleObject))]
 pub struct Progress {
     pub date: String,
     pub event: i32,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "async-graphql", derive(async_graphql::SimpleObject))]
 pub struct Committee {
     pub committee_id: i32,
     pub chamber: String,
@@ -68,6 +106,7 @@ pub struct Committee {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "async-graphql", derive(async_graphql::SimpleObject))]
 pub struct Referral {
     pub date: String,
     pub committee_id: i32,
@@ -77,6 +116,7 @@ pub struct Referral {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "async-graphql", derive(async_graphql::SimpleObject))]
 pub struct History {
     pub date: String,
     pub action: String,
@@ -86,6 +126,7 @@ pub struct History {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "async-graphql", derive(async_graphql::SimpleObject))]
 pub struct Sponsor {
     pub people_id: i32,
     pub person_hash: String,
@@ -111,6 +152,7 @@ pub struct Sponsor {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "async-graphql", derive(async_graphql::SimpleObject))]
 pub struct Sast {
     pub type_id: i32,
     #[serde(rename = "type")]
@@ -120,12 +162,14 @@ pub struct Sast {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "async-graphql", derive(async_graphql::SimpleObject))]
 pub struct Subject {
     pub subject_id: i32,
     pub subject_name: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "async-graphql", derive(async_graphql::SimpleObject))]
 pub struct Text {
     pub doc_id: i32,
     pub date: String,
@@ -140,6 +184,7 @@ pub struct Text {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "async-graphql", derive(async_graphql::SimpleObject))]
 pub struct Vote {
     pub roll_call_id: i32,
     pub date: String,
@@ -157,6 +202,7 @@ pub struct Vote {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "async-graphql", derive(async_graphql::SimpleObject))]
 pub struct Amendment {
     pub amendment_id: i32,
     pub adopted: i32,
@@ -172,6 +218,7 @@ pub struct Amendment {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "async-graphql", derive(async_graphql::SimpleObject))]
 pub struct Supplement {
     pub supplement_id: i32,
     pub date: String,
@@ -187,6 +234,7 @@ pub struct Supplement {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "async-graphql", derive(async_graphql::SimpleObject))]
 pub struct Calendar {
     pub type_id: i32,
     #[serde(rename = "type")]
@@ -207,7 +255,7 @@ impl LegiscanProxy {
             operation = "getBill",
             bill_id = bill_id
         );
-        println!("{}", url);
+
         let response = self.client.get(url).send().await.unwrap();
 
         match crate::handle_legiscan_response(response).await {

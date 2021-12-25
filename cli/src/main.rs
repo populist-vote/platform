@@ -91,6 +91,8 @@ enum VotesmartAction {
     GetCandidateVotingRecord(GetCandidateVotingRecordArgs),
     /// Get bill action
     GetBillAction(GetBillActionArgs),
+    /// Get bill data
+    GetBill(GetBillArgs),
 }
 
 #[derive(Clone, Debug, StructOpt)]
@@ -146,6 +148,7 @@ async fn main() -> Result<(), Error> {
                 get_candidate_voting_record(args).await
             }
             VotesmartAction::GetBillAction(args) => get_bill_action(args).await,
+            VotesmartAction::GetBill(args) => get_votesmart_bill(args).await,
         }
     }
 
@@ -280,7 +283,7 @@ async fn main() -> Result<(), Error> {
 
                 // Create all of the populist bill objects
                 for bill in data.bills.bill.into_iter() {
-                    let vote_status = match bill.stage.as_ref() {
+                    let legislation_status = match bill.stage.as_ref() {
                         "Introduced" => LegislationStatus::Introduced,
                         "Passage" => LegislationStatus::BecameLaw,
                         "Amendment Vote" => LegislationStatus::Unknown,
@@ -295,7 +298,7 @@ async fn main() -> Result<(), Error> {
                         title: bill.title,
                         bill_number: bill.bill_number,
                         description: None,
-                        vote_status,
+                        legislation_status,
                         official_summary: None,
                         populist_summary: None,
                         full_text_url: None,
@@ -425,6 +428,23 @@ async fn main() -> Result<(), Error> {
 
     async fn get_bill_text(args: GetBillTextArgs) -> Result<(), Error> {
         println!("{:?}", args.bill_id);
+        Ok(())
+    }
+
+    async fn get_votesmart_bill(args: GetBillArgs) -> Result<(), Error> {
+        println!(
+            "\n🧚  Fetching bill data from Votesmart\n  📖 bill_id: {}",
+            args.bill_id
+        );
+
+        let proxy = VotesmartProxy::new().unwrap();
+        let response = proxy.votes().get_bill(args.bill_id).await?;
+        let json: serde_json::Value = response.json().await?;
+
+        if args.pretty_print {
+            println!("{}", serde_json::to_string_pretty(&json).unwrap());
+        }
+
         Ok(())
     }
 
