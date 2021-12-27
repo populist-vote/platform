@@ -1,10 +1,20 @@
 use async_graphql::Enum;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use strum_macros::{Display, EnumString};
+use strum_macros::{Display, EnumIter, EnumString};
 
 #[derive(
-    Enum, Debug, Copy, Clone, Eq, PartialEq, EnumString, sqlx::Type, Serialize, Deserialize,
+    Enum,
+    Debug,
+    Copy,
+    Clone,
+    Eq,
+    PartialEq,
+    EnumString,
+    EnumIter,
+    sqlx::Type,
+    Serialize,
+    Deserialize,
 )]
 pub enum State {
     AL,

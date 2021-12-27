@@ -68,7 +68,7 @@ pub struct BillSearch {
 impl Bill {
     pub async fn create(db_pool: &PgPool, input: &CreateBillInput) -> Result<Self, sqlx::Error> {
         let slug = match input.slug.clone() {
-            None => slugify!(&input.title, stop_words = "the", max_length = 32),
+            None => slugify!(&input.bill_number),
             Some(slug) => slug,
         };
 

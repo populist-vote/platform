@@ -25,7 +25,7 @@ pub struct Bill {
     /// Can be cast to its BillStatus with
     /// `BillStatus::try_from(status).unwrap()`
     pub status: i32,
-    pub status_date: String,
+    pub status_date: Option<String>,
     pub progress: Vec<Progress>,
     pub state: String,
     pub state_id: i32,
@@ -69,6 +69,8 @@ impl Bill {
 )]
 #[repr(i32)]
 pub enum BillStatus {
+    // This is rare but does show up from time to time
+    NotIntroduced = 0,
     Introduced = 1,
     Engrossed = 2,
     Enrolled = 3,
@@ -260,7 +262,8 @@ impl LegiscanProxy {
 
         match crate::handle_legiscan_response(response).await {
             Ok(json) => {
-                let json: GetBillResponse = serde_json::from_value(json).unwrap();
+                let json: GetBillResponse = serde_json::from_value(json.clone())
+                    .unwrap_or_else(|_| panic!("Heres the crappy JSON: {}", &json));
                 Ok(json.bill)
             }
             Err(e) => Err(e),

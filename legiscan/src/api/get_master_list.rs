@@ -12,7 +12,7 @@ pub struct MasterListBill {
     pub number: String,
     pub change_hash: String,
     pub url: String,
-    pub status_date: String,
+    pub status_date: Option<String>,
     pub status: String,
     pub last_action_date: String,
     pub last_action: String,
@@ -42,7 +42,9 @@ impl LegiscanProxy {
                     .unwrap()
                     .iter()
                     .filter(|(key, _val)| key.parse::<i32>().is_ok())
-                    .map(|(_key, value)| serde_json::from_value(value.to_owned()).unwrap())
+                    .map(|(_key, value)| {
+                        serde_json::from_value(value.to_owned()).unwrap_or_default()
+                    })
                     .collect();
                 Ok(masterlist)
             }

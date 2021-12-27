@@ -1,9 +1,9 @@
 mod api;
 mod errors;
 mod types;
-use api::*;
-use errors::Error;
-pub use types::{GetCandidateBioResponse, GetCandidateVotingRecordResponse};
+pub use api::*;
+pub use errors::*;
+pub use types::*;
 
 const VOTESMART_BASE_URL: &str = "http://api.votesmart.org/";
 

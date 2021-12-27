@@ -2,7 +2,7 @@ mod api;
 pub use api::*;
 #[allow(clippy::module_inception)]
 mod errors;
-use errors::{Error, LegiscanErrorResponse};
+pub use errors::{Error, LegiscanErrorResponse};
 
 const LEGISCAN_BASE_URL: &str = "https://api.legiscan.com/";
 

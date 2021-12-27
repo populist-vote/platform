@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-legiscan = { path = "../legiscan" }
+legiscan = { path = "../legiscan", features = ["async-graphql"] }
 votesmart = { path = "../votesmart" }
 chrono = { version = "0.4.19", features = ["serde"] }
 sqlx = { version = "0.5.9", features = [ "runtime-tokio-rustls", "postgres", "chrono", "uuid", "json", "offline" ] }
