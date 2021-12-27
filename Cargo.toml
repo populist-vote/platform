@@ -5,6 +5,7 @@ members = [
     "db",
     "graphql",
     "legiscan",
+    "open-secrets",
     "votesmart",
     "server"
 ]
