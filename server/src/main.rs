@@ -11,7 +11,7 @@ use poem::{
     get, handler,
     http::{header, HeaderMap, Method},
     listener::TcpListener,
-    middleware::{Cors, ForceHttps},
+    middleware::Cors,
     web::{Data, Html, Json},
     EndpointExt, IntoResponse, Route, Server,
 };
@@ -115,7 +115,6 @@ async fn main() -> Result<(), std::io::Error> {
         .at("/", get(graphql_playground).post(graphql_handler))
         .data(schema)
         .with(Cors::default());
-    // .with(ForceHttps::default());
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
     let address = format!("0.0.0.0:{}", port);
