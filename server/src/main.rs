@@ -11,7 +11,7 @@ use poem::{
     get, handler,
     http::{header, HeaderMap, Method},
     listener::TcpListener,
-    middleware::Cors,
+    middleware::{Cors, ForceHttps},
     web::{Data, Html, Json},
     EndpointExt, IntoResponse, Route, Server,
 };
@@ -113,7 +113,8 @@ async fn main() -> Result<(), Error> {
     let app = Route::new()
         .at("/", get(graphql_playground).post(graphql_handler))
         .data(schema)
-        .with(Cors::default());
+        .with(Cors::default())
+        .with(ForceHttps::default());
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
     let address = format!("0.0.0.0:{}", port);
@@ -121,7 +122,7 @@ async fn main() -> Result<(), Error> {
     info!("GraphQL Playground live at {}/playground", &address);
 
     let listener = TcpListener::bind(&address);
-    let server = Server::new(listener).await?;
+    let server = Server::new(listener);
     server.run(app).await?;
     Ok(())
 }
