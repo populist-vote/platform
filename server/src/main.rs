@@ -16,7 +16,7 @@ use poem::{
     EndpointExt, IntoResponse, Route, Server,
 };
 use serde_json::Value;
-use server::{Environment, Error};
+use server::Environment;
 use sqlx::postgres::PgPoolOptions;
 
 #[handler]
@@ -56,16 +56,17 @@ fn graphql_playground() -> impl IntoResponse {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() -> Result<(), std::io::Error> {
     dotenv().ok();
     pretty_env_logger::init();
 
-    let db_url = std::env::var("DATABASE_URL")?;
+    let db_url = std::env::var("DATABASE_URL").unwrap();
 
     let pool = PgPoolOptions::new()
         .max_connections(16)
         .connect(&db_url)
-        .await?;
+        .await
+        .unwrap();
 
     let schema = new_schema(pool).finish();
 
@@ -113,16 +114,14 @@ async fn main() -> Result<(), Error> {
     let app = Route::new()
         .at("/", get(graphql_playground).post(graphql_handler))
         .data(schema)
-        .with(Cors::default())
-        .with(ForceHttps::default());
+        .with(Cors::default());
+    // .with(ForceHttps::default());
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
     let address = format!("0.0.0.0:{}", port);
 
-    info!("GraphQL Playground live at {}/playground", &address);
+    info!("GraphQL Playground live at {}", &address);
 
     let listener = TcpListener::bind(&address);
-    let server = Server::new(listener);
-    server.run(app).await?;
-    Ok(())
+    Server::new(listener).run(app).await
 }

@@ -53,6 +53,7 @@ impl LegiscanProxy {
 }
 
 #[tokio::test]
+#[ignore]
 async fn test_get_sponsored_list() {
     let proxy = LegiscanProxy::new().unwrap();
     let sponsored_bills = proxy.get_sponsored_list(1498).await.unwrap();

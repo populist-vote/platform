@@ -79,6 +79,7 @@ impl LegiscanProxy {
 }
 
 #[tokio::test]
+#[ignore]
 async fn test_get_session_list() {
     let proxy = LegiscanProxy::new().unwrap();
     let session_list = proxy.get_session_list("CO").await.unwrap();
@@ -86,6 +87,7 @@ async fn test_get_session_list() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn test_get_session_people() {
     let proxy = LegiscanProxy::new().unwrap();
     let session_people = proxy.get_session_people(1797).await.unwrap();

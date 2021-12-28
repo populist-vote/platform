@@ -83,6 +83,7 @@ impl LegiscanProxy {
 }
 
 #[tokio::test]
+#[ignore]
 pub async fn test_get_master_list_by_state() {
     let proxy = LegiscanProxy::new().unwrap();
     let masterlist = proxy.get_master_list_by_state("CO").await.unwrap();
@@ -90,6 +91,7 @@ pub async fn test_get_master_list_by_state() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn test_get_master_list_raw_by_session() {
     let proxy = LegiscanProxy::new().unwrap();
     let masterlist = proxy.get_master_list_by_session(1797).await.unwrap();

@@ -80,6 +80,7 @@ impl LegiscanProxy {
 }
 
 #[tokio::test]
+#[ignore]
 async fn test_search() {
     let proxy = LegiscanProxy::new().unwrap();
     let search_results = proxy

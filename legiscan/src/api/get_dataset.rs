@@ -47,6 +47,7 @@ impl LegiscanProxy {
 }
 
 #[tokio::test]
+#[ignore]
 async fn test_get_dataset() {
     let proxy = LegiscanProxy::new().unwrap();
     let dataset = proxy

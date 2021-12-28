@@ -55,6 +55,7 @@ impl LegiscanProxy {
 }
 
 #[tokio::test]
+#[ignore]
 async fn test_get_roll_call() {
     let proxy = LegiscanProxy::new().unwrap();
     let roll_call = proxy.get_roll_call(234223).await.unwrap();

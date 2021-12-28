@@ -393,7 +393,7 @@ async fn main() -> Result<(), Error> {
 
         let data = LegiscanProxy::new().unwrap().get_bill(args.bill_id).await;
 
-        let data = data.unwrap().clone();
+        let data = data.unwrap();
         let json = serde_json::to_value(data).unwrap();
 
         if json == serde_json::Value::Null {
