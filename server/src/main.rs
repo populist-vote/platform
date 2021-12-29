@@ -11,7 +11,7 @@ use poem::{
     get, handler,
     http::{header, HeaderMap, Method},
     listener::TcpListener,
-    middleware::{Cors, ForceHttps},
+    middleware::Cors,
     web::{Data, Html, Json},
     EndpointExt, IntoResponse, Route, Server,
 };
@@ -123,12 +123,5 @@ async fn main() -> Result<(), std::io::Error> {
     info!("GraphQL Playground live at {}", &address);
 
     let listener = TcpListener::bind(&address);
-
-    if environment == Environment::Local {
-        Server::new(listener).run(app).await
-    } else {
-        Server::new(listener)
-            .run(app.with(ForceHttps::default()))
-            .await
-    }
+    Server::new(listener).run(app).await
 }
