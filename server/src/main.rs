@@ -110,6 +110,7 @@ async fn main() -> Result<(), std::io::Error> {
     let schema = new_schema(pool).finish();
 
     let environment = Environment::from_str(&std::env::var("ENVIRONMENT").unwrap()).unwrap();
+    println!("{:?}", environment);
 
     let app = Route::new()
         .at("/", get(graphql_playground).post(graphql_handler))
@@ -122,5 +123,12 @@ async fn main() -> Result<(), std::io::Error> {
     info!("GraphQL Playground live at {}", &address);
 
     let listener = TcpListener::bind(&address);
-    Server::new(listener).run(app).await
+
+    if environment == Environment::Local {
+        Server::new(listener).run(app).await
+    } else {
+        Server::new(listener)
+            .run(app.with(ForceHttps::default()))
+            .await
+    }
 }
