@@ -11,7 +11,7 @@ use poem::{
     get, handler,
     http::{header, HeaderMap, Method},
     listener::TcpListener,
-    middleware::Cors,
+    middleware::{Cors, ForceHttps},
     web::{Data, Html, Json},
     EndpointExt, IntoResponse, Route, Server,
 };
