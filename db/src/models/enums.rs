@@ -1,10 +1,20 @@
 use async_graphql::Enum;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use strum_macros::{Display, EnumString};
+use strum_macros::{Display, EnumIter, EnumString};
 
 #[derive(
-    Enum, Debug, Copy, Clone, Eq, PartialEq, EnumString, sqlx::Type, Serialize, Deserialize,
+    Enum,
+    Debug,
+    Copy,
+    Clone,
+    Eq,
+    PartialEq,
+    EnumString,
+    EnumIter,
+    sqlx::Type,
+    Serialize,
+    Deserialize,
 )]
 pub enum State {
     AL,
@@ -102,17 +112,17 @@ pub enum ArgumentPosition {
 }
 
 #[derive(Enum, Debug, Copy, Clone, Eq, PartialEq, sqlx::Type)]
-#[sqlx(type_name = "vote_status", rename_all = "lowercase")]
+#[sqlx(type_name = "legislation_status", rename_all = "snake_case")]
 pub enum LegislationStatus {
     Introduced,
-    PassedOneChamber,
-    PassedBothChambers,
-    Tabled,
+    PassedHouse,
+    PassedSenate,
+    FailedHouse,
+    FailedSenate,
+    ResolvingDifferences,
     SentToExecutive,
-    BecameLawSigned,
-    BecameLawUnsigned,
+    BecameLaw,
     Vetoed,
-    Failed,
     Unknown,
 }
 

@@ -4,6 +4,7 @@ use db::{
     models::{bill::Bill, enums::LegislationStatus},
     DateTime,
 };
+use legiscan::Bill as LegiscanBill;
 use sqlx::{Pool, Postgres};
 #[derive(SimpleObject)]
 #[graphql(complex)]
@@ -11,13 +12,13 @@ pub struct BillResult {
     id: ID,
     slug: String,
     title: String,
-    vote_status: LegislationStatus,
+    legislation_status: LegislationStatus,
     description: Option<String>,
     official_summary: Option<String>,
     populist_summary: Option<String>,
     full_text_url: Option<String>,
     legiscan_bill_id: Option<i32>,
-    legiscan_data: serde_json::Value,
+    legiscan_data: LegiscanBill,
     history: serde_json::Value,
     created_at: DateTime,
     updated_at: DateTime,
@@ -39,13 +40,13 @@ impl From<Bill> for BillResult {
             id: ID::from(b.id),
             slug: b.slug,
             title: b.title,
-            vote_status: b.vote_status,
+            legislation_status: b.legislation_status,
             description: b.description,
             official_summary: b.official_summary,
             populist_summary: b.populist_summary,
             full_text_url: b.full_text_url,
             legiscan_bill_id: b.legiscan_bill_id,
-            legiscan_data: b.legiscan_data,
+            legiscan_data: serde_json::from_value(b.legiscan_data.to_owned()).unwrap(),
             history: b.history,
             created_at: b.created_at,
             updated_at: b.updated_at,

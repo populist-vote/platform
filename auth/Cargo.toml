@@ -5,7 +5,6 @@ edition = "2021"
 
 [dependencies]
 db = { path = "../db" }
-
 chrono = "0.4.19"
 dotenv = "0.15.0"
 jsonwebtoken = "7.2.0"

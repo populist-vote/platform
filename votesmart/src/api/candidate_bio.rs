@@ -43,3 +43,41 @@ impl CandidateBio<'_> {
         self.0.client.get(url).send().await
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::VotesmartProxy;
+
+    #[tokio::test]
+    async fn test_get_bio() {
+        let proxy = VotesmartProxy::new().unwrap();
+        let response = proxy.candidate_bio().get_bio(53279).await.unwrap();
+        assert_eq!(response.status().is_success(), true);
+        let json: serde_json::Value = response.json().await.unwrap();
+        assert_eq!(json["bio"]["candidate"]["firstName"], "Joseph");
+    }
+
+    #[tokio::test]
+    async fn test_get_detailed_bio() {
+        let proxy = VotesmartProxy::new().unwrap();
+        let response = proxy.candidate_bio().get_detailed_bio(53279).await.unwrap();
+        assert_eq!(response.status().is_success(), true);
+        let json: serde_json::Value = response.json().await.unwrap();
+        assert_eq!(
+            json["bio"]["candidate"]["political"]["experience"][0]["title"],
+            "President"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_get_addl_bio() {
+        let proxy = VotesmartProxy::new().unwrap();
+        let response = proxy.candidate_bio().get_detailed_bio(53279).await.unwrap();
+        assert_eq!(response.status().is_success(), true);
+        let json: serde_json::Value = response.json().await.unwrap();
+        assert_eq!(
+            json["bio"]["candidate"]["political"]["experience"][0]["title"],
+            "President"
+        );
+    }
+}

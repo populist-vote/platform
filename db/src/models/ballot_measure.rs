@@ -12,7 +12,7 @@ pub struct BallotMeasure {
     pub id: uuid::Uuid,
     pub slug: String,
     pub title: String,
-    pub vote_status: LegislationStatus,
+    pub legislation_status: LegislationStatus,
     pub election_id: uuid::Uuid,
     pub ballot_state: State,
     pub ballot_measure_code: String,
@@ -33,7 +33,7 @@ pub struct BallotMeasure {
 pub struct CreateBallotMeasureInput {
     pub slug: Option<String>,
     pub title: String,
-    pub vote_status: LegislationStatus,
+    pub legislation_status: LegislationStatus,
     pub ballot_state: State,
     pub ballot_measure_code: String,
     pub measure_type: String,
@@ -48,7 +48,7 @@ pub struct CreateBallotMeasureInput {
 pub struct UpdateBallotMeasureInput {
     pub slug: Option<String>,
     pub title: Option<String>,
-    pub vote_status: Option<LegislationStatus>,
+    pub legislation_status: Option<LegislationStatus>,
     pub ballot_state: Option<State>,
     pub ballot_measure_code: Option<String>,
     pub measure_type: Option<String>,
@@ -64,7 +64,7 @@ pub struct BallotMeasureSearch {
     slug: Option<String>,
     title: Option<String>,
     ballot_state: Option<State>,
-    vote_status: Option<LegislationStatus>,
+    legislation_status: Option<LegislationStatus>,
 }
 
 impl BallotMeasure {
@@ -78,16 +78,16 @@ impl BallotMeasure {
             BallotMeasure,
             r#"
                 INSERT INTO ballot_measure 
-                (election_id, slug, title, vote_status, description, official_summary, 
+                (election_id, slug, title, legislation_status, description, official_summary, 
                 populist_summary, full_text_url, ballot_state, ballot_measure_code, 
                 measure_type, definitions) 
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
-                RETURNING id, election_id, slug, title, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, created_at, updated_at
+                RETURNING id, election_id, slug, title, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, created_at, updated_at
             "#,
             election_id,
             slug,
             input.title,
-            input.vote_status as LegislationStatus,
+            input.legislation_status as LegislationStatus,
             input.description,
             input.official_summary,
             input.populist_summary,
@@ -114,7 +114,7 @@ impl BallotMeasure {
                 UPDATE ballot_measure
                 SET slug = COALESCE($2, slug),
                     title = COALESCE($3, title),
-                    vote_status = COALESCE($4, vote_status),
+                    legislation_status = COALESCE($4, legislation_status),
                     ballot_state = COALESCE($5, ballot_state),
                     ballot_measure_code = COALESCE($6, ballot_measure_code),
                     measure_type = COALESCE($7, measure_type),
@@ -124,12 +124,12 @@ impl BallotMeasure {
                     populist_summary = COALESCE($11, populist_summary),
                     full_text_url = COALESCE($12, full_text_url)
                 WHERE id=$1    
-                RETURNING id, election_id, slug, title, vote_status AS "vote_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at
+                RETURNING id, election_id, slug, title, legislation_status AS "legislation_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at
             "#,
             id,
             input.slug,
             input.title,
-            input.vote_status as Option<LegislationStatus>,
+            input.legislation_status as Option<LegislationStatus>,
             input.ballot_state as Option<State>,
             input.ballot_measure_code,
             input.measure_type,
@@ -150,7 +150,7 @@ impl BallotMeasure {
     }
 
     pub async fn index(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
-        let records = sqlx::query_as!(BallotMeasure, r#"SELECT id, election_id, slug, title, vote_status AS "vote_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure"#,)
+        let records = sqlx::query_as!(BallotMeasure, r#"SELECT id, election_id, slug, title, legislation_status AS "legislation_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure"#,)
             .fetch_all(db_pool)
             .await?;
         Ok(records)
@@ -163,16 +163,16 @@ impl BallotMeasure {
         let records = sqlx::query_as!(
             BallotMeasure,
             r#"
-                SELECT id, election_id, slug, title, vote_status AS "vote_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure
-                WHERE $1::text IS NULL OR slug = $1
-                AND $2::text IS NULL OR levenshtein($2, title) <=5
-                AND $3::state IS NULL OR ballot_state = $3
-                AND $4::vote_status IS NULL OR vote_status = $4
+                SELECT id, election_id, slug, title, legislation_status AS "legislation_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure
+                WHERE ($1::text IS NULL OR slug = $1)
+                AND ($2::text IS NULL OR levenshtein($2, title) <=5)
+                AND ($3::state IS NULL OR ballot_state = $3)
+                AND ($4::legislation_status IS NULL OR legislation_status = $4)
             "#,
             search.slug,
             search.title,
             search.ballot_state as Option<State>,
-            search.vote_status as Option<LegislationStatus>
+            search.legislation_status as Option<LegislationStatus>
         )
         .fetch_all(db_pool)
         .await?;
@@ -186,7 +186,7 @@ impl BallotMeasure {
 //             id: uuid::Uuid::new_v4(),
 //             slug: "some-piece-of-legislation".to_string(),
 //             title: "Some Piece of Legislation".to_string(),
-//             vote_status: LegislationStatus::UNDECIDED,
+//             legislation_status: LegislationStatus::UNDECIDED,
 //             description: None,
 //             official_summary: None,
 //             populist_summary: None,

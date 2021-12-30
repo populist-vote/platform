@@ -16,16 +16,12 @@ use poem::{
     EndpointExt, IntoResponse, Route, Server,
 };
 use serde_json::Value;
-use server::{Environment, Error};
+use server::Environment;
 use sqlx::postgres::PgPoolOptions;
 
 #[handler]
 fn root() -> impl IntoResponse {
-    Html(
-        r#"
-        <h1>Populist API Docs</h1>
-    "#,
-    )
+    Html(r#"<h1>Populist API Docs</h1>"#)
 }
 
 // Simple server health check
@@ -55,22 +51,7 @@ fn graphql_playground() -> impl IntoResponse {
     Html(playground_source(GraphQLPlaygroundConfig::new("/")))
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Error> {
-    dotenv().ok();
-    pretty_env_logger::init();
-
-    let db_url = std::env::var("DATABASE_URL")?;
-
-    let pool = PgPoolOptions::new()
-        .max_connections(16)
-        .connect(&db_url)
-        .await?;
-
-    let schema = new_schema(pool).finish();
-
-    let environment = Environment::from_str(&std::env::var("ENVIRONMENT").unwrap()).unwrap();
-
+pub fn cors(environment: Environment) -> Cors {
     let cors = Cors::default()
         .allow_methods(vec![Method::GET, Method::POST])
         .allow_headers(vec![
@@ -102,26 +83,45 @@ async fn main() -> Result<(), Error> {
         Environment::Local => cors.allow_origin("http://localhost:1234"),
         Environment::Staging => cors.allow_origins(vec![
             "https://populist-api-staging.herokuapp.com",
+            "https://api.staging.populist.us",
             "http://localhost:3030",
         ]),
-        Environment::Production => {
-            cors.allow_origin("https://populist-api-production.herokuapp.com/")
-        }
+        Environment::Production => cors.allow_origins(vec![
+            "https://populist-api-production.herokuapp.com",
+            "https://api.populist.us",
+        ]),
         _ => Cors::new().allow_origin("https://populist.us"),
-    };
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<(), std::io::Error> {
+    dotenv().ok();
+    pretty_env_logger::init();
+
+    let db_url = std::env::var("DATABASE_URL").unwrap();
+
+    let pool = PgPoolOptions::new()
+        .max_connections(16)
+        .connect(&db_url)
+        .await
+        .unwrap();
+
+    let schema = new_schema(pool).finish();
+
+    let environment = Environment::from_str(&std::env::var("ENVIRONMENT").unwrap()).unwrap();
+    println!("{:?}", environment);
 
     let app = Route::new()
         .at("/", get(graphql_playground).post(graphql_handler))
         .data(schema)
-        .with(Cors::default());
+        .with(cors(environment));
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
     let address = format!("0.0.0.0:{}", port);
 
-    info!("GraphQL Playground live at {}/playground", &address);
+    info!("GraphQL Playground live at {}", &address);
 
     let listener = TcpListener::bind(&address);
-    let server = Server::new(listener).await?;
-    server.run(app).await?;
-    Ok(())
+    Server::new(listener).run(app).await
 }

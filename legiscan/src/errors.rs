@@ -1,17 +1,27 @@
+use serde::{Deserialize, Serialize};
+
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error(transparent)]
-    DbError(#[from] sqlx::Error),
+    Io(#[from] std::io::Error),
 
     #[error(transparent)]
-    IoError(#[from] std::io::Error),
+    Var(#[from] std::env::VarError),
 
     #[error(transparent)]
-    VarError(#[from] std::env::VarError),
+    Request(#[from] reqwest::Error),
 
-    #[error(transparent)]
-    RequestError(#[from] reqwest::Error),
+    #[error("Failed to fetch {0} from Legiscan API")]
+    Api(String),
+}
 
-    #[error("Failed to fetch from API")]
-    ApiError,
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LegiscanErrorResponse {
+    pub status: String,
+    pub alert: Alert,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Alert {
+    pub message: String,
 }

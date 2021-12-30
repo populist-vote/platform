@@ -70,6 +70,17 @@ impl PoliticianResult {
         let results = records.into_iter().map(IssueTagResult::from).collect();
         Ok(results)
     }
+
+    // async fn voting_hostory(&self, ctx: &Context<'_>) -> FieldResult<serde_json::Value> {
+    //     let pool = ctx.data_unchecked::<Pool<Postgres>>();
+    //     let records = sqlx::query!(
+    //         r#"
+    //         SELECT
+    //     "#
+    //     )
+    //     .await?;
+    //     Ok(records)
+    // }
 }
 
 impl From<Politician> for PoliticianResult {

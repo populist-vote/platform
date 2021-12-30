@@ -1,18 +1,22 @@
 [package]
 name = "votesmart"
+authors = ["Wiley McKay Conte <wiley@populist.us>"]
 description = "A client wrapper for the Votesmart REST API"
 license = "MIT/Apache-2.0"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2021"
+homepage = "https://github.com/populist-vote/votesmart"
 documentation = "https://docs.rs/votesmart"
+repository = "https://github.com/populist-vote/votesmart"
+readme = "README.md"
 
 [dependencies]
 dotenv = "0.15.0"
 enum-utils = "0.1.2"
 reqwest = { version = "0.11.6", features = ["json"] }
-serde = "1.0.130"
+serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.71"
 thiserror = "1.0.30"
 tokio = { version = "1.8", features = ["full"] }
-async-graphql = { version = "3.0.10", features = ["uuid", "chrono", "unblock"] }
 chrono = "0.4.19"
+async-graphql = { version = "3.0.10", optional = true }

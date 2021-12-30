@@ -1,6 +1,8 @@
+mod api;
+pub use api::*;
+#[allow(clippy::module_inception)]
 mod errors;
-use errors::Error;
-use serde::{Deserialize, Serialize};
+pub use errors::{Error, LegiscanErrorResponse};
 
 const LEGISCAN_BASE_URL: &str = "https://api.legiscan.com/";
 
@@ -10,18 +12,6 @@ pub struct LegiscanProxy {
     client: reqwest::Client,
     pub base_url: reqwest::Url,
     api_key: String,
-}
-
-#[derive(Serialize, Deserialize)]
-struct GetBillResponse {
-    status: String,
-    bill: serde_json::Value,
-}
-
-#[derive(Serialize, Deserialize)]
-struct GetBillTextResponse {
-    status: String,
-    bill: serde_json::Value,
 }
 
 impl LegiscanProxy {
@@ -37,31 +27,32 @@ impl LegiscanProxy {
         })
     }
 
-    pub async fn get_bill(&self, bill_id: String) -> Result<serde_json::Value, Error> {
-        let url = format!(
-            "{base_url}?key={key}&op={operation}&id={bill_id}",
-            base_url = self.base_url,
-            key = self.api_key,
-            operation = "getBill",
-            bill_id = bill_id
-        );
-        let response = self.client.get(url).send().await.unwrap();
-        let json: GetBillResponse = response.json().await?;
-        let bill_data = json.bill;
-        Ok(bill_data)
-    }
+    /// Instantiate new LegiscanProxy API client by passing api key to this function
+    pub fn new_from_key(api_key: String) -> Result<Self, Error> {
+        let client = reqwest::Client::new();
 
-    pub async fn get_bill_text(&self, bill_id: String) -> Result<serde_json::Value, Error> {
-        let url = format!(
-            "{base_url}?key={key}&op={operation}&id={bill_id}",
-            base_url = self.base_url,
-            key = self.api_key,
-            operation = "getBillText",
-            bill_id = bill_id
-        );
-        let response = self.client.get(url).send().await.unwrap();
-        let json: GetBillTextResponse = response.json().await?;
-        let bill_text_data = json.bill;
-        Ok(bill_text_data)
+        Ok(LegiscanProxy {
+            client,
+            base_url: reqwest::Url::parse(LEGISCAN_BASE_URL).unwrap(),
+            api_key,
+        })
+    }
+}
+
+pub async fn handle_legiscan_response(
+    response: reqwest::Response,
+) -> Result<serde_json::Value, Error> {
+    if response.status().is_success() {
+        let json: serde_json::Value = response.json().await?;
+        match json["status"].as_str().unwrap() {
+            "OK" => Ok(json),
+            "ERROR" => {
+                let json: LegiscanErrorResponse = serde_json::from_value(json).unwrap();
+                Err(Error::Api(json.alert.message))
+            }
+            _ => Err(Error::Api("Something went wrong.".to_string())),
+        }
+    } else {
+        Err(Error::Api("Legiscan API could not be reached.".to_string()))
     }
 }

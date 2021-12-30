@@ -22,7 +22,7 @@ impl Election<'_> {
     pub async fn get_election_by_year_state(
         &self,
         year: i32,
-        state_id: Option<String>,
+        state_id: Option<&str>,
     ) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&year={year}&stateId={state_id}&o=JSON",
@@ -30,7 +30,7 @@ impl Election<'_> {
             key = &self.0.api_key,
             operation = "Election.getElectionByYearState",
             year = year,
-            state_id = state_id.unwrap_or("NA".to_string())
+            state_id = state_id.unwrap_or("")
         );
 
         self.0.client.get(url).send().await
@@ -40,7 +40,7 @@ impl Election<'_> {
     pub async fn get_election_by_zip(
         &self,
         zip5: i32,
-        zip4: Option<String>,
+        zip4: Option<&str>,
         year: Option<i32>,
     ) -> Result<Response, Error> {
         let url = format!(
@@ -49,8 +49,8 @@ impl Election<'_> {
             key = &self.0.api_key,
             operation = "Election.getElectionByZip",
             zip5 = zip5,
-            zip4 = zip4.unwrap_or("NULL".to_string()),
-            year = year.unwrap_or(chrono::Utc::now().year()),
+            zip4 = zip4.unwrap_or(""),
+            year = year.unwrap_or_else(|| chrono::Utc::now().year()),
         );
 
         self.0.client.get(url).send().await
@@ -62,9 +62,9 @@ impl Election<'_> {
         election_id: i32,
         stage_id: i32,
         major: String,
-        party: Option<String>,
-        district_id: Option<String>,
-        state_id: Option<String>,
+        party: Option<&str>,
+        district_id: Option<&str>,
+        state_id: Option<&str>,
     ) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&electionId={election_id}&stageId={stage_id}&major={major}&party={party}&districtId={district_id}&stateId={state_id}&o=JSON",
@@ -74,9 +74,9 @@ impl Election<'_> {
             election_id = election_id,
             stage_id = stage_id,
             major = major,
-            party = party.unwrap_or("NULL".to_string()),
-            district_id = district_id.unwrap_or("NULL".to_string()),
-            state_id = state_id.unwrap_or("NULL".to_string()),
+            party = party.unwrap_or(""),
+            district_id = district_id.unwrap_or(""),
+            state_id = state_id.unwrap_or(""),
         );
 
         self.0.client.get(url).send().await

@@ -5,13 +5,13 @@ pub struct Rating<'a>(pub &'a VotesmartProxy);
 
 impl Rating<'_> {
     /// This method dumps categories that contain released ratingss according to state.
-    pub async fn get_categories(&self, state_id: Option<String>) -> Result<Response, Error> {
+    pub async fn get_categories(&self, state_id: Option<&str>) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&stateId={state_id}&o=JSON",
             base_url = &self.0.base_url,
             key = &self.0.api_key,
             operation = "Rating.getCategories",
-            state_id = state_id.unwrap_or("NA".to_string()),
+            state_id = state_id.unwrap_or(""),
         );
 
         self.0.client.get(url).send().await
@@ -21,7 +21,7 @@ impl Rating<'_> {
     pub async fn get_sig_list(
         &self,
         category_id: i32,
-        state_id: Option<String>,
+        state_id: Option<&str>,
     ) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&categoryId={category_id}&stateId={state_id}&o=JSON",
@@ -29,7 +29,7 @@ impl Rating<'_> {
             key = &self.0.api_key,
             operation = "Rating.getSigList",
             category_id = category_id,
-            state_id = state_id.unwrap_or("NA".to_string()),
+            state_id = state_id.unwrap_or(""),
         );
 
         self.0.client.get(url).send().await
@@ -65,7 +65,7 @@ impl Rating<'_> {
     pub async fn get_candidate_rating(
         &self,
         candidate_id: i32,
-        sig_id: Option<String>,
+        sig_id: Option<&str>,
     ) -> Result<Response, Error> {
         let url = format!(
             "{base_url}{operation}?key={key}&candidateId={candidate_id}&sigId={sig_id}&o=JSON",
@@ -73,7 +73,7 @@ impl Rating<'_> {
             key = &self.0.api_key,
             operation = "Rating.getCandidateRating",
             candidate_id = candidate_id,
-            sig_id = sig_id.unwrap_or("NULL".to_string())
+            sig_id = sig_id.unwrap_or("")
         );
 
         self.0.client.get(url).send().await

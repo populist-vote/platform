@@ -35,7 +35,7 @@ enum Service {
     /// Interact with Legiscan API data
     Legiscan(LegiscanAction),
     /// Interact with Votesmart API data
-    Votesmart(VoteSmartAction),
+    Votesmart(VotesmartAction),
 }
 
 #[derive(Clone, Debug, StructOpt)]
@@ -71,11 +71,28 @@ struct GetBillTextArgs {
 }
 
 #[derive(Clone, Debug, StructOpt)]
-enum VoteSmartAction {
+struct GetBillActionArgs {
+    #[structopt(about = "Legiscan action ID")]
+    action_id: i32,
+    #[structopt(short, long, about = "Create populist record")]
+    create_record: bool,
+    #[structopt(short, long, about = "Update populist record")]
+    update_record: bool,
+    #[structopt(short, long, about = "Print fetched JSON data to console")]
+    pretty_print: bool,
+}
+
+#[derive(Clone, Debug, StructOpt)]
+#[allow(clippy::enum_variant_names)]
+enum VotesmartAction {
     /// Get candidate bio from Votesmart
     GetCandidateBio(GetCandidateBioArgs),
     /// Get candidate voting record from Votesmart
     GetCandidateVotingRecord(GetCandidateVotingRecordArgs),
+    /// Get bill action
+    GetBillAction(GetBillActionArgs),
+    /// Get bill data
+    GetBill(GetBillArgs),
 }
 
 #[derive(Clone, Debug, StructOpt)]
@@ -124,18 +141,20 @@ async fn main() -> Result<(), Error> {
         }
     }
 
-    async fn handle_votesmart_action(action: VoteSmartAction) -> Result<(), Error> {
+    async fn handle_votesmart_action(action: VotesmartAction) -> Result<(), Error> {
         match action {
-            VoteSmartAction::GetCandidateBio(args) => get_candidate_bio(args).await,
-            VoteSmartAction::GetCandidateVotingRecord(args) => {
+            VotesmartAction::GetCandidateBio(args) => get_candidate_bio(args).await,
+            VotesmartAction::GetCandidateVotingRecord(args) => {
                 get_candidate_voting_record(args).await
             }
+            VotesmartAction::GetBillAction(args) => get_bill_action(args).await,
+            VotesmartAction::GetBill(args) => get_votesmart_bill(args).await,
         }
     }
 
     async fn get_candidate_bio(args: GetCandidateBioArgs) -> Result<(), Error> {
         println!(
-            "\n▶️ FETCHING CANDIDATE BIO FROM LEGISCAN\n  📖 candidate_id: {}",
+            "\n🧜‍♀️ Fetching candidate bio from Votesmart\n  📖 candidate_id: {}",
             args.candidate_id
         );
 
@@ -232,7 +251,7 @@ async fn main() -> Result<(), Error> {
 
     async fn get_candidate_voting_record(args: GetCandidateVotingRecordArgs) -> Result<(), Error> {
         println!(
-            "\n▶️ FETCHING CANDIDATE VOTING RECORD FROM VOTESMART\n  📖 candidate_id: {}",
+            "\n🧞‍♂️ Fetching candidate voting record from Votesmart\n  📖 candidate_id: {}",
             args.candidate_id
         );
 
@@ -254,7 +273,7 @@ async fn main() -> Result<(), Error> {
                 let pool = db::pool().await;
 
                 // Find the populist politician
-                let politician_id = sqlx::query!(
+                let _politician_id = sqlx::query!(
                     r#"SELECT id FROM politician WHERE votesmart_candidate_id = $1"#,
                     args.candidate_id
                 )
@@ -264,9 +283,9 @@ async fn main() -> Result<(), Error> {
 
                 // Create all of the populist bill objects
                 for bill in data.bills.bill.into_iter() {
-                    let vote_status = match bill.stage.as_ref() {
+                    let legislation_status = match bill.stage.as_ref() {
                         "Introduced" => LegislationStatus::Introduced,
-                        "Passage" => LegislationStatus::PassedBothChambers,
+                        "Passage" => LegislationStatus::BecameLaw,
                         "Amendment Vote" => LegislationStatus::Unknown,
                         "Concurrence Vote" => LegislationStatus::Unknown,
                         "Conference Report Vote" => LegislationStatus::Unknown,
@@ -279,7 +298,7 @@ async fn main() -> Result<(), Error> {
                         title: bill.title,
                         bill_number: bill.bill_number,
                         description: None,
-                        vote_status,
+                        legislation_status,
                         official_summary: None,
                         populist_summary: None,
                         full_text_url: None,
@@ -293,7 +312,7 @@ async fn main() -> Result<(), Error> {
 
                     // Going to need to get date from vote action :(
 
-                    // let history_record = match bill.vote.as_ref() {
+                    // let history_record = match bill.vote.as_str() {
                     //     "P" => LegislationAction::BecameLawSigned {
                     //         date: todo!(),
                     //         politician_id,
@@ -320,11 +339,11 @@ async fn main() -> Result<(), Error> {
 
                     match new_bill_record {
                         // Bill record already exists
-                        Err(e) => {
+                        Err(_e) => {
                             let bill_row = sqlx::query!(
                                 r#"
-                                SELECT id FROM bill WHERE votesmart_bill_id = $1
-                            "#,
+                                    SELECT id FROM bill WHERE votesmart_bill_id = $1
+                                "#,
                                 bill.bill_id.parse::<i32>().unwrap()
                             )
                             .fetch_one(&pool.connection)
@@ -332,10 +351,10 @@ async fn main() -> Result<(), Error> {
 
                             sqlx::query!(
                                 r#"
-                            UPDATE bill
-                            SET history = history || '["newString"]'::jsonb
-                            WHERE id = $1
-                        "#,
+                                    UPDATE bill
+                                    SET history = history || '["newString"]'::jsonb
+                                    WHERE id = $1
+                                "#,
                                 bill_row.id,
                             )
                             .fetch_optional(&pool.connection)
@@ -346,10 +365,10 @@ async fn main() -> Result<(), Error> {
                             // TODO: parse bill.vote here and create true history on bill record
                             sqlx::query!(
                                 r#"
-                            UPDATE bill
-                            SET history = history || '["newString"]'::jsonb
-                            WHERE id = $1
-                        "#,
+                                    UPDATE bill
+                                    SET history = history || '["newString"]'::jsonb
+                                    WHERE id = $1
+                                "#,
                                 new_bill_record.unwrap().id,
                             )
                             .fetch_optional(&pool.connection)
@@ -368,18 +387,16 @@ async fn main() -> Result<(), Error> {
 
     async fn get_bill(args: GetBillArgs) -> Result<(), Error> {
         println!(
-            "\n▶️ FETCHING BILL DATA FROM LEGISCAN\n  📖 bill_id: {}",
+            "\n🧚  Fetching bill data from Legiscan\n  📖 bill_id: {}",
             args.bill_id
         );
 
-        let data = LegiscanProxy::new()
-            .unwrap()
-            .get_bill(args.bill_id.to_string())
-            .await;
+        let data = LegiscanProxy::new().unwrap().get_bill(args.bill_id).await;
 
-        let data = data.unwrap().clone();
+        let data = data.unwrap();
+        let json = serde_json::to_value(data).unwrap();
 
-        if data == serde_json::Value::Null {
+        if json == serde_json::Value::Null {
             println!(
                 "Bill with bill_id: {} does not exist in the Legiscan API",
                 args.bill_id
@@ -388,13 +405,13 @@ async fn main() -> Result<(), Error> {
         }
 
         if args.pretty_print {
-            println!("{}", serde_json::to_string_pretty(&data).unwrap());
+            println!("{}", serde_json::to_string_pretty(&json).unwrap());
         }
 
         if args.update_record {
             let pool = db::pool().await;
             let input = UpdateBillInput {
-                legiscan_data: Some(data.clone()),
+                legiscan_data: Some(json),
                 ..Default::default()
             };
             let updated_record =
@@ -411,6 +428,44 @@ async fn main() -> Result<(), Error> {
 
     async fn get_bill_text(args: GetBillTextArgs) -> Result<(), Error> {
         println!("{:?}", args.bill_id);
+        Ok(())
+    }
+
+    async fn get_votesmart_bill(args: GetBillArgs) -> Result<(), Error> {
+        println!(
+            "\n🧚  Fetching bill data from Votesmart\n  📖 bill_id: {}",
+            args.bill_id
+        );
+
+        let proxy = VotesmartProxy::new().unwrap();
+        let response = proxy.votes().get_bill(args.bill_id).await?;
+        let json: serde_json::Value = response.json().await?;
+
+        if args.pretty_print {
+            println!("{}", serde_json::to_string_pretty(&json).unwrap());
+        }
+
+        Ok(())
+    }
+
+    async fn get_bill_action(args: GetBillActionArgs) -> Result<(), Error> {
+        println!(
+            "\n🌥➞ Fetching bill action data from Votesmart\n📖 action_id: {}",
+            args.action_id
+        );
+
+        let proxy = VotesmartProxy::new().unwrap();
+        let response = proxy.votes().get_bill_action(args.action_id).await?;
+
+        if response.status().is_success() {
+            let json: serde_json::Value = response.json().await?;
+            let data = json;
+
+            if args.pretty_print {
+                println!("{}", serde_json::to_string_pretty(&data).unwrap());
+            }
+        }
+
         Ok(())
     }
 

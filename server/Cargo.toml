@@ -6,11 +6,10 @@ edition = "2021"
 [dependencies]
 auth = { path = "../auth" }
 graphql = { path = "../graphql" }
-
 tokio = { version = "1.8", features = ["full"] }
-poem = "1.0.13"
-async-graphql = "3.0.10"
-async-graphql-poem = "3.0.7"
+poem = "1.2.16"
+async-graphql = "3.0.18"
+async-graphql-poem = "3.0.18"
 log = "0.4.14"
 serde_json = "1.0.68"
 slab = "0.4.5"
@@ -21,4 +20,3 @@ pretty_env_logger = "0.4.0"
 uuid = "0.8.2"
 thiserror = "1.0.30"
 pwhash = "1.0.0"
-

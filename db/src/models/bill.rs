@@ -13,7 +13,7 @@ pub struct Bill {
     pub slug: String,
     pub title: String,
     pub bill_number: String,
-    pub vote_status: LegislationStatus,
+    pub legislation_status: LegislationStatus,
     pub description: Option<String>,
     pub official_summary: Option<String>,
     pub populist_summary: Option<String>,
@@ -31,7 +31,7 @@ pub struct CreateBillInput {
     pub slug: Option<String>,
     pub title: String,
     pub bill_number: String,
-    pub vote_status: LegislationStatus,
+    pub legislation_status: LegislationStatus,
     pub description: Option<String>,
     pub official_summary: Option<String>,
     pub populist_summary: Option<String>,
@@ -47,7 +47,7 @@ pub struct UpdateBillInput {
     pub slug: Option<String>,
     pub title: Option<String>,
     pub bill_number: String,
-    pub vote_status: Option<LegislationStatus>,
+    pub legislation_status: Option<LegislationStatus>,
     pub description: Option<String>,
     pub official_summary: Option<String>,
     pub populist_summary: Option<String>,
@@ -62,13 +62,13 @@ pub struct BillSearch {
     slug: Option<String>,
     title: Option<String>,
     bill_number: Option<String>,
-    vote_status: Option<LegislationStatus>,
+    legislation_status: Option<LegislationStatus>,
 }
 
 impl Bill {
     pub async fn create(db_pool: &PgPool, input: &CreateBillInput) -> Result<Self, sqlx::Error> {
         let slug = match input.slug.clone() {
-            None => slugify!(&input.title),
+            None => slugify!(&input.bill_number),
             Some(slug) => slug,
         };
 
@@ -80,16 +80,16 @@ impl Bill {
         let record = sqlx::query_as!(
             Bill,
             r#"
-                INSERT INTO bill (slug, title, bill_number, vote_status, description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, votesmart_bill_id) 
+                INSERT INTO bill (slug, title, bill_number, legislation_status, description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, votesmart_bill_id) 
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                 ON CONFLICT (slug) DO UPDATE
                 SET title = $2
-                RETURNING id, slug, title, bill_number, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at
+                RETURNING id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at
             "#,
             slug,
             input.title,
             input.bill_number,
-            input.vote_status as LegislationStatus,
+            input.legislation_status as LegislationStatus,
             input.description,
             input.official_summary,
             input.populist_summary,
@@ -117,7 +117,7 @@ impl Bill {
                 SET slug = COALESCE($3, slug),
                     title = COALESCE($4, title),
                     bill_number = COALESCE($5,bill_number),
-                    vote_status = COALESCE($6, vote_status),
+                    legislation_status = COALESCE($6, legislation_status),
                     description = COALESCE($7, description),
                     official_summary = COALESCE($8, official_summary),
                     populist_summary = COALESCE($9, populist_summary),
@@ -126,14 +126,14 @@ impl Bill {
                     legiscan_data = COALESCE($12, legiscan_data)
                 WHERE id=$1
                 OR legiscan_bill_id=$2
-                RETURNING id, slug, title, bill_number, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at
+                RETURNING id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at
             "#,
             id,
             legiscan_bill_id,
             input.slug,
             input.title,
             input.bill_number,
-            input.vote_status as Option<LegislationStatus>,
+            input.legislation_status as Option<LegislationStatus>,
             input.description,
             input.official_summary,
             input.populist_summary,
@@ -153,7 +153,7 @@ impl Bill {
 
     pub async fn index(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
         let records = sqlx::query_as!(Bill, r#"
-            SELECT id, slug, title, bill_number, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at FROM bill"#,)
+            SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at FROM bill"#,)
             .fetch_all(db_pool)
             .await?;
         Ok(records)
@@ -163,14 +163,14 @@ impl Bill {
         let records = sqlx::query_as!(
             Bill,
             r#"
-                SELECT id, slug, title, bill_number, vote_status AS "vote_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at FROM bill
-                WHERE $1::text IS NULL OR slug = $1
-                AND $2::text IS NULL OR levenshtein($2, title) <=5
-                AND $3::vote_status IS NULL OR vote_status = $3
+                SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at FROM bill
+                WHERE ($1::text IS NULL OR slug = $1)
+                AND ($2::text IS NULL OR title ILIKE $2)
+                AND ($3::legislation_status IS NULL OR legislation_status = $3)
             "#,
             search.slug,
             search.title,
-            search.vote_status as Option<LegislationStatus>
+            search.legislation_status as Option<LegislationStatus>
         )
         .fetch_all(db_pool)
         .await?;
@@ -276,7 +276,7 @@ impl Bill {
 //             id: uuid::Uuid::new_v4(),
 //             slug: "some-piece-of-legislation".to_string(),
 //             title: "Some Piece of Legislation".to_string(),
-//             vote_status: LegislationStatus::UNDECIDED,
+//             legislation_status: LegislationStatus::UNDECIDED,
 //             description: None,
 //             official_summary: None,
 //             populist_summary: None,

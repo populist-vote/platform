@@ -1,5 +1,5 @@
 # Votesmart 
-A rust wrapper around the Votesmart REST API
+A Rust wrapper around the Votesmart REST API
 
 ## Docs
 https://docs.rs/votesmart/latest/votesmart/
