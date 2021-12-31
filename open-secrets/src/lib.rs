@@ -395,8 +395,8 @@ async fn test_cand_sector() {
     assert_eq!(response.status().is_success(), true);
     let json: serde_json::Value = response.json().await.unwrap();
     assert_eq!(
-        json["response"]["candIndus"]["@attributes"]["cand_name"],
-        "Pelosi, Nancy"
+        json["response"]["sectors"]["@attributes"]["cand_name"],
+        "Nancy Pelosi (D)"
     );
 }
 
