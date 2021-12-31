@@ -1043,6 +1043,7 @@ dependencies = [
  "anyhow",
  "async-graphql",
  "auth",
+ "base64 0.13.0",
  "bytes",
  "chrono",
  "db",

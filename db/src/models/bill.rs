@@ -151,9 +151,10 @@ impl Bill {
         Ok(())
     }
 
+    // this table is too big to run this query, its too expensive and will blow up heroku
     pub async fn index(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
         let records = sqlx::query_as!(Bill, r#"
-            SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at FROM bill"#,)
+            SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at FROM bill"#)
             .fetch_all(db_pool)
             .await?;
         Ok(records)
