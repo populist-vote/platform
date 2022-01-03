@@ -206,6 +206,80 @@
       ]
     }
   },
+  "139e8e31c9999a8bffc2567bb707b97ab8f58c8c6b48fc0486adffede608eb76": {
+    "query": "\n                SELECT id, email, username, password, role AS \"role:Role\", created_at, confirmed_at, updated_at FROM populist_user \n                WHERE $1 = id;\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "email",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "username",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "password",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "role:Role",
+          "type_info": {
+            "Custom": {
+              "name": "user_role",
+              "kind": {
+                "Enum": [
+                  "superuser",
+                  "staff",
+                  "premium",
+                  "basic"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 6,
+          "name": "confirmed_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 7,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    }
+  },
   "1a47cbe583edf42b41691c47eab47641fcf8685fccf6842006509b2078fa2661": {
     "query": "\n                SELECT * FROM organization\n                WHERE ($1::text IS NULL OR levenshtein($1, name) <=5)\n             ",
     "describe": {
