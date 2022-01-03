@@ -343,6 +343,7 @@ async fn test_cand_summary() {
     let response = proxy.cand_summary("N00007360", None).await.unwrap();
     assert_eq!(response.status().is_success(), true);
     let json: serde_json::Value = response.json().await.unwrap();
+    println!("{}", serde_json::to_string_pretty(&json).unwrap());
     assert_eq!(
         json["response"]["summary"]["@attributes"]["cand_name"],
         "Pelosi, Nancy"
@@ -355,6 +356,7 @@ async fn test_cand_contrib() {
     let response = proxy.cand_contrib("N00007360", None).await.unwrap();
     assert_eq!(response.status().is_success(), true);
     let json: serde_json::Value = response.json().await.unwrap();
+    println!("{}", serde_json::to_string_pretty(&json).unwrap());
     assert_eq!(
         json["response"]["contributors"]["@attributes"]["cand_name"],
         "Nancy Pelosi (D)"

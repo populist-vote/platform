@@ -5,3 +5,7 @@
 [submodule "legiscan"]
 	path = legiscan
 	url = https://github.com/populist-vote/legiscan.git
+
+[submodule "open-secrets"]
+	path = open-secrets 
+	url = https://github.com/populist-vote/open-secrets.git

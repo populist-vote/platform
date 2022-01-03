@@ -2,7 +2,7 @@ use async_graphql::*;
 use db::{CreateElectionInput, Election, UpdateElectionInput};
 use sqlx::{Pool, Postgres};
 
-use crate::types::ElectionResult;
+use crate::{mutation::StaffOnly, types::ElectionResult};
 #[derive(Default)]
 pub struct ElectionMutation;
 
@@ -13,6 +13,7 @@ struct DeleteElectionResult {
 
 #[Object]
 impl ElectionMutation {
+    #[graphql(guard = "StaffOnly")]
     async fn create_election(
         &self,
         ctx: &Context<'_>,
@@ -23,6 +24,7 @@ impl ElectionMutation {
         Ok(ElectionResult::from(new_record))
     }
 
+    #[graphql(guard = "StaffOnly")]
     async fn update_election(
         &self,
         ctx: &Context<'_>,
@@ -34,6 +36,7 @@ impl ElectionMutation {
         Ok(ElectionResult::from(updated_record))
     }
 
+    #[graphql(guard = "StaffOnly")]
     async fn delete_election(&self, ctx: &Context<'_>, id: String) -> Result<DeleteElectionResult> {
         let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
         Election::delete(db_pool, uuid::Uuid::parse_str(&id)?).await?;

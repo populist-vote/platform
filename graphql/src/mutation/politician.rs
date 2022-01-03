@@ -6,6 +6,7 @@ use db::{
 use sqlx::{Pool, Postgres};
 
 use crate::{
+    mutation::StaffOnly,
     types::{Error, PoliticianResult},
     upload_to_s3, File,
 };
@@ -47,6 +48,7 @@ async fn handle_nested_issue_tags(
 
 #[Object]
 impl PoliticianMutation {
+    #[graphql(guard = "StaffOnly")]
     async fn create_politician(
         &self,
         ctx: &Context<'_>,
@@ -62,6 +64,7 @@ impl PoliticianMutation {
         Ok(PoliticianResult::from(new_record))
     }
 
+    #[graphql(guard = "StaffOnly")]
     async fn update_politician(
         &self,
         ctx: &Context<'_>,
@@ -80,6 +83,7 @@ impl PoliticianMutation {
     }
 
     // TODO make this generic and accept an associated model e.g Politician
+    #[graphql(guard = "StaffOnly")]
     async fn upload_politician_thumbnail(
         &self,
         ctx: &Context<'_>,
@@ -101,6 +105,7 @@ impl PoliticianMutation {
         Ok(upload_to_s3(file_info).await?)
     }
 
+    #[graphql(guard = "StaffOnly")]
     async fn delete_politician(
         &self,
         ctx: &Context<'_>,

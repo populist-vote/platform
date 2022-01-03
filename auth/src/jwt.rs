@@ -1,17 +1,15 @@
 use crate::Error;
 use db::{Role, User};
-use jsonwebtoken::{
-    decode, encode, errors::ErrorKind, DecodingKey, EncodingKey, Header, TokenData, Validation,
-};
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    sub: uuid::Uuid,
-    username: String,
-    email: String,
-    role: Role,
-    exp: usize,
+    pub sub: uuid::Uuid,
+    pub username: String,
+    pub email: String,
+    pub role: Role,
+    pub exp: usize,
 }
 
 pub fn create_token_for_user(user_record: User) -> Result<String, Error> {
@@ -45,18 +43,12 @@ pub fn create_token_for_user(user_record: User) -> Result<String, Error> {
 pub fn validate_token(token: &str) -> Result<TokenData<Claims>, Error> {
     let key = std::env::var("JWT_SECRET")?;
 
-    let token_data = match decode::<Claims>(
+    match decode::<Claims>(
         &token.to_string(),
         &DecodingKey::from_secret(key.as_ref()),
         &Validation::default(),
     ) {
-        Ok(c) => c,
-        Err(err) => match *err.kind() {
-            ErrorKind::InvalidToken => panic!("Token is invalid"),
-            ErrorKind::InvalidIssuer => panic!("Issuer is invalid"),
-            _ => panic!("Something went wrong decoding a JWT"),
-        },
-    };
-
-    Ok(token_data)
+        Ok(token_data) => Ok(token_data),
+        Err(err) => Err(Error::JwtError(err)),
+    }
 }

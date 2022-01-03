@@ -2,7 +2,7 @@ use async_graphql::*;
 use db::{CreateIssueTagInput, IssueTag, UpdateIssueTagInput};
 use sqlx::{Pool, Postgres};
 
-use crate::types::IssueTagResult;
+use crate::{mutation::StaffOnly, types::IssueTagResult};
 
 #[derive(Default)]
 pub struct IssueTagMutation;
@@ -14,6 +14,7 @@ struct DeleteIssueTagResult {
 
 #[Object]
 impl IssueTagMutation {
+    #[graphql(guard = "StaffOnly")]
     async fn create_issue_tag(
         &self,
         ctx: &Context<'_>,
@@ -24,6 +25,7 @@ impl IssueTagMutation {
         Ok(IssueTagResult::from(new_record))
     }
 
+    #[graphql(guard = "StaffOnly")]
     async fn update_issue_tag(
         &self,
         ctx: &Context<'_>,
@@ -35,6 +37,7 @@ impl IssueTagMutation {
         Ok(IssueTagResult::from(updated_record))
     }
 
+    #[graphql(guard = "StaffOnly")]
     async fn delete_issue_tag(
         &self,
         ctx: &Context<'_>,

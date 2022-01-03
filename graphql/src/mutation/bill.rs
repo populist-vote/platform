@@ -2,6 +2,7 @@ use async_graphql::*;
 use db::{Bill, CreateArgumentInput, CreateBillInput, UpdateBillInput};
 use sqlx::{Pool, Postgres};
 
+use crate::mutation::StaffOnly;
 use crate::types::BillResult;
 #[derive(Default)]
 pub struct BillMutation;
@@ -32,6 +33,7 @@ async fn handle_nested_arguments(
 
 #[Object]
 impl BillMutation {
+    #[graphql(guard = "StaffOnly")]
     async fn create_bill(&self, ctx: &Context<'_>, input: CreateBillInput) -> Result<BillResult> {
         let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
         let new_record = Bill::create(db_pool, &input).await?;
@@ -41,6 +43,7 @@ impl BillMutation {
         Ok(BillResult::from(new_record))
     }
 
+    #[graphql(guard = "StaffOnly")]
     async fn update_bill(
         &self,
         ctx: &Context<'_>,
@@ -60,6 +63,7 @@ impl BillMutation {
         Ok(BillResult::from(updated_record))
     }
 
+    #[graphql(guard = "StaffOnly")]
     async fn delete_bill(&self, ctx: &Context<'_>, id: String) -> Result<DeleteBillResult> {
         let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
         Bill::delete(db_pool, uuid::Uuid::parse_str(&id)?).await?;

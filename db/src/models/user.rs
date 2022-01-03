@@ -52,6 +52,22 @@ impl User {
         Ok(record)
     }
 
+    pub async fn find_by_id(db_pool: &PgPool, id: uuid::Uuid) -> Result<Self, Error> {
+        let record = sqlx::query_as!(
+            User,
+            r#"
+                SELECT id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at FROM populist_user 
+                WHERE $1 = id;
+            "#,
+            id
+        ).fetch_optional(db_pool).await?;
+
+        match record {
+            Some(record) => Ok(record),
+            None => Err(Error::EmailOrUsernameNotFound),
+        }
+    }
+
     pub async fn find_by_email_or_username(
         db_pool: &PgPool,
         email_or_username: String,

@@ -1042,6 +1042,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-graphql",
+ "async-trait",
  "auth",
  "base64 0.13.0",
  "bytes",
@@ -1643,7 +1644,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 
 [[package]]
 name = "open_secrets"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "dotenv",
  "reqwest",

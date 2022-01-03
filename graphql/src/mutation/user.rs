@@ -1,4 +1,7 @@
-use crate::types::{CreateUserResult, Error, LoginResult};
+use crate::{
+    mutation::StaffOnly,
+    types::{CreateUserResult, Error, LoginResult},
+};
 use async_graphql::*;
 use auth::create_token_for_user;
 use db::{CreateUserInput, User};
@@ -16,6 +19,7 @@ pub struct UserMutation;
 
 #[Object]
 impl UserMutation {
+    #[graphql(guard = "StaffOnly")]
     async fn create_user(
         &self,
         ctx: &Context<'_>,

@@ -5,7 +5,10 @@ use db::{
 };
 use sqlx::{Pool, Postgres};
 
-use crate::types::{Error, OrganizationResult};
+use crate::{
+    mutation::StaffOnly,
+    types::{Error, OrganizationResult},
+};
 #[derive(Default)]
 pub struct OrganizationMutation;
 
@@ -42,6 +45,7 @@ async fn handle_nested_issue_tags(
 
 #[Object]
 impl OrganizationMutation {
+    #[graphql(guard = "StaffOnly")]
     async fn create_organization(
         &self,
         ctx: &Context<'_>,
@@ -57,6 +61,7 @@ impl OrganizationMutation {
         Ok(OrganizationResult::from(new_record))
     }
 
+    #[graphql(guard = "StaffOnly")]
     async fn update_organization(
         &self,
         ctx: &Context<'_>,
@@ -74,6 +79,7 @@ impl OrganizationMutation {
         Ok(OrganizationResult::from(updated_record))
     }
 
+    #[graphql(guard = "StaffOnly")]
     async fn delete_organization(
         &self,
         ctx: &Context<'_>,
