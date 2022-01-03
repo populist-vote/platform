@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use async_graphql::{
+    extensions::ApolloTracing,
     http::{playground_source, GraphQLPlaygroundConfig},
     Request, Response,
 };
@@ -107,7 +108,7 @@ async fn main() -> Result<(), std::io::Error> {
         .await
         .unwrap();
 
-    let schema = new_schema(pool).finish();
+    let schema = new_schema(pool).extension(ApolloTracing).finish();
 
     let environment = Environment::from_str(&std::env::var("ENVIRONMENT").unwrap()).unwrap();
     let app = Route::new()

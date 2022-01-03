@@ -45,7 +45,6 @@ impl LegiscanProxy {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_get_supplement() {
     let proxy = LegiscanProxy::new().unwrap();
     let supplement = proxy.get_supplement(47508).await.unwrap();

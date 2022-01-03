@@ -9,7 +9,7 @@ auth = { path = "../auth" }
 graphql = { path = "../graphql" }
 tokio = { version = "1.8", features = ["full"] }
 poem = "1.2.16"
-async-graphql = "3.0.18"
+async-graphql = { version = "3.0.18", features = ["apollo_tracing"] }
 async-graphql-poem = "3.0.18"
 log = "0.4.14"
 serde_json = "1.0.68"

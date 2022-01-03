@@ -3,7 +3,7 @@ use async_graphql::FieldResult;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
-struct GetBillResponse {
+pub struct GetBillResponse {
     status: String,
     bill: Bill,
 }
@@ -22,8 +22,6 @@ pub struct Bill {
     pub url: String,
     pub state_link: String,
     pub completed: i32,
-    /// Can be cast to its BillStatus with
-    /// `BillStatus::try_from(status).unwrap()`
     pub status: i32,
     pub status_date: Option<String>,
     pub progress: Vec<Progress>,
@@ -272,7 +270,6 @@ impl LegiscanProxy {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_get_bill() {
     let proxy = LegiscanProxy::new().unwrap();
     let bill = proxy.get_bill(428345).await.unwrap();

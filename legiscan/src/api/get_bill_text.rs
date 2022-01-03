@@ -41,7 +41,6 @@ impl LegiscanProxy {
 }
 
 #[tokio::test]
-#[ignore]
 async fn test_get_bill_text() {
     let proxy = LegiscanProxy::new().unwrap();
     let bill_text = proxy.get_bill_text(647508).await.unwrap();
