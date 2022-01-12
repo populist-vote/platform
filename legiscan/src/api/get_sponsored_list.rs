@@ -14,7 +14,7 @@ pub struct GetSponsoredListResponse {
 pub struct SponsoredBills {
     pub sponsor: Person,
     pub sessions: Vec<Session>,
-    pub bills: Vec<Bill>,
+    pub bills: Vec<BillInfo>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -24,7 +24,7 @@ pub struct Session {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Bill {
+pub struct BillInfo {
     pub session_id: i32,
     pub bill_id: i32,
     pub number: String,

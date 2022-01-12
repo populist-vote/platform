@@ -2,6 +2,7 @@ use crate::CreateOrConnectIssueTagInput;
 use crate::DateTime;
 use crate::IssueTag;
 use async_graphql::InputObject;
+use serde::{Deserialize, Serialize};
 use slugify::slugify;
 use sqlx::PgPool;
 
@@ -24,9 +25,10 @@ pub struct Organization {
     pub updated_at: DateTime,
 }
 
-#[derive(InputObject)]
+#[derive(Debug, Serialize, Deserialize, InputObject)]
 pub struct CreateOrganizationInput {
     pub name: String,
+    pub slug: Option<String>,
     pub description: Option<String>,
     pub thumbnail_image_url: Option<String>,
     pub website_url: Option<String>,
@@ -60,12 +62,26 @@ pub struct OrganizationSearch {
     name: Option<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize, InputObject)]
+pub struct CreateOrConnectOrganizationInput {
+    pub create: Option<Vec<CreateOrganizationInput>>,
+    pub connect: Option<Vec<String>>, // Accept UUIDs or slugs
+}
+
+pub enum OrganizationIdentifier {
+    Uuid(uuid::Uuid),
+    Slug(String),
+}
+
 impl Organization {
     pub async fn create(
         db_pool: &PgPool,
         input: &CreateOrganizationInput,
     ) -> Result<Self, sqlx::Error> {
-        let slug = slugify!(&input.name); // TODO run a query and ensure this is Unique
+        let slug = match &input.slug {
+            Some(slug) => slug.to_owned(),
+            None => slugify!(&input.name),
+        }; // TODO run a query and ensure this is Unique
         let record = sqlx::query_as!(
             Organization,
             r#"

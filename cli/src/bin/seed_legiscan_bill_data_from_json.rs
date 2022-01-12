@@ -1,5 +1,5 @@
 use db::models::enums::LegislationStatus;
-use legiscan::{Bill, BillStatus as LegiscanBillStatus};
+use legiscan::{Bill, BillStatus as LegiscanBillStatus, LegiscanProxy};
 use std::{env, error::Error, fs, io, path::Path, process};
 
 async fn seed_bills() -> Result<(), Box<dyn Error>> {
@@ -28,6 +28,13 @@ async fn seed_bills() -> Result<(), Box<dyn Error>> {
             Some(v) => v.chamber.to_owned(),
             None => "unknown".to_string(),
         };
+
+        // let proxy = LegiscanProxy::new().unwrap();
+
+        // for vote in bill.votes.into_iter() {
+        //     let roll_call = proxy.get_roll_call(vote.roll_call_id).await;
+        // }
+
         let legislation_status = match legiscan::BillStatus::try_from(bill.status)
             .unwrap_or(LegiscanBillStatus::NotIntroduced)
         {

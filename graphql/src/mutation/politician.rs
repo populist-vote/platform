@@ -1,7 +1,7 @@
 use async_graphql::*;
 use db::{
-    CreateOrConnectIssueTagInput, CreatePoliticianInput, IssueTag, Politician,
-    UpdatePoliticianInput,
+    CreateOrConnectIssueTagInput, CreateOrConnectOrganizationInput, CreatePoliticianInput,
+    IssueTag, Organization, OrganizationIdentifier, Politician, UpdatePoliticianInput,
 };
 use sqlx::{Pool, Postgres};
 
@@ -11,7 +11,7 @@ use crate::{
     upload_to_s3, File,
 };
 
-use std::io::Read;
+use std::{io::Read, str::FromStr};
 #[derive(Default)]
 pub struct PoliticianMutation;
 
@@ -46,6 +46,48 @@ async fn handle_nested_issue_tags(
     Ok(())
 }
 
+async fn handle_nested_endorsements(
+    db_pool: &Pool<Postgres>,
+    politician_id: uuid::Uuid,
+    organizations_input: CreateOrConnectOrganizationInput,
+) -> Result<(), Error> {
+    if organizations_input.create.is_some() {
+        for input in organizations_input.create.unwrap() {
+            let new_organization = Organization::create(db_pool, &input).await?;
+            Politician::connect_organization(
+                db_pool,
+                politician_id,
+                OrganizationIdentifier::Uuid(new_organization.id),
+            )
+            .await?;
+        }
+    }
+    if organizations_input.connect.is_some() {
+        for organization_identifier in organizations_input.connect.unwrap() {
+            match uuid::Uuid::from_str(organization_identifier.as_str()) {
+                Ok(org_id) => {
+                    Politician::connect_organization(
+                        db_pool,
+                        politician_id,
+                        OrganizationIdentifier::Uuid(org_id),
+                    )
+                    .await?
+                }
+                _ => {
+                    Politician::connect_organization(
+                        db_pool,
+                        politician_id,
+                        OrganizationIdentifier::Slug(organization_identifier),
+                    )
+                    .await?
+                }
+            };
+        }
+    }
+
+    Ok(())
+}
+
 #[Object]
 impl PoliticianMutation {
     #[graphql(guard = "StaffOnly")]
@@ -59,6 +101,10 @@ impl PoliticianMutation {
         // be sure to handle None inputs from GraphQL
         if input.issue_tags.is_some() {
             handle_nested_issue_tags(db_pool, new_record.id, input.issue_tags.unwrap()).await?;
+        }
+
+        if input.endorsements.is_some() {
+            handle_nested_endorsements(db_pool, new_record.id, input.endorsements.unwrap()).await?;
         }
 
         Ok(PoliticianResult::from(new_record))
@@ -77,6 +123,11 @@ impl PoliticianMutation {
 
         if input.issue_tags.is_some() {
             handle_nested_issue_tags(db_pool, updated_record.id, input.issue_tags.unwrap()).await?;
+        }
+
+        if input.endorsements.is_some() {
+            handle_nested_endorsements(db_pool, updated_record.id, input.endorsements.unwrap())
+                .await?;
         }
 
         Ok(PoliticianResult::from(updated_record))

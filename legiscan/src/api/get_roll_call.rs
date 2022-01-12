@@ -8,6 +8,7 @@ pub struct GetRollCallResponse {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "async-graphql", derive(async_graphql::SimpleObject))]
 pub struct RollCall {
     pub roll_call_id: i64,
     pub bill_id: i64,
@@ -25,6 +26,7 @@ pub struct RollCall {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[cfg_attr(feature = "async-graphql", derive(async_graphql::SimpleObject))]
 pub struct Vote {
     pub people_id: i64,
     pub vote_id: i64,
@@ -58,5 +60,6 @@ impl LegiscanProxy {
 async fn test_get_roll_call() {
     let proxy = LegiscanProxy::new().unwrap();
     let roll_call = proxy.get_roll_call(234223).await.unwrap();
+    println!("{}", serde_json::to_string_pretty(&roll_call).unwrap());
     assert_eq!(roll_call.date, "2013-02-20");
 }

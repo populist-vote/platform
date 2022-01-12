@@ -1,0 +1,22 @@
+thirdway:
+  name: Third Way
+  slug: third-way  
+  description: A national think tank that claims to champion 'modern center-left ideas'
+  thumbnail_image_url: https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.guidestar.org%2Fprofile%2F20-1734070&psig=AOvVaw1xhOKf811wY5ADMzX3cJxe&ust=1641961940108000&source=images&cd=vfe&ved=0CAsQjRxqFwoTCKDBlYPvqPUCFQAAAAAdAAAAABAI
+  website_url: https://www.thirdway.org/
+  facebook_url: https://www.facebook.com/ThirdWayThinkTank
+  twitter_url: https://twitter.com/ThirdWayTweet
+  email: contact@thirdway.org
+  headquarters_phone: 202-384-1700
+  tax_classification: 501(c)(4)
+
+carpenters-and-joiners:
+  slug: carpenters-and-joiners
+  name: The United Brotherhood of Carpenters and Joiners of America
+  description: One of North Americas largest trade unions for skilled construction professionals
+  thumbnail_image_url: https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.carpenters.org%2Fabout-ubc%2F21st-century-union%2Fthe-ubc-emblem%2F&psig=AOvVaw03Ux6kx_x_m5ITLMne89i0&ust=1641962710108000&source=images&cd=vfe&ved=0CAsQjRxqFwoTCNCisvLxqPUCFQAAAAAdAAAAABAD
+  website_url: https://www.carpenters.org/
+  facebook_url: https://www.facebook.com/CarpentersUnited
+  twitter_url: https://twitter.com/ubcja_official
+  instagram_url: https://www.instagram.com/ubcja
+  tax_classification: 501(c)(5)

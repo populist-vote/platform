@@ -1,6 +1,7 @@
 use crate::{
     models::enums::{PoliticalParty, State},
-    CreateOrConnectIssueTagInput, DateTime, IssueTag, Organization,
+    CreateOrConnectIssueTagInput, CreateOrConnectOrganizationInput, DateTime, IssueTag,
+    Organization, OrganizationIdentifier,
 };
 use async_graphql::InputObject;
 use serde::{Deserialize, Serialize};
@@ -51,6 +52,7 @@ pub struct CreatePoliticianInput {
     pub instagram_url: Option<String>,
     pub office_party: Option<PoliticalParty>,
     pub issue_tags: Option<CreateOrConnectIssueTagInput>,
+    pub endorsements: Option<CreateOrConnectOrganizationInput>,
     pub votesmart_candidate_id: Option<i32>,
     pub votesmart_candidate_bio: Option<Value>,
     pub legiscan_people_id: Option<i32>,
@@ -74,6 +76,7 @@ pub struct UpdatePoliticianInput {
     pub instagram_url: Option<String>,
     pub office_party: Option<PoliticalParty>,
     pub issue_tags: Option<CreateOrConnectIssueTagInput>,
+    pub endorsements: Option<CreateOrConnectOrganizationInput>,
     pub votesmart_candidate_id: Option<i32>,
     pub votesmart_candidate_bio: Option<Value>,
     pub legiscan_people_id: Option<i32>,
@@ -263,6 +266,45 @@ impl Politician {
         politician_id).fetch_all(db_pool).await?;
 
         Ok(records)
+    }
+
+    pub async fn connect_organization(
+        db_pool: &PgPool,
+        politician_id: uuid::Uuid,
+        organization_identifier: OrganizationIdentifier,
+    ) -> Result<(), sqlx::Error> {
+        match organization_identifier {
+            OrganizationIdentifier::Uuid(organization_id) => {
+                sqlx::query_as!(
+                    Politician,
+                    r#"
+                        INSERT INTO politician_endorsements (politician_id, organization_id)
+                        VALUES ($1, $2)
+                    "#,
+                    politician_id,
+                    organization_id
+                )
+                .execute(db_pool)
+                .await?;
+
+                Ok(())
+            }
+            OrganizationIdentifier::Slug(organization_slug) => {
+                sqlx::query_as!(
+                    Politician,
+                    r#"
+                        INSERT INTO politician_endorsements (politician_id, organization_id)
+                        VALUES ($1, (SELECT id FROM organization WHERE slug = $2))
+                    "#,
+                    politician_id,
+                    organization_slug
+                )
+                .execute(db_pool)
+                .await?;
+
+                Ok(())
+            }
+        }
     }
 
     pub async fn connect_issue_tag(

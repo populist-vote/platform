@@ -1,4 +1,4 @@
-use async_graphql::InputObject;
+use async_graphql::{Enum, InputObject};
 use pwhash::bcrypt;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool, Type};
@@ -17,16 +17,20 @@ pub struct User {
     pub updated_at: DateTime,
 }
 
-#[derive(InputObject)]
+#[derive(Serialize, Deserialize, InputObject)]
 pub struct CreateUserInput {
     #[graphql(validator(email))]
     email: String,
     username: String,
     password: String,
+    role: Option<Role>,
 }
 
-#[derive(Debug, Clone, strum_macros::Display, Type, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, strum_macros::Display, Type, Serialize, Deserialize, Copy, Eq, PartialEq, Enum,
+)]
 #[sqlx(type_name = "user_role", rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
 pub enum Role {
     SUPERUSER,
     STAFF,
@@ -37,16 +41,18 @@ pub enum Role {
 impl User {
     pub async fn create(db_pool: &PgPool, input: &CreateUserInput) -> Result<Self, Error> {
         let hash = bcrypt::hash(&input.password).unwrap();
+        let role = input.role.unwrap_or(Role::BASIC);
         let record = sqlx::query_as!(
             User,
             r#"
-                INSERT INTO populist_user (email, username, password)
-                VALUES ($1, $2, $3)
+                INSERT INTO populist_user (email, username, password, role)
+                VALUES ($1, $2, $3, $4)
                 RETURNING id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at
             "#,
             input.email,
             input.username,
             hash,
+            role as Role
         ).fetch_one(db_pool).await?;
 
         Ok(record)

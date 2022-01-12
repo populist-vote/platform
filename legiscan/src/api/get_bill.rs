@@ -1,5 +1,4 @@
-use crate::{Error, LegiscanProxy};
-use async_graphql::FieldResult;
+use crate::{Error, LegiscanProxy, RollCall};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -51,7 +50,8 @@ pub struct Bill {
 
 #[cfg_attr(feature = "async-graphql", async_graphql::ComplexObject)]
 impl Bill {
-    async fn status_type(&self) -> FieldResult<String> {
+    #[cfg(feature = "async-graphql")]
+    async fn status_type(&self) -> async_graphql::FieldResult<String> {
         Ok(BillStatus::try_from(self.status).unwrap().to_string())
     }
 }
@@ -187,6 +187,8 @@ pub struct Text {
 #[cfg_attr(feature = "async-graphql", derive(async_graphql::SimpleObject))]
 pub struct Vote {
     pub roll_call_id: i32,
+    /// This field is not returned from get_bill, but can be populated with a subsequent call to `get_roll_call`
+    pub roll_call_data: Option<RollCall>,
     pub date: String,
     pub desc: String,
     pub yea: i32,

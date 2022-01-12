@@ -1,15 +1,17 @@
 use async_graphql::{ComplexObject, Context, Enum, FieldResult, SimpleObject, ID};
 use db::{
     models::{
-        enums::{PoliticalParty, State},
+        bill::Bill,
+        enums::{LegislationStatus, PoliticalParty, State},
         politician::Politician,
     },
     DateTime,
 };
+
 use sqlx::{Pool, Postgres};
 use votesmart::GetCandidateBioResponse;
 
-use super::{IssueTagResult, OrganizationResult};
+use super::{BillResult, IssueTagResult, OrganizationResult};
 
 #[derive(Enum, Copy, Clone, Eq, PartialEq)]
 enum OfficeType {
@@ -39,6 +41,12 @@ pub struct PoliticianResult {
     votesmart_candidate_bio: GetCandidateBioResponse,
     created_at: DateTime,
     updated_at: DateTime,
+}
+
+#[derive(SimpleObject, Debug, Clone)]
+pub struct SponsoredBillResult {
+    id: ID,
+    title: String,
 }
 
 #[ComplexObject]
@@ -71,16 +79,22 @@ impl PoliticianResult {
         Ok(results)
     }
 
-    // async fn voting_hostory(&self, ctx: &Context<'_>) -> FieldResult<serde_json::Value> {
-    //     let pool = ctx.data_unchecked::<Pool<Postgres>>();
-    //     let records = sqlx::query!(
-    //         r#"
-    //         SELECT
-    //     "#
-    //     )
-    //     .await?;
-    //     Ok(records)
-    // }
+    async fn sponsored_bills(&self, ctx: &Context<'_>) -> FieldResult<Vec<BillResult>> {
+        let pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let records = sqlx::query_as!(
+            Bill,
+            r#"
+                SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at FROM bill, jsonb_array_elements(legiscan_data->'sponsors') sponsors 
+                WHERE sponsors->>'votesmart_id' = $1
+            "#,
+            &self.votesmart_candidate_id.to_string()
+        )
+        .fetch_all(pool)
+        .await?;
+
+        let results = records.into_iter().map(BillResult::from).collect();
+        Ok(results)
+    }
 }
 
 impl From<Politician> for PoliticianResult {
