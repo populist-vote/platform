@@ -60,6 +60,5 @@ impl LegiscanProxy {
 async fn test_get_roll_call() {
     let proxy = LegiscanProxy::new().unwrap();
     let roll_call = proxy.get_roll_call(234223).await.unwrap();
-    println!("{}", serde_json::to_string_pretty(&roll_call).unwrap());
     assert_eq!(roll_call.date, "2013-02-20");
 }

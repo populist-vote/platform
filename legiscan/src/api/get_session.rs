@@ -15,8 +15,8 @@ pub struct Session {
     pub year_end: i64,
     pub special: i64,
     pub session_name: String,
-    pub name: String,
-    pub session_hash: String,
+    pub name: Option<String>,
+    pub session_hash: Option<String>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -82,7 +82,7 @@ impl LegiscanProxy {
 async fn test_get_session_list() {
     let proxy = LegiscanProxy::new().unwrap();
     let session_list = proxy.get_session_list("CO").await.unwrap();
-    assert_eq!(session_list[0].session_id, 1797);
+    assert_eq!(session_list.len() >= 15, true);
 }
 
 #[tokio::test]
