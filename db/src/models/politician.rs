@@ -286,8 +286,6 @@ impl Politician {
                 )
                 .execute(db_pool)
                 .await?;
-
-                Ok(())
             }
             OrganizationIdentifier::Slug(organization_slug) => {
                 sqlx::query_as!(
@@ -301,10 +299,9 @@ impl Politician {
                 )
                 .execute(db_pool)
                 .await?;
-
-                Ok(())
             }
         }
+        Ok(())
     }
 
     pub async fn connect_issue_tag(
