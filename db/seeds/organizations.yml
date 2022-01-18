@@ -20,3 +20,245 @@ carpenters-and-joiners:
   twitter_url: https://twitter.com/ubcja_official
   instagram_url: https://www.instagram.com/ubcja
   tax_classification: 501(c)(5)
+
+jewish-dems:
+  name: Jewish Democratic Council of America
+  slug: jewish-dems
+  description: The Jewish Democratic Council of America (JDCA) actively promotes policy consistent with socially progressive, pro-Israel, Jewish community values.
+  thumbnail_image_url:
+  website_url: https://jewishdems.org/
+  facebook_url: https://www.facebook.com/JewishDems
+  twitter_url:
+  email: info@jewishdems.org
+  headquarters_phone:
+  tax_classification: 501(c)(4)
+
+planned-parenthood-action-fund:
+  slug: planned-parenthood-action-fund
+  name: Planned Parenthood Action Fund
+  description: The Planned Parenthood Action Fund works to advance access to sexual health care and defend reproductive rights.
+  thumbnail_image_url:
+  website_url: https://www.plannedparenthoodaction.org/
+  facebook_url: https://www.facebook.com/PlannedParenthoodAction
+  twitter_url:
+  instagram_url:
+  tax_classification: 501(c)(4)
+
+american-civl-liberties-union:
+  slug: american-civl-liberties-union
+  name: American Civil Liberties Union (ACLU)
+  description: The ACLU dares to create a more perfect union — beyond one person, party, or side. Our mission is to realize this promise of the United States Constitution for all and expand the reach of its guarantees.
+  thumbnail_image_url:
+  website_url: https://www.aclu.org/
+  facebook_url: https://www.facebook.com/American-Civil-Liberties-Union-89610455456
+  twitter_url:
+  instagram_url:
+  tax_classification: 501(c)(4)
+
+progressive-punch:
+  slug: progressive-punch
+  name: Progressive Punch
+  description: ProgressivePunch.org is a privately-owned website. By providing information on a broad range of issues deliberated by Congress and applying a progressive analysis to the votes cast, ProgressivePunch wants to raise public consciousness by highlighting progressive votes and exposing non-progressive votes. It also hopes to influence the future voting patterns of legislators, not only by making their votes visible and transparent, but also – as we build the website – by facilitating the transmission of messages from the public to these legislators, thanking them for good votes, chastising them for bad votes, and calling upon them to "do the right thing" as future votes arise.
+  thumbnail_image_url:
+  website_url: https://www.progressivepunch.org/
+  facebook_url:
+  twitter_url:
+  instagram_url:
+  tax_classification:
+
+350-action:
+  slug: 350-action
+  name: 350 Action
+  description: From the streets to the ballot box, 350 Action is fighting for progressive climate champions who are willing to stand up for climate justice, good green jobs, just immigration policies, healthcare for all, and human rights.
+  thumbnail_image_url:
+  website_url: https://350action.org/
+  facebook_url: https://www.facebook.com/350action
+  twitter_url: https://twitter.com/350action
+  instagram_url:
+  tax_classification:
+
+greenpeace:
+  slug: greenpeace
+  name: Greenpeace
+  description: Greenpeace is a global network of independent campaigning organizations that use peaceful protest and creative communication to expose global environmental problems and promote solutions that are essential to a green and peaceful future.
+  thumbnail_image_url:
+  website_url: https://www.greenpeace.org/
+  facebook_url: https://www.facebook.com/groups/268696403286825
+  twitter_url:
+  instagram_url:
+  tax_classification:
+
+norml:
+  slug: norml
+  name: National Organization for the Reform of Marijuana Laws
+  description: NORML’s mission is to move public opinion sufficiently to legalize the responsible use of marijuana by adults, and to serve as an advocate for consumers to assure they have access to high quality marijuana that is safe, convenient and affordable.
+  thumbnail_image_url:
+  website_url:
+  facebook_url:
+  twitter_url:
+  instagram_url:
+  email: norml@norml.org
+  headquarters_phone: 202-483-5500
+  tax_classification: 501(c)(4
+
+colorado-tax-payer:
+  slug: colorado-tax-payer
+  name: Colorado Union of Taxpayers
+  description: The mission of CUT shall be to educate the public as to the dangers of excessive taxation, regulation, and government spending, thereby en­couraging the reduction of taxes, regulation, and spending accountability.
+  thumbnail_image_url:
+  website_url: https://www.coloradotaxpayer.org/
+  facebook_url:
+  twitter_url:
+  instagram_url:
+  email: marty5539@gmail.com
+  headquarters_phone: 303-775-8804
+  tax_classification: 
+
+cato-institute:
+  slug: cato-institute
+  name: The Cato Institute
+  description: The Cato Institute is a public policy research organization—or think tank—that creates a presence for and promotes libertarian ideas in policy debates. Our mission is to originate, disseminate, and advance solutions based on the principles of individual liberty, limited government, free markets, and peace.
+  thumbnail_image_url:
+  website_url: https://www.cato.org/
+  facebook_url: https://www.facebook.com/CatoInstitute
+  twitter_url:
+  instagram_url:
+  email: 
+  headquarters_phone: 202-842-0200
+  tax_classification: 
+
+ed-reform:
+  slug: ed-reform
+  name: The Center for Education Reform
+  description: The mission of the Center for Education Reform is to expand educational opportunities that lead to improved economic outcomes for all Americans, particularly our youth, ensuring that conditions are ripe for innovation, freedom and flexibility throughout U.S. education. Our vision is a country and states that provide increased, quality educational options that secure our nation’s freedom and future prosperity.
+  thumbnail_image_url:
+  website_url: https://edreform.com/
+  facebook_url: https://www.facebook.com/theCenterforEducationReform
+  twitter_url: https://twitter.com/edreform
+  instagram_url: https://www.instagram.com/edreform/
+  tax_classification: 
+
+naral-colorado:
+  slug: naral-colorado
+  name: NARAL Pro-Choice Colorado
+  description: NARAL Pro-Choice Colorado fights for reproductive freedom for every person across the state. Each day, we organize and mobilize to protect that freedom by fighting for access to abortion care, birth control, paid parental leave and protections from pregnancy discrimination. NARAL Pro-Choice Colorado is the state chapter of NARAL Pro-Choice America.
+  thumbnail_image_url:
+  website_url: https://naralcolorado.org/
+  facebook_url: https://www.facebook.com/pages/NARAL-Pro-Choice-Colorado/287064608631522
+  twitter_url:
+  instagram_url:
+  headquarters_phone: 202-973-3000
+  tax_classification: 
+
+gun-owners-of-america:
+  slug: gun-owners-of-america
+  name: Gun Owners of America
+  description: Gun Owners of America (GOA) is a non-profit lobbying organization formed in 1976 to preserve and defend the Second Amendment rights of gun owners. GOA sees firearms ownership as a freedom issue.
+  thumbnail_image_url:
+  website_url: https://www.gunowners.org/
+  facebook_url: https://www.facebook.com/GunOwners
+  twitter_url: https://twitter.com/GunOwners
+  instagram_url: https://www.instagram.com/gunownersofamerica/
+  tax_classification: 
+
+nrapvf:
+  slug: nrapvf
+  name: NRA Political Victory Fund
+  description: The NRA Political Victory Fund (NRA-PVF) is NRA's political action committee. The NRA-PVF  ranks political candidates - irrespective of party affiliation - based on voting records, public statements and their responses to an NRA-PVF questionnaire.
+  thumbnail_image_url:
+  website_url: https://www.nrapvf.org/
+  facebook_url: https://www.facebook.com/NationalRifleAssociation
+  twitter_url: https://twitter.com/nrapvf
+  instagram_url: https://www.instagram.com/nra/
+  email: ila-contact@nrahq.org
+  headquarters_phone: 800-392-8683
+  tax_classification: 
+
+colorado-state-shooting-association:
+  slug: colorado-state-shooting-association
+  name: Colorado State Shooting Association
+  description: The Colorado State Shooting Association is the official state association of the National Rifle Association (NRA). CSSA is an independent state organization led and operated by leadership elected by its members.
+  thumbnail_image_url:
+  website_url: https://www.cssa.org/
+  facebook_url: https://www.facebook.com/COSSAssn
+  twitter_url:
+  instagram_url:
+  tax_classification: 
+
+colorado-conservation-voters:
+  slug: colorado-conservation-voters
+  name: Colorado Conservation Voters
+  description: The Colorado Union of Taxpayers (CUT) is a non-partisan group advocating for Colorado taxpayers. We review all state legislation that could impact taxpayer.
+  thumbnail_image_url:
+  website_url: https://www.coloradotaxpayer.org/
+  facebook_url: https://www.facebook.com/coloradotaxpayers
+  twitter_url:
+  instagram_url:
+  tax_classification: 
+
+equal-rights-colorado:
+  slug: equal-rights-colorado
+  name: Equal Rights Colorado
+  description: Equal Rights Colorado promotes equal rights on behalf of all GLBT Coloradoans and their families through non-partisan state legislative advocacy.
+  thumbnail_image_url:
+  website_url: https://www.equalrights.org/
+  facebook_url: https://www.facebook.com/Equal-Rights-Colorado-105522020394
+  twitter_url:
+  instagram_url:
+  tax_classification: 
+
+aarp-colorado:
+  slug: aarp-colorado
+  name: AARP of Colorado
+  description: AARP wants a society in which everyone ages with dignity and purpose, and in which AARP helps people fulfill their goals and dreams.
+  thumbnail_image_url:
+  website_url: https://states.aarp.org/colorado/
+  facebook_url: https://www.facebook.com/aarp.colorado
+  twitter_url:
+  instagram_url:
+  tax_classification: 
+
+aclu-colorado:
+  slug: aclu-colorado
+  name: ACLU of Colorado
+  description: The ACLU works tirelessly in courts, legislatures, and communities to defend and preserve the Constitution’s promise of liberty for everyone in our country.
+  thumbnail_image_url:
+  website_url: https://www.aclu-co.org/
+  facebook_url: https://www.facebook.com/acluofcolorado
+  twitter_url:
+  instagram_url:
+  tax_classification: 501(c)(3)
+
+colorado-afl-cio:
+  slug: colorado-afl-cio
+  name: Colorado AFL-CIO
+  description: The Colorado AFL-CIO is dedicated to raising the standard of living and quality of life for all working people and their families in the State of Colorado.
+  thumbnail_image_url:
+  website_url: https://www.coaflcio.org/
+  facebook_url: https://www.facebook.com/coloradoaflcio
+  twitter_url:
+  instagram_url:
+  tax_classification: 
+
+colorado-farm-bureau:
+  slug: colorado-farm-bureau
+  name: Colorado Farm Bureau
+  description: The Colorado Farm Bureau exists to promote, protect and enhance the future of agriculture and rural communities.
+  thumbnail_image_url:
+  website_url: https://www.coloradofarmbureau.com/
+  facebook_url: https://www.facebook.com/ColoradoFarmBureau
+  twitter_url:
+  instagram_url:
+  tax_classification: 
+
+conservation-colorado:
+  slug: conservation-colorado
+  name: Conservation Colorado
+  description: Conservation Colorado works throughout the state to protect our air, land, water, and people.
+  thumbnail_image_url:
+  website_url: https://conservationco.org/
+  facebook_url: https://www.facebook.com/ConservationColorado
+  twitter_url:
+  instagram_url:
+  email: info@conservationco.org
+  tax_classification: 
