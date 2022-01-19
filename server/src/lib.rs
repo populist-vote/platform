@@ -8,7 +8,7 @@ pub enum Environment {
     Staging,
     Development,
     Local,
-    IntegrationTest,
+    Test,
     Unknown,
 }
 
@@ -24,7 +24,7 @@ impl FromStr for Environment {
         } else if e.contains("dev") {
             Ok(Environment::Development)
         } else if e.contains("test") {
-            Ok(Environment::IntegrationTest)
+            Ok(Environment::Test)
         } else if e.contains("local") {
             Ok(Environment::Local)
         } else {
@@ -47,7 +47,7 @@ impl fmt::Display for Environment {
                 Environment::Staging => "staging",
                 Environment::Production => "production",
                 Environment::Development => "development",
-                Environment::IntegrationTest => "test",
+                Environment::Test => "test",
                 Environment::Unknown => "unknown",
                 Environment::Local => "local",
             }
