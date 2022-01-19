@@ -69,9 +69,6 @@ pub fn cors(environment: Environment) -> Cors {
                 "https://api.staging.populist.us",
                 "https://staging.populist.us",
                 "http://localhost:3030",
-                "https://web-five-kohl.vercel.app/",
-                "https://web-populist.vercel.app",
-                "https://web-git-main-populist.vercel.app",
             ])
             .allow_origins_fn(allowed_staging_origins),
         Environment::Production => cors.allow_origins(vec![
@@ -80,8 +77,10 @@ pub fn cors(environment: Environment) -> Cors {
             "https://populist.us",
             "https://www.populist.us",
             "https://web-five-kohl.vercel.app/",
+            "https://web-populist.vercel.app",
+            "https://web-git-main-populist.vercel.app",
         ]),
-        _ => cors.allow_origin("https://populist.us"),
+        _ => cors,
     }
 }
 
