@@ -1,11 +1,233 @@
 food-and-agriculture:
   slug: food-and-agriculture
   name: Food & Agriculture
-  description: Description for food and ag
+  description: 
   category: Economy
+
+business-and-consumers:
+  slug: business-and-consumers
+  name: Business & Consumers
+  description: 
+  category: Economy
+
+energy:
+  slug: energy
+  name: Energy
+  description: 
+  category: Economy
+
+gambling-and-gaming:
+  slug: gambling-and-gaming
+  name: Gambling & Gaming
+  description: 
+  category: Economy
+
+labor-and-unions:
+  slug: labor-and-unions
+  name: Labor & Unions
+  description: 
+  category: Economy
+
+trade:
+  slug: trade
+  name: Trade
+  description: 
+  category: Economy
+
+budget-spending-and-tax:
+  slug: budget-spending-and-tax
+  name: Budget, Spending & Tax
+  description: 
+  category: Economy
+
+education:
+  slug: education
+  name: Education
+  description: 
+  category: Education
+
+science:
+  slug: science
+  name: Science
+  description: 
+  category: Education
 
 animals-and-wildlife:
   slug: animals-and-wildlife
   name: Animals & Wildlife
-  description: Description for the animals
+  description: 
   category: Environment
+
+environment:
+  slug: environment
+  name: Environment
+  description: 
+  category: Environment
+
+campaign-finance-and-elections:
+  slug: campaign-finance-and-elections
+  name: Campaign, Finance & Elections
+  description: 
+  category: Government
+
+criminal-justice:
+  slug: criminal-justice
+  name: Criminal Justice
+  description: 
+  category: Government
+
+defense:
+  slug: defense
+  name: Defense
+  description: 
+  category: Government
+
+federal-state-and-local-relations:
+  slug: federal-state-and-local-relations
+  name: Federal, State, & Local Relations
+  description: 
+  category: Government
+
+foreign-affairs:
+  slug: foreign-affairs
+  name: Foreign Affairs
+  description: 
+  category: Government
+
+government-operations:
+  slug: government-operations
+  name: Government Operations
+  description: 
+  category: Government
+
+judicial-branch:
+  slug: judicial-branch
+  name: Judicial Branch
+  description: 
+  category: Government
+
+legislative-branch:
+  slug: legislative-branch
+  name: Legislative Branch
+  description: 
+  category: Government
+
+military:
+  slug: military
+  name: Military
+  description: 
+  category: Government
+
+national-security:
+  slug: national-security
+  name: National Security
+  description: 
+  category: Government
+
+transportation:
+  slug: transportation
+  name: Transportation
+  description: 
+  category: Government
+
+aboration:
+  slug: aboration
+  name: Aboration
+  description: 
+  category: Health
+
+coronavirus:
+  slug: coronavirus
+  name: Coronavirus
+  description: 
+  category: Health
+
+drugs-and-alcohol:
+  slug: drugs-and-alcohol
+  name: Drugs & Alcohol
+  description: 
+  category: Health
+
+health-and-healthcare:
+  slug: health-and-healthcare
+  name: Health &^ Healthcare
+  description: 
+  category: Health
+
+reproduction:
+  slug: reproduction
+  name: Reproduction
+  description: 
+  category: Health
+
+arts-entertainment-and-history:
+  slug: arts-entertainment-and-history
+  name: Arts, Entertainment & History
+  description: 
+  category: Social
+
+civil-liberties-and-civil-rights:
+  slug: civil-liberties-and-civil-rights
+  name: Civil Liberties & Civil Rights
+  description: 
+  category: Social
+
+death-penalty:
+  slug: death-penalty
+  name: Death Penalty
+  description: 
+  category: Social
+
+employment-and-affirmative-action:
+  slug: employment-and-affirmative-action
+  name: Employment & Affirmative Action
+  description: 
+  category: Social
+
+housing-and-property:
+  slug: housing-and-property
+  name: Housing & Property
+  description: 
+  category: Social
+
+indiginous-peoples:
+  slug: indiginous-peoples
+  name: Indiginous Peoples
+  description: 
+  category: Social
+
+marriage-and-family:
+  slug: marriage-and-family
+  name: Marriage & Family
+  description: 
+  category: Social
+
+senior-citizens:
+  slug: senior-citizens
+  name: Senior Citizens
+  description: 
+  category: Social
+
+sexual-orientation-and-gender-identity:
+  slug: sexual-orientation-and-gender-identity
+  name: Sexual Orientation & Gender Identity
+  description: 
+  category: Social
+
+technology-and-communication:
+  slug: technology-and-communication
+  name: Technology & Communication
+  description: 
+  category: Social
+
+unemployment-and-low-income:
+  slug: unemployment-and-low-income
+  name: Unemployment & Low Income
+  description: 
+  category: Social
+
+veterans:
+  slug: veterans
+  name: Veterans
+  description: 
+  category: Social
