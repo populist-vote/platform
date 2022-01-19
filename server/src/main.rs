@@ -10,10 +10,10 @@ use graphql::{new_schema, PopulistSchema};
 use log::info;
 use poem::{
     get, handler,
-    http::{header, HeaderMap, Method},
+    http::HeaderMap,
     listener::TcpListener,
     middleware::Cors,
-    web::{headers::Origin, Data, Html, Json},
+    web::{Data, Html, Json},
     EndpointExt, IntoResponse, Route, Server,
 };
 use regex::Regex;

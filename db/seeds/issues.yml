@@ -1,0 +1,11 @@
+food-and-agriculture:
+  slug: food-and-agriculture
+  name: Food & Agriculture
+  description: Description for food and ag
+  category: Economy
+
+animals-and-wildlife:
+  slug: animals-and-wildlife
+  name: Animals & Wildlife
+  description: Description for the animals
+  category: Environment
