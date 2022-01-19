@@ -76,7 +76,7 @@ pub fn cors(environment: Environment) -> Cors {
             "https://api.populist.us",
             "https://populist.us",
             "https://www.populist.us",
-            "https://web-five-kohl.vercel.app/",
+            "https://web-five-kohl.vercel.app",
             "https://web-populist.vercel.app",
             "https://web-git-main-populist.vercel.app",
         ]),
