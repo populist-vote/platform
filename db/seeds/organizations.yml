@@ -1,7 +1,7 @@
 thirdway:
   name: Third Way
   slug: third-way  
-  description: A national think tank that claims to champion 'modern center-left ideas'
+  description: A national think tank that claims to champion 'modern center-left ideas'.
   thumbnail_image_url: https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.guidestar.org%2Fprofile%2F20-1734070&psig=AOvVaw1xhOKf811wY5ADMzX3cJxe&ust=1641961940108000&source=images&cd=vfe&ved=0CAsQjRxqFwoTCKDBlYPvqPUCFQAAAAAdAAAAABAI
   website_url: https://www.thirdway.org/
   facebook_url: https://www.facebook.com/ThirdWayThinkTank
@@ -13,7 +13,7 @@ thirdway:
 carpenters-and-joiners:
   slug: carpenters-and-joiners
   name: The United Brotherhood of Carpenters and Joiners of America
-  description: One of North Americas largest trade unions for skilled construction professionals
+  description: One of North Americas largest trade unions for skilled construction professionals.
   thumbnail_image_url: https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.carpenters.org%2Fabout-ubc%2F21st-century-union%2Fthe-ubc-emblem%2F&psig=AOvVaw03Ux6kx_x_m5ITLMne89i0&ust=1641962710108000&source=images&cd=vfe&ved=0CAsQjRxqFwoTCNCisvLxqPUCFQAAAAAdAAAAABAD
   website_url: https://www.carpenters.org/
   facebook_url: https://www.facebook.com/CarpentersUnited
@@ -83,10 +83,12 @@ greenpeace:
   description: Greenpeace is a global network of independent campaigning organizations that use peaceful protest and creative communication to expose global environmental problems and promote solutions that are essential to a green and peaceful future.
   thumbnail_image_url:
   website_url: https://www.greenpeace.org/
-  facebook_url: https://www.facebook.com/groups/268696403286825
+  facebook_url: https://www.facebook.com/greenpeaceusa
   twitter_url:
   instagram_url:
-  tax_classification:
+  email: connect@greenpeace.us
+  headquarters_phone: 800-722-6995
+  tax_classification: 501(c)(4)
 
 norml:
   slug: norml
@@ -96,7 +98,7 @@ norml:
   website_url:
   facebook_url:
   twitter_url:
-  instagram_url:
+  instagram_url: 
   email: norml@norml.org
   headquarters_phone: 202-483-5500
   tax_classification: 501(c)(4
@@ -123,7 +125,7 @@ cato-institute:
   facebook_url: https://www.facebook.com/CatoInstitute
   twitter_url:
   instagram_url:
-  email: 
+  email: pr@cato.org
   headquarters_phone: 202-842-0200
   tax_classification: 
 
@@ -181,17 +183,6 @@ colorado-state-shooting-association:
   thumbnail_image_url:
   website_url: https://www.cssa.org/
   facebook_url: https://www.facebook.com/COSSAssn
-  twitter_url:
-  instagram_url:
-  tax_classification: 
-
-colorado-conservation-voters:
-  slug: colorado-conservation-voters
-  name: Colorado Conservation Voters
-  description: The Colorado Union of Taxpayers (CUT) is a non-partisan group advocating for Colorado taxpayers. We review all state legislation that could impact taxpayer.
-  thumbnail_image_url:
-  website_url: https://www.coloradotaxpayer.org/
-  facebook_url: https://www.facebook.com/coloradotaxpayers
   twitter_url:
   instagram_url:
   tax_classification: 
