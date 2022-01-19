@@ -2354,6 +2354,7 @@ dependencies = [
  "poem",
  "pretty_env_logger",
  "pwhash",
+ "regex",
  "serde_json",
  "slab",
  "sqlx",

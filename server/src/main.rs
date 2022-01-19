@@ -13,9 +13,10 @@ use poem::{
     http::{header, HeaderMap, Method},
     listener::TcpListener,
     middleware::Cors,
-    web::{Data, Html, Json},
+    web::{headers::Origin, Data, Html, Json},
     EndpointExt, IntoResponse, Route, Server,
 };
+use regex::Regex;
 use serde_json::Value;
 use server::Environment;
 use sqlx::postgres::PgPoolOptions;
@@ -52,51 +53,35 @@ fn graphql_playground() -> impl IntoResponse {
     Html(playground_source(GraphQLPlaygroundConfig::new("/")))
 }
 
+fn allowed_staging_origins(origin: &str) -> bool {
+    let re = Regex::new(r"https://web-.*?-populist.vercel.app/?").unwrap();
+    re.is_match(origin)
+}
+
 pub fn cors(environment: Environment) -> Cors {
-    let cors = Cors::default()
-        .allow_methods(vec![Method::GET, Method::POST])
-        .allow_headers(vec![
-            header::ACCEPT,
-            header::ACCEPT_ENCODING,
-            header::ACCEPT_LANGUAGE,
-            header::AUTHORIZATION,
-            header::ACCESS_CONTROL_ALLOW_ORIGIN,
-            header::ACCESS_CONTROL_ALLOW_HEADERS,
-            header::ACCESS_CONTROL_ALLOW_METHODS,
-            header::ACCESS_CONTROL_ALLOW_CREDENTIALS,
-            header::CONNECTION,
-            header::CONTENT_LENGTH,
-            header::CONTENT_TYPE,
-            header::HOST,
-            header::ORIGIN,
-            header::REFERER,
-            header::UPGRADE,
-            header::USER_AGENT,
-        ])
-        .expose_headers(vec![
-            header::ACCESS_CONTROL_ALLOW_ORIGIN,
-            header::ACCESS_CONTROL_ALLOW_METHODS,
-            header::ACCESS_CONTROL_ALLOW_HEADERS,
-            header::ACCESS_CONTROL_ALLOW_CREDENTIALS,
-        ]);
+    let cors = Cors::new();
 
     match environment {
         Environment::Local => cors.allow_origin("http://localhost:1234"),
-        Environment::Staging => cors.allow_origins(vec![
-            "https://populist-api-staging.herokuapp.com",
-            "https://api.staging.populist.us",
-            "https://staging.populist.us",
-            "http://localhost:3030",
-            "https://web-five-kohl.vercel.app/",
-            "https://web-populist.vercel.app",
-            "https://web-git-main-populist.vercel.app",
-        ]),
+        Environment::Staging => cors
+            .allow_origins(vec![
+                "https://populist-api-staging.herokuapp.com",
+                "https://api.staging.populist.us",
+                "https://staging.populist.us",
+                "http://localhost:3030",
+                "https://web-five-kohl.vercel.app/",
+                "https://web-populist.vercel.app",
+                "https://web-git-main-populist.vercel.app",
+            ])
+            .allow_origins_fn(allowed_staging_origins),
         Environment::Production => cors.allow_origins(vec![
             "https://populist-api-production.herokuapp.com",
             "https://api.populist.us",
             "https://populist.us",
+            "https://www.populist.us",
+            "https://web-five-kohl.vercel.app/",
         ]),
-        _ => Cors::new().allow_origin("https://populist.us"),
+        _ => cors.allow_origin("https://populist.us"),
     }
 }
 
