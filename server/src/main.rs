@@ -53,24 +53,23 @@ fn graphql_playground() -> impl IntoResponse {
     Html(playground_source(GraphQLPlaygroundConfig::new("/")))
 }
 
-fn allowed_staging_origins(origin: &str) -> bool {
-    let re = Regex::new(r"https://web-.*?-populist.vercel.app/?").unwrap();
-    re.is_match(origin)
-}
-
 pub fn cors(environment: Environment) -> Cors {
     let cors = Cors::new();
 
+    fn allowed_staging_origins(origin: &str) -> bool {
+        let staging_origins = vec![
+            "https://populist-api-staging.herokuapp.com",
+            "https://api.staging.populist.us",
+            "https://staging.populist.us",
+            "http://localhost:3030",
+        ];
+        let re = Regex::new(r"https://web-.*?-populist\.vercel\.app$").unwrap();
+        re.is_match(origin) || staging_origins.contains(&origin)
+    }
+
     match environment {
         Environment::Local => cors.allow_origin("http://localhost:1234"),
-        Environment::Staging => cors
-            .allow_origins(vec![
-                "https://populist-api-staging.herokuapp.com",
-                "https://api.staging.populist.us",
-                "https://staging.populist.us",
-                "http://localhost:3030",
-            ])
-            .allow_origins_fn(allowed_staging_origins),
+        Environment::Staging => cors.allow_origins_fn(allowed_staging_origins),
         Environment::Production => cors.allow_origins(vec![
             "https://populist-api-production.herokuapp.com",
             "https://api.populist.us",
