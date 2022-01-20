@@ -22,9 +22,21 @@ gambling-and-gaming:
   description: 
   category: Economy
 
+infrastructure:
+  slug: infrastructure
+  name: Infrastructure
+  description: 
+  category: Economy
+
 labor-and-unions:
   slug: labor-and-unions
   name: Labor & Unions
+  description: 
+  category: Economy
+
+property-rights-and-real-estate:
+  slug: property-rights-and-real-estate
+  name: Property Rights & Real Estate
   description: 
   category: Economy
 
@@ -106,6 +118,12 @@ judicial-branch:
   description: 
   category: Government
 
+law-enforcement:
+  slug: law-enforcement
+  name: Law Enforcement
+  description: 
+  category: Government
+
 legislative-branch:
   slug: legislative-branch
   name: Legislative Branch
@@ -127,6 +145,36 @@ national-security:
 transportation:
   slug: transportation
   name: Transportation
+  description: 
+  category: Government
+
+china:
+  slug: china
+  name: China
+  description: 
+  category: Government
+
+iran:
+  slug: iran
+  name: Iran
+  description: 
+  category: Government
+
+iraq:
+  slug: iraq
+  name: Iraq
+  description: 
+  category: Government
+
+israel:
+  slug: israel
+  name: Israel
+  description: 
+  category: Government
+
+russia:
+  slug: russia
+  name: Russia
   description: 
   category: Government
 
@@ -184,9 +232,21 @@ employment-and-affirmative-action:
   description: 
   category: Social
 
+guns:
+  slug: guns
+  name: Guns
+  description: 
+  category: Social
+
 housing-and-property:
   slug: housing-and-property
   name: Housing & Property
+  description: 
+  category: Social
+
+immigration:
+  slug: immigration
+  name: Immigration
   description: 
   category: Social
 
@@ -223,6 +283,12 @@ technology-and-communication:
 unemployment-and-low-income:
   slug: unemployment-and-low-income
   name: Unemployment & Low Income
+  description: 
+  category: Social
+
+womans-issues:
+  slug: womans-issues
+  name: Woman's Issues
   description: 
   category: Social
 
