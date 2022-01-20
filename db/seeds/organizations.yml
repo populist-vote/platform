@@ -9,6 +9,11 @@ thirdway:
   email: contact@thirdway.org
   headquarters_phone: 202-384-1700
   tax_classification: 501(c)(4)
+  issue_tags: 
+    - environment
+    - education
+    - health-and-health-care
+    - national-security
 
 carpenters-and-joiners:
   slug: carpenters-and-joiners
@@ -20,6 +25,9 @@ carpenters-and-joiners:
   twitter_url: https://twitter.com/ubcja_official
   instagram_url: https://www.instagram.com/ubcja
   tax_classification: 501(c)(5)
+  issue_tags: 
+    - labor-and-unions
+    - national-security
 
 jewish-dems:
   name: Jewish Democratic Council of America
@@ -32,6 +40,8 @@ jewish-dems:
   email: info@jewishdems.org
   headquarters_phone:
   tax_classification: 501(c)(4)
+  issue_tags:
+    - civil-liberties-and-civil-rights
 
 planned-parenthood-action-fund:
   slug: planned-parenthood-action-fund
@@ -43,6 +53,10 @@ planned-parenthood-action-fund:
   twitter_url:
   instagram_url:
   tax_classification: 501(c)(4)
+  issue_tags:
+    - abortion
+    - reproduction
+    - health-and-health-care
 
 american-civl-liberties-union:
   slug: american-civl-liberties-union
@@ -54,6 +68,11 @@ american-civl-liberties-union:
   twitter_url:
   instagram_url:
   tax_classification: 501(c)(4)
+  issue_tags:
+    - criminal-justice
+    - immigration
+    - national-security
+    - technology-and-communication
 
 progressive-punch:
   slug: progressive-punch
@@ -65,6 +84,8 @@ progressive-punch:
   twitter_url:
   instagram_url:
   tax_classification:
+  issue_tags:
+    - legislative-branch
 
 350-action:
   slug: 350-action
@@ -76,6 +97,9 @@ progressive-punch:
   twitter_url: https://twitter.com/350action
   instagram_url:
   tax_classification:
+  issue_tags:
+    - energy
+    - environment
 
 greenpeace:
   slug: greenpeace
@@ -89,6 +113,9 @@ greenpeace:
   email: connect@greenpeace.us
   headquarters_phone: 800-722-6995
   tax_classification: 501(c)(4)
+    issue_tags:
+    - environment
+    - climate-change
 
 norml:
   slug: norml
@@ -102,6 +129,8 @@ norml:
   email: norml@norml.org
   headquarters_phone: 202-483-5500
   tax_classification: 501(c)(4
+  issue_tags:
+    - drugs-and-alcohol
 
 colorado-tax-payers:
   slug: colorado-tax-payers
@@ -115,6 +144,8 @@ colorado-tax-payers:
   email: marty5539@gmail.com
   headquarters_phone: 303-775-8804
   tax_classification: 
+  issue_tags:
+    - budget-spending-and-tax
 
 cato-institute:
   slug: cato-institute
@@ -128,6 +159,8 @@ cato-institute:
   email: pr@cato.org
   headquarters_phone: 202-842-0200
   tax_classification: 
+  issue_tags:
+   - civil-liberties-and-civil-rights
 
 ed-reform:
   slug: ed-reform
@@ -139,6 +172,8 @@ ed-reform:
   twitter_url: https://twitter.com/edreform
   instagram_url: https://www.instagram.com/edreform/
   tax_classification: 
+  issue_tags:
+    - education
 
 naral-colorado:
   slug: naral-colorado
@@ -151,6 +186,10 @@ naral-colorado:
   instagram_url:
   headquarters_phone: 202-973-3000
   tax_classification: 
+  issue_tags:
+    - abortion
+    - reproduction
+    - marriage-and-family
 
 gun-owners-of-america:
   slug: gun-owners-of-america
@@ -162,6 +201,8 @@ gun-owners-of-america:
   twitter_url: https://twitter.com/GunOwners
   instagram_url: https://www.instagram.com/gunownersofamerica/
   tax_classification: 
+  issue_tags:
+    - guns
 
 nrapvf:
   slug: nrapvf
@@ -175,6 +216,8 @@ nrapvf:
   email: ila-contact@nrahq.org
   headquarters_phone: 800-392-8683
   tax_classification: 
+  issue_tags:
+    - guns
 
 colorado-state-shooting-association:
   slug: colorado-state-shooting-association
@@ -186,6 +229,7 @@ colorado-state-shooting-association:
   twitter_url:
   instagram_url:
   tax_classification: 
+  issue_tags:
 
 equal-rights-colorado:
   slug: equal-rights-colorado
@@ -197,6 +241,8 @@ equal-rights-colorado:
   twitter_url:
   instagram_url:
   tax_classification: 
+  issue_tags:
+    - guns
 
 aarp-colorado:
   slug: aarp-colorado
@@ -208,6 +254,8 @@ aarp-colorado:
   twitter_url:
   instagram_url:
   tax_classification: 
+  issue_tags:
+    - health-and-health-care
 
 aclu-colorado:
   slug: aclu-colorado
@@ -219,6 +267,9 @@ aclu-colorado:
   twitter_url:
   instagram_url:
   tax_classification: 501(c)(3)
+  issue_tags:
+    - civil-liberties-and-civil-rights
+    - education
 
 colorado-afl-cio:
   slug: colorado-afl-cio
@@ -230,6 +281,8 @@ colorado-afl-cio:
   twitter_url:
   instagram_url:
   tax_classification: 
+  issue_tags:
+    - labor-and-unions
 
 colorado-farm-bureau:
   slug: colorado-farm-bureau
@@ -241,6 +294,12 @@ colorado-farm-bureau:
   twitter_url:
   instagram_url:
   tax_classification: 
+  issue_tags:
+    - food-and-agriculture
+    - infrastructure
+    - energy
+    - trade
+    - property-rights-and-real-estate
 
 conservation-colorado:
   slug: conservation-colorado
@@ -252,4 +311,8 @@ conservation-colorado:
   twitter_url:
   instagram_url:
   email: info@conservationco.org
-  tax_classification: 
+  tax_classification:
+  issue_tags:
+    - environment
+    - climate-change
+    - animals-and-wildlife

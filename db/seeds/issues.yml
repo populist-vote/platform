@@ -76,6 +76,12 @@ environment:
   description: 
   category: Environment
 
+climate-change:
+  slug: climate-change
+  name: Climate Change
+  description: 
+  category: Environment
+
 campaign-finance-and-elections:
   slug: campaign-finance-and-elections
   name: Campaign, Finance & Elections
