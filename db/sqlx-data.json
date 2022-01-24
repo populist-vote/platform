@@ -633,6 +633,19 @@
       ]
     }
   },
+  "2338b50f44450e9ad0b8d91720c48e6b33fff177b94f519a52982476ad1b836c": {
+    "query": "\n                        INSERT INTO organization_issue_tags (organization_id, issue_tag_id) \n                        VALUES ($1, $2)\n                    ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Uuid"
+        ]
+      },
+      "nullable": []
+    }
+  },
   "257c0373bd351cffd41af46ce2b38a8773d5a396ac96829d1b155a256ceff17f": {
     "query": "\n                INSERT INTO issue_tag (id, slug, name, description, category) VALUES ($1, $2, $3, $4, $5)\n                RETURNING id, slug, name, description, category, created_at, updated_at\n            ",
     "describe": {
@@ -1159,19 +1172,6 @@
         false,
         false
       ]
-    }
-  },
-  "4b20cbede62bbe5255101911bbaa8727f1a501ccca7bd88bedfe2de5d8fabb2e": {
-    "query": "\n                INSERT INTO organization_issue_tags (organization_id, issue_tag_id) \n                VALUES ($1, $2)\n            ",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Uuid"
-        ]
-      },
-      "nullable": []
     }
   },
   "4b211e5363bd8c5396fe8116f4b04827cede5e5bdd09206373af5e2aa98e78d3": {
@@ -3883,6 +3883,19 @@
         true,
         false
       ]
+    }
+  },
+  "c12215e7c0877b1ea681f799dfe87d73a124e00970a5f24f01f9e5844ce192ea": {
+    "query": "\n                        INSERT INTO organization_issue_tags (organization_id, issue_tag_id) \n                        VALUES ($1, (SELECT id FROM issue_tag WHERE slug = $2))\n                    ",
+    "describe": {
+      "columns": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text"
+        ]
+      },
+      "nullable": []
     }
   },
   "cdacddb1849f442c8ae5f8e340d2d470c79e2075e1ec18b60bd1467eb63fe173": {
