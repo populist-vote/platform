@@ -424,20 +424,20 @@ async fn test_get_orgs() {
     assert_eq!(response.status().is_success(), true);
     let json: serde_json::Value = response.json().await.unwrap();
     assert_eq!(
-        json["response"]["organization"][0]["@attributes"]["orgname"],
-        "International Planned Parenthood"
+        json["response"]["organization"]["@attributes"]["orgname"],
+        "Planned Parenthood"
     );
 }
 
 #[tokio::test]
 async fn test_org_summary() {
     let proxy = OpenSecretsProxy::new().unwrap();
-    let response = proxy.org_summary("D000022603").await.unwrap();
+    let response = proxy.org_summary("D000000125").await.unwrap();
     assert_eq!(response.status().is_success(), true);
     let json: serde_json::Value = response.json().await.unwrap();
     assert_eq!(
         json["response"]["organization"]["@attributes"]["orgname"],
-        "International Planned Parenthood"
+        "General Electric"
     );
 }
 
