@@ -42,7 +42,10 @@ impl Election {
         db_pool: &PgPool,
         input: &CreateElectionInput,
     ) -> Result<Self, sqlx::Error> {
-        let slug = slugify!(&input.title);
+        let slug = match &input.slug {
+            Some(slug) => slug.to_owned(),
+            None => slugify!(&input.title),
+        };
         let record = sqlx::query_as!(
             Election,
             r#"

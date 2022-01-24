@@ -1,9 +1,10 @@
 use async_graphql::*;
 use db::{
-    CreateOrConnectIssueTagInput, CreateOrganizationInput, IssueTag, Organization,
-    UpdateOrganizationInput,
+    CreateOrConnectIssueTagInput, CreateOrganizationInput, IssueTag, IssueTagIdentifier,
+    Organization, UpdateOrganizationInput,
 };
 use sqlx::{Pool, Postgres};
+use std::str::FromStr;
 
 use crate::{
     mutation::StaffOnly,
@@ -17,7 +18,7 @@ struct DeleteOrganizationResult {
     id: String,
 }
 
-async fn handle_nested_issue_tags(
+pub async fn handle_nested_issue_tags(
     db_pool: &Pool<Postgres>,
     associated_record_id: uuid::Uuid,
     issue_tags_input: CreateOrConnectIssueTagInput,
@@ -25,19 +26,34 @@ async fn handle_nested_issue_tags(
     if issue_tags_input.create.is_some() {
         for input in issue_tags_input.create.unwrap() {
             let new_issue_tag = IssueTag::create(db_pool, &input).await?;
-            Organization::connect_issue_tag(db_pool, associated_record_id, new_issue_tag.id)
-                .await?;
-        }
-    }
-    if issue_tags_input.connect.is_some() {
-        for issue_tag_id in issue_tags_input.connect.unwrap() {
-            // figure out how to accept slugs and IDs here, that'd be great
             Organization::connect_issue_tag(
                 db_pool,
                 associated_record_id,
-                uuid::Uuid::parse_str(&issue_tag_id)?,
+                IssueTagIdentifier::Uuid(new_issue_tag.id),
             )
             .await?;
+        }
+    }
+    if issue_tags_input.connect.is_some() {
+        for issue_tag_identifier in issue_tags_input.connect.unwrap() {
+            match uuid::Uuid::from_str(issue_tag_identifier.as_str()) {
+                Ok(issue_tag_id) => {
+                    Organization::connect_issue_tag(
+                        db_pool,
+                        associated_record_id,
+                        IssueTagIdentifier::Uuid(issue_tag_id),
+                    )
+                    .await?;
+                }
+                _ => {
+                    Organization::connect_issue_tag(
+                        db_pool,
+                        associated_record_id,
+                        IssueTagIdentifier::Slug(issue_tag_identifier),
+                    )
+                    .await?
+                }
+            }
         }
     }
     Ok(())

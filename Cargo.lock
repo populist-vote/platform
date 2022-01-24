@@ -488,11 +488,13 @@ name = "cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-graphql",
  "chrono",
  "colored",
  "csv",
  "db",
  "dotenv",
+ "graphql",
  "legiscan",
  "serde_json",
  "serde_yaml",

@@ -73,7 +73,10 @@ impl BallotMeasure {
         election_id: uuid::Uuid,
         input: &CreateBallotMeasureInput,
     ) -> Result<Self, sqlx::Error> {
-        let slug = slugify!(&input.title); // TODO run a query and ensure this is Unique
+        let slug = match &input.slug {
+            Some(slug) => slug.to_owned(),
+            None => slugify!(&input.title),
+        };
         let record = sqlx::query_as!(
             BallotMeasure,
             r#"

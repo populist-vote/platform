@@ -1,3 +1,4 @@
+use db::CreateOrConnectIssueTagInput;
 use serde_yaml;
 use std::{error, fs, io, path, process};
 
@@ -18,27 +19,44 @@ async fn seed() -> Result<(), Box<dyn error::Error>> {
             serde_yaml::from_reader(reader).expect("YAML was improperly formatted");
 
         match model_name.to_str().unwrap() {
-            "users" => {
-                for (name, user) in yaml.into_iter() {
-                    let input: db::CreateUserInput = serde_yaml::from_value(user).unwrap();
-                    db::User::create(&pool.connection, &input).await.unwrap();
-                    println!("Created user record for: {}", name.as_str().unwrap());
-                }
-            }
+            // "users" => {
+            //     for (name, user) in yaml.into_iter() {
+            //         let input: db::CreateUserInput = serde_yaml::from_value(user).unwrap();
+            //         db::User::create(&pool.connection, &input).await.unwrap();
+            //         println!("Created user record for: {}", name.as_str().unwrap());
+            //     }
+            // }
             "organizations" => {
                 for (name, organization) in yaml.into_iter() {
                     let input: db::CreateOrganizationInput =
-                        serde_yaml::from_value(organization).unwrap();
-                    db::Organization::create(&pool.connection, &input)
+                        serde_yaml::from_value(organization.to_owned()).unwrap();
+                    let record = db::Organization::create(&pool.connection, &input)
                         .await
                         .unwrap();
+                    let issue_tag_input: CreateOrConnectIssueTagInput =
+                        serde_yaml::from_value(organization["issue_tags"].to_owned()).unwrap();
+                    graphql::mutation::organization::handle_nested_issue_tags(
+                        &pool.connection,
+                        record.id,
+                        issue_tag_input,
+                    )
+                    .await?;
                     println!(
                         "Created organization record for: {}",
                         name.as_str().unwrap()
                     );
                 }
             }
-            _ => panic!("model is not supported: {:?}", model_name),
+            // "issues" => {
+            //     for (name, issue) in yaml.into_iter() {
+            //         let input: db::CreateIssueTagInput = serde_yaml::from_value(issue).unwrap();
+            //         db::IssueTag::create(&pool.connection, &input)
+            //             .await
+            //             .unwrap();
+            //         println!("Created issue tag record for : {}", name.as_str().unwrap())
+            //     }
+            // }
+            _ => (), // panic!("model is not supported: {:?}", model_name),
         }
     }
     Ok(())

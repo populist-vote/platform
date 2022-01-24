@@ -13,6 +13,7 @@ pub struct IssueTag {
     pub slug: String,
     pub name: String,
     pub description: Option<String>,
+    pub category: Option<String>,
     // pub created_by: User,
     pub created_at: DateTime,
     pub updated_at: DateTime,
@@ -23,6 +24,7 @@ pub struct CreateIssueTagInput {
     pub name: String,
     pub slug: Option<String>,
     pub description: Option<String>,
+    pub category: Option<String>,
 }
 
 #[derive(InputObject)]
@@ -30,6 +32,7 @@ pub struct UpdateIssueTagInput {
     pub name: Option<String>,
     pub slug: Option<String>,
     pub description: Option<String>,
+    pub category: Option<String>,
 }
 
 #[derive(InputObject, Debug, Serialize, Deserialize)]
@@ -43,23 +46,32 @@ pub struct IssueTagSearch {
     pub name: Option<String>,
 }
 
+pub enum IssueTagIdentifier {
+    Uuid(uuid::Uuid),
+    Slug(String),
+}
+
 impl IssueTag {
     pub async fn create(
         db_pool: &PgPool,
         input: &CreateIssueTagInput,
     ) -> Result<Self, sqlx::Error> {
         let id = uuid::Uuid::new_v4();
-        let slug = slugify!(&input.name);
+        let slug = match &input.slug {
+            Some(slug) => slug.to_owned(),
+            None => slugify!(&input.name),
+        };
         let record = sqlx::query_as!(
             IssueTag,
             r#"
-                INSERT INTO issue_tag (id, slug, name, description) VALUES ($1, $2, $3, $4)
-                RETURNING id, slug, name, description, created_at, updated_at
+                INSERT INTO issue_tag (id, slug, name, description, category) VALUES ($1, $2, $3, $4, $5)
+                RETURNING id, slug, name, description, category, created_at, updated_at
             "#,
             id,
             slug,
             input.name,
-            input.description
+            input.description,
+            input.category
         )
         .fetch_one(db_pool)
         .await?;
@@ -78,14 +90,16 @@ impl IssueTag {
                 UPDATE issue_tag
                 SET slug = COALESCE($2, slug),
                     name = COALESCE($3, name),
-                    description = COALESCE($4, description)
+                    description = COALESCE($4, description),
+                    category = COALESCE($5, category)
                 WHERE id = $1
-                RETURNING id, slug, name, description, created_at, updated_at           
+                RETURNING id, slug, name, description, category, created_at, updated_at           
             "#,
             id,
             input.slug,
             input.name,
-            input.description
+            input.description,
+            input.category
         )
         .fetch_one(db_pool)
         .await?;
@@ -105,7 +119,7 @@ impl IssueTag {
         let records = sqlx::query_as!(
             IssueTag,
             r#"
-                SELECT id, slug, name, description, created_at, updated_at FROM issue_tag
+                SELECT id, slug, name, description, category, created_at, updated_at FROM issue_tag
             "#,
         )
         .fetch_all(db_pool)
@@ -118,7 +132,7 @@ impl IssueTag {
         let record = sqlx::query_as!(
             IssueTag,
             r#"
-                SELECT id, slug, name, description, created_at, updated_at FROM issue_tag
+                SELECT id, slug, name, description, category, created_at, updated_at FROM issue_tag
                 WHERE slug = $1
             "#,
             slug
@@ -136,7 +150,7 @@ impl IssueTag {
         let records = sqlx::query_as!(
             IssueTag,
             r#"
-                SELECT id, slug, name, description, created_at, updated_at FROM issue_tag
+                SELECT id, slug, name, description, category, created_at, updated_at FROM issue_tag
                 WHERE ($1::text IS NULL OR levenshtein($1, name) <= 3)
             "#,
             search.name

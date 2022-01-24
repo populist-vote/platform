@@ -1,6 +1,6 @@
 thirdway:
   name: Third Way
-  slug: third-way  
+  slug: third-way
   description: A national think tank that claims to champion 'modern center-left ideas'.
   thumbnail_image_url: https://s3.console.aws.amazon.com/s3/object/populist-platform?region=us-east-2&prefix=web-assets/organization-thumbnails/third-way.png
   website_url: https://www.thirdway.org/
@@ -9,11 +9,12 @@ thirdway:
   email: contact@thirdway.org
   headquarters_phone: 202-384-1700
   tax_classification: 501(c)(4)
-  issue_tags: 
-    - environment
-    - education
-    - health-and-health-care
-    - national-security
+  issue_tags:
+    connect:
+      - environment
+      - education
+      - health-and-healthcare
+      - national-security
 
 carpenters-and-joiners:
   slug: carpenters-and-joiners
@@ -25,9 +26,10 @@ carpenters-and-joiners:
   twitter_url: https://twitter.com/ubcja_official
   instagram_url: https://www.instagram.com/ubcja
   tax_classification: 501(c)(5)
-  issue_tags: 
-    - labor-and-unions
-    - national-security
+  issue_tags:
+    connect:
+      - labor-and-unions
+      - national-security
 
 jewish-dems:
   name: Jewish Democratic Council of America
@@ -41,7 +43,8 @@ jewish-dems:
   headquarters_phone:
   tax_classification: 501(c)(4)
   issue_tags:
-    - civil-liberties-and-civil-rights
+    connect:
+      - civil-liberties-and-civil-rights
 
 planned-parenthood-action-fund:
   slug: planned-parenthood-action-fund
@@ -54,9 +57,10 @@ planned-parenthood-action-fund:
   instagram_url:
   tax_classification: 501(c)(4)
   issue_tags:
-    - abortion
-    - reproduction
-    - health-and-health-care
+    connect:
+      - abortion
+      - reproduction
+      - health-and-healthcare
 
 american-civl-liberties-union:
   slug: american-civl-liberties-union
@@ -69,23 +73,25 @@ american-civl-liberties-union:
   instagram_url:
   tax_classification: 501(c)(4)
   issue_tags:
-    - criminal-justice
-    - immigration
-    - national-security
-    - technology-and-communication
+    connect:
+      - criminal-justice
+      - immigration
+      - national-security
+      - technology-and-communication
 
 progressive-punch:
   slug: progressive-punch
   name: Progressive Punch
   description: ProgressivePunch.org is a privately-owned website. By providing information on a broad range of issues deliberated by Congress and applying a progressive analysis to the votes cast, ProgressivePunch wants to raise public consciousness by highlighting progressive votes and exposing non-progressive votes. It also hopes to influence the future voting patterns of legislators, not only by making their votes visible and transparent, but also – as we build the website – by facilitating the transmission of messages from the public to these legislators, thanking them for good votes, chastising them for bad votes, and calling upon them to "do the right thing" as future votes arise.
-  thumbnail_image_url: 
+  thumbnail_image_url:
   website_url: https://www.progressivepunch.org/
   facebook_url:
   twitter_url:
   instagram_url:
   tax_classification:
   issue_tags:
-    - legislative-branch
+    connect:
+      - legislative-branch
 
 350-action:
   slug: 350-action
@@ -98,8 +104,9 @@ progressive-punch:
   instagram_url:
   tax_classification:
   issue_tags:
-    - energy
-    - environment
+    connect:
+      - energy
+      - environment
 
 greenpeace:
   slug: greenpeace
@@ -113,9 +120,10 @@ greenpeace:
   email: connect@greenpeace.us
   headquarters_phone: 800-722-6995
   tax_classification: 501(c)(4)
-    issue_tags:
-    - environment
-    - climate-change
+  issue_tags:
+    connect:
+      - environment
+      - climate-change
 
 norml:
   slug: norml
@@ -125,12 +133,13 @@ norml:
   website_url:
   facebook_url:
   twitter_url:
-  instagram_url: 
+  instagram_url:
   email: norml@norml.org
   headquarters_phone: 202-483-5500
-  tax_classification: 501(c)(4
+  tax_classification: 501(c)(4)
   issue_tags:
-    - drugs-and-alcohol
+    connect:
+      - drugs-and-alcohol
 
 colorado-tax-payers:
   slug: colorado-tax-payers
@@ -143,9 +152,10 @@ colorado-tax-payers:
   instagram_url:
   email: marty5539@gmail.com
   headquarters_phone: 303-775-8804
-  tax_classification: 
+  tax_classification:
   issue_tags:
-    - budget-spending-and-tax
+    connect:
+      - budget-spending-and-tax
 
 cato-institute:
   slug: cato-institute
@@ -158,9 +168,10 @@ cato-institute:
   instagram_url:
   email: pr@cato.org
   headquarters_phone: 202-842-0200
-  tax_classification: 
+  tax_classification:
   issue_tags:
-   - civil-liberties-and-civil-rights
+    connect:
+      - civil-liberties-and-civil-rights
 
 ed-reform:
   slug: ed-reform
@@ -171,9 +182,10 @@ ed-reform:
   facebook_url: https://www.facebook.com/theCenterforEducationReform
   twitter_url: https://twitter.com/edreform
   instagram_url: https://www.instagram.com/edreform/
-  tax_classification: 
+  tax_classification:
   issue_tags:
-    - education
+    connect:
+      - education
 
 naral-colorado:
   slug: naral-colorado
@@ -185,11 +197,12 @@ naral-colorado:
   twitter_url:
   instagram_url:
   headquarters_phone: 202-973-3000
-  tax_classification: 
+  tax_classification:
   issue_tags:
-    - abortion
-    - reproduction
-    - marriage-and-family
+    connect:
+      - abortion
+      - reproduction
+      - marriage-and-family
 
 gun-owners-of-america:
   slug: gun-owners-of-america
@@ -200,9 +213,10 @@ gun-owners-of-america:
   facebook_url: https://www.facebook.com/GunOwners
   twitter_url: https://twitter.com/GunOwners
   instagram_url: https://www.instagram.com/gunownersofamerica/
-  tax_classification: 
+  tax_classification:
   issue_tags:
-    - guns
+    connect:
+      - guns
 
 nrapvf:
   slug: nrapvf
@@ -215,9 +229,10 @@ nrapvf:
   instagram_url: https://www.instagram.com/nra/
   email: ila-contact@nrahq.org
   headquarters_phone: 800-392-8683
-  tax_classification: 
+  tax_classification:
   issue_tags:
-    - guns
+    connect:
+      - guns
 
 colorado-state-shooting-association:
   slug: colorado-state-shooting-association
@@ -228,8 +243,10 @@ colorado-state-shooting-association:
   facebook_url: https://www.facebook.com/COSSAssn
   twitter_url:
   instagram_url:
-  tax_classification: 
+  tax_classification:
   issue_tags:
+    connect:
+      - guns
 
 equal-rights-colorado:
   slug: equal-rights-colorado
@@ -240,9 +257,10 @@ equal-rights-colorado:
   facebook_url: https://www.facebook.com/Equal-Rights-Colorado-105522020394
   twitter_url:
   instagram_url:
-  tax_classification: 
+  tax_classification:
   issue_tags:
-    - guns
+    connect:
+      - guns
 
 aarp-colorado:
   slug: aarp-colorado
@@ -253,9 +271,10 @@ aarp-colorado:
   facebook_url: https://www.facebook.com/aarp.colorado
   twitter_url:
   instagram_url:
-  tax_classification: 
+  tax_classification:
   issue_tags:
-    - health-and-health-care
+    connect:
+      - health-and-healthcare
 
 aclu-colorado:
   slug: aclu-colorado
@@ -268,8 +287,9 @@ aclu-colorado:
   instagram_url:
   tax_classification: 501(c)(3)
   issue_tags:
-    - civil-liberties-and-civil-rights
-    - education
+    connect:
+      - civil-liberties-and-civil-rights
+      - education
 
 colorado-afl-cio:
   slug: colorado-afl-cio
@@ -280,9 +300,10 @@ colorado-afl-cio:
   facebook_url: https://www.facebook.com/coloradoaflcio
   twitter_url:
   instagram_url:
-  tax_classification: 
+  tax_classification:
   issue_tags:
-    - labor-and-unions
+    connect:
+      - labor-and-unions
 
 colorado-farm-bureau:
   slug: colorado-farm-bureau
@@ -293,13 +314,14 @@ colorado-farm-bureau:
   facebook_url: https://www.facebook.com/ColoradoFarmBureau
   twitter_url:
   instagram_url:
-  tax_classification: 
+  tax_classification:
   issue_tags:
-    - food-and-agriculture
-    - infrastructure
-    - energy
-    - trade
-    - property-rights-and-real-estate
+    connect:
+      - food-and-agriculture
+      - infrastructure
+      - energy
+      - trade
+      - property-rights-and-real-estate
 
 conservation-colorado:
   slug: conservation-colorado
@@ -313,6 +335,7 @@ conservation-colorado:
   email: info@conservationco.org
   tax_classification:
   issue_tags:
-    - environment
-    - climate-change
-    - animals-and-wildlife
+    connect:
+      - environment
+      - climate-change
+      - animals-and-wildlife

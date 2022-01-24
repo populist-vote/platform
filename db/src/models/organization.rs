@@ -1,6 +1,7 @@
 use crate::CreateOrConnectIssueTagInput;
 use crate::DateTime;
 use crate::IssueTag;
+use crate::IssueTagIdentifier;
 use async_graphql::InputObject;
 use serde::{Deserialize, Serialize};
 use slugify::slugify;
@@ -219,19 +220,36 @@ impl Organization {
     pub async fn connect_issue_tag(
         db_pool: &PgPool,
         organization_id: uuid::Uuid,
-        issue_tag_id: uuid::Uuid,
+        issue_tag_identifier: IssueTagIdentifier,
     ) -> Result<(), sqlx::Error> {
-        sqlx::query_as!(
-            Organization,
-            r#"
-                INSERT INTO organization_issue_tags (organization_id, issue_tag_id) 
-                VALUES ($1, $2)
-            "#,
-            organization_id,
-            issue_tag_id
-        )
-        .execute(db_pool)
-        .await?;
+        match issue_tag_identifier {
+            IssueTagIdentifier::Uuid(issue_tag_id) => {
+                sqlx::query_as!(
+                    Organization,
+                    r#"
+                        INSERT INTO organization_issue_tags (organization_id, issue_tag_id) 
+                        VALUES ($1, $2)
+                    "#,
+                    organization_id,
+                    issue_tag_id
+                )
+                .execute(db_pool)
+                .await?;
+            }
+            IssueTagIdentifier::Slug(issue_tag_slug) => {
+                sqlx::query_as!(
+                    Organization,
+                    r#"
+                        INSERT INTO organization_issue_tags (organization_id, issue_tag_id) 
+                        VALUES ($1, (SELECT id FROM issue_tag WHERE slug = $2))
+                    "#,
+                    organization_id,
+                    issue_tag_slug
+                )
+                .execute(db_pool)
+                .await?;
+            }
+        }
 
         Ok(())
     }
@@ -242,7 +260,7 @@ impl Organization {
     ) -> Result<Vec<IssueTag>, sqlx::Error> {
         let records = sqlx::query_as!(IssueTag,
             r#"
-                SELECT it.id, slug, name, description, it.created_at, it.updated_at FROM issue_tag it
+                SELECT it.id, slug, name, description, category, it.created_at, it.updated_at FROM issue_tag it
                 JOIN organization_issue_tags
                 ON organization_issue_tags.issue_tag_id = it.id
                 WHERE organization_issue_tags.organization_id = $1

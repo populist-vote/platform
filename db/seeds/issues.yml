@@ -1,305 +1,305 @@
 food-and-agriculture:
   slug: food-and-agriculture
   name: Food & Agriculture
-  description: 
+  description:
   category: Economy
 
 business-and-consumers:
   slug: business-and-consumers
   name: Business & Consumers
-  description: 
+  description:
   category: Economy
 
 energy:
   slug: energy
   name: Energy
-  description: 
+  description:
   category: Economy
 
 gambling-and-gaming:
   slug: gambling-and-gaming
   name: Gambling & Gaming
-  description: 
+  description:
   category: Economy
 
 infrastructure:
   slug: infrastructure
   name: Infrastructure
-  description: 
+  description:
   category: Economy
 
 labor-and-unions:
   slug: labor-and-unions
   name: Labor & Unions
-  description: 
+  description:
   category: Economy
 
 property-rights-and-real-estate:
   slug: property-rights-and-real-estate
   name: Property Rights & Real Estate
-  description: 
+  description:
   category: Economy
 
 trade:
   slug: trade
   name: Trade
-  description: 
+  description:
   category: Economy
 
 budget-spending-and-tax:
   slug: budget-spending-and-tax
   name: Budget, Spending & Tax
-  description: 
+  description:
   category: Economy
 
 education:
   slug: education
   name: Education
-  description: 
+  description:
   category: Education
 
 science:
   slug: science
   name: Science
-  description: 
+  description:
   category: Education
 
 animals-and-wildlife:
   slug: animals-and-wildlife
   name: Animals & Wildlife
-  description: 
+  description:
   category: Environment
 
 environment:
   slug: environment
   name: Environment
-  description: 
+  description:
   category: Environment
 
 climate-change:
   slug: climate-change
   name: Climate Change
-  description: 
+  description:
   category: Environment
 
 campaign-finance-and-elections:
   slug: campaign-finance-and-elections
   name: Campaign, Finance & Elections
-  description: 
+  description:
   category: Government
 
 criminal-justice:
   slug: criminal-justice
   name: Criminal Justice
-  description: 
+  description:
   category: Government
 
 defense:
   slug: defense
   name: Defense
-  description: 
+  description:
   category: Government
 
 federal-state-and-local-relations:
   slug: federal-state-and-local-relations
   name: Federal, State, & Local Relations
-  description: 
+  description:
   category: Government
 
 foreign-affairs:
   slug: foreign-affairs
   name: Foreign Affairs
-  description: 
+  description:
   category: Government
 
 government-operations:
   slug: government-operations
   name: Government Operations
-  description: 
+  description:
   category: Government
 
 judicial-branch:
   slug: judicial-branch
   name: Judicial Branch
-  description: 
+  description:
   category: Government
 
 law-enforcement:
   slug: law-enforcement
   name: Law Enforcement
-  description: 
+  description:
   category: Government
 
 legislative-branch:
   slug: legislative-branch
   name: Legislative Branch
-  description: 
+  description:
   category: Government
 
 military:
   slug: military
   name: Military
-  description: 
+  description:
   category: Government
 
 national-security:
   slug: national-security
   name: National Security
-  description: 
+  description:
   category: Government
 
 transportation:
   slug: transportation
   name: Transportation
-  description: 
+  description:
   category: Government
 
 china:
   slug: china
   name: China
-  description: 
+  description:
   category: Government
 
 iran:
   slug: iran
   name: Iran
-  description: 
+  description:
   category: Government
 
 iraq:
   slug: iraq
   name: Iraq
-  description: 
+  description:
   category: Government
 
 israel:
   slug: israel
   name: Israel
-  description: 
+  description:
   category: Government
 
 russia:
   slug: russia
   name: Russia
-  description: 
+  description:
   category: Government
 
-aboration:
-  slug: aboration
-  name: Aboration
-  description: 
+abortion:
+  slug: abortion
+  name: Abortion
+  description:
   category: Health
 
 coronavirus:
   slug: coronavirus
   name: Coronavirus
-  description: 
+  description:
   category: Health
 
 drugs-and-alcohol:
   slug: drugs-and-alcohol
   name: Drugs & Alcohol
-  description: 
+  description:
   category: Health
 
 health-and-healthcare:
   slug: health-and-healthcare
   name: Health &^ Healthcare
-  description: 
+  description:
   category: Health
 
 reproduction:
   slug: reproduction
   name: Reproduction
-  description: 
+  description:
   category: Health
 
 arts-entertainment-and-history:
   slug: arts-entertainment-and-history
   name: Arts, Entertainment & History
-  description: 
+  description:
   category: Social
 
 civil-liberties-and-civil-rights:
   slug: civil-liberties-and-civil-rights
   name: Civil Liberties & Civil Rights
-  description: 
+  description:
   category: Social
 
 death-penalty:
   slug: death-penalty
   name: Death Penalty
-  description: 
+  description:
   category: Social
 
 employment-and-affirmative-action:
   slug: employment-and-affirmative-action
   name: Employment & Affirmative Action
-  description: 
+  description:
   category: Social
 
 guns:
   slug: guns
   name: Guns
-  description: 
+  description:
   category: Social
 
 housing-and-property:
   slug: housing-and-property
   name: Housing & Property
-  description: 
+  description:
   category: Social
 
 immigration:
   slug: immigration
   name: Immigration
-  description: 
+  description:
   category: Social
 
 indiginous-peoples:
   slug: indiginous-peoples
   name: Indiginous Peoples
-  description: 
+  description:
   category: Social
 
 marriage-and-family:
   slug: marriage-and-family
   name: Marriage & Family
-  description: 
+  description:
   category: Social
 
 senior-citizens:
   slug: senior-citizens
   name: Senior Citizens
-  description: 
+  description:
   category: Social
 
 sexual-orientation-and-gender-identity:
   slug: sexual-orientation-and-gender-identity
   name: Sexual Orientation & Gender Identity
-  description: 
+  description:
   category: Social
 
 technology-and-communication:
   slug: technology-and-communication
   name: Technology & Communication
-  description: 
+  description:
   category: Social
 
 unemployment-and-low-income:
   slug: unemployment-and-low-income
   name: Unemployment & Low Income
-  description: 
+  description:
   category: Social
 
 womans-issues:
   slug: womans-issues
   name: Woman's Issues
-  description: 
+  description:
   category: Social
 
 veterans:
   slug: veterans
   name: Veterans
-  description: 
+  description:
   category: Social

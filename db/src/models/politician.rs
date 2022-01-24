@@ -330,7 +330,7 @@ impl Politician {
     ) -> Result<Vec<IssueTag>, sqlx::Error> {
         let records = sqlx::query_as!(IssueTag,
             r#"
-                SELECT it.id, slug, name, description, it.created_at, it.updated_at FROM issue_tag it
+                SELECT it.id, slug, name, description, category, it.created_at, it.updated_at FROM issue_tag it
                 JOIN politician_issue_tags
                 ON politician_issue_tags.issue_tag_id = it.id
                 WHERE politician_issue_tags.politician_id = $1
