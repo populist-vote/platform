@@ -3,6 +3,7 @@ use crate::{
     Argument, CreateArgumentInput, DateTime, IssueTag,
 };
 use async_graphql::InputObject;
+use legiscan::Bill as LegiscanBill;
 use serde_json::Value;
 use slugify::slugify;
 use sqlx::{postgres::PgPool, FromRow};
@@ -20,7 +21,6 @@ pub struct Bill {
     pub full_text_url: Option<String>,
     pub votesmart_bill_id: Option<i32>,
     pub legiscan_bill_id: Option<i32>,
-    pub legiscan_data: Value,
     pub history: Value,
     pub created_at: DateTime,
     pub updated_at: DateTime,
@@ -65,6 +65,17 @@ pub struct BillSearch {
     legislation_status: Option<LegislationStatus>,
 }
 
+impl Default for BillSearch {
+    fn default() -> Self {
+        Self {
+            slug: None,
+            title: None,
+            bill_number: None,
+            legislation_status: None,
+        }
+    }
+}
+
 impl Bill {
     pub async fn create(db_pool: &PgPool, input: &CreateBillInput) -> Result<Self, sqlx::Error> {
         let slug = match input.slug.clone() {
@@ -84,7 +95,7 @@ impl Bill {
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                 ON CONFLICT (slug) DO UPDATE
                 SET title = $2
-                RETURNING id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at
+                RETURNING id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, history, votesmart_bill_id, created_at, updated_at
             "#,
             slug,
             input.title,
@@ -96,7 +107,7 @@ impl Bill {
             input.full_text_url,
             input.legiscan_bill_id,
             legiscan_data,
-            input.votesmart_bill_id
+            input.votesmart_bill_id,
         )
         .fetch_one(db_pool)
         .await?;
@@ -126,7 +137,7 @@ impl Bill {
                     legiscan_data = COALESCE($12, legiscan_data)
                 WHERE id=$1
                 OR legiscan_bill_id=$2
-                RETURNING id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at
+                RETURNING id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, history, votesmart_bill_id, created_at, updated_at
             "#,
             id,
             legiscan_bill_id,
@@ -154,7 +165,7 @@ impl Bill {
     // this table is too big to run this query, its too expensive and will blow up heroku
     pub async fn index(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
         let records = sqlx::query_as!(Bill, r#"
-            SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at FROM bill"#)
+            SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, history, votesmart_bill_id, created_at, updated_at FROM bill"#)
             .fetch_all(db_pool)
             .await?;
         Ok(records)
@@ -164,7 +175,7 @@ impl Bill {
         let records = sqlx::query_as!(
             Bill,
             r#"
-                SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, history, votesmart_bill_id, created_at, updated_at FROM bill
+                SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, history, votesmart_bill_id, created_at, updated_at FROM bill
                 WHERE ($1::text IS NULL OR slug = $1)
                 AND ($2::text IS NULL OR title ILIKE $2)
                 AND ($3::legislation_status IS NULL OR legislation_status = $3)

@@ -5,7 +5,8 @@ use db::{
     DateTime,
 };
 use legiscan::Bill as LegiscanBill;
-use sqlx::{Pool, Postgres};
+use sqlx::{types::Json, Pool, Postgres, Row};
+use uuid::Uuid;
 #[derive(SimpleObject)]
 #[graphql(complex)]
 pub struct BillResult {
@@ -19,7 +20,6 @@ pub struct BillResult {
     populist_summary: Option<String>,
     full_text_url: Option<String>,
     legiscan_bill_id: Option<i32>,
-    legiscan_data: LegiscanBill,
     history: serde_json::Value,
     created_at: DateTime,
     updated_at: DateTime,
@@ -32,6 +32,24 @@ impl BillResult {
         let records = Bill::arguments(pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
         let results = records.into_iter().map(ArgumentResult::from).collect();
         Ok(results)
+    }
+
+    async fn legiscan_data(&self, ctx: &Context<'_>) -> FieldResult<LegiscanBill> {
+        let pool = ctx.data_unchecked::<Pool<Postgres>>();
+
+        let record = sqlx::query(
+            r#"
+                SELECT legiscan_data FROM bill
+                WHERE id=$1
+            "#,
+        )
+        .bind(Uuid::parse_str(&self.id).unwrap())
+        .fetch_one(pool)
+        .await?;
+
+        let legiscan_data: Json<LegiscanBill> = record.get(0);
+
+        Ok(legiscan_data.0)
     }
 }
 
@@ -48,7 +66,6 @@ impl From<Bill> for BillResult {
             populist_summary: b.populist_summary,
             full_text_url: b.full_text_url,
             legiscan_bill_id: b.legiscan_bill_id,
-            legiscan_data: serde_json::from_value(b.legiscan_data.to_owned()).unwrap_or_default(),
             history: b.history,
             created_at: b.created_at,
             updated_at: b.updated_at,
