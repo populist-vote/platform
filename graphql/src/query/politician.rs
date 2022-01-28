@@ -5,6 +5,7 @@ use sqlx::{Pool, Postgres};
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use crate::relay;
 use crate::types::PoliticianResult;
 
 // struct PoliticianLoader {
@@ -31,6 +32,15 @@ pub struct PoliticianQuery;
 
 #[Object]
 impl PoliticianQuery {
+    async fn politician_by_id(
+        &self,
+        _ctx: &Context<'_>,
+        _id: String,
+    ) -> FieldResult<PoliticianResult> {
+        // Look up politician by id in the database
+        todo!()
+    }
+
     async fn politician_by_slug(
         &self,
         ctx: &Context<'_>,
@@ -42,30 +52,24 @@ impl PoliticianQuery {
         Ok(record.into())
     }
 
-    async fn all_politicians(&self, ctx: &Context<'_>) -> FieldResult<Vec<PoliticianResult>> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let records = Politician::index(pool).await?;
-        let results = records.into_iter().map(PoliticianResult::from).collect();
-        Ok(results)
-    }
-
     async fn politicians(
         &self,
         ctx: &Context<'_>,
         #[graphql(desc = "Search by homeState or lastName")] search: PoliticianSearch,
-    ) -> FieldResult<Vec<PoliticianResult>> {
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+    ) -> relay::ConnectionResult<PoliticianResult> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let records = Politician::search(pool, &search).await?;
-        let results = records.into_iter().map(PoliticianResult::from).collect();
-        Ok(results)
-    }
+        let results = records.into_iter().map(PoliticianResult::from);
 
-    async fn politician_by_id(
-        &self,
-        _ctx: &Context<'_>,
-        _id: String,
-    ) -> FieldResult<PoliticianResult> {
-        // Look up politician by id in the database
-        todo!()
+        relay::query(
+            results.into_iter(),
+            relay::Params::new(after, before, first, last),
+            10,
+        )
+        .await
     }
 }
