@@ -179,10 +179,12 @@ impl Bill {
                 WHERE ($1::text IS NULL OR slug = $1)
                 AND ($2::text IS NULL OR title ILIKE $2)
                 AND ($3::legislation_status IS NULL OR legislation_status = $3)
+                AND ($4::text IS NULL OR bill_number ILIKE $4)
             "#,
             search.slug,
             search.title,
-            search.legislation_status as Option<LegislationStatus>
+            search.legislation_status as Option<LegislationStatus>,
+            search.bill_number
         )
         .fetch_all(db_pool)
         .await?;

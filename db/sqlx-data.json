@@ -481,142 +481,6 @@
       ]
     }
   },
-  "19791849a2f3de3164258d6a839a65cdeaa386bfb167da9a498a987d276f38c0": {
-    "query": "\n                SELECT id, slug, title, bill_number, legislation_status AS \"legislation_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, history, votesmart_bill_id, created_at, updated_at FROM bill\n                WHERE ($1::text IS NULL OR slug = $1)\n                AND ($2::text IS NULL OR title ILIKE $2)\n                AND ($3::legislation_status IS NULL OR legislation_status = $3)\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "slug",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "title",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "bill_number",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 4,
-          "name": "legislation_status:LegislationStatus",
-          "type_info": {
-            "Custom": {
-              "name": "legislation_status",
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "passed_house",
-                  "passed_senate",
-                  "failed_house",
-                  "failed_senate",
-                  "resolving_differences",
-                  "sent_to_executive",
-                  "became_law",
-                  "vetoed",
-                  "unknown"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 5,
-          "name": "description",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 6,
-          "name": "official_summary",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 7,
-          "name": "populist_summary",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 8,
-          "name": "full_text_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 9,
-          "name": "legiscan_bill_id",
-          "type_info": "Int4"
-        },
-        {
-          "ordinal": 10,
-          "name": "history",
-          "type_info": "Jsonb"
-        },
-        {
-          "ordinal": 11,
-          "name": "votesmart_bill_id",
-          "type_info": "Int4"
-        },
-        {
-          "ordinal": 12,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 13,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text",
-          {
-            "Custom": {
-              "name": "legislation_status",
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "passed_house",
-                  "passed_senate",
-                  "failed_house",
-                  "failed_senate",
-                  "resolving_differences",
-                  "sent_to_executive",
-                  "became_law",
-                  "vetoed",
-                  "unknown"
-                ]
-              }
-            }
-          }
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        true,
-        false,
-        false
-      ]
-    }
-  },
   "1a47cbe583edf42b41691c47eab47641fcf8685fccf6842006509b2078fa2661": {
     "query": "\n                SELECT * FROM organization\n                WHERE ($1::text IS NULL OR levenshtein($1, name) <=5)\n             ",
     "describe": {
@@ -5396,6 +5260,143 @@
         false,
         false,
         false,
+        false,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "f3adf0e2a63d9ebc675410010543cc7bbb40427b8a60d1567cee96f5c8fcba62": {
+    "query": "\n                SELECT id, slug, title, bill_number, legislation_status AS \"legislation_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, history, votesmart_bill_id, created_at, updated_at FROM bill\n                WHERE ($1::text IS NULL OR slug = $1)\n                AND ($2::text IS NULL OR title ILIKE $2)\n                AND ($3::legislation_status IS NULL OR legislation_status = $3)\n                AND ($4::text IS NULL OR bill_number ILIKE $4)\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "bill_number",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "legislation_status:LegislationStatus",
+          "type_info": {
+            "Custom": {
+              "name": "legislation_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed_house",
+                  "passed_senate",
+                  "failed_house",
+                  "failed_senate",
+                  "resolving_differences",
+                  "sent_to_executive",
+                  "became_law",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "official_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "populist_summary",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "full_text_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "legiscan_bill_id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 10,
+          "name": "history",
+          "type_info": "Jsonb"
+        },
+        {
+          "ordinal": 11,
+          "name": "votesmart_bill_id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 12,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 13,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "legislation_status",
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "passed_house",
+                  "passed_senate",
+                  "failed_house",
+                  "failed_senate",
+                  "resolving_differences",
+                  "sent_to_executive",
+                  "became_law",
+                  "vetoed",
+                  "unknown"
+                ]
+              }
+            }
+          },
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
         false,
         true,
         false,

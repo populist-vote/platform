@@ -1,4 +1,4 @@
-pub mod connection;
+pub mod relay;
 pub mod mutation;
 pub mod query;
 pub mod subscription;

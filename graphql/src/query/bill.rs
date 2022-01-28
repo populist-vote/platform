@@ -2,7 +2,7 @@ use async_graphql::{Context, FieldResult, Object};
 use db::{Bill, BillSearch};
 use sqlx::{Pool, Postgres};
 
-use crate::{connection, types::BillResult};
+use crate::{relay, types::BillResult};
 
 #[derive(Default)]
 pub struct BillQuery;
@@ -17,14 +17,14 @@ impl BillQuery {
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
-    ) -> connection::ConnectionResult<BillResult> {
+    ) -> relay::ConnectionResult<BillResult> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let records = Bill::search(pool, &search).await?;
         let results = records.into_iter().map(BillResult::from);
 
-        connection::query(
+        relay::query(
             results.into_iter(),
-            connection::Params::new(after, before, first, last),
+            relay::Params::new(after, before, first, last),
             10,
         )
         .await
