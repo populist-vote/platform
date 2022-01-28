@@ -55,14 +55,14 @@ impl PoliticianQuery {
     async fn politicians(
         &self,
         ctx: &Context<'_>,
-        #[graphql(desc = "Search by homeState or lastName")] search: PoliticianSearch,
+        #[graphql(desc = "Search by homeState or lastName")] search: Option<PoliticianSearch>,
         after: Option<String>,
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
     ) -> relay::ConnectionResult<PoliticianResult> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let records = Politician::search(pool, &search).await?;
+        let records = Politician::search(pool, &search.unwrap_or_default()).await?;
         let results = records.into_iter().map(PoliticianResult::from);
 
         relay::query(

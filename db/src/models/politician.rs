@@ -89,6 +89,16 @@ pub struct PoliticianSearch {
     office_party: Option<PoliticalParty>,
 }
 
+impl Default for PoliticianSearch {
+    fn default() -> Self {
+        PoliticianSearch {
+            home_state: None,
+            last_name: None,
+            office_party: None,
+        }
+    }
+}
+
 impl CreatePoliticianInput {
     fn full_name(&self) -> String {
         match &self.middle_name {
