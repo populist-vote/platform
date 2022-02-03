@@ -63,6 +63,12 @@ pub struct OrganizationSearch {
     name: Option<String>,
 }
 
+impl Default for OrganizationSearch {
+    fn default() -> Self {
+        OrganizationSearch { name: None }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, InputObject)]
 pub struct CreateOrConnectOrganizationInput {
     pub create: Option<Vec<CreateOrganizationInput>>,
