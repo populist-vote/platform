@@ -1,31 +1,9 @@
-use async_graphql::dataloader::*;
 use async_graphql::{Context, FieldResult, Object};
 use db::{Politician, PoliticianSearch};
 use sqlx::{Pool, Postgres};
-use std::collections::HashMap;
-use std::sync::Arc;
 
 use crate::relay;
 use crate::types::PoliticianResult;
-
-// struct PoliticianLoader {
-//     pool: sqlx::Pool<Postgres>,
-// }
-
-// #[async_trait::async_trait]
-// impl Loader<u64> for PoliticianLoader {
-//     type Value = Politician;
-//     type Error = Arc<sqlx::Error>;
-
-//     async fn load(&self, keys: &[u64]) -> Result<HashMap<u64, Self::Value>, Self::Error> {
-//         let query = format!("SELECT name FROM user WHERE id IN ({})", keys.iter().join(","));
-//         Ok(sqlx::query_as(query)
-//             .fetch(&self.pool)
-//             .map_ok(|name: String| name)
-//             .map_err(Arc::new)
-//             .try_collect().await?)
-//     }
-// }
 
 #[derive(Default)]
 pub struct PoliticianQuery;
