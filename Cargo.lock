@@ -696,6 +696,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "data-encoding"
+version = "2.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ee2393c4a91429dffb4bedf19f4d6abf27d8a732c8ce4980305d782e5426d57"
+
+[[package]]
 name = "db"
 version = "0.1.0"
 dependencies = [
@@ -1418,6 +1424,9 @@ dependencies = [
 [[package]]
 name = "mailers"
 version = "0.1.0"
+dependencies = [
+ "sendgrid",
+]
 
 [[package]]
 name = "maplit"
@@ -2261,6 +2270,20 @@ checksum = "a9dd14d83160b528b7bfd66439110573efcfbe281b17fc2ca9f39f550d619c7e"
 dependencies = [
  "core-foundation-sys",
  "libc",
+]
+
+[[package]]
+name = "sendgrid"
+version = "0.17.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "88afc7511b68247bf469e0dff55eb7ef305aab293211242695fd07cc17e36a78"
+dependencies = [
+ "data-encoding",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "url",
 ]
 
 [[package]]
