@@ -85,15 +85,23 @@ pub struct UpdatePoliticianInput {
 #[derive(InputObject)]
 pub struct PoliticianSearch {
     home_state: Option<State>,
-    last_name: Option<String>,
+    name: Option<String>,
     office_party: Option<PoliticalParty>,
+}
+
+fn split_search_query(query: String) -> String {
+    query
+        .split_whitespace()
+        .map(|s| s.to_string())
+        .collect::<Vec<String>>()
+        .join(" | ")
 }
 
 impl Default for PoliticianSearch {
     fn default() -> Self {
         PoliticianSearch {
             home_state: None,
-            last_name: None,
+            name: None,
             office_party: None,
         }
     }
@@ -245,16 +253,18 @@ impl Politician {
         db_pool: &PgPool,
         search: &PoliticianSearch,
     ) -> Result<Vec<Self>, sqlx::Error> {
+        let search_query = split_search_query(search.name.to_owned().unwrap_or("".to_string()));
+        println!("search_query: {:?}", search_query);
         let records = sqlx::query_as!(
             Politician,
             r#"
                 SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, legiscan_people_id, created_at, updated_at FROM politician
-                WHERE ($1::state IS NULL OR home_state = $1)
-                AND ($2::text IS NULL OR levenshtein($2, last_name) <=2)
+                WHERE ($1::text IS NULL OR to_tsvector(concat_ws(' ', first_name, middle_name, last_name, nickname, preferred_name, ballot_name)) @@ to_tsquery($1))
+                AND ($2::state IS NULL OR home_state = $2)
                 AND ($3::political_party IS NULL OR office_party = $3)
             "#,
+            search_query,
             search.home_state as Option<State>,
-            search.last_name,
             search.office_party as Option<PoliticalParty>,
         )
         .fetch_all(db_pool)
