@@ -3126,6 +3126,294 @@
       ]
     }
   },
+  "b11f63e4a6fa8bf526363e2a46e0307cd0fbc2d93025f6294a28c5c4be8f3151": {
+    "query": "\n                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS \"home_state:State\", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS \"office_party:PoliticalParty\", votesmart_candidate_id, votesmart_candidate_bio, legiscan_people_id, created_at, updated_at FROM politician\n                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector(concat_ws(' ', first_name, middle_name, last_name, nickname, preferred_name, ballot_name)) @@ to_tsquery($1))\n                AND ($2::state IS NULL OR home_state = $2)\n                AND ($3::political_party IS NULL OR office_party = $3)\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "first_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "middle_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "last_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "nickname",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "preferred_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "ballot_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "home_state:State",
+          "type_info": {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 10,
+          "name": "thumbnail_image_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 11,
+          "name": "website_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "facebook_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 13,
+          "name": "twitter_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 14,
+          "name": "instagram_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 15,
+          "name": "office_party:PoliticalParty",
+          "type_info": {
+            "Custom": {
+              "name": "political_party",
+              "kind": {
+                "Enum": [
+                  "democratic",
+                  "republican",
+                  "libertarian",
+                  "green",
+                  "constitution",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 16,
+          "name": "votesmart_candidate_id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 17,
+          "name": "votesmart_candidate_bio",
+          "type_info": "Jsonb"
+        },
+        {
+          "ordinal": 18,
+          "name": "legiscan_people_id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 19,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 20,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          },
+          {
+            "Custom": {
+              "name": "political_party",
+              "kind": {
+                "Enum": [
+                  "democratic",
+                  "republican",
+                  "libertarian",
+                  "green",
+                  "constitution",
+                  "unknown"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        false,
+        false
+      ]
+    }
+  },
   "b2d17a78dc7479596da3e7d60a9c64d3c578782b743afccd86cf8176bbad3b50": {
     "query": "\n                INSERT INTO ballot_measure \n                (election_id, slug, title, legislation_status, description, official_summary, \n                populist_summary, full_text_url, ballot_state, ballot_measure_code, \n                measure_type, definitions) \n                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) \n                RETURNING id, election_id, slug, title, legislation_status AS \"legislation_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, ballot_state AS \"ballot_state:State\", ballot_measure_code, measure_type, definitions, created_at, updated_at\n            ",
     "describe": {
@@ -3433,294 +3721,6 @@
         false,
         false,
         true,
-        false
-      ]
-    }
-  },
-  "ba202e5e705b43961b56e3cc4edfb69c389a45cca1d817d3da67a477549ba647": {
-    "query": "\n                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS \"home_state:State\", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS \"office_party:PoliticalParty\", votesmart_candidate_id, votesmart_candidate_bio, legiscan_people_id, created_at, updated_at FROM politician\n                WHERE ($1::text IS NULL OR to_tsvector(concat_ws(' ', first_name, middle_name, last_name, nickname, preferred_name, ballot_name)) @@ to_tsquery($1))\n                AND ($2::state IS NULL OR home_state = $2)\n                AND ($3::political_party IS NULL OR office_party = $3)\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "slug",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "first_name",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "middle_name",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 4,
-          "name": "last_name",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 5,
-          "name": "nickname",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 6,
-          "name": "preferred_name",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 7,
-          "name": "ballot_name",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 8,
-          "name": "description",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 9,
-          "name": "home_state:State",
-          "type_info": {
-            "Custom": {
-              "name": "state",
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 10,
-          "name": "thumbnail_image_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 11,
-          "name": "website_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 12,
-          "name": "facebook_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 13,
-          "name": "twitter_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 14,
-          "name": "instagram_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 15,
-          "name": "office_party:PoliticalParty",
-          "type_info": {
-            "Custom": {
-              "name": "political_party",
-              "kind": {
-                "Enum": [
-                  "democratic",
-                  "republican",
-                  "libertarian",
-                  "green",
-                  "constitution",
-                  "unknown"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 16,
-          "name": "votesmart_candidate_id",
-          "type_info": "Int4"
-        },
-        {
-          "ordinal": 17,
-          "name": "votesmart_candidate_bio",
-          "type_info": "Jsonb"
-        },
-        {
-          "ordinal": 18,
-          "name": "legiscan_people_id",
-          "type_info": "Int4"
-        },
-        {
-          "ordinal": 19,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 20,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          {
-            "Custom": {
-              "name": "state",
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              }
-            }
-          },
-          {
-            "Custom": {
-              "name": "political_party",
-              "kind": {
-                "Enum": [
-                  "democratic",
-                  "republican",
-                  "libertarian",
-                  "green",
-                  "constitution",
-                  "unknown"
-                ]
-              }
-            }
-          }
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        true,
-        false,
-        true,
-        true,
-        true,
-        true,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        true,
-        false,
         false
       ]
     }

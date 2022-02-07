@@ -254,12 +254,12 @@ impl Politician {
         search: &PoliticianSearch,
     ) -> Result<Vec<Self>, sqlx::Error> {
         let search_query = split_search_query(search.name.to_owned().unwrap_or("".to_string()));
-        println!("search_query: {:?}", search_query);
+
         let records = sqlx::query_as!(
             Politician,
             r#"
                 SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, legiscan_people_id, created_at, updated_at FROM politician
-                WHERE ($1::text IS NULL OR to_tsvector(concat_ws(' ', first_name, middle_name, last_name, nickname, preferred_name, ballot_name)) @@ to_tsquery($1))
+                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector(concat_ws(' ', first_name, middle_name, last_name, nickname, preferred_name, ballot_name)) @@ to_tsquery($1))
                 AND ($2::state IS NULL OR home_state = $2)
                 AND ($3::political_party IS NULL OR office_party = $3)
             "#,
