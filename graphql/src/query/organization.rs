@@ -30,4 +30,15 @@ impl OrganizationQuery {
         )
         .await
     }
+
+    async fn organization_by_slug(
+        &self,
+        ctx: &Context<'_>,
+        slug: String,
+    ) -> FieldResult<OrganizationResult> {
+        let pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let record = Organization::find_by_slug(pool, slug).await?;
+
+        Ok(record.into())
+    }
 }
