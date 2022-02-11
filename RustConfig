@@ -1,1 +1,2 @@
 RUST_INSTALL_SQLX=1
+SQLX_FLAGS="--features postgres"
