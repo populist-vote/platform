@@ -51,10 +51,11 @@ mod tests {
     #[tokio::test]
     async fn test_get_bio() {
         let proxy = VotesmartProxy::new().unwrap();
-        let response = proxy.candidate_bio().get_bio(53279).await.unwrap();
+        let response = proxy.candidate_bio().get_bio(110942).await.unwrap();
         assert_eq!(response.status().is_success(), true);
         let json: serde_json::Value = response.json().await.unwrap();
-        assert_eq!(json["bio"]["candidate"]["firstName"], "Joseph");
+        // println!("{}", serde_json::to_string_pretty(&json).unwrap());
+        assert_eq!(json["bio"]["candidate"]["firstName"], "Michael");
     }
 
     #[tokio::test]

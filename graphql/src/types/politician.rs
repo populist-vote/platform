@@ -50,6 +50,12 @@ pub struct SponsoredBillResult {
     title: String,
 }
 
+#[derive(SimpleObject, Debug, Clone)]
+pub struct Endorsements {
+    politicians: Vec<PoliticianResult>,
+    organizations: Vec<OrganizationResult>,
+}
+
 #[ComplexObject]
 impl PoliticianResult {
     async fn full_name(&self) -> String {
@@ -64,12 +70,27 @@ impl PoliticianResult {
         }
     }
 
-    async fn endorsements(&self, ctx: &Context<'_>) -> FieldResult<Vec<OrganizationResult>> {
+    async fn endorsements(&self, ctx: &Context<'_>) -> FieldResult<Endorsements> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let records =
-            Politician::endorsements(pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
-        let results = records.into_iter().map(OrganizationResult::from).collect();
-        Ok(results)
+        let politician_records =
+            Politician::politician_endorsements(pool, uuid::Uuid::parse_str(&self.id).unwrap())
+                .await?;
+        let politician_results = politician_records
+            .into_iter()
+            .map(PoliticianResult::from)
+            .collect();
+
+        let organization_records =
+            Politician::organization_endorsements(pool, uuid::Uuid::parse_str(&self.id).unwrap())
+                .await?;
+        let organization_results = organization_records
+            .into_iter()
+            .map(OrganizationResult::from)
+            .collect();
+        Ok(Endorsements {
+            politicians: politician_results,
+            organizations: organization_results,
+        })
     }
 
     async fn issue_tags(&self, ctx: &Context<'_>) -> FieldResult<Vec<IssueTagResult>> {

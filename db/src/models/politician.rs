@@ -82,6 +82,11 @@ pub struct UpdatePoliticianInput {
     pub legiscan_people_id: Option<i32>,
 }
 
+pub enum PoliticianIdentifier {
+    Uuid(uuid::Uuid),
+    Slug(String),
+}
+
 #[derive(InputObject)]
 pub struct PoliticianSearch {
     home_state: Option<State>,
@@ -272,16 +277,32 @@ impl Politician {
         Ok(records)
     }
 
-    pub async fn endorsements(
+    pub async fn organization_endorsements(
         db_pool: &PgPool,
         politician_id: uuid::Uuid,
     ) -> Result<Vec<Organization>, sqlx::Error> {
         let records = sqlx::query_as!(Organization,
             r#"
                 SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, tax_classification, o.created_at, o.updated_at  FROM organization o
-                JOIN politician_endorsements
-                ON politician_endorsements.organization_id = o.id
-                WHERE politician_endorsements.politician_id = $1
+                JOIN politician_organization_endorsements
+                ON politician_organization_endorsements.organization_id = o.id
+                WHERE politician_organization_endorsements.politician_id = $1
+            "#, 
+        politician_id).fetch_all(db_pool).await?;
+
+        Ok(records)
+    }
+
+    pub async fn politician_endorsements(
+        db_pool: &PgPool,
+        politician_id: uuid::Uuid,
+    ) -> Result<Vec<Politician>, sqlx::Error> {
+        let records = sqlx::query_as!(Politician,
+            r#"
+                SELECT p.id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, legiscan_people_id, p.created_at, p.updated_at FROM politician p
+                JOIN politician_politician_endorsements
+                ON politician_politician_endorsements.politician_endorsement_id = p.id
+                WHERE politician_politician_endorsements.politician_id = $1
             "#, 
         politician_id).fetch_all(db_pool).await?;
 
@@ -298,7 +319,7 @@ impl Politician {
                 sqlx::query_as!(
                     Politician,
                     r#"
-                        INSERT INTO politician_endorsements (politician_id, organization_id)
+                        INSERT INTO politician_organization_endorsements (politician_id, organization_id)
                         VALUES ($1, $2)
                     "#,
                     politician_id,
@@ -311,11 +332,47 @@ impl Politician {
                 sqlx::query_as!(
                     Politician,
                     r#"
-                        INSERT INTO politician_endorsements (politician_id, organization_id)
+                        INSERT INTO politician_organization_endorsements (politician_id, organization_id)
                         VALUES ($1, (SELECT id FROM organization WHERE slug = $2))
                     "#,
                     politician_id,
                     organization_slug
+                )
+                .execute(db_pool)
+                .await?;
+            }
+        }
+        Ok(())
+    }
+
+    pub async fn connect_politician(
+        db_pool: &PgPool,
+        politician_id: uuid::Uuid,
+        politician_identifier: PoliticianIdentifier,
+    ) -> Result<(), sqlx::Error> {
+        match politician_identifier {
+            PoliticianIdentifier::Uuid(politician_endorsement_id) => {
+                sqlx::query_as!(
+                    Politician,
+                    r#"
+                        INSERT INTO politician_politician_endorsements (politician_id, politician_endorsement_id)
+                        VALUES ($1, $2)
+                    "#,
+                    politician_id,
+                    politician_endorsement_id
+                )
+                .execute(db_pool)
+                .await?;
+            }
+            PoliticianIdentifier::Slug(politician_endorsement_slug) => {
+                sqlx::query_as!(
+                    Politician,
+                    r#"
+                        INSERT INTO politician_politician_endorsements (politician_id, politician_endorsement_id)
+                        VALUES ($1, (SELECT id FROM politician WHERE slug = $2))
+                    "#,
+                    politician_id,
+                    politician_endorsement_slug
                 )
                 .execute(db_pool)
                 .await?;

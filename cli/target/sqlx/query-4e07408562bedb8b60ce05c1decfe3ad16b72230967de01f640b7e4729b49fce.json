@@ -1,0 +1,13 @@
+{
+  "query": "\n                                    UPDATE bill\n                                    SET history = history || '[\"newString\"]'::jsonb\n                                    WHERE id = $1\n                                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "bcc85127cecb7b5f12f986189406c08955610c9f2aae9d3530b6843655a1b430"
+}
