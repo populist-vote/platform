@@ -1,7 +1,8 @@
 use async_graphql::*;
 use db::{
-    CreateOrConnectIssueTagInput, CreateOrConnectOrganizationInput, CreatePoliticianInput,
-    IssueTag, Organization, OrganizationIdentifier, Politician, UpdatePoliticianInput,
+    CreateOrConnectIssueTagInput, CreateOrConnectOrganizationInput, CreateOrConnectPoliticianInput,
+    CreatePoliticianInput, IssueTag, Organization, OrganizationIdentifier, Politician,
+    PoliticianIdentifier, UpdatePoliticianInput,
 };
 use sqlx::{Pool, Postgres};
 
@@ -46,7 +47,7 @@ async fn handle_nested_issue_tags(
     Ok(())
 }
 
-async fn handle_nested_endorsements(
+async fn handle_nested_organization_endorsements(
     db_pool: &Pool<Postgres>,
     politician_id: uuid::Uuid,
     organizations_input: CreateOrConnectOrganizationInput,
@@ -88,6 +89,48 @@ async fn handle_nested_endorsements(
     Ok(())
 }
 
+async fn handle_nested_politician_endorsements(
+    db_pool: &Pool<Postgres>,
+    politician_id: uuid::Uuid,
+    politicians_input: CreateOrConnectPoliticianInput,
+) -> Result<(), Error> {
+    if politicians_input.create.is_some() {
+        for input in politicians_input.create.unwrap() {
+            let new_politician = Politician::create(db_pool, &input).await?;
+            Politician::connect_politician(
+                db_pool,
+                politician_id,
+                PoliticianIdentifier::Uuid(new_politician.id),
+            )
+            .await?;
+        }
+    }
+    if politicians_input.connect.is_some() {
+        for politician_identifier in politicians_input.connect.unwrap() {
+            match uuid::Uuid::from_str(politician_identifier.as_str()) {
+                Ok(pol_endorsement_id) => {
+                    Politician::connect_politician(
+                        db_pool,
+                        politician_id,
+                        PoliticianIdentifier::Uuid(pol_endorsement_id),
+                    )
+                    .await?
+                }
+                _ => {
+                    Politician::connect_politician(
+                        db_pool,
+                        politician_id,
+                        PoliticianIdentifier::Slug(politician_identifier),
+                    )
+                    .await?
+                }
+            };
+        }
+    }
+
+    Ok(())
+}
+
 #[Object]
 impl PoliticianMutation {
     #[graphql(guard = "StaffOnly")]
@@ -103,8 +146,22 @@ impl PoliticianMutation {
             handle_nested_issue_tags(db_pool, new_record.id, input.issue_tags.unwrap()).await?;
         }
 
-        if input.endorsements.is_some() {
-            handle_nested_endorsements(db_pool, new_record.id, input.endorsements.unwrap()).await?;
+        if input.organization_endorsements.is_some() {
+            handle_nested_organization_endorsements(
+                db_pool,
+                new_record.id,
+                input.organization_endorsements.unwrap(),
+            )
+            .await?;
+        }
+
+        if input.politician_endorsements.is_some() {
+            handle_nested_politician_endorsements(
+                db_pool,
+                new_record.id,
+                input.politician_endorsements.unwrap(),
+            )
+            .await?;
         }
 
         Ok(PoliticianResult::from(new_record))
@@ -125,9 +182,22 @@ impl PoliticianMutation {
             handle_nested_issue_tags(db_pool, updated_record.id, input.issue_tags.unwrap()).await?;
         }
 
-        if input.endorsements.is_some() {
-            handle_nested_endorsements(db_pool, updated_record.id, input.endorsements.unwrap())
-                .await?;
+        if input.organization_endorsements.is_some() {
+            handle_nested_organization_endorsements(
+                db_pool,
+                updated_record.id,
+                input.organization_endorsements.unwrap(),
+            )
+            .await?;
+        }
+
+        if input.politician_endorsements.is_some() {
+            handle_nested_politician_endorsements(
+                db_pool,
+                updated_record.id,
+                input.politician_endorsements.unwrap(),
+            )
+            .await?;
         }
 
         Ok(PoliticianResult::from(updated_record))

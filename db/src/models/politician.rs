@@ -52,7 +52,8 @@ pub struct CreatePoliticianInput {
     pub instagram_url: Option<String>,
     pub office_party: Option<PoliticalParty>,
     pub issue_tags: Option<CreateOrConnectIssueTagInput>,
-    pub endorsements: Option<CreateOrConnectOrganizationInput>,
+    pub organization_endorsements: Option<CreateOrConnectOrganizationInput>,
+    pub politician_endorsements: Option<CreateOrConnectPoliticianInput>,
     pub votesmart_candidate_id: Option<i32>,
     pub votesmart_candidate_bio: Option<Value>,
     pub legiscan_people_id: Option<i32>,
@@ -76,7 +77,8 @@ pub struct UpdatePoliticianInput {
     pub instagram_url: Option<String>,
     pub office_party: Option<PoliticalParty>,
     pub issue_tags: Option<CreateOrConnectIssueTagInput>,
-    pub endorsements: Option<CreateOrConnectOrganizationInput>,
+    pub organization_endorsements: Option<CreateOrConnectOrganizationInput>,
+    pub politician_endorsements: Option<CreateOrConnectPoliticianInput>,
     pub votesmart_candidate_id: Option<i32>,
     pub votesmart_candidate_bio: Option<Value>,
     pub legiscan_people_id: Option<i32>,
@@ -85,6 +87,12 @@ pub struct UpdatePoliticianInput {
 pub enum PoliticianIdentifier {
     Uuid(uuid::Uuid),
     Slug(String),
+}
+
+#[derive(Debug, Serialize, Deserialize, InputObject)]
+pub struct CreateOrConnectPoliticianInput {
+    pub create: Option<Vec<CreatePoliticianInput>>,
+    pub connect: Option<Vec<String>>, // Accept UUIDs or slugs
 }
 
 #[derive(InputObject)]
