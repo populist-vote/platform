@@ -3,7 +3,6 @@ use crate::{
     Argument, CreateArgumentInput, DateTime, IssueTag,
 };
 use async_graphql::InputObject;
-use legiscan::Bill as LegiscanBill;
 use serde_json::Value;
 use slugify::slugify;
 use sqlx::{postgres::PgPool, FromRow};
