@@ -72,21 +72,30 @@ impl PoliticianResult {
 
     async fn endorsements(&self, ctx: &Context<'_>) -> FieldResult<Endorsements> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let politician_records =
-            Politician::politician_endorsements(pool, uuid::Uuid::parse_str(&self.id).unwrap())
-                .await?;
-        let politician_results = politician_records
-            .into_iter()
-            .map(PoliticianResult::from)
-            .collect();
 
-        let organization_records =
-            Politician::organization_endorsements(pool, uuid::Uuid::parse_str(&self.id).unwrap())
-                .await?;
-        let organization_results = organization_records
-            .into_iter()
-            .map(OrganizationResult::from)
-            .collect();
+        let mut politician_results: Vec<PoliticianResult> = vec![];
+        let mut organization_results: Vec<OrganizationResult> = vec![];
+
+        if ctx.look_ahead().field("organizations").exists() {
+            let organization_records = Politician::organization_endorsements(
+                pool,
+                uuid::Uuid::parse_str(&self.id).unwrap(),
+            )
+            .await?;
+            organization_results = organization_records
+                .into_iter()
+                .map(OrganizationResult::from)
+                .collect();
+        } else if ctx.look_ahead().field("politicians").exists() {
+            let politician_records =
+                Politician::politician_endorsements(pool, uuid::Uuid::parse_str(&self.id).unwrap())
+                    .await?;
+            politician_results = politician_records
+                .into_iter()
+                .map(PoliticianResult::from)
+                .collect();
+        }
+
         Ok(Endorsements {
             politicians: politician_results,
             organizations: organization_results,
