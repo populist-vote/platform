@@ -95,19 +95,22 @@ impl Rating<'_> {
 
 #[cfg(test)]
 mod tests {
-    use serde_json::json;
+    use serde_json;
 
     use crate::VotesmartProxy;
 
-    // #[tokio::test]
-    // async fn test_get_candidate_rating() {
-    //     let proxy = VotesmartProxy::new().unwrap();
-    //     let response = proxy
-    //         .rating()
-    //         .get_candidate_rating(53279, None)
-    //         .await
-    //         .unwrap();
-    //     assert_eq!(response.status().is_success(), true);
-    //     assert_eq!(response.json().await.unwrap(), json!({}))
-    // }
+    #[tokio::test]
+    async fn test_get_candidate_rating() {
+        let proxy = VotesmartProxy::new().unwrap();
+        let response = proxy
+            .rating()
+            .get_candidate_rating(53279, None)
+            .await
+            .unwrap();
+
+        let status = response.status();
+        let json = response.json::<serde_json::Value>().await.unwrap();
+        println!("{}", serde_json::to_string_pretty(&json).unwrap());
+        assert_eq!(status.is_success(), true);
+    }
 }

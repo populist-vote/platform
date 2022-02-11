@@ -1,5 +1,5 @@
 use db::models::enums::LegislationStatus;
-use legiscan::{Bill, BillStatus as LegiscanBillStatus, LegiscanProxy};
+use legiscan::{Bill, BillStatus as LegiscanBillStatus};
 use std::{env, error::Error, fs, io, path::Path, process};
 
 async fn seed_bills() -> Result<(), Box<dyn Error>> {
