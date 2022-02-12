@@ -8,10 +8,13 @@ use db::{
     DateTime,
 };
 
+use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 use votesmart::GetCandidateBioResponse;
 
 use super::{BillResult, IssueTagResult, OrganizationResult};
+
+use chrono::Datelike;
 
 #[derive(Enum, Copy, Clone, Eq, PartialEq)]
 enum OfficeType {
@@ -56,6 +59,23 @@ pub struct Endorsements {
     organizations: Vec<OrganizationResult>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Experience {
+    span: String,
+    title: String,
+    special: Option<String>,
+    district: Option<String>,
+    full_text: Option<String>,
+    organization: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum ExperienceResponse {
+    Object(Experience),
+    Array(Vec<Experience>),
+}
+
 #[ComplexObject]
 impl PoliticianResult {
     async fn full_name(&self) -> String {
@@ -67,6 +87,44 @@ impl PoliticianResult {
                 &self.last_name
             ),
             None => format!("{} {}", &self.first_name, &self.last_name),
+        }
+    }
+
+    /// Calculates the total years a politician has been in office using
+    /// the votesmart politicial experience array.  Does not take into account
+    /// objects where the politician is considered a 'candidate'
+    async fn years_in_public_office(&self) -> FieldResult<i32> {
+        let experience: ExperienceResponse = serde_json::from_value(
+            self.votesmart_candidate_bio.candidate.political["experience"].to_owned(),
+        )
+        .unwrap();
+        match experience {
+            ExperienceResponse::Object(exp) => {
+                let years = exp.span.split("-").collect::<Vec<&str>>();
+                let start_year = years[0].parse::<i32>().unwrap();
+                let end_year = years[1]
+                    .parse::<i32>()
+                    .unwrap_or(chrono::Local::now().year());
+                let years_in_public_office = (end_year - start_year).abs();
+                Ok(years_in_public_office)
+            }
+            ExperienceResponse::Array(exp_vec) => {
+                let years_in_office = exp_vec.into_iter().fold(0, |acc, x| {
+                    if x.title != "Candidate".to_string() {
+                        let span = x
+                            .span
+                            .split("-")
+                            // Sometimes span goes to 'present' so we need to convert that to current year
+                            .map(|n| n.parse::<i32>().unwrap_or(chrono::Utc::now().year()))
+                            .collect::<Vec<i32>>();
+                        acc + (span[0] - span[1]).abs()
+                    } else {
+                        acc
+                    }
+                });
+
+                Ok(years_in_office)
+            }
         }
     }
 
