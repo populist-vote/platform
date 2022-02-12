@@ -1,4 +1,4 @@
-use async_graphql::{Context, FieldResult, Object};
+use async_graphql::{Context, Object};
 use db::{Bill, BillSearch};
 use sqlx::{Pool, Postgres};
 

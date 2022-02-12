@@ -1,9 +1,8 @@
+use db::CreatePoliticianInput;
+use db::Politician;
 use std::error::Error;
 use std::io;
 use std::process;
-
-use db::CreatePoliticianInput;
-use db::Politician;
 use votesmart::VotesmartProxy;
 
 async fn example() -> Result<(), Box<dyn Error>> {

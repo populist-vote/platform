@@ -86,7 +86,10 @@ impl PoliticianResult {
                 .into_iter()
                 .map(OrganizationResult::from)
                 .collect();
-        } else if ctx.look_ahead().field("politicians").exists() {
+        }
+
+        if ctx.look_ahead().field("politicians").exists() {
+            println!("TRUE ITS HERE");
             let politician_records =
                 Politician::politician_endorsements(pool, uuid::Uuid::parse_str(&self.id).unwrap())
                     .await?;
