@@ -6,7 +6,7 @@ CREATE TABLE politician_politician_endorsements
 (
   id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   politician_id uuid NOT NULL,
-  politician_endorsement_id uuid NOT NULL,
+  politician_endorsement_id uuid NOT NULL UNIQUE,
   created_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
   updated_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
   CONSTRAINT fk_politician FOREIGN KEY(politician_id) REFERENCES politician(id),

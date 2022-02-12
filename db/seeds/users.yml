@@ -1,4 +1,4 @@
-wiley: 
+wiley:
   email: wiley@populist.us
   username: wiley
   password: Password 12!
@@ -10,7 +10,7 @@ chris:
   password: Password 12!
   role: staff
 
-henry: 
+henry:
   email: henry@populist.us
   username: henry
   password: Password 12!
