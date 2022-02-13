@@ -117,7 +117,11 @@ impl PoliticianResult {
                             // Sometimes span goes to 'present' so we need to convert that to current year
                             .map(|n| n.parse::<i32>().unwrap_or(chrono::Utc::now().year()))
                             .collect::<Vec<i32>>();
-                        acc + (span[0] - span[1]).abs()
+                        if span.len() == 1 {
+                            acc + (chrono::Utc::now().year() - span[0]).abs()
+                        } else {
+                            acc + (span[1] - span[0]).abs()
+                        }
                     } else {
                         acc
                     }
