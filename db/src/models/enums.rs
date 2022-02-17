@@ -16,6 +16,25 @@ use strum_macros::{Display, EnumIter, EnumString};
     Serialize,
     Deserialize,
 )]
+pub enum PoliticalScope {
+    Local,
+    State,
+    Federal,
+}
+
+#[derive(
+    Enum,
+    Debug,
+    Copy,
+    Clone,
+    Eq,
+    PartialEq,
+    EnumString,
+    EnumIter,
+    sqlx::Type,
+    Serialize,
+    Deserialize,
+)]
 
 pub enum State {
     AL,

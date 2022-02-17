@@ -3,8 +3,10 @@ mod ballot_measure;
 mod bill;
 mod election;
 mod issue_tag;
+mod office;
 pub mod organization;
 mod politician;
+mod race;
 mod user;
 
 #[allow(clippy::module_inception)]

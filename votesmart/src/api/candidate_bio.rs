@@ -64,6 +64,7 @@ mod tests {
         let response = proxy.candidate_bio().get_detailed_bio(53279).await.unwrap();
         assert_eq!(response.status().is_success(), true);
         let json: serde_json::Value = response.json().await.unwrap();
+        // println!("{}", serde_json::to_string_pretty(&json).unwrap());
         assert_eq!(
             json["bio"]["candidate"]["political"]["experience"][0]["title"],
             "President"
@@ -76,6 +77,7 @@ mod tests {
         let response = proxy.candidate_bio().get_detailed_bio(53279).await.unwrap();
         assert_eq!(response.status().is_success(), true);
         let json: serde_json::Value = response.json().await.unwrap();
+        // println!("{}", serde_json::to_string_pretty(&json).unwrap());
         assert_eq!(
             json["bio"]["candidate"]["political"]["experience"][0]["title"],
             "President"
