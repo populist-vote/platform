@@ -5,14 +5,14 @@ use db::{
         enums::{LegislationStatus, PoliticalParty, State},
         politician::Politician,
     },
-    DateTime,
+    DateTime, Office, Race,
 };
 
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 use votesmart::GetCandidateBioResponse;
 
-use super::{BillResult, IssueTagResult, OrganizationResult};
+use super::{BillResult, IssueTagResult, OfficeResult, OrganizationResult, RaceResult};
 
 use chrono::Datelike;
 
@@ -35,6 +35,7 @@ pub struct PoliticianResult {
     ballot_name: Option<String>,
     description: Option<String>,
     home_state: State,
+    office_id: Option<ID>,
     thumbnail_image_url: Option<String>,
     website_url: Option<String>,
     twitter_url: Option<String>,
@@ -43,6 +44,7 @@ pub struct PoliticianResult {
     office_party: Option<PoliticalParty>,
     votesmart_candidate_id: i32,
     votesmart_candidate_bio: GetCandidateBioResponse,
+    upcoming_race_id: Option<ID>,
     created_at: DateTime,
     updated_at: DateTime,
 }
@@ -71,7 +73,7 @@ pub struct Experience {
 
 #[derive(Deserialize)]
 #[serde(untagged)]
-enum ExperienceResponse {
+enum VotesmartExperience {
     Object(Experience),
     Array(Vec<Experience>),
 }
@@ -94,12 +96,12 @@ impl PoliticianResult {
     /// the votesmart politicial experience array.  Does not take into account
     /// objects where the politician is considered a 'candidate'
     async fn years_in_public_office(&self) -> FieldResult<i32> {
-        let experience: ExperienceResponse = serde_json::from_value(
+        let experience: VotesmartExperience = serde_json::from_value(
             self.votesmart_candidate_bio.candidate.political["experience"].to_owned(),
         )
         .unwrap();
         match experience {
-            ExperienceResponse::Object(exp) => {
+            VotesmartExperience::Object(exp) => {
                 let years = exp.span.split("-").collect::<Vec<&str>>();
                 let start_year = years[0].parse::<i32>().unwrap();
                 let end_year = years[1]
@@ -108,7 +110,7 @@ impl PoliticianResult {
                 let years_in_public_office = (end_year - start_year).abs();
                 Ok(years_in_public_office)
             }
-            ExperienceResponse::Array(exp_vec) => {
+            VotesmartExperience::Array(exp_vec) => {
                 let years_in_office = exp_vec.into_iter().fold(0, |acc, x| {
                     if x.title != "Candidate".to_string() {
                         let span = x
@@ -133,14 +135,14 @@ impl PoliticianResult {
     }
 
     async fn endorsements(&self, ctx: &Context<'_>) -> FieldResult<Endorsements> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
 
         let mut politician_results: Vec<PoliticianResult> = vec![];
         let mut organization_results: Vec<OrganizationResult> = vec![];
 
         if ctx.look_ahead().field("organizations").exists() {
             let organization_records = Politician::organization_endorsements(
-                pool,
+                db_pool,
                 uuid::Uuid::parse_str(&self.id).unwrap(),
             )
             .await?;
@@ -151,10 +153,11 @@ impl PoliticianResult {
         }
 
         if ctx.look_ahead().field("politicians").exists() {
-            println!("TRUE ITS HERE");
-            let politician_records =
-                Politician::politician_endorsements(pool, uuid::Uuid::parse_str(&self.id).unwrap())
-                    .await?;
+            let politician_records = Politician::politician_endorsements(
+                db_pool,
+                uuid::Uuid::parse_str(&self.id).unwrap(),
+            )
+            .await?;
             politician_results = politician_records
                 .into_iter()
                 .map(PoliticianResult::from)
@@ -191,6 +194,33 @@ impl PoliticianResult {
         let results = records.into_iter().map(BillResult::from).collect();
         Ok(results)
     }
+
+    async fn current_office(&self, ctx: &Context<'_>) -> FieldResult<Option<OfficeResult>> {
+        let office_result = match &self.office_id {
+            Some(id) => {
+                let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
+                let office =
+                    Office::find_by_id(db_pool, uuid::Uuid::parse_str(id).unwrap()).await?;
+                Some(OfficeResult::from(office))
+            }
+            None => None,
+        };
+
+        Ok(office_result)
+    }
+
+    async fn upcoming_race(&self, ctx: &Context<'_>) -> FieldResult<Option<RaceResult>> {
+        let race_result = match &self.upcoming_race_id {
+            Some(id) => {
+                let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
+                let race = Race::find_by_id(db_pool, uuid::Uuid::parse_str(id).unwrap()).await?;
+                Some(RaceResult::from(race))
+            }
+            None => None,
+        };
+
+        Ok(race_result)
+    }
 }
 
 impl From<Politician> for PoliticianResult {
@@ -206,6 +236,10 @@ impl From<Politician> for PoliticianResult {
             ballot_name: p.ballot_name,
             description: p.description,
             home_state: p.home_state,
+            office_id: match p.office_id {
+                Some(id) => Some(ID::from(id)),
+                None => None,
+            },
             thumbnail_image_url: p.thumbnail_image_url,
             website_url: p.website_url,
             twitter_url: p.twitter_url,
@@ -215,6 +249,10 @@ impl From<Politician> for PoliticianResult {
             votesmart_candidate_id: p.votesmart_candidate_id.unwrap(),
             votesmart_candidate_bio: serde_json::from_value(p.votesmart_candidate_bio.to_owned())
                 .unwrap(),
+            upcoming_race_id: match p.upcoming_race_id {
+                Some(id) => Some(ID::from(id)),
+                None => None,
+            },
             created_at: p.created_at,
             updated_at: p.updated_at,
         }

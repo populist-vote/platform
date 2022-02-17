@@ -81,7 +81,16 @@ impl User {
         let record = sqlx::query_as!(
             User,
             r#"
-                SELECT id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at FROM populist_user 
+                SELECT 
+                    id, 
+                    email, 
+                    username, 
+                    password, 
+                    role AS "role:Role", 
+                    created_at, 
+                    confirmed_at, 
+                    updated_at 
+                FROM populist_user 
                 WHERE $1 IN(email, username);
             "#,
             email_or_username
