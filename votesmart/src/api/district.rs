@@ -38,3 +38,36 @@ impl District<'_> {
         self.0.client.get(url).send().await
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use serde_json;
+
+    use crate::VotesmartProxy;
+
+    #[tokio::test]
+    async fn test_get_by_office_state() {
+        let proxy = VotesmartProxy::new().unwrap();
+        let response = proxy
+            .district()
+            .get_by_office_state(29949, "CO".to_string(), None)
+            .await
+            .unwrap();
+
+        let status = response.status();
+        let json = response.json::<serde_json::Value>().await.unwrap();
+        println!("{}", serde_json::to_string_pretty(&json).unwrap());
+        assert_eq!(status.is_success(), true);
+    }
+
+    #[tokio::test]
+    async fn test_get_by_zip() {
+        let proxy = VotesmartProxy::new().unwrap();
+        let response = proxy.district().get_by_zip(80521, None).await.unwrap();
+
+        let status = response.status();
+        let json = response.json::<serde_json::Value>().await.unwrap();
+        println!("{}", serde_json::to_string_pretty(&json).unwrap());
+        assert_eq!(status.is_success(), true);
+    }
+}

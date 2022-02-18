@@ -66,7 +66,7 @@ impl OrganizationMutation {
         &self,
         ctx: &Context<'_>,
         input: CreateOrganizationInput,
-    ) -> Result<OrganizationResult> {
+    ) -> Result<OrganizationResult, Error> {
         let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
         let new_record = Organization::create(db_pool, &input).await?;
 

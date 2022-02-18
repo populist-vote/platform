@@ -68,7 +68,7 @@ pub fn cors(environment: Environment) -> Cors {
     }
 
     match environment {
-        Environment::Local => cors.allow_origin("http://localhost:1234"),
+        Environment::Local => cors,
         Environment::Staging => cors.allow_origins_fn(allowed_staging_origins),
         Environment::Production => cors.allow_origins(vec![
             "https://populist-api-production.herokuapp.com",
