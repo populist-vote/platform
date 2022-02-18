@@ -16,6 +16,7 @@ use strum_macros::{Display, EnumIter, EnumString};
     Serialize,
     Deserialize,
 )]
+#[sqlx(type_name = "political_scope", rename_all = "lowercase")]
 pub enum PoliticalScope {
     Local,
     State,

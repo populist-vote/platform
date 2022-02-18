@@ -6,6 +6,7 @@ CREATE TABLE office (
     slug TEXT NOT NULL,
     title TEXT NOT NULL,
     office_type TEXT, /* useful for sorting */
+    district TEXT,
     term_length INTEGER, /* in years */
     political_scope political_scope NOT NULL,
     encumbent_id uuid NOT NULL,

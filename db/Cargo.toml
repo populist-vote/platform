@@ -10,10 +10,10 @@ votesmart = { path = "../votesmart" }
 chrono = { version = "0.4.19", features = ["serde"] }
 sqlx = { version = "0.5.9", features = [ "runtime-tokio-rustls", "postgres", "chrono", "uuid", "json", "offline" ] }
 tokio = { version = "1.8", features = ["full"] }
-uuid = { version = "0.8", features = ["serde", "v4"] }
+uuid = { version = "0.8.2", features = ["serde", "v4"] }
 lazy_static = "*"
 serde = "1.0.130"
-async-graphql = { version = "3.0.10", features = ["chrono"] }
+async-graphql = { version = "3.0.10", features = ["chrono", "uuid"] }
 dotenv = "*"
 anyhow = "1.0.45"
 strum = "0.22.0"

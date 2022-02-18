@@ -1,6 +1,7 @@
 use db::models::enums::State;
 use db::{models::enums::PoliticalScope, CreateOfficeInput, Office};
 use serde::{Deserialize, Serialize};
+use slugify::slugify;
 use std::error::Error;
 use std::process;
 use std::str::FromStr;
@@ -10,7 +11,12 @@ struct VotesmartOffice {
     name: Vec<String>,
     #[serde(rename = "type")]
     type_field: String,
-    state: String,
+    title: String,
+    status: String,
+    parties: String,
+    #[serde(rename = "stateId")]
+    state_id: String,
+    district: String,
 }
 
 async fn create_offices() -> Result<(), Box<dyn Error>> {
@@ -28,31 +34,38 @@ async fn create_offices() -> Result<(), Box<dyn Error>> {
     for politician in politicians {
         let office: VotesmartOffice = serde_json::from_value(politician.office.unwrap()).unwrap();
         // println!("{}", serde_json::to_string_pretty(&office).unwrap());
-        // Use these fields to create new Offices
-        // Use office_type
+
         let political_scope = match office.type_field.as_ref() {
-            "Mayor" => PoliticalScope::Local,
+            "Local Executive" => PoliticalScope::Local,
+            "Gubernatorial" => PoliticalScope::State,
+            "State Legislative" => PoliticalScope::State,
+            "Congressional" => PoliticalScope::Federal,
             _ => PoliticalScope::Federal,
         };
 
         let new_office_input = CreateOfficeInput {
-            slug: None,
+            slug: Some(slugify!(
+                format!("{} {}", office.name[0], office.district).as_str()
+            )),
             title: office.name.first().unwrap().to_owned(),
             office_type: Some(office.type_field),
+            district: Some(office.district),
             political_scope,
-            state: Some(State::from_str(&office.state).unwrap()),
+            state: Some(State::from_str(&office.state_id).unwrap()),
             encumbent_id: politician.id,
         };
-        Office::create(&pool.connection, &new_office_input).await?;
-    }
 
+        Office::create(&pool.connection, &new_office_input).await?;
+        println!("Office record has been created: {}", office.title);
+    }
+    println!("Offices have been successfully seeded.");
     Ok(())
 }
 
 #[tokio::main]
 async fn main() {
     if let Err(err) = create_offices().await {
-        println!("Error seeding bills: {}", err);
+        println!("Error seeding offices: {}", err);
         process::exit(1);
     }
 }
