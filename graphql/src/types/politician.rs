@@ -8,11 +8,11 @@ use db::{
     DateTime, Office, Race,
 };
 
+use super::{BillResult, IssueTagResult, OfficeResult, OrganizationResult, RaceResult};
+use crate::relay;
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 use votesmart::GetCandidateBioResponse;
-
-use super::{BillResult, IssueTagResult, OfficeResult, OrganizationResult, RaceResult};
 
 use chrono::Datelike;
 
@@ -178,7 +178,14 @@ impl PoliticianResult {
         Ok(results)
     }
 
-    async fn sponsored_bills(&self, ctx: &Context<'_>) -> FieldResult<Vec<BillResult>> {
+    async fn sponsored_bills(
+        &self,
+        ctx: &Context<'_>,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+    ) -> relay::ConnectionResult<BillResult> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let records = sqlx::query_as!(
             Bill,
@@ -191,8 +198,13 @@ impl PoliticianResult {
         .fetch_all(pool)
         .await?;
 
-        let results = records.into_iter().map(BillResult::from).collect();
-        Ok(results)
+        let results = records.into_iter().map(BillResult::from);
+        relay::query(
+            results.into_iter(),
+            relay::Params::new(after, before, first, last),
+            10,
+        )
+        .await
     }
 
     async fn current_office(&self, ctx: &Context<'_>) -> FieldResult<Option<OfficeResult>> {
