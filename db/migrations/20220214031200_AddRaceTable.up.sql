@@ -3,7 +3,7 @@ CREATE TYPE political_scope AS ENUM ('local', 'state', 'federal');
 
 CREATE TABLE office (
     id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-    slug TEXT NOT NULL,
+    slug TEXT NOT NULL UNIQUE,
     title TEXT NOT NULL,
     office_type TEXT, /* useful for sorting */
     district TEXT,
@@ -25,10 +25,11 @@ EXECUTE PROCEDURE set_updated_at();
 
 CREATE TABLE race (
     id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+    title TEXT NOT NULL,
+    slug TEXT NOT NULL UNIQUE,
     office_position TEXT NOT NULL,
     office_id uuid NOT NULL,
-    slug TEXT NOT NULL,
-    title TEXT NOT NULL,
+    race_type TEXT NOT NULL DEFAULT 'primary',
     description TEXT,
     ballotpedia_link TEXT,
     early_voting_begins_date DATE,
@@ -45,7 +46,7 @@ CREATE TABLE race (
 ALTER TABLE politician
 ADD COLUMN office_id uuid,
 ADD COLUMN upcoming_race_id uuid,
-ADD CONSTRAINT fk_office FOREIGN KEY(office_id) REFERENCES office(id),
+ADD CONSTRAINT fk_office FOREIGN KEY(office_id) REFERENCES office(id) ON DELETE CASCADE,
 ADD CONSTRAINT fk_race FOREIGN KEY(upcoming_race_id) REFERENCES race(id);
 
 CREATE TRIGGER set_updated_at

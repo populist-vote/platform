@@ -496,6 +496,7 @@ dependencies = [
  "dotenv",
  "graphql",
  "legiscan",
+ "rand",
  "serde",
  "serde_json",
  "serde_yaml",
