@@ -192,6 +192,7 @@ impl PoliticianResult {
             r#"
                 SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, history, votesmart_bill_id, created_at, updated_at FROM bill, jsonb_array_elements(legiscan_data->'sponsors') sponsors 
                 WHERE sponsors->>'votesmart_id' = $1
+                LIMIT 25
             "#,
             &self.votesmart_candidate_id.to_string()
         )
