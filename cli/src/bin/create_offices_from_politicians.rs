@@ -71,6 +71,7 @@ async fn create_offices() -> Result<(), Box<dyn Error>> {
                 .to_owned(),
             office_type: Some(office.type_field),
             district: Some(office.district),
+            municipality: None,
             political_scope,
             state: Some(State::from_str(&office.state_id).unwrap_or_default()),
             encumbent_id: politician.id,

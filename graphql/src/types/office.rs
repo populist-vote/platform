@@ -20,6 +20,7 @@ pub struct OfficeResult {
     district: Option<String>,
     political_scope: PoliticalScope,
     state: Option<State>,
+    municipality: Option<String>,
     created_at: DateTime,
     updated_at: DateTime,
 }
@@ -54,6 +55,7 @@ impl From<Office> for OfficeResult {
             district: o.district,
             political_scope: o.political_scope,
             state: o.state,
+            municipality: o.municipality,
             created_at: o.created_at,
             updated_at: o.updated_at,
         }
