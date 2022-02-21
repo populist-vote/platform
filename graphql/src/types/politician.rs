@@ -208,7 +208,7 @@ impl PoliticianResult {
         .await
     }
 
-    async fn current_office(&self, ctx: &Context<'_>) -> FieldResult<Option<OfficeResult>> {
+    pub async fn current_office(&self, ctx: &Context<'_>) -> FieldResult<Option<OfficeResult>> {
         let office_result = match &self.office_id {
             Some(id) => {
                 let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
