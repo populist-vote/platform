@@ -76,6 +76,7 @@ pub struct Experience {
 enum VotesmartExperience {
     Object(Experience),
     Array(Vec<Experience>),
+    None,
 }
 
 #[ComplexObject]
@@ -131,6 +132,7 @@ impl PoliticianResult {
 
                 Ok(years_in_office)
             }
+            VotesmartExperience::None => Ok(0),
         }
     }
 
