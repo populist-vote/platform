@@ -1,0 +1,117 @@
+{
+  "query": "\n                SELECT id, slug, title, bill_number, legislation_status AS \"legislation_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, history, votesmart_bill_id, created_at, updated_at FROM bill, jsonb_array_elements(legiscan_data->'sponsors') sponsors \n                WHERE sponsors->>'votesmart_id' = $1\n                LIMIT 25\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "bill_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "legislation_status:LegislationStatus",
+        "type_info": {
+          "Custom": {
+            "name": "legislation_status",
+            "kind": {
+              "Enum": [
+                "introduced",
+                "passed_house",
+                "passed_senate",
+                "failed_house",
+                "failed_senate",
+                "resolving_differences",
+                "sent_to_executive",
+                "became_law",
+                "vetoed",
+                "unknown"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "official_summary",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "populist_summary",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "full_text_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "legiscan_bill_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 10,
+        "name": "history",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 11,
+        "name": "votesmart_bill_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 12,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 13,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "aa42647503085c25cc53c2019a9784974d6ace0b4f26c379eea1927baaaffdb3"
+}
