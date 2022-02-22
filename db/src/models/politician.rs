@@ -5,7 +5,7 @@ use crate::{
 };
 use async_graphql::InputObject;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{json, Value};
 use slugify::slugify;
 use sqlx::{postgres::PgPool, FromRow};
 
@@ -147,6 +147,11 @@ impl Politician {
     ) -> Result<Self, sqlx::Error> {
         let slug = slugify!(&CreatePoliticianInput::full_name(input));
 
+        let vs_candidate_bio = match input.votesmart_candidate_bio.to_owned() {
+            Some(bio) => bio,
+            None => json!({}),
+        };
+
         let record = sqlx::query_as!(
             Politician,
             r#"
@@ -170,7 +175,7 @@ impl Politician {
             input.office_id,
             input.office_party as Option<PoliticalParty>,
             input.votesmart_candidate_id,
-            input.votesmart_candidate_bio,
+            vs_candidate_bio,
             input.website_url,
             input.upcoming_race_id
         )
