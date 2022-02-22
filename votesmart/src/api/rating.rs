@@ -1,7 +1,30 @@
 use crate::VotesmartProxy;
 use reqwest::{Error, Response};
+use serde_json::Value;
 
 pub struct Rating<'a>(pub &'a VotesmartProxy);
+
+pub struct CandidateRating {
+    pub candidate: Value,
+    pub general_info: Value,
+    pub rating: Vec<VsRating>,
+}
+
+pub struct VsRating {
+    pub categories: VsCategory,
+    pub rating: i8,
+    pub rating_id: i32,
+    pub rating_name: String,
+    pub rating_text: String,
+    pub sig_id: i32,
+    pub timespan: i32,
+}
+
+pub struct VsCategory(Vec<VsCategoryItem>);
+pub struct VsCategoryItem {
+    pub category_id: i32,
+    pub name: String,
+}
 
 impl Rating<'_> {
     /// This method dumps categories that contain released ratingss according to state.

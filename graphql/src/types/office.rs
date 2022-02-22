@@ -32,7 +32,7 @@ impl OfficeResult {
         let record = sqlx::query_as!(
             Politician,
             r#"
-                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, legiscan_people_id, upcoming_race_id, created_at, updated_at FROM politician
+                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, created_at, updated_at FROM politician
                 WHERE office_id = $1
             "#,
             uuid::Uuid::parse_str(&self.id.as_str()).unwrap()
