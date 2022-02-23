@@ -19,6 +19,8 @@ pub struct Organization {
     pub twitter_url: Option<String>,
     pub instagram_url: Option<String>,
     pub email: Option<String>,
+    pub votesmart_sig_id: Option<i32>,
+    pub headquarters_address_id: Option<uuid::Uuid>,
     pub headquarters_phone: Option<String>,
     pub tax_classification: Option<String>,
     // pub created_by: User,
@@ -37,6 +39,8 @@ pub struct CreateOrganizationInput {
     pub twitter_url: Option<String>,
     pub instagram_url: Option<String>,
     pub email: Option<String>,
+    pub votesmart_sig_id: Option<i32>,
+    pub headquarters_address_id: Option<uuid::Uuid>,
     pub headquarters_phone: Option<String>,
     pub tax_classification: Option<String>,
     pub issue_tags: Option<CreateOrConnectIssueTagInput>,
@@ -53,6 +57,8 @@ pub struct UpdateOrganizationInput {
     pub twitter_url: Option<String>,
     pub instagram_url: Option<String>,
     pub email: Option<String>,
+    pub votesmart_sig_id: Option<i32>,
+    pub headquarters_address_id: Option<uuid::Uuid>,
     pub headquarters_phone: Option<String>,
     pub tax_classification: Option<String>,
     pub issue_tags: Option<CreateOrConnectIssueTagInput>,
@@ -98,9 +104,9 @@ impl Organization {
                     RETURNING id AS author_id
                 ),
                 o AS (
-                    INSERT INTO organization (id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, tax_classification) 
-                    VALUES ((SELECT author_id FROM ins_author), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-                    RETURNING id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, tax_classification, created_at, updated_at
+                    INSERT INTO organization (id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification) 
+                    VALUES ((SELECT author_id FROM ins_author), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                    RETURNING id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, created_at, updated_at
                 )
                 SELECT o.* FROM o
             "#,
@@ -113,6 +119,8 @@ impl Organization {
             input.twitter_url,
             input.instagram_url,
             input.email,
+            input.votesmart_sig_id,
+            input.headquarters_address_id,
             input.headquarters_phone,
             input.tax_classification
         )
@@ -139,8 +147,10 @@ impl Organization {
                 twitter_url = COALESCE($8, twitter_url),
                 instagram_url = COALESCE($9, instagram_url),
                 email = COALESCE($10, email),
-                headquarters_phone = COALESCE($11, headquarters_phone),
-                tax_classification = COALESCE($12, tax_classification)
+                votesmart_sig_id = COALESCE($11, votesmart_sig_id),
+                headquarters_address_id = COALESCE($12, headquarters_address_id),
+                headquarters_phone = COALESCE($13, headquarters_phone),
+                tax_classification = COALESCE($14, tax_classification)
             WHERE id=$1
             RETURNING *",
             id,
@@ -153,6 +163,8 @@ impl Organization {
             input.twitter_url,
             input.instagram_url,
             input.email,
+            input.votesmart_sig_id,
+            input.headquarters_address_id,
             input.headquarters_phone,
             input.tax_classification
         )

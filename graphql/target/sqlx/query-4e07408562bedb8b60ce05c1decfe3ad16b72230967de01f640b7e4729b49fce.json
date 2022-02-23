@@ -1,0 +1,21 @@
+{
+  "query": "\n                SELECT votesmart_candidate_bio FROM politician\n                WHERE id = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "votesmart_candidate_bio",
+        "type_info": "Jsonb"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "b9dcef3a4dbcf4ec4af8c0bae59ed40bfceb00ed57ede6b81e22d51f93d08815"
+}

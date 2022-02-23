@@ -184,7 +184,7 @@ impl IssueTag {
         let records = sqlx::query_as!(
             Organization,
             r#"
-                SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, tax_classification, o.created_at, o.updated_at  FROM organization o
+                SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, votesmart_sig_id, headquarters_address_id, tax_classification, o.created_at, o.updated_at  FROM organization o
                 JOIN organization_issue_tags
                 ON organization_issue_tags.organization_id = o.id
                 WHERE organization_issue_tags.issue_tag_id = $1
