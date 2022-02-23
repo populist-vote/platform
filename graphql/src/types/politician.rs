@@ -1,3 +1,7 @@
+use super::{
+    votesmart::VsRating, BillResult, IssueTagResult, OfficeResult, OrganizationResult, RaceResult,
+};
+use crate::relay;
 use async_graphql::{ComplexObject, Context, Enum, FieldResult, SimpleObject, ID};
 use db::{
     models::{
@@ -7,9 +11,6 @@ use db::{
     },
     DateTime, Office, Race,
 };
-
-use super::{BillResult, IssueTagResult, OfficeResult, OrganizationResult, RaceResult};
-use crate::relay;
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 use votesmart::GetCandidateBioResponse;
@@ -44,6 +45,7 @@ pub struct PoliticianResult {
     office_party: Option<PoliticalParty>,
     votesmart_candidate_id: i32,
     votesmart_candidate_bio: GetCandidateBioResponse,
+    votesmart_candidate_ratings: Vec<VsRating>,
     upcoming_race_id: Option<ID>,
     created_at: DateTime,
     updated_at: DateTime,
@@ -263,7 +265,11 @@ impl From<Politician> for PoliticianResult {
             office_party: p.office_party,
             votesmart_candidate_id: p.votesmart_candidate_id.unwrap(),
             votesmart_candidate_bio: serde_json::from_value(p.votesmart_candidate_bio.to_owned())
-                .unwrap(),
+                .unwrap_or_default(),
+            votesmart_candidate_ratings: serde_json::from_value(
+                p.votesmart_candidate_ratings.to_owned(),
+            )
+            .unwrap_or_default(),
             upcoming_race_id: match p.upcoming_race_id {
                 Some(id) => Some(ID::from(id)),
                 None => None,

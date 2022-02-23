@@ -10,6 +10,7 @@ mod politician;
 mod race;
 mod upload;
 mod user;
+mod votesmart;
 
 pub use argument::ArgumentResult;
 pub use ballot_measure::BallotMeasureResult;
