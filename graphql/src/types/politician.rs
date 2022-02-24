@@ -1,18 +1,22 @@
+use std::sync::Arc;
+
 use super::{
     votesmart::VsRating, BillResult, IssueTagResult, OfficeResult, OrganizationResult, RaceResult,
 };
 use crate::relay;
-use async_graphql::{ComplexObject, Context, Enum, FieldResult, SimpleObject, ID};
+use async_graphql::{
+    dataloader::DataLoader, ComplexObject, Context, Enum, FieldResult, SimpleObject, ID,
+};
 use db::{
     models::{
         bill::Bill,
         enums::{LegislationStatus, PoliticalParty, State},
         politician::Politician,
     },
-    DateTime, Office, Race,
+    DateTime, Office, Organization, OrganizationLoader, Race,
 };
 use serde::{Deserialize, Serialize};
-use sqlx::{Pool, Postgres};
+use sqlx::{PgPool, Pool, Postgres};
 use votesmart::GetCandidateBioResponse;
 
 use chrono::Datelike;
@@ -81,6 +85,12 @@ enum VotesmartExperience {
     None,
 }
 
+#[derive(SimpleObject, Debug, Clone)]
+pub struct RatingResult {
+    vs_rating: VsRating,
+    organization: Option<OrganizationResult>,
+}
+
 #[ComplexObject]
 impl PoliticianResult {
     async fn full_name(&self) -> String {
@@ -93,6 +103,54 @@ impl PoliticianResult {
             ),
             None => format!("{} {}", &self.first_name, &self.last_name),
         }
+    }
+
+    /// Leverages Votesmart data for the time being
+    async fn ratings(
+        &self,
+        ctx: &Context<'_>,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+    ) -> relay::ConnectionResult<RatingResult> {
+        let mut ratings = vec![];
+        // let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
+
+        let unique_sig_ids = self
+            .votesmart_candidate_ratings
+            .iter()
+            .map(|rating| rating.sig_id.as_str().unwrap().parse::<i32>().unwrap())
+            .collect::<Vec<i32>>()
+            .into_iter()
+            .collect::<std::collections::HashSet<i32>>();
+
+        // Preload all organizations to avoid expensive n + 1
+        let organizations = Arc::new(
+            ctx.data_unchecked::<DataLoader<OrganizationLoader>>()
+                .load_many(unique_sig_ids)
+                .await?,
+        );
+
+        self.votesmart_candidate_ratings
+            .iter()
+            .for_each(|vs_rating| {
+                let sig_id = vs_rating.sig_id.as_str().unwrap().parse::<i32>().unwrap();
+                let organization = organizations.get(&sig_id).unwrap().to_owned();
+
+                let rating = RatingResult {
+                    vs_rating: vs_rating.to_owned(),
+                    organization: Some(OrganizationResult::from(organization)),
+                };
+                ratings.push(rating);
+            });
+
+        relay::query(
+            ratings.into_iter(),
+            relay::Params::new(after, before, first, last),
+            25,
+        )
+        .await
     }
 
     /// Calculates the total years a politician has been in office using

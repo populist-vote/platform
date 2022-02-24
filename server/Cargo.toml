@@ -7,6 +7,7 @@ default-run = "server"
 
 [dependencies]
 auth = { path = "../auth" }
+db = { path = "../db" }
 graphql = { path = "../graphql" }
 tokio = { version = "1.8", features = ["full"] }
 poem = { version = "1.2.59", features = ["compression"] }

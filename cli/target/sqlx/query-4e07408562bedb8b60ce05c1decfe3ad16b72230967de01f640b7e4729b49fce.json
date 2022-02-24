@@ -1,28 +1,26 @@
 {
-  "query": "\n                            UPDATE politician\n                            SET votesmart_candidate_ratings = $1\n                            WHERE id = $2\n                            RETURNING first_name, last_name\n                            ",
+  "query": "\n                    INSERT INTO address (\n                        line_1,\n                        line_2,\n                        city,\n                        state,\n                        postal_code,\n                        country\n                    ) VALUES (\n                        $1,\n                        $2,\n                        $3,\n                        $4,\n                        $5,\n                        $6\n                    ) RETURNING id\n                ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "first_name",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 1,
-        "name": "last_name",
-        "type_info": "Text"
+        "name": "id",
+        "type_info": "Uuid"
       }
     ],
     "parameters": {
       "Left": [
-        "Jsonb",
-        "Uuid"
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text"
       ]
     },
     "nullable": [
-      false,
       false
     ]
   },
-  "hash": "d7be1cf3a22986c1b5bb93c6a93336a37c474fcced2c8cd43b0605563ce1a390"
+  "hash": "cf4a5613358e6be7f9c40022ffd3e3957da8d66fa1498e4a707d968226fbf39a"
 }
