@@ -1,10 +1,13 @@
 use std::str::FromStr;
 
 use async_graphql::{
+    dataloader::DataLoader,
     extensions::ApolloTracing,
     http::{playground_source, GraphQLPlaygroundConfig},
     Request, Response,
 };
+
+use db::OrganizationLoader;
 use dotenv::dotenv;
 use graphql::{new_schema, PopulistSchema};
 use log::info;
@@ -19,7 +22,6 @@ use poem::{
 use regex::Regex;
 use serde_json::Value;
 use server::Environment;
-use sqlx::postgres::PgPoolOptions;
 
 #[handler]
 fn root() -> impl IntoResponse {
@@ -88,15 +90,17 @@ async fn main() -> Result<(), std::io::Error> {
     dotenv().ok();
     pretty_env_logger::init();
 
-    let db_url = std::env::var("DATABASE_URL").unwrap();
+    db::init_pool().await.unwrap();
+    let pool = db::pool().await;
 
-    let pool = PgPoolOptions::new()
-        .max_connections(16)
-        .connect(&db_url)
-        .await
-        .unwrap();
-
-    let schema = new_schema(pool).extension(ApolloTracing).finish();
+    let schema = new_schema()
+        .data(pool.connection.to_owned())
+        .data(DataLoader::new(
+            OrganizationLoader::new(&pool.connection.to_owned()),
+            tokio::spawn,
+        ))
+        .extension(ApolloTracing)
+        .finish();
 
     let environment = Environment::from_str(&std::env::var("ENVIRONMENT").unwrap()).unwrap();
     let app = Route::new()

@@ -6,19 +6,20 @@ pub mod types;
 
 use crate::mutation::Mutation;
 use crate::query::Query;
+
 // use crate::subscription::Subscription;
+use crate::types::Error;
 use async_graphql::{EmptySubscription, Schema, SchemaBuilder, ID};
+
 use dotenv::dotenv;
 use s3::bucket::Bucket;
 use s3::creds::Credentials;
 use sqlx::PgPool;
 
-use crate::types::Error;
-
 pub type PopulistSchema = Schema<Query, Mutation, EmptySubscription>;
 
-pub fn new_schema(db_pool: PgPool) -> SchemaBuilder<Query, Mutation, EmptySubscription> {
-    Schema::build(Query::default(), Mutation::default(), EmptySubscription).data(db_pool)
+pub fn new_schema() -> SchemaBuilder<Query, Mutation, EmptySubscription> {
+    Schema::build(Query::default(), Mutation::default(), EmptySubscription)
 }
 
 pub struct File {
