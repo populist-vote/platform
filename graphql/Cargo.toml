@@ -6,7 +6,7 @@ publish = false
 
 [dependencies]
 anyhow = "1.0.45"
-async-graphql = { version = "3.0.10", features = ["uuid", "chrono", "unblock", "dataloader"] }
+async-graphql = { version = "3.0.10", features = ["uuid", "chrono", "unblock", "dataloader", "apollo_persisted_queries"] }
 bytes = "1.1.0"
 chrono = "0.4.19"
 auth = { path = "../auth" }

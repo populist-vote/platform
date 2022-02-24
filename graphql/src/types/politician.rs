@@ -13,10 +13,10 @@ use db::{
         enums::{LegislationStatus, PoliticalParty, State},
         politician::Politician,
     },
-    DateTime, Office, Organization, OrganizationLoader, Race,
+    DateTime, Office, OrganizationLoader, Race,
 };
 use serde::{Deserialize, Serialize};
-use sqlx::{PgPool, Pool, Postgres};
+use sqlx::{Pool, Postgres};
 use votesmart::GetCandidateBioResponse;
 
 use chrono::Datelike;

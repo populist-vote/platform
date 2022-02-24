@@ -2,7 +2,10 @@ use std::str::FromStr;
 
 use async_graphql::{
     dataloader::DataLoader,
-    extensions::ApolloTracing,
+    extensions::{
+        apollo_persisted_queries::{ApolloPersistedQueries, LruCacheStorage},
+        ApolloTracing,
+    },
     http::{playground_source, GraphQLPlaygroundConfig},
     Request, Response,
 };
@@ -100,6 +103,7 @@ async fn main() -> Result<(), std::io::Error> {
             tokio::spawn,
         ))
         .extension(ApolloTracing)
+        .extension(ApolloPersistedQueries::new(LruCacheStorage::new(256)))
         .finish();
 
     let environment = Environment::from_str(&std::env::var("ENVIRONMENT").unwrap()).unwrap();

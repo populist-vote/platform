@@ -173,8 +173,11 @@ async fn create_organizations() -> Result<(), Box<dyn Error>> {
                 votesmart_sig_id: Some(sig_id),
                 headquarters_address_id: Some(new_address.id),
             };
-            Organization::create(&pool.connection, &new_org_input).await?;
-            println!("Created {}", name);
+            if let Err(err) = Organization::create(&pool.connection, &new_org_input).await {
+                println!("Error creating {}: {}", name, err);
+            } else {
+                println!("Created {}", name);
+            }
         }
     }
 
