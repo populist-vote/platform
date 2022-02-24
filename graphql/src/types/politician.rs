@@ -136,11 +136,14 @@ impl PoliticianResult {
             .iter()
             .for_each(|vs_rating| {
                 let sig_id = vs_rating.sig_id.as_str().unwrap().parse::<i32>().unwrap();
-                let organization = organizations.get(&sig_id).unwrap().to_owned();
+                let organization = organizations.get(&sig_id).to_owned();
 
                 let rating = RatingResult {
                     vs_rating: vs_rating.to_owned(),
-                    organization: Some(OrganizationResult::from(organization)),
+                    organization: match organization {
+                        Some(org) => Some(OrganizationResult::from(org.to_owned())),
+                        None => None,
+                    },
                 };
                 ratings.push(rating);
             });
