@@ -5,7 +5,7 @@ use super::{
 };
 use crate::relay;
 use async_graphql::{
-    dataloader::DataLoader, ComplexObject, Context, Enum, FieldResult, SimpleObject, ID,
+    dataloader::DataLoader, ComplexObject, Context, Enum, Result, SimpleObject, ID,
 };
 use db::{
     models::{
@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 use votesmart::GetCandidateBioResponse;
 
-use chrono::Datelike;
+use chrono::{Datelike, Local, NaiveDate};
 
 #[derive(Enum, Copy, Clone, Eq, PartialEq)]
 enum OfficeType {
@@ -105,7 +105,25 @@ impl PoliticianResult {
         }
     }
 
-    /// Leverages Votesmart data for the time being
+    async fn age(&self) -> Option<i64> {
+        let dob = NaiveDate::parse_from_str(
+            &self.votesmart_candidate_bio.candidate.birth_date,
+            "%m/%d/%Y",
+        );
+        // Votesmart dob may be in a whack format
+        if let Ok(dob) = dob {
+            // There must be a better way to get NaiveDate.today but 🤷
+            let now =
+                NaiveDate::parse_from_str(&Local::now().format("%m/%d/%Y").to_string(), "%m/%d/%Y")
+                    .unwrap();
+            let age = (now - dob).num_weeks() / 52;
+            Some(age)
+        } else {
+            None
+        }
+    }
+
+    /// Leverages Votesmart ratings data for the time being
     async fn ratings(
         &self,
         ctx: &Context<'_>,
@@ -159,7 +177,7 @@ impl PoliticianResult {
     /// Calculates the total years a politician has been in office using
     /// the votesmart politicial experience array.  Does not take into account
     /// objects where the politician is considered a 'candidate'
-    async fn years_in_public_office(&self) -> FieldResult<i32> {
+    async fn years_in_public_office(&self) -> Result<i32> {
         let experience: VotesmartExperience = serde_json::from_value(
             self.votesmart_candidate_bio.candidate.political["experience"].to_owned(),
         )
@@ -199,7 +217,7 @@ impl PoliticianResult {
         }
     }
 
-    async fn endorsements(&self, ctx: &Context<'_>) -> FieldResult<Endorsements> {
+    async fn endorsements(&self, ctx: &Context<'_>) -> Result<Endorsements> {
         let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
 
         let mut politician_results: Vec<PoliticianResult> = vec![];
@@ -235,7 +253,7 @@ impl PoliticianResult {
         })
     }
 
-    async fn issue_tags(&self, ctx: &Context<'_>) -> FieldResult<Vec<IssueTagResult>> {
+    async fn issue_tags(&self, ctx: &Context<'_>) -> Result<Vec<IssueTagResult>> {
         let pool = ctx.data_unchecked::<Pool<Postgres>>();
         let records =
             Politician::issue_tags(pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
@@ -273,7 +291,7 @@ impl PoliticianResult {
         .await
     }
 
-    pub async fn current_office(&self, ctx: &Context<'_>) -> FieldResult<Option<OfficeResult>> {
+    pub async fn current_office(&self, ctx: &Context<'_>) -> Result<Option<OfficeResult>> {
         let office_result = match &self.office_id {
             Some(id) => {
                 let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
@@ -287,7 +305,7 @@ impl PoliticianResult {
         Ok(office_result)
     }
 
-    async fn upcoming_race(&self, ctx: &Context<'_>) -> FieldResult<Option<RaceResult>> {
+    async fn upcoming_race(&self, ctx: &Context<'_>) -> Result<Option<RaceResult>> {
         let race_result = match &self.upcoming_race_id {
             Some(id) => {
                 let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
