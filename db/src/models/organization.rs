@@ -97,7 +97,6 @@ impl Loader<i32> for OrganizationLoader {
 
     // Currently being used for loading via Votesmart sig ids, but should also implement for org ids
     async fn load(&self, keys: &[i32]) -> Result<HashMap<i32, Self::Value>, Self::Error> {
-        println!("keys = {:?}", keys);
         let query = format!(
             "SELECT * FROM organization WHERE votesmart_sig_id IN ({})",
             keys.iter().join(",")

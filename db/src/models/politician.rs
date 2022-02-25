@@ -313,6 +313,7 @@ impl Politician {
                 WHERE (($1::text = '') IS NOT FALSE OR to_tsvector(concat_ws(' ', first_name, middle_name, last_name, nickname, preferred_name, ballot_name)) @@ to_tsquery($1))
                 AND ($2::state IS NULL OR home_state = $2)
                 AND ($3::political_party IS NULL OR office_party = $3)
+                ORDER BY last_name ASC
             "#,
             search_query,
             search.home_state as Option<State>,

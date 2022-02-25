@@ -14,7 +14,6 @@ use async_graphql::{EmptySubscription, Schema, SchemaBuilder, ID};
 use dotenv::dotenv;
 use s3::bucket::Bucket;
 use s3::creds::Credentials;
-use sqlx::PgPool;
 
 pub type PopulistSchema = Schema<Query, Mutation, EmptySubscription>;
 
