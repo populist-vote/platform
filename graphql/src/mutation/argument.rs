@@ -3,9 +3,8 @@ use db::{
     models::vote::{VotableType, Vote, VoteDirection},
     Argument, UpdateArgumentInput,
 };
-use sqlx::{Pool, Postgres};
 
-use crate::types::ArgumentResult;
+use crate::{context::ApiContext, types::ArgumentResult};
 #[derive(Default)]
 pub struct ArgumentMutation;
 
@@ -22,14 +21,15 @@ impl ArgumentMutation {
         id: ID,
         input: UpdateArgumentInput,
     ) -> Result<ArgumentResult> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let updated_record = Argument::update(db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let updated_record =
+            Argument::update(&db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
         Ok(ArgumentResult::from(updated_record))
     }
 
     async fn delete_argument(&self, ctx: &Context<'_>, id: String) -> Result<DeleteArgumentResult> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
-        Argument::delete(db_pool, uuid::Uuid::parse_str(&id)?).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        Argument::delete(&db_pool, uuid::Uuid::parse_str(&id)?).await?;
         Ok(DeleteArgumentResult { id })
     }
 
@@ -39,14 +39,14 @@ impl ArgumentMutation {
         argument_id: ID,
         populist_user_id: ID,
     ) -> Result<bool> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let vote = Vote {
             populist_user_id: uuid::Uuid::parse_str(&populist_user_id)?,
             votable_id: uuid::Uuid::parse_str(&argument_id)?,
             votable_type: VotableType::Argument,
             direction: VoteDirection::UP,
         };
-        Vote::upsert(db_pool, vote).await?;
+        Vote::upsert(&db_pool, vote).await?;
 
         Ok(true)
     }
@@ -57,14 +57,14 @@ impl ArgumentMutation {
         argument_id: ID,
         populist_user_id: ID,
     ) -> Result<bool> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let vote = Vote {
             populist_user_id: uuid::Uuid::parse_str(&populist_user_id)?,
             votable_id: uuid::Uuid::parse_str(&argument_id)?,
             votable_type: VotableType::Argument,
             direction: VoteDirection::DOWN,
         };
-        Vote::upsert(db_pool, vote).await?;
+        Vote::upsert(&db_pool, vote).await?;
 
         Ok(true)
     }

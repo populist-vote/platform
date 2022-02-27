@@ -1,8 +1,7 @@
 use async_graphql::*;
 use db::{CreateIssueTagInput, IssueTag, UpdateIssueTagInput};
-use sqlx::{Pool, Postgres};
 
-use crate::{mutation::StaffOnly, types::IssueTagResult};
+use crate::{context::ApiContext, mutation::StaffOnly, types::IssueTagResult};
 
 #[derive(Default)]
 pub struct IssueTagMutation;
@@ -20,8 +19,8 @@ impl IssueTagMutation {
         ctx: &Context<'_>,
         input: CreateIssueTagInput,
     ) -> Result<IssueTagResult> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let new_record = IssueTag::create(db_pool, &input).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let new_record = IssueTag::create(&db_pool, &input).await?;
         Ok(IssueTagResult::from(new_record))
     }
 
@@ -32,8 +31,9 @@ impl IssueTagMutation {
         id: String,
         input: UpdateIssueTagInput,
     ) -> Result<IssueTagResult> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let updated_record = IssueTag::update(db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let updated_record =
+            IssueTag::update(&db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
         Ok(IssueTagResult::from(updated_record))
     }
 
@@ -43,8 +43,8 @@ impl IssueTagMutation {
         ctx: &Context<'_>,
         id: String,
     ) -> Result<DeleteIssueTagResult> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
-        IssueTag::delete(db_pool, uuid::Uuid::parse_str(&id)?).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        IssueTag::delete(&db_pool, uuid::Uuid::parse_str(&id)?).await?;
         Ok(DeleteIssueTagResult { id })
     }
 }

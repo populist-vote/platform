@@ -7,6 +7,7 @@ use sqlx::{Pool, Postgres};
 use std::str::FromStr;
 
 use crate::{
+    context::ApiContext,
     mutation::StaffOnly,
     types::{Error, OrganizationResult},
 };
@@ -66,12 +67,12 @@ impl OrganizationMutation {
         &self,
         ctx: &Context<'_>,
         input: CreateOrganizationInput,
-    ) -> Result<OrganizationResult, Error> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let new_record = Organization::create(db_pool, &input).await?;
+    ) -> Result<OrganizationResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let new_record = Organization::create(&db_pool, &input).await?;
 
         if input.issue_tags.is_some() {
-            handle_nested_issue_tags(db_pool, new_record.id, input.issue_tags.unwrap()).await?;
+            handle_nested_issue_tags(&db_pool, new_record.id, input.issue_tags.unwrap()).await?;
         }
 
         Ok(OrganizationResult::from(new_record))
@@ -83,13 +84,14 @@ impl OrganizationMutation {
         ctx: &Context<'_>,
         id: String,
         input: UpdateOrganizationInput,
-    ) -> Result<OrganizationResult, Error> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
+    ) -> Result<OrganizationResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let updated_record =
-            Organization::update(db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
+            Organization::update(&db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
 
         if input.issue_tags.is_some() {
-            handle_nested_issue_tags(db_pool, updated_record.id, input.issue_tags.unwrap()).await?;
+            handle_nested_issue_tags(&db_pool, updated_record.id, input.issue_tags.unwrap())
+                .await?;
         }
 
         Ok(OrganizationResult::from(updated_record))
@@ -101,8 +103,8 @@ impl OrganizationMutation {
         ctx: &Context<'_>,
         id: String,
     ) -> Result<DeleteOrganizationResult> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
-        Organization::delete(db_pool, uuid::Uuid::parse_str(&id)?).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        Organization::delete(&db_pool, uuid::Uuid::parse_str(&id)?).await?;
         Ok(DeleteOrganizationResult { id })
     }
 }

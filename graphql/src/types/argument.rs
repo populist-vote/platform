@@ -3,7 +3,8 @@ use db::{
     models::{enums::AuthorType, vote::Vote},
     Argument, DateTime, Organization, Politician,
 };
-use sqlx::{Pool, Postgres};
+
+use crate::context::ApiContext;
 
 use super::{OrganizationResult, PoliticianResult};
 
@@ -29,14 +30,14 @@ pub struct ArgumentResult {
 #[ComplexObject]
 impl ArgumentResult {
     async fn author(&self, ctx: &Context<'_>) -> FieldResult<AuthorResult> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let result = match self.author_type {
             AuthorType::Politician => AuthorResult::PoliticianResult(PoliticianResult::from(
-                Politician::find_by_id(pool, uuid::Uuid::parse_str(self.author_id.as_str())?)
+                Politician::find_by_id(&db_pool, uuid::Uuid::parse_str(self.author_id.as_str())?)
                     .await?,
             )),
             AuthorType::Organization => AuthorResult::OrganizationResult(OrganizationResult::from(
-                Organization::find_by_id(pool, uuid::Uuid::parse_str(self.author_id.as_str())?)
+                Organization::find_by_id(&db_pool, uuid::Uuid::parse_str(self.author_id.as_str())?)
                     .await?,
             )),
         };
@@ -45,8 +46,8 @@ impl ArgumentResult {
     }
 
     async fn votes(&self, ctx: &Context<'_>) -> Result<i64> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let total = Vote::count(pool, uuid::Uuid::parse_str(self.id.as_str())?).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let total = Vote::count(&db_pool, uuid::Uuid::parse_str(self.id.as_str())?).await?;
         Ok(total)
     }
 }

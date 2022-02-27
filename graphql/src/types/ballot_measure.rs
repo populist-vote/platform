@@ -6,7 +6,6 @@ use db::{
     },
     DateTime,
 };
-use sqlx::{Pool, Postgres};
 
 #[derive(SimpleObject)]
 #[graphql(complex)]
@@ -32,7 +31,6 @@ pub struct BallotMeasureResult {
 impl BallotMeasureResult {
     async fn arguments(&self, ctx: &Context<'_>) -> FieldResult<Vec<BallotMeasureResult>> {
         //Change to ArgumentResult once implemented
-        let _pool = ctx.data_unchecked::<Pool<Postgres>>();
         todo!()
     }
 }

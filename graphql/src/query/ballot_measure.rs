@@ -1,8 +1,7 @@
 use async_graphql::{Context, FieldResult, Object};
 use db::{BallotMeasure, BallotMeasureSearch};
-use sqlx::{Pool, Postgres};
 
-use crate::types::BallotMeasureResult;
+use crate::{context::ApiContext, types::BallotMeasureResult};
 
 #[derive(Default)]
 pub struct BallotMeasureQuery;
@@ -13,8 +12,8 @@ impl BallotMeasureQuery {
         &self,
         ctx: &Context<'_>,
     ) -> FieldResult<Vec<BallotMeasureResult>> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let records = BallotMeasure::index(pool).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records = BallotMeasure::index(&db_pool).await?;
         let results = records.into_iter().map(BallotMeasureResult::from).collect();
         Ok(results)
     }
@@ -24,8 +23,8 @@ impl BallotMeasureQuery {
         ctx: &Context<'_>,
         #[graphql(desc = "Search by voteStatus, name, or slug")] search: BallotMeasureSearch,
     ) -> FieldResult<Vec<BallotMeasureResult>> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let records = BallotMeasure::search(pool, &search).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records = BallotMeasure::search(&db_pool, &search).await?;
         let results = records.into_iter().map(BallotMeasureResult::from).collect();
         Ok(results)
     }

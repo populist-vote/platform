@@ -1,11 +1,7 @@
-use async_graphql::{Context, Object, SimpleObject};
+use async_graphql::{Context, Object, Result, SimpleObject};
 use db::{CreateRaceInput, Race, UpdateRaceInput};
-use sqlx::{Pool, Postgres};
 
-use crate::{
-    mutation::StaffOnly,
-    types::{Error, RaceResult},
-};
+use crate::{context::ApiContext, mutation::StaffOnly, types::RaceResult};
 
 #[derive(Default)]
 pub struct RaceMutation;
@@ -18,12 +14,8 @@ struct DeleteRaceResult {
 #[Object]
 impl RaceMutation {
     #[graphql(guard = "StaffOnly")]
-    async fn create_race(
-        &self,
-        ctx: &Context<'_>,
-        input: CreateRaceInput,
-    ) -> Result<RaceResult, Error> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
+    async fn create_race(&self, ctx: &Context<'_>, input: CreateRaceInput) -> Result<RaceResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let new_race = Race::create(&db_pool, &input).await?;
         Ok(new_race.into())
     }
@@ -34,15 +26,15 @@ impl RaceMutation {
         ctx: &Context<'_>,
         id: String,
         input: UpdateRaceInput,
-    ) -> Result<RaceResult, Error> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
+    ) -> Result<RaceResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let updated_race = Race::update(&db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
         Ok(updated_race.into())
     }
 
     #[graphql(guard = "StaffOnly")]
-    async fn delete_race(&self, ctx: &Context<'_>, id: String) -> Result<DeleteRaceResult, Error> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
+    async fn delete_race(&self, ctx: &Context<'_>, id: String) -> Result<DeleteRaceResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         Race::delete(&db_pool, uuid::Uuid::parse_str(&id)?).await?;
         Ok(DeleteRaceResult { id })
     }

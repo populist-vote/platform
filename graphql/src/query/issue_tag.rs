@@ -1,8 +1,7 @@
 use async_graphql::{Context, FieldResult, Object};
 use db::{IssueTag, IssueTagSearch};
-use sqlx::{Pool, Postgres};
 
-use crate::types::IssueTagResult;
+use crate::{context::ApiContext, types::IssueTagResult};
 
 #[derive(Default)]
 pub struct IssueTagQuery;
@@ -14,15 +13,15 @@ impl IssueTagQuery {
         ctx: &Context<'_>,
         #[graphql(desc = "Search issue tag by slug")] slug: String,
     ) -> FieldResult<IssueTagResult> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let record = IssueTag::find_by_slug(pool, slug).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let record = IssueTag::find_by_slug(&db_pool, slug).await?;
         let result = IssueTagResult::from(record);
         Ok(result)
     }
 
     async fn all_issue_tags(&self, ctx: &Context<'_>) -> FieldResult<Vec<IssueTagResult>> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let records = IssueTag::index(pool).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records = IssueTag::index(&db_pool).await?;
         let results = records.into_iter().map(IssueTagResult::from).collect();
         Ok(results)
     }
@@ -32,8 +31,8 @@ impl IssueTagQuery {
         ctx: &Context<'_>,
         #[graphql(desc = "Search by issue tag name")] search: IssueTagSearch,
     ) -> FieldResult<Vec<IssueTagResult>> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let records = IssueTag::search(pool, &search).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records = IssueTag::search(&db_pool, &search).await?;
         let results = records.into_iter().map(IssueTagResult::from).collect();
         Ok(results)
     }

@@ -1,26 +1,19 @@
 {
-  "query": "\n                    INSERT INTO address (\n                        line_1,\n                        line_2,\n                        city,\n                        state,\n                        postal_code,\n                        country\n                    ) VALUES (\n                        $1,\n                        $2,\n                        $3,\n                        $4,\n                        $5,\n                        $6\n                    ) RETURNING id\n                ",
+  "query": "\n            SELECT votesmart_candidate_ratings FROM politician\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id",
-        "type_info": "Uuid"
+        "name": "votesmart_candidate_ratings",
+        "type_info": "Jsonb"
       }
     ],
     "parameters": {
-      "Left": [
-        "Text",
-        "Text",
-        "Text",
-        "Text",
-        "Text",
-        "Text"
-      ]
+      "Left": []
     },
     "nullable": [
       false
     ]
   },
-  "hash": "cf4a5613358e6be7f9c40022ffd3e3957da8d66fa1498e4a707d968226fbf39a"
+  "hash": "07a9c6dc585911be05890f4a8d9189fb8c84a6bc0b4440aa79230d516b2f0f07"
 }

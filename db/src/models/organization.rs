@@ -85,7 +85,7 @@ impl Default for OrganizationSearch {
 pub struct OrganizationLoader(PgPool);
 
 impl OrganizationLoader {
-    pub fn new(pool: &PgPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self(pool.to_owned())
     }
 }
@@ -102,11 +102,13 @@ impl Loader<i32> for OrganizationLoader {
             keys.iter().join(",")
         );
 
-        Ok(sqlx::query_as(&query)
+        let cache = sqlx::query_as(&query)
             .fetch(&self.0)
             .map_ok(|org: Organization| (org.votesmart_sig_id.unwrap(), org))
             .try_collect()
-            .await?)
+            .await?;
+
+        Ok(cache)
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::types::PoliticianResult;
+use crate::{context::ApiContext, types::PoliticianResult};
 use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
 use db::{
     models::{
@@ -8,7 +8,6 @@ use db::{
     },
     DateTime,
 };
-use sqlx::{Pool, Postgres};
 
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
@@ -28,7 +27,7 @@ pub struct OfficeResult {
 #[ComplexObject]
 impl OfficeResult {
     async fn encumbent(&self, ctx: &Context<'_>) -> FieldResult<PoliticianResult> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query_as!(
             Politician,
             r#"
@@ -37,7 +36,7 @@ impl OfficeResult {
             "#,
             uuid::Uuid::parse_str(&self.id.as_str()).unwrap()
         )
-        .fetch_one(pool)
+        .fetch_one(&db_pool)
         .await?;
 
         let politician_result = PoliticianResult::from(record);

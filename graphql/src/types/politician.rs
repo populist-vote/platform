@@ -3,20 +3,18 @@ use std::sync::Arc;
 use super::{
     votesmart::VsRating, BillResult, IssueTagResult, OfficeResult, OrganizationResult, RaceResult,
 };
-use crate::relay;
-use async_graphql::{
-    dataloader::DataLoader, ComplexObject, Context, Enum, Result, SimpleObject, ID,
-};
+use crate::{context::ApiContext, relay};
+use async_graphql::{ComplexObject, Context, Enum, Result, SimpleObject, ID};
 use db::{
     models::{
         bill::Bill,
         enums::{LegislationStatus, PoliticalParty, State},
         politician::Politician,
     },
-    DateTime, Office, OrganizationLoader, Race,
+    DateTime, Office, Race,
 };
 use serde::{Deserialize, Serialize};
-use sqlx::{Pool, Postgres};
+
 use votesmart::GetCandidateBioResponse;
 
 use chrono::{Datelike, Local, NaiveDate};
@@ -133,7 +131,7 @@ impl PoliticianResult {
         last: Option<i32>,
     ) -> relay::ConnectionResult<RatingResult> {
         let mut ratings = vec![];
-        // let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
+        // let db_pool = ctx.data::<ApiContext>()?.pool.clone();
 
         let unique_sig_ids = self
             .votesmart_candidate_ratings
@@ -145,7 +143,9 @@ impl PoliticianResult {
 
         // Preload all organizations to avoid expensive n + 1
         let organizations = Arc::new(
-            ctx.data_unchecked::<DataLoader<OrganizationLoader>>()
+            ctx.data::<ApiContext>()?
+                .loaders
+                .organization_loader
                 .load_many(unique_sig_ids)
                 .await?,
         );
@@ -218,14 +218,14 @@ impl PoliticianResult {
     }
 
     async fn endorsements(&self, ctx: &Context<'_>) -> Result<Endorsements> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
 
         let mut politician_results: Vec<PoliticianResult> = vec![];
         let mut organization_results: Vec<OrganizationResult> = vec![];
 
         if ctx.look_ahead().field("organizations").exists() {
             let organization_records = Politician::organization_endorsements(
-                db_pool,
+                &db_pool,
                 uuid::Uuid::parse_str(&self.id).unwrap(),
             )
             .await?;
@@ -237,7 +237,7 @@ impl PoliticianResult {
 
         if ctx.look_ahead().field("politicians").exists() {
             let politician_records = Politician::politician_endorsements(
-                db_pool,
+                &db_pool,
                 uuid::Uuid::parse_str(&self.id).unwrap(),
             )
             .await?;
@@ -254,9 +254,9 @@ impl PoliticianResult {
     }
 
     async fn issue_tags(&self, ctx: &Context<'_>) -> Result<Vec<IssueTagResult>> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let records =
-            Politician::issue_tags(pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
+            Politician::issue_tags(&db_pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
         let results = records.into_iter().map(IssueTagResult::from).collect();
         Ok(results)
     }
@@ -269,7 +269,7 @@ impl PoliticianResult {
         first: Option<i32>,
         last: Option<i32>,
     ) -> relay::ConnectionResult<BillResult> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let records = sqlx::query_as!(
             Bill,
             r#"
@@ -279,7 +279,7 @@ impl PoliticianResult {
             "#,
             &self.votesmart_candidate_id.to_string()
         )
-        .fetch_all(pool)
+        .fetch_all(&db_pool)
         .await?;
 
         let results = records.into_iter().map(BillResult::from);
@@ -294,9 +294,9 @@ impl PoliticianResult {
     pub async fn current_office(&self, ctx: &Context<'_>) -> Result<Option<OfficeResult>> {
         let office_result = match &self.office_id {
             Some(id) => {
-                let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
+                let db_pool = ctx.data::<ApiContext>()?.pool.clone();
                 let office =
-                    Office::find_by_id(db_pool, uuid::Uuid::parse_str(id).unwrap()).await?;
+                    Office::find_by_id(&db_pool, uuid::Uuid::parse_str(id).unwrap()).await?;
                 Some(OfficeResult::from(office))
             }
             None => None,
@@ -308,8 +308,8 @@ impl PoliticianResult {
     async fn upcoming_race(&self, ctx: &Context<'_>) -> Result<Option<RaceResult>> {
         let race_result = match &self.upcoming_race_id {
             Some(id) => {
-                let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
-                let race = Race::find_by_id(db_pool, uuid::Uuid::parse_str(id).unwrap()).await?;
+                let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+                let race = Race::find_by_id(&db_pool, uuid::Uuid::parse_str(id).unwrap()).await?;
                 Some(RaceResult::from(race))
             }
             None => None,

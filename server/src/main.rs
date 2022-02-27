@@ -1,7 +1,6 @@
 use std::str::FromStr;
 
 use async_graphql::{
-    dataloader::DataLoader,
     extensions::{
         apollo_persisted_queries::{ApolloPersistedQueries, LruCacheStorage},
         ApolloTracing,
@@ -10,9 +9,8 @@ use async_graphql::{
     Request, Response,
 };
 
-use db::OrganizationLoader;
 use dotenv::dotenv;
-use graphql::{new_schema, PopulistSchema};
+use graphql::{context::ApiContext, new_schema, PopulistSchema};
 use log::info;
 use poem::{
     get, handler,
@@ -95,13 +93,10 @@ async fn main() -> Result<(), std::io::Error> {
 
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
+    let context = ApiContext::new(pool.connection.clone());
 
     let schema = new_schema()
-        .data(pool.connection.to_owned())
-        .data(DataLoader::new(
-            OrganizationLoader::new(&pool.connection.to_owned()),
-            tokio::spawn,
-        ))
+        .data(context)
         .extension(ApolloTracing)
         .extension(ApolloPersistedQueries::new(LruCacheStorage::new(256)))
         .finish();

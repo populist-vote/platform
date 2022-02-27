@@ -1,6 +1,7 @@
 use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
 use db::{models::issue_tag::IssueTag, DateTime};
-use sqlx::{Pool, Postgres};
+
+use crate::context::ApiContext;
 
 use super::{BallotMeasureResult, BillResult, OrganizationResult, PoliticianResult};
 
@@ -22,8 +23,8 @@ impl IssueTagResult {
     }
 
     async fn organizations(&self, ctx: &Context<'_>) -> FieldResult<Vec<OrganizationResult>> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let records = IssueTag::organizations(pool, uuid::Uuid::parse_str(&self.id)?).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records = IssueTag::organizations(&db_pool, uuid::Uuid::parse_str(&self.id)?).await?;
         let results = records.into_iter().map(OrganizationResult::from).collect();
         Ok(results)
     }

@@ -1,8 +1,7 @@
 use async_graphql::{Context, FieldResult, Object};
 use db::{Election, ElectionSearchInput};
-use sqlx::{Pool, Postgres};
 
-use crate::types::ElectionResult;
+use crate::{context::ApiContext, types::ElectionResult};
 
 #[derive(Default)]
 pub struct ElectionQuery;
@@ -10,11 +9,11 @@ pub struct ElectionQuery;
 #[Object]
 impl ElectionQuery {
     async fn all_elections(&self, ctx: &Context<'_>) -> FieldResult<Vec<ElectionResult>> {
-        let token = ctx.data_unchecked::<Option<String>>();
+        // let token = ctx.data_unchecked::<Option<String>>();
         // let auth_claim = auth::validate_token(token.as_ref().unwrap()).await;
-        println!("{:?}", token);
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let records = Election::index(pool).await?;
+        // println!("{:?}", token);
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records = Election::index(&db_pool).await?;
         let results = records.into_iter().map(ElectionResult::from).collect();
         Ok(results)
     }
@@ -24,8 +23,8 @@ impl ElectionQuery {
         ctx: &Context<'_>,
         #[graphql(desc = "Search by slug or title")] search: ElectionSearchInput,
     ) -> FieldResult<Vec<ElectionResult>> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let records = Election::search(pool, &search).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records = Election::search(&db_pool, &search).await?;
         let results = records.into_iter().map(ElectionResult::from).collect();
         Ok(results)
     }

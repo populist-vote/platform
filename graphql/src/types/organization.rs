@@ -1,7 +1,8 @@
+use crate::context::ApiContext;
+
 use super::IssueTagResult;
 use async_graphql::*;
 use db::Organization;
-use sqlx::{Pool, Postgres};
 
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
@@ -17,9 +18,9 @@ pub struct OrganizationResult {
 #[ComplexObject]
 impl OrganizationResult {
     async fn issue_tags(&self, ctx: &Context<'_>) -> FieldResult<Vec<IssueTagResult>> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let records =
-            Organization::issue_tags(pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
+            Organization::issue_tags(&db_pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
         let results = records.into_iter().map(IssueTagResult::from).collect();
         Ok(results)
     }

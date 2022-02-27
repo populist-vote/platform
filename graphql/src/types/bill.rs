@@ -1,11 +1,11 @@
-use crate::types::ArgumentResult;
+use crate::{context::ApiContext, types::ArgumentResult};
 use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
 use db::{
     models::{bill::Bill, enums::LegislationStatus},
     DateTime,
 };
 use legiscan::Bill as LegiscanBill;
-use sqlx::{types::Json, Pool, Postgres, Row};
+use sqlx::{types::Json, Row};
 use uuid::Uuid;
 #[derive(SimpleObject)]
 #[graphql(complex)]
@@ -28,14 +28,14 @@ pub struct BillResult {
 #[ComplexObject]
 impl BillResult {
     async fn arguments(&self, ctx: &Context<'_>) -> FieldResult<Vec<ArgumentResult>> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let records = Bill::arguments(pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records = Bill::arguments(&db_pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
         let results = records.into_iter().map(ArgumentResult::from).collect();
         Ok(results)
     }
 
     async fn legiscan_data(&self, ctx: &Context<'_>) -> FieldResult<LegiscanBill> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
 
         let record = sqlx::query(
             r#"
@@ -44,7 +44,7 @@ impl BillResult {
             "#,
         )
         .bind(Uuid::parse_str(&self.id).unwrap())
-        .fetch_one(pool)
+        .fetch_one(&db_pool)
         .await?;
 
         let legiscan_data: Json<LegiscanBill> = record.get(0);

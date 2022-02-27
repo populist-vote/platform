@@ -7,6 +7,7 @@ use db::{
 use sqlx::{Pool, Postgres};
 
 use crate::{
+    context::ApiContext,
     mutation::StaffOnly,
     types::{Error, PoliticianResult},
     upload_to_s3, File,
@@ -138,17 +139,17 @@ impl PoliticianMutation {
         &self,
         ctx: &Context<'_>,
         input: CreatePoliticianInput,
-    ) -> Result<PoliticianResult, Error> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let new_record = Politician::create(db_pool, &input).await?;
+    ) -> Result<PoliticianResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let new_record = Politician::create(&db_pool, &input).await?;
         // be sure to handle None inputs from GraphQL
         if input.issue_tags.is_some() {
-            handle_nested_issue_tags(db_pool, new_record.id, input.issue_tags.unwrap()).await?;
+            handle_nested_issue_tags(&db_pool, new_record.id, input.issue_tags.unwrap()).await?;
         }
 
         if input.organization_endorsements.is_some() {
             handle_nested_organization_endorsements(
-                db_pool,
+                &db_pool,
                 new_record.id,
                 input.organization_endorsements.unwrap(),
             )
@@ -157,7 +158,7 @@ impl PoliticianMutation {
 
         if input.politician_endorsements.is_some() {
             handle_nested_politician_endorsements(
-                db_pool,
+                &db_pool,
                 new_record.id,
                 input.politician_endorsements.unwrap(),
             )
@@ -173,18 +174,19 @@ impl PoliticianMutation {
         ctx: &Context<'_>,
         id: String,
         input: UpdatePoliticianInput,
-    ) -> Result<PoliticianResult, Error> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
+    ) -> Result<PoliticianResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let updated_record =
-            Politician::update(db_pool, Some(uuid::Uuid::parse_str(&id)?), None, &input).await?;
+            Politician::update(&db_pool, Some(uuid::Uuid::parse_str(&id)?), None, &input).await?;
 
         if input.issue_tags.is_some() {
-            handle_nested_issue_tags(db_pool, updated_record.id, input.issue_tags.unwrap()).await?;
+            handle_nested_issue_tags(&db_pool, updated_record.id, input.issue_tags.unwrap())
+                .await?;
         }
 
         if input.organization_endorsements.is_some() {
             handle_nested_organization_endorsements(
-                db_pool,
+                &db_pool,
                 updated_record.id,
                 input.organization_endorsements.unwrap(),
             )
@@ -193,7 +195,7 @@ impl PoliticianMutation {
 
         if input.politician_endorsements.is_some() {
             handle_nested_politician_endorsements(
-                db_pool,
+                &db_pool,
                 updated_record.id,
                 input.politician_endorsements.unwrap(),
             )
@@ -205,11 +207,7 @@ impl PoliticianMutation {
 
     // TODO make this generic and accept an associated model e.g Politician
     #[graphql(guard = "StaffOnly")]
-    async fn upload_politician_thumbnail(
-        &self,
-        ctx: &Context<'_>,
-        file: Upload,
-    ) -> Result<u16, Error> {
+    async fn upload_politician_thumbnail(&self, ctx: &Context<'_>, file: Upload) -> Result<u16> {
         let upload = file.value(ctx).unwrap();
         let mut content = Vec::new();
         let filename = upload.filename.clone();
@@ -232,8 +230,8 @@ impl PoliticianMutation {
         ctx: &Context<'_>,
         id: String,
     ) -> Result<DeletePoliticianResult> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
-        Politician::delete(db_pool, uuid::Uuid::parse_str(&id)?).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        Politician::delete(&db_pool, uuid::Uuid::parse_str(&id)?).await?;
         Ok(DeletePoliticianResult { id })
     }
 }

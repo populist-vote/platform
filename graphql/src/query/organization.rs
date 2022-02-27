@@ -1,7 +1,7 @@
 use async_graphql::{Context, FieldResult, Object};
 use db::{Organization, OrganizationSearch};
-use sqlx::{Pool, Postgres};
 
+use crate::context::ApiContext;
 use crate::relay;
 use crate::types::OrganizationResult;
 
@@ -19,8 +19,8 @@ impl OrganizationQuery {
         first: Option<i32>,
         last: Option<i32>,
     ) -> relay::ConnectionResult<OrganizationResult> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let records = Organization::search(pool, &search.unwrap_or_default()).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records = Organization::search(&db_pool, &search.unwrap_or_default()).await?;
         let results = records.into_iter().map(OrganizationResult::from);
 
         relay::query(
@@ -36,8 +36,8 @@ impl OrganizationQuery {
         ctx: &Context<'_>,
         slug: String,
     ) -> FieldResult<OrganizationResult> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let record = Organization::find_by_slug(pool, slug).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let record = Organization::find_by_slug(&db_pool, slug).await?;
 
         Ok(record.into())
     }

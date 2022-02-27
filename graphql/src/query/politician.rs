@@ -1,8 +1,8 @@
 use async_graphql::{Context, Enum, FieldResult, InputObject, Object};
 use db::models::enums::PoliticalScope;
 use db::{Politician, PoliticianSearch};
-use sqlx::{Pool, Postgres};
 
+use crate::context::ApiContext;
 use crate::relay;
 use crate::types::PoliticianResult;
 
@@ -31,7 +31,7 @@ impl Default for PoliticianFilter {
     }
 }
 
-#[Object]
+#[Object(cache_control(max_age = 60))]
 impl PoliticianQuery {
     async fn politician_by_id(
         &self,
@@ -47,8 +47,8 @@ impl PoliticianQuery {
         ctx: &Context<'_>,
         slug: String,
     ) -> FieldResult<PoliticianResult> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let record = Politician::find_by_slug(pool, slug).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let record = Politician::find_by_slug(&db_pool, slug).await?;
 
         Ok(record.into())
     }
@@ -63,8 +63,8 @@ impl PoliticianQuery {
         first: Option<i32>,
         last: Option<i32>,
     ) -> relay::ConnectionResult<PoliticianResult> {
-        let pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let records = Politician::search(pool, &search.unwrap_or_default()).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records = Politician::search(&db_pool, &search.unwrap_or_default()).await?;
         let filter = filter.unwrap_or_default();
         let results: Vec<PoliticianResult> = records
             .into_iter()

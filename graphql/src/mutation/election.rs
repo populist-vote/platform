@@ -1,8 +1,7 @@
 use async_graphql::*;
 use db::{CreateElectionInput, Election, UpdateElectionInput};
-use sqlx::{Pool, Postgres};
 
-use crate::{mutation::StaffOnly, types::ElectionResult};
+use crate::{context::ApiContext, mutation::StaffOnly, types::ElectionResult};
 #[derive(Default)]
 pub struct ElectionMutation;
 
@@ -19,8 +18,8 @@ impl ElectionMutation {
         ctx: &Context<'_>,
         input: CreateElectionInput,
     ) -> Result<ElectionResult> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let new_record = Election::create(db_pool, &input).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let new_record = Election::create(&db_pool, &input).await?;
         Ok(ElectionResult::from(new_record))
     }
 
@@ -31,15 +30,16 @@ impl ElectionMutation {
         id: String,
         input: UpdateElectionInput,
     ) -> Result<ElectionResult> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
-        let updated_record = Election::update(db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let updated_record =
+            Election::update(&db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
         Ok(ElectionResult::from(updated_record))
     }
 
     #[graphql(guard = "StaffOnly")]
     async fn delete_election(&self, ctx: &Context<'_>, id: String) -> Result<DeleteElectionResult> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
-        Election::delete(db_pool, uuid::Uuid::parse_str(&id)?).await?;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        Election::delete(&db_pool, uuid::Uuid::parse_str(&id)?).await?;
         Ok(DeleteElectionResult { id })
     }
 }

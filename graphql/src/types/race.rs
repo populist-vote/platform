@@ -1,4 +1,4 @@
-use crate::types::OfficeResult;
+use crate::{context::ApiContext, types::OfficeResult};
 use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
 use db::{
     models::{
@@ -8,7 +8,6 @@ use db::{
     },
     DateTime, Office,
 };
-use sqlx::{Pool, Postgres};
 
 use super::PoliticianResult;
 
@@ -35,9 +34,9 @@ pub struct RaceResult {
 #[ComplexObject]
 impl RaceResult {
     async fn office(&self, ctx: &Context<'_>) -> FieldResult<OfficeResult> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = Office::find_by_id(
-            db_pool,
+            &db_pool,
             uuid::Uuid::parse_str(&self.office_id.as_str()).unwrap(),
         )
         .await?;
@@ -45,13 +44,13 @@ impl RaceResult {
     }
 
     async fn candidates(&self, ctx: &Context<'_>) -> FieldResult<Vec<PoliticianResult>> {
-        let db_pool = ctx.data_unchecked::<Pool<Postgres>>();
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let records = sqlx::query_as!(Politician, r#"
             SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, created_at, updated_at FROM politician
             WHERE upcoming_race_id = $1
             "#,
             uuid::Uuid::parse_str(self.id.as_str()).unwrap()
-        ).fetch_all(db_pool).await?;
+        ).fetch_all(&db_pool).await?;
         let results = records.into_iter().map(PoliticianResult::from).collect();
         Ok(results)
     }
