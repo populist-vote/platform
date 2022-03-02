@@ -111,24 +111,6 @@ pub struct PoliticianSearch {
     office_party: Option<PoliticalParty>,
 }
 
-/// This function takes in a string and returns a ts_query safe string for postgres
-/// For example "barack oba" becomes "barack | oba:*"
-fn process_search_query(query: String) -> String {
-    if query.len() == 0 {
-        return "".to_string();
-    } else {
-        format!(
-            "{}{}",
-            query
-                .split_whitespace()
-                .map(|s| s.to_string())
-                .collect::<Vec<String>>()
-                .join(" | "),
-            ":*"
-        )
-    }
-}
-
 impl Default for PoliticianSearch {
     fn default() -> Self {
         PoliticianSearch {
@@ -304,7 +286,8 @@ impl Politician {
         db_pool: &PgPool,
         search: &PoliticianSearch,
     ) -> Result<Vec<Self>, sqlx::Error> {
-        let search_query = process_search_query(search.name.to_owned().unwrap_or("".to_string()));
+        let search_query =
+            crate::process_search_query(search.name.to_owned().unwrap_or("".to_string()));
 
         let records = sqlx::query_as!(
             Politician,

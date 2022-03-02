@@ -1,4 +1,5 @@
 pub mod errors;
+pub mod loaders;
 pub mod models;
 pub mod pool;
 
@@ -17,3 +18,21 @@ pub use models::politician::*;
 pub use models::race::*;
 pub use models::user::*;
 pub use pool::*;
+
+/// This function takes in a string and returns a ts_query safe string for postgres
+/// For example "barack oba" becomes "barack | oba:*"
+fn process_search_query(query: String) -> String {
+    if query.len() == 0 {
+        return "".to_string();
+    } else {
+        format!(
+            "{}{}",
+            query
+                .split_whitespace()
+                .map(|s| s.to_string())
+                .collect::<Vec<String>>()
+                .join(" | "),
+            ":*"
+        )
+    }
+}

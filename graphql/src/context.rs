@@ -1,5 +1,5 @@
 use async_graphql::dataloader::{DataLoader, HashMapCache};
-use db::OrganizationLoader;
+use db::loaders::{organization::OrganizationLoader, politician::PoliticianLoader};
 use sqlx::PgPool;
 
 pub struct ApiContext {
@@ -9,6 +9,7 @@ pub struct ApiContext {
 
 pub struct DataLoaders {
     pub organization_loader: DataLoader<OrganizationLoader, HashMapCache>,
+    pub politician_loader: DataLoader<PoliticianLoader, HashMapCache>,
 }
 
 impl DataLoaders {
@@ -16,6 +17,11 @@ impl DataLoaders {
         Self {
             organization_loader: DataLoader::with_cache(
                 OrganizationLoader::new(pool.clone()),
+                tokio::task::spawn,
+                HashMapCache::default(),
+            ),
+            politician_loader: DataLoader::with_cache(
+                PoliticianLoader::new(pool.clone()),
                 tokio::task::spawn,
                 HashMapCache::default(),
             ),

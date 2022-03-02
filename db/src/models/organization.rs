@@ -1,15 +1,10 @@
-use std::collections::HashMap;
-
 use crate::CreateOrConnectIssueTagInput;
 use crate::DateTime;
 use crate::IssueTag;
 use crate::IssueTagIdentifier;
-use async_graphql::async_trait::async_trait;
-use async_graphql::dataloader::Loader;
-use async_graphql::futures_util::TryStreamExt;
-use async_graphql::FieldError;
+
 use async_graphql::InputObject;
-use itertools::Itertools;
+
 use serde::{Deserialize, Serialize};
 use slugify::slugify;
 use sqlx::PgPool;
@@ -79,36 +74,6 @@ pub struct OrganizationSearch {
 impl Default for OrganizationSearch {
     fn default() -> Self {
         OrganizationSearch { name: None }
-    }
-}
-
-pub struct OrganizationLoader(PgPool);
-
-impl OrganizationLoader {
-    pub fn new(pool: PgPool) -> Self {
-        Self(pool.to_owned())
-    }
-}
-
-#[async_trait]
-impl Loader<i32> for OrganizationLoader {
-    type Value = Organization;
-    type Error = FieldError;
-
-    // Currently being used for loading via Votesmart sig ids, but should also implement for org ids
-    async fn load(&self, keys: &[i32]) -> Result<HashMap<i32, Self::Value>, Self::Error> {
-        let query = format!(
-            "SELECT * FROM organization WHERE votesmart_sig_id IN ({})",
-            keys.iter().join(",")
-        );
-
-        let cache = sqlx::query_as(&query)
-            .fetch(&self.0)
-            .map_ok(|org: Organization| (org.votesmart_sig_id.unwrap(), org))
-            .try_collect()
-            .await?;
-
-        Ok(cache)
     }
 }
 
