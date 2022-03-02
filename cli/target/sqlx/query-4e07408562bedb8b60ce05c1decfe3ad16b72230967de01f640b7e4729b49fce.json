@@ -1,19 +1,14 @@
 {
-  "query": "\n            SELECT votesmart_candidate_ratings FROM politician\n        ",
+  "query": "INSERT INTO bill_sponsors (bill_id, politician_id) VALUES ($1, $2)",
   "describe": {
-    "columns": [
-      {
-        "ordinal": 0,
-        "name": "votesmart_candidate_ratings",
-        "type_info": "Jsonb"
-      }
-    ],
+    "columns": [],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
     },
-    "nullable": [
-      false
-    ]
+    "nullable": []
   },
-  "hash": "07a9c6dc585911be05890f4a8d9189fb8c84a6bc0b4440aa79230d516b2f0f07"
+  "hash": "1d777125f4f6f57d34d98a7dfeac015013724e54b233b546b0d9680699405060"
 }

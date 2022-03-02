@@ -273,11 +273,12 @@ impl PoliticianResult {
         let records = sqlx::query_as!(
             Bill,
             r#"
-                SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, history, votesmart_bill_id, created_at, updated_at FROM bill, jsonb_array_elements(legiscan_data->'sponsors') sponsors 
-                WHERE sponsors->>'votesmart_id' = $1
-                LIMIT 25
+                SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, history, votesmart_bill_id, b.created_at, b.updated_at FROM bill b
+                JOIN bill_sponsors 
+                ON bill_sponsors.bill_id = id
+                WHERE bill_sponsors.politician_id = $1
             "#,
-            &self.votesmart_candidate_id.to_string()
+            uuid::Uuid::parse_str(&self.id).unwrap()
         )
         .fetch_all(&db_pool)
         .await?;

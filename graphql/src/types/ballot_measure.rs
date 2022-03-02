@@ -29,7 +29,7 @@ pub struct BallotMeasureResult {
 
 #[ComplexObject]
 impl BallotMeasureResult {
-    async fn arguments(&self, ctx: &Context<'_>) -> FieldResult<Vec<BallotMeasureResult>> {
+    async fn arguments(&self, _ctx: &Context<'_>) -> FieldResult<Vec<BallotMeasureResult>> {
         //Change to ArgumentResult once implemented
         todo!()
     }
