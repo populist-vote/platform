@@ -29,7 +29,8 @@ fn root() -> impl IntoResponse {
     Html(r#"<h1>Populist API Docs</h1>"#)
 }
 
-// Simple server health check
+/// Simple server health check
+// TODO: Make this a GraphQL subscription
 #[handler]
 fn ping() -> Json<Value> {
     Json(serde_json::json!({

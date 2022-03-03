@@ -23,7 +23,7 @@ impl Loader<i32> for OrganizationLoader {
 
     async fn load(&self, keys: &[i32]) -> Result<HashMap<i32, Self::Value>, Self::Error> {
         let query = format!(
-            "SELECT * FROM organization WHERE votesmart_sig_id IN ({})",
+            r#"SELECT * FROM organization WHERE votesmart_sig_id IN ({})"#,
             keys.iter().join(",")
         );
 

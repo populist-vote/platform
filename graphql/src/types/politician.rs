@@ -142,13 +142,12 @@ impl PoliticianResult {
             .collect::<std::collections::HashSet<i32>>();
 
         // Preload all organizations to avoid expensive n + 1
-        let organizations = Arc::new(
-            ctx.data::<ApiContext>()?
-                .loaders
-                .organization_loader
-                .load_many(unique_sig_ids)
-                .await?,
-        );
+        let organizations = ctx
+            .data::<ApiContext>()?
+            .loaders
+            .organization_loader
+            .load_many(unique_sig_ids)
+            .await?;
 
         self.votesmart_candidate_ratings
             .iter()

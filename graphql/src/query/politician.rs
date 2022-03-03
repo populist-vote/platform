@@ -47,10 +47,20 @@ impl PoliticianQuery {
         ctx: &Context<'_>,
         slug: String,
     ) -> FieldResult<PoliticianResult> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let record = Politician::find_by_slug(&db_pool, slug).await?;
+        let cached_politician = ctx
+            .data::<ApiContext>()?
+            .loaders
+            .politician_loader
+            .load_one(slug.clone())
+            .await?;
 
-        Ok(record.into())
+        if let Some(politician) = cached_politician {
+            Ok(politician.into())
+        } else {
+            let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+            let record = Politician::find_by_slug(&db_pool, slug).await?;
+            Ok(record.into())
+        }
     }
 
     async fn politicians(

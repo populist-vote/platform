@@ -62,16 +62,16 @@ async fn create_organizations() -> Result<(), Box<dyn Error>> {
         .collect::<std::collections::HashSet<i32>>();
 
     for sig_id in unique_sig_ids {
-        let existing_org = sqlx::query_as!(
-            Organization,
-            r#"
-                SELECT * FROM organization
-                WHERE votesmart_sig_id = $1"#,
-            sig_id
-        )
-        .fetch_optional(&pool.connection)
-        .await
-        .unwrap();
+        // let existing_org = sqlx::query_as!(
+        //     Organization,
+        //     r#"
+        //         SELECT * FROM organization
+        //         WHERE votesmart_sig_id = $1"#,
+        //     sig_id
+        // )
+        // .fetch_optional(&pool.connection)
+        // .await
+        // .unwrap();
 
         let vs_response = proxy.rating().get_sig(sig_id).await?;
         let json = vs_response.json::<serde_json::Value>().await.unwrap()["sig"].to_owned();
@@ -88,97 +88,110 @@ async fn create_organizations() -> Result<(), Box<dyn Error>> {
         let website = sig.url;
         let phone = sig.phone1;
 
-        if let Some(org) = existing_org {
-            sqlx::query!(
-                r#"
-                    WITH new_address_id AS (
-                        INSERT INTO address (
-                            line_1,
-                            line_2,
-                            city,
-                            state,
-                            postal_code,
-                            country
-                        ) VALUES (
-                            $1,
-                            $2,
-                            $3,
-                            $4,
-                            $5,
-                            $6
-                        ) RETURNING id
-                    ),
-                    org AS (
-                        UPDATE organization
-                        SET headquarters_address_id = (SELECT new_address_id.id FROM new_address_id)
-                        WHERE id = $7
-                        RETURNING id
-                    )
-                    SELECT org.* FROM org
+        let existing_org = sqlx::query_as!(
+            Organization,
+            r#"
+                UPDATE organization SET votesmart_sig_id = $1 
+                WHERE name ILIKE $2
                 "#,
-                address_line_1,
-                address_line_2,
-                city,
-                state,
-                zip,
-                "USA",
-                org.id
-            )
-            .fetch_one(&pool.connection)
-            .await?;
+            sig_id,
+            name
+        )
+        .fetch_optional(&pool.connection)
+        .await;
+        // .unwrap();
 
-            println!("Updated {}", name);
-        } else {
-            let new_address = sqlx::query!(
-                r#"
-                    INSERT INTO address (
-                        line_1,
-                        line_2,
-                        city,
-                        state,
-                        postal_code,
-                        country
-                    ) VALUES (
-                        $1,
-                        $2,
-                        $3,
-                        $4,
-                        $5,
-                        $6
-                    ) RETURNING id
-                "#,
-                address_line_1,
-                address_line_2,
-                city,
-                state,
-                zip,
-                "USA"
-            )
-            .fetch_one(&pool.connection)
-            .await?;
+        // if let Some(org) = existing_org {
+        //     sqlx::query!(
+        //         r#"
+        //             WITH new_address_id AS (
+        //                 INSERT INTO address (
+        //                     line_1,
+        //                     line_2,
+        //                     city,
+        //                     state,
+        //                     postal_code,
+        //                     country
+        //                 ) VALUES (
+        //                     $1,
+        //                     $2,
+        //                     $3,
+        //                     $4,
+        //                     $5,
+        //                     $6
+        //                 ) RETURNING id
+        //             ),
+        //             org AS (
+        //                 UPDATE organization
+        //                 SET headquarters_address_id = (SELECT new_address_id.id FROM new_address_id)
+        //                 WHERE id = $7
+        //                 RETURNING id
+        //             )
+        //             SELECT org.* FROM org
+        //         "#,
+        //         address_line_1,
+        //         address_line_2,
+        //         city,
+        //         state,
+        //         zip,
+        //         "USA",
+        //         org.id
+        //     )
+        //     .fetch_one(&pool.connection)
+        //     .await?;
 
-            let new_org_input = CreateOrganizationInput {
-                name: name.clone(),
-                slug: None,
-                thumbnail_image_url: None,
-                facebook_url: None,
-                twitter_url: None,
-                instagram_url: None,
-                headquarters_phone: Some(phone),
-                tax_classification: None,
-                issue_tags: None,
-                website_url: Some(website),
-                description: Some(description),
-                email: Some(email),
-                votesmart_sig_id: Some(sig_id),
-                headquarters_address_id: Some(new_address.id),
-            };
-            if let Err(err) = Organization::create(&pool.connection, &new_org_input).await {
-                println!("Error creating {}: {}", name, err);
-            } else {
-                println!("Created {}", name);
-            }
-        }
+        //     println!("Updated {}", name);
+        // } else {
+        //     let new_address = sqlx::query!(
+        //         r#"
+        //             INSERT INTO address (
+        //                 line_1,
+        //                 line_2,
+        //                 city,
+        //                 state,
+        //                 postal_code,
+        //                 country
+        //             ) VALUES (
+        //                 $1,
+        //                 $2,
+        //                 $3,
+        //                 $4,
+        //                 $5,
+        //                 $6
+        //             ) RETURNING id
+        //         "#,
+        //         address_line_1,
+        //         address_line_2,
+        //         city,
+        //         state,
+        //         zip,
+        //         "USA"
+        //     )
+        //     .fetch_one(&pool.connection)
+        //     .await?;
+
+        //     let new_org_input = CreateOrganizationInput {
+        //         name: name.clone(),
+        //         slug: None,
+        //         thumbnail_image_url: None,
+        //         facebook_url: None,
+        //         twitter_url: None,
+        //         instagram_url: None,
+        //         headquarters_phone: Some(phone),
+        //         tax_classification: None,
+        //         issue_tags: None,
+        //         website_url: Some(website),
+        //         description: Some(description),
+        //         email: Some(email),
+        //         votesmart_sig_id: Some(sig_id),
+        //         headquarters_address_id: Some(new_address.id),
+        //     };
+        //     if let Err(err) = Organization::create(&pool.connection, &new_org_input).await {
+        //         println!("Error creating {}: {}", name, err);
+        //     } else {
+        //         println!("Created {}", name);
+        //     }
+        // }
     }
 
     println!("Organizations have been successfully seeded.");

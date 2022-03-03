@@ -49,7 +49,7 @@ Deploys to the staging environment happen automatically when changes are pushed 
 
 To run the migrations, **make sure you're on branch `main`** and set the `DATABASE_URL` to the URI found on our [Heroku datastore dashboard], under "View Credentials." Then run `sqlx migrate run` from your local machine. This is a temporary solution until we figure out how to automatically run the migrations on each deploy.
 
-Deploys to production happen manually via the Heroku dashboard. Press the "Promote to Production" button on the staging app in the [pipeline view].
+Deploys to production happen manually via the Heroku dashboard. Press the "Promote to Production" button on the staging app in the [pipeline view]. You can access logs to the production server by running `heroku logs --tail -a populist-api-production`
 
 [rust installed]: https://www.rust-lang.org/tools/install
 [sqlx-cli]: https://crates.io/crates/sqlx-cli
