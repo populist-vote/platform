@@ -194,6 +194,20 @@ impl Bill {
         todo!()
     }
 
+    pub async fn find_by_slug(db_pool: &PgPool, slug: &str) -> Result<Self, sqlx::Error> {
+        let record = sqlx::query_as!(
+            Bill,
+            r#"
+                SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, history, votesmart_bill_id, created_at, updated_at FROM bill
+                WHERE slug=$1
+            "#,
+            slug
+        )
+        .fetch_one(db_pool)
+        .await?;
+        Ok(record)
+    }
+
     pub async fn issue_tags(
         db_pool: &PgPool,
         bill_id: uuid::Uuid,

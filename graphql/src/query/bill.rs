@@ -28,4 +28,10 @@ impl BillQuery {
         )
         .await
     }
+
+    async fn bill_by_slug(&self, ctx: &Context<'_>, slug: String) -> Option<BillResult> {
+        let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+        let record = Bill::find_by_slug(&db_pool, &slug).await.unwrap();
+        Some(BillResult::from(record))
+    }
 }
