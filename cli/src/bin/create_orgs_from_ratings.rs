@@ -100,7 +100,6 @@ async fn create_organizations() -> Result<(), Box<dyn Error>> {
         .fetch_optional(&pool.connection)
         .await;
         // .unwrap();
-
         // if let Some(org) = existing_org {
         //     sqlx::query!(
         //         r#"

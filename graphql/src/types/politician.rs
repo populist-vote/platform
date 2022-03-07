@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use super::{
     votesmart::VsRating, BillResult, IssueTagResult, OfficeResult, OrganizationResult, RaceResult,
 };

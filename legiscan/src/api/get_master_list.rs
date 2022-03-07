@@ -86,6 +86,7 @@ impl LegiscanProxy {
 pub async fn test_get_master_list_by_state() {
     let proxy = LegiscanProxy::new().unwrap();
     let masterlist = proxy.get_master_list_by_state("CO").await.unwrap();
+    println!("{}", serde_json::to_string_pretty(&masterlist).unwrap());
     assert_eq!(masterlist.len() >= 2, true);
 }
 

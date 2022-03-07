@@ -6,7 +6,7 @@ use sqlx::PgPool;
 
 use crate::DateTime;
 
-use super::enums::State;
+use super::enums::{PoliticalParty, RaceType, State};
 
 #[derive(sqlx::FromRow, Debug, Clone)]
 
@@ -16,7 +16,8 @@ pub struct Race {
     pub title: String,
     pub office_position: String,
     pub office_id: uuid::Uuid,
-    pub race_type: String,
+    pub race_type: RaceType,
+    pub party: Option<PoliticalParty>,
     pub state: Option<State>,
     pub description: Option<String>,
     pub ballotpedia_link: Option<String>,
@@ -34,7 +35,8 @@ pub struct CreateRaceInput {
     pub title: String,
     pub office_position: String,
     pub office_id: uuid::Uuid,
-    pub race_type: String,
+    pub race_type: RaceType,
+    pub party: Option<PoliticalParty>,
     pub state: Option<State>,
     pub description: Option<String>,
     pub ballotpedia_link: Option<String>,
@@ -50,7 +52,8 @@ pub struct UpdateRaceInput {
     pub title: Option<String>,
     pub office_position: Option<String>,
     pub office_id: Option<uuid::Uuid>,
-    pub race_type: String,
+    pub race_type: RaceType,
+    pub party: Option<PoliticalParty>,
     pub description: Option<String>,
     pub ballotpedia_link: Option<String>,
     pub early_voting_begins_date: Option<NaiveDate>,
@@ -85,15 +88,16 @@ impl Race {
         let record = sqlx::query_as!(
             Race,
             r#"
-                INSERT INTO race (slug, title, office_position, office_id, race_type, state,  description, ballotpedia_link, early_voting_begins_date, election_date, official_website, election_id)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-                RETURNING id, slug, title, office_position, office_id, race_type, state AS "state:State", description, ballotpedia_link, early_voting_begins_date, election_date, official_website, election_id, created_at, updated_at
+                INSERT INTO race (slug, title, office_position, office_id, race_type, party, state,  description, ballotpedia_link, early_voting_begins_date, election_date, official_website, election_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                RETURNING id, slug, title, office_position, office_id, race_type AS "race_type:RaceType", party AS "party:PoliticalParty", state AS "state:State", description, ballotpedia_link, early_voting_begins_date, election_date, official_website, election_id, created_at, updated_at
             "#,
             slug,
             input.title,
             input.office_position,
             input.office_id,
-            input.race_type,
+            input.race_type as RaceType,
+            input.party as Option<PoliticalParty>,
             input.state as Option<State>,
             input.description,
             input.ballotpedia_link,
@@ -122,22 +126,24 @@ impl Race {
                     office_position = COALESCE($4, office_position),
                     office_id = COALESCE($5, office_id),
                     race_type = COALESCE($6, race_type),
-                    state = COALESCE($7, state),
-                    description = COALESCE($8, description),
-                    ballotpedia_link = COALESCE($9, ballotpedia_link),
-                    early_voting_begins_date = COALESCE($10, early_voting_begins_date),
-                    election_date = COALESCE($11, election_date),
-                    official_website = COALESCE($12, official_website),
-                    election_id = COALESCE($13, election_id)
+                    party = COALESCE($7, party),
+                    state = COALESCE($8, state),
+                    description = COALESCE($9, description),
+                    ballotpedia_link = COALESCE($10, ballotpedia_link),
+                    early_voting_begins_date = COALESCE($11, early_voting_begins_date),
+                    election_date = COALESCE($12, election_date),
+                    official_website = COALESCE($13, official_website),
+                    election_id = COALESCE($14, election_id)
                 WHERE id = $1
-                RETURNING id, slug, title, office_position, office_id, race_type, state AS "state:State", description, ballotpedia_link, early_voting_begins_date, election_date, official_website, election_id, created_at, updated_at
+                RETURNING id, slug, title, office_position, office_id, race_type AS "race_type:RaceType", party AS "party:PoliticalParty", state AS "state:State", description, ballotpedia_link, early_voting_begins_date, election_date, official_website, election_id, created_at, updated_at
             "#,
             id,
             input.slug,
             input.title,
             input.office_position,
             input.office_id,
-            input.race_type,
+            input.race_type as RaceType,
+            input.party as Option<PoliticalParty>,
             input.state as Option<State>,
             input.description,
             input.ballotpedia_link,
@@ -163,7 +169,7 @@ impl Race {
         let record = sqlx::query_as!(
             Race,
             r#"
-                SELECT id, slug, title, office_position, office_id, race_type, state AS "state:State", description, ballotpedia_link, early_voting_begins_date, election_date, official_website, election_id, created_at, updated_at FROM race
+                SELECT id, slug, title, office_position, office_id, race_type AS "race_type:RaceType", party AS "party:PoliticalParty", state AS "state:State", description, ballotpedia_link, early_voting_begins_date, election_date, official_website, election_id, created_at, updated_at FROM race
                 WHERE id = $1
             "#,
             id
@@ -178,7 +184,7 @@ impl Race {
         let record = sqlx::query_as!(
             Race,
             r#"
-                SELECT id, slug, title, office_position, office_id, race_type, state AS "state:State", description, ballotpedia_link, early_voting_begins_date, election_date, official_website, election_id, created_at, updated_at FROM race
+                SELECT id, slug, title, office_position, office_id, race_type AS "race_type:RaceType", party AS "party:PoliticalParty", state AS "state:State", description, ballotpedia_link, early_voting_begins_date, election_date, official_website, election_id, created_at, updated_at FROM race
                 WHERE slug = $1
             "#,
             slug
@@ -193,7 +199,7 @@ impl Race {
         let records = sqlx::query_as!(
             Race,
             r#"
-                SELECT id, slug, title, office_position, office_id, race_type, state AS "state:State", description, ballotpedia_link, early_voting_begins_date, election_date, official_website, election_id, created_at, updated_at FROM race
+                SELECT id, slug, title, office_position, office_id, race_type AS "race_type:RaceType", party AS "party:PoliticalParty", state AS "state:State", description, ballotpedia_link, early_voting_begins_date, election_date, official_website, election_id, created_at, updated_at FROM race
                 WHERE (($1::text = '') IS NOT FALSE OR to_tsvector(concat_ws(' ', slug, title)) @@ to_tsquery($1))
                 AND ($2::state IS NULL OR state = $2)
                 

@@ -2,7 +2,7 @@ use crate::{context::ApiContext, types::OfficeResult};
 use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
 use db::{
     models::{
-        enums::{PoliticalParty, State},
+        enums::{PoliticalParty, RaceType, State},
         politician::Politician,
         race::Race,
     },
@@ -19,7 +19,8 @@ pub struct RaceResult {
     title: String,
     office_position: String,
     office_id: ID,
-    race_type: String,
+    race_type: RaceType,
+    party: Option<PoliticalParty>,
     state: Option<State>,
     description: Option<String>,
     ballotpedia_link: Option<String>,
@@ -65,6 +66,7 @@ impl From<Race> for RaceResult {
             office_position: r.office_position,
             office_id: ID::from(r.office_id),
             race_type: r.race_type,
+            party: r.party,
             state: r.state,
             description: r.description,
             ballotpedia_link: r.ballotpedia_link,

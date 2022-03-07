@@ -29,8 +29,17 @@ impl ElectionQuery {
         Ok(results)
     }
 
+    // Need to think about this.
+    // User is going to only want to see relevant election, based on locale
+    // Perhaps to start, implement an upcoming_election_by_state() resolver
     async fn upcoming_elections(&self, _ctx: &Context<'_>) -> FieldResult<Vec<ElectionResult>> {
-        todo!();
+        let db_pool = _ctx.data::<ApiContext>()?.pool.clone();
+        let records = sqlx::query_as!(Election,
+            "SELECT id, slug, title, description, election_date FROM election WHERE election_date > NOW()", )
+            .fetch_all(&db_pool)
+            .await?;
+        let results = records.into_iter().map(ElectionResult::from).collect();
+        Ok(results)
     }
 
     async fn election_by_id(&self, _ctx: &Context<'_>, _id: String) -> FieldResult<ElectionResult> {
