@@ -27,7 +27,7 @@ pub struct Politician {
     pub facebook_url: Option<String>,
     pub twitter_url: Option<String>,
     pub instagram_url: Option<String>,
-    pub office_party: Option<PoliticalParty>,
+    pub party: Option<PoliticalParty>,
     pub votesmart_candidate_id: Option<i32>,
     pub votesmart_candidate_bio: Value,
     pub votesmart_candidate_ratings: Value,
@@ -54,7 +54,7 @@ pub struct CreatePoliticianInput {
     pub facebook_url: Option<String>,
     pub twitter_url: Option<String>,
     pub instagram_url: Option<String>,
-    pub office_party: Option<PoliticalParty>,
+    pub party: Option<PoliticalParty>,
     pub issue_tags: Option<CreateOrConnectIssueTagInput>,
     pub organization_endorsements: Option<CreateOrConnectOrganizationInput>,
     pub politician_endorsements: Option<CreateOrConnectPoliticianInput>,
@@ -82,7 +82,7 @@ pub struct UpdatePoliticianInput {
     pub facebook_url: Option<String>,
     pub twitter_url: Option<String>,
     pub instagram_url: Option<String>,
-    pub office_party: Option<PoliticalParty>,
+    pub party: Option<PoliticalParty>,
     pub issue_tags: Option<CreateOrConnectIssueTagInput>,
     pub organization_endorsements: Option<CreateOrConnectOrganizationInput>,
     pub politician_endorsements: Option<CreateOrConnectPoliticianInput>,
@@ -108,7 +108,7 @@ pub struct CreateOrConnectPoliticianInput {
 pub struct PoliticianSearch {
     home_state: Option<State>,
     name: Option<String>,
-    office_party: Option<PoliticalParty>,
+    party: Option<PoliticalParty>,
 }
 
 impl Default for PoliticianSearch {
@@ -116,7 +116,7 @@ impl Default for PoliticianSearch {
         PoliticianSearch {
             home_state: None,
             name: None,
-            office_party: None,
+            party: None,
         }
     }
 }
@@ -161,9 +161,9 @@ impl Politician {
                     RETURNING id AS author_id
                 ),
                 p AS (
-                    INSERT INTO politician (id, slug, first_name, middle_name, last_name, home_state, office_id, office_party, votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, website_url, upcoming_race_id) 
+                    INSERT INTO politician (id, slug, first_name, middle_name, last_name, home_state, office_id, party, votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, website_url, upcoming_race_id) 
                     VALUES ((SELECT author_id FROM ins_author), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-                    RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, created_at, updated_at
+                    RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, party AS "party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, created_at, updated_at
                 )
                 SELECT p.* FROM p
             "#,
@@ -173,7 +173,7 @@ impl Politician {
             input.last_name,
             input.home_state as State,
             input.office_id,
-            input.office_party as Option<PoliticalParty>,
+            input.party as Option<PoliticalParty>,
             input.votesmart_candidate_id,
             vs_candidate_bio,
             vs_candidate_ratings,
@@ -210,14 +210,14 @@ impl Politician {
                     facebook_url = COALESCE($14, facebook_url),
                     twitter_url = COALESCE($15, twitter_url),
                     instagram_url = COALESCE($16, instagram_url),
-                    office_party = COALESCE($17, office_party),
+                    party = COALESCE($17, party),
                     votesmart_candidate_bio = COALESCE($18, votesmart_candidate_bio),
                     votesmart_candidate_ratings = COALESCE($19, votesmart_candidate_ratings),
                     legiscan_people_id = COALESCE($20, legiscan_people_id),
                     upcoming_race_id = COALESCE($21, upcoming_race_id)
                 WHERE id=$1
                 OR votesmart_candidate_id = $2
-                RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, created_at, updated_at
+                RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, party AS "party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, created_at, updated_at
             "#,
             id,
             votesmart_candidate_id,
@@ -235,7 +235,7 @@ impl Politician {
             input.facebook_url,
             input.twitter_url,
             input.instagram_url,
-            input.office_party as Option<PoliticalParty>,
+            input.party as Option<PoliticalParty>,
             input.votesmart_candidate_bio,
             input.votesmart_candidate_ratings,
             input.legiscan_people_id,
@@ -255,7 +255,7 @@ impl Politician {
     }
 
     pub async fn index(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
-        let records = sqlx::query_as!(Politician, r#"SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, created_at, updated_at FROM politician"#,)
+        let records = sqlx::query_as!(Politician, r#"SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, party AS "party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, created_at, updated_at FROM politician"#,)
             .fetch_all(db_pool)
             .await?;
         Ok(records)
@@ -264,7 +264,7 @@ impl Politician {
     pub async fn find_by_id(db_pool: &PgPool, id: uuid::Uuid) -> Result<Self, sqlx::Error> {
         let record = sqlx::query_as!(Politician,
             r#"
-                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, created_at, updated_at FROM politician
+                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, party AS "party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, created_at, updated_at FROM politician
                 WHERE id = $1
             "#, id)
             .fetch_one(db_pool).await?;
@@ -274,7 +274,7 @@ impl Politician {
     pub async fn find_by_slug(db_pool: &PgPool, slug: String) -> Result<Self, sqlx::Error> {
         let record = sqlx::query_as!(Politician,
             r#"
-                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, created_at, updated_at FROM politician
+                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, party AS "party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, created_at, updated_at FROM politician
                 WHERE slug = $1
             "#, slug)
             .fetch_one(db_pool).await?;
@@ -292,15 +292,15 @@ impl Politician {
         let records = sqlx::query_as!(
             Politician,
             r#"
-                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, created_at, updated_at FROM politician
+                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, party AS "party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, created_at, updated_at FROM politician
                 WHERE (($1::text = '') IS NOT FALSE OR to_tsvector(concat_ws(' ', first_name, middle_name, last_name, nickname, preferred_name, ballot_name)) @@ to_tsquery($1))
                 AND ($2::state IS NULL OR home_state = $2)
-                AND ($3::political_party IS NULL OR office_party = $3)
+                AND ($3::political_party IS NULL OR party = $3)
                 ORDER BY last_name ASC
             "#,
             search_query,
             search.home_state as Option<State>,
-            search.office_party as Option<PoliticalParty>,
+            search.party as Option<PoliticalParty>,
         )
         .fetch_all(db_pool)
         .await?;
@@ -329,7 +329,7 @@ impl Politician {
     ) -> Result<Vec<Politician>, sqlx::Error> {
         let records = sqlx::query_as!(Politician,
             r#"
-                SELECT p.id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, office_party AS "office_party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, p.created_at, p.updated_at FROM politician p
+                SELECT p.id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, party AS "party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, p.created_at, p.updated_at FROM politician p
                 JOIN politician_politician_endorsements
                 ON politician_politician_endorsements.politician_endorsement_id = p.id
                 WHERE politician_politician_endorsements.politician_id = $1

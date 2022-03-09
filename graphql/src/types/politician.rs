@@ -42,7 +42,7 @@ pub struct PoliticianResult {
     twitter_url: Option<String>,
     facebook_url: Option<String>,
     instagram_url: Option<String>,
-    office_party: Option<PoliticalParty>,
+    party: Option<PoliticalParty>,
     votesmart_candidate_id: i32,
     votesmart_candidate_bio: GetCandidateBioResponse,
     votesmart_candidate_ratings: Vec<VsRating>,
@@ -339,7 +339,7 @@ impl From<Politician> for PoliticianResult {
             twitter_url: p.twitter_url,
             facebook_url: p.facebook_url,
             instagram_url: p.instagram_url,
-            office_party: p.office_party,
+            party: p.party,
             votesmart_candidate_id: p.votesmart_candidate_id.unwrap(),
             votesmart_candidate_bio: serde_json::from_value(p.votesmart_candidate_bio.to_owned())
                 .unwrap_or_default(),

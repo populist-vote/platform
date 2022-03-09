@@ -12,3 +12,6 @@ DROP COLUMN description;
 
 ALTER TABLE office
 RENAME incumbent_id TO encumbent_id;
+
+ALTER TABLE politician
+RENAME party TO office_party;

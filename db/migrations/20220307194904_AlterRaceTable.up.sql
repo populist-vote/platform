@@ -11,3 +11,6 @@ ADD COLUMN description TEXT;
 
 ALTER TABLE office
 RENAME encumbent_id TO incumbent_id;
+
+ALTER TABLE politician
+RENAME office_party TO party;
