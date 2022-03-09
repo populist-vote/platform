@@ -2,7 +2,7 @@ eli-bremer:
     first_name: Eli
     last_name: Bremer
     office_party: Republican
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -12,7 +12,7 @@ gino-campana:
     first_name: Gino
     last_name: Campana
     office_party: Republican
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -22,7 +22,7 @@ deborah-flora:
     first_name: Deborah
     last_name: Flora
     office_party: Republican
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -32,7 +32,7 @@ ron-hanks:
     first_name: Ron
     last_name: Hanks
     office_party: Republican
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 191771
     ballotpedia_id: 
     legiscan_person_id: 
@@ -43,7 +43,7 @@ gregory-moore:
     first_name: Gregory
     last_name: Moore
     office_party: Republican
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 93012
     ballotpedia_id: 
     legiscan_person_id: 
@@ -54,7 +54,7 @@ jon-o'dea:
     first_name: Jon 
     last_name: O'Dea
     office_party: Republican
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -64,7 +64,7 @@ peter-yu:
     first_name: Peter
     last_name: Yu
     office_party: Republican
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -74,7 +74,7 @@ teal'c-anderson:
     first_name: Teal'c
     last_name: Anderson
     office_party: Freedom
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -84,7 +84,7 @@ aaron-trevino:
     first_name: Aaron
     last_name: Trevino
     office_party: Independent
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -94,7 +94,7 @@ neal-walia:
     first_name: Neal
     last_name: Walia
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -104,7 +104,7 @@ dom-waters:
     first_name: Dom
     last_name: Waters
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -114,7 +114,7 @@ diane-degette:
     first_name: Diane
     last_name: Degette
     office_party: Democratic
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 561
     ballotpedia_id: 
     legiscan_person_id: 
@@ -125,7 +125,7 @@ joe-neguse:
     first_name: Joe
     last_name: Neguse
     office_party: Democratic
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 151075
     ballotpedia_id: 
     legiscan_person_id: 
@@ -136,7 +136,7 @@ lauren-boebert:
     first_name: Lauren
     last_name: Boebert
     office_party: Republican
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 191290
     ballotpedia_id: 
     legiscan_person_id: 
@@ -147,7 +147,7 @@ don-coram:
     first_name: Don
     last_name: Coram
     office_party: Republican
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 125548
     ballotpedia_id: 
     legiscan_person_id: 
@@ -158,7 +158,7 @@ marina-zimmerman:
     first_name: Marina
     last_name: Zimmerman
     office_party: Republican
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 
     ballotpedia_id: 
     legiscan_person_id: 
@@ -169,7 +169,7 @@ debby-burnett:
     first_name: Debby
     last_name: Burnett
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -179,7 +179,7 @@ adam-frisch:
     first_name: Adam
     last_name: Frisch
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -189,7 +189,7 @@ naziha-in'am-hadil:
     first_name: Naziha
     last_name: In'am Hadil
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -199,7 +199,7 @@ susan-martinez:
     first_name: Susan
     last_name: Martinez
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -209,7 +209,7 @@ kellie-rhodes:
     first_name: Kellie
     last_name: Rhodes
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -219,7 +219,7 @@ sol-sandoval:
     first_name: Sol
     last_name: Sandoval
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -229,7 +229,7 @@ donald-valdez:
     first_name: Donald
     last_name: Valdez
     office_party: Democratic
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 170025
     ballotpedia_id: 
     legiscan_person_id: 
@@ -240,7 +240,7 @@ alex-walker:
     first_name: Alex
     last_name: Walker
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -250,7 +250,7 @@ colin-wilhelm:
     first_name: Colin
     last_name: Wilhelm
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -260,7 +260,7 @@ scott-yates:
     first_name: Scott
     last_name: Yates
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -270,7 +270,7 @@ kristin-skowronski:
     first_name: Kristin
     last_name: Skowronski
     office_party: Independent
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -280,7 +280,7 @@ ken-buck:
     first_name: Ken
     last_name: Buck
     office_party: Republican
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 125319
     ballotpedia_id: 
     legiscan_person_id: 
@@ -291,7 +291,7 @@ isaac-mccorkle:
     first_name: Isaac
     last_name: McCorkle
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -301,7 +301,7 @@ rome-vibe:
     first_name: Rome
     last_name: Vibe
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -311,7 +311,7 @@ ryan-mcgonigal:
     first_name: Ryan
     last_name: McGonigal
     office_party: Independent
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 
     ballotpedia_id: 
     legiscan_person_id: 
@@ -322,7 +322,7 @@ donna-windholz:
     first_name: Donna
     last_name: Windholz
     office_party: Independent
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -332,7 +332,7 @@ doug-lamborn:
     first_name: Doug
     last_name: Lamborn
     office_party: Republican
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 2698
     ballotpedia_id: 
     legiscan_person_id: 
@@ -343,7 +343,7 @@ rebecca-keltie:
     first_name: Rebecca
     last_name: Keltie
     office_party: Republican
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -353,7 +353,7 @@ dave-williams:
     first_name: Dave
     last_name: Williams
     office_party: Republican
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 149342
     ballotpedia_id: 
     legiscan_person_id: 
@@ -364,7 +364,7 @@ orlondo-avion:
     first_name: Orlondo
     last_name: Avion
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -374,7 +374,7 @@ michael-colombe:
     first_name: Michael
     last_name: Colombe
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -384,7 +384,7 @@ jeremy-dowell:
     first_name: Jeremy
     last_name: Dowell
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -394,7 +394,7 @@ santiago-goenaga-torres:
     first_name: Santiago
     last_name: Goenaga-Torres
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -404,7 +404,7 @@ matthew-feigenbaum:
     first_name: Matthew
     last_name: Feigenbaum
     office_party: Unaffiliated
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -414,7 +414,7 @@ ryan-thompson:
     first_name: Ryan
     last_name: Thompson
     office_party: Unaffiliated
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -424,7 +424,7 @@ alax-jones:
     first_name: Alax
     last_name: Jones
     office_party: Independent
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -434,7 +434,7 @@ jason-crow:
     first_name: Jason
     last_name: Crow
     office_party: Democratic
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 180218
     ballotpedia_id: 
     legiscan_person_id: 
@@ -445,7 +445,7 @@ stevemonahan:
     first_name: Steve
     last_name: Monahan
     office_party: Republican
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -455,7 +455,7 @@ glenn-rickerson:
     first_name: Glenn
     last_name: Rickerson
     office_party: Republican
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -465,7 +465,7 @@ brian-smith:
     first_name: Brian
     last_name: Smith
     office_party: Republican
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -475,7 +475,7 @@ eric-mulder:
     first_name: Eric
     last_name: Mulder
     office_party: Libertarian
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -485,7 +485,7 @@ andrew-forrest-white:
     first_name: Andrew
     last_name: Forrest White
     office_party: Independent
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 
     ballotpedia_id: 
     legiscan_person_id: 
@@ -496,7 +496,7 @@ kyle-faust:
     first_name: Kyle
     last_name: Faust
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -506,7 +506,7 @@ julius-mopper:
     first_name: Julius
     last_name: Mopper
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -516,7 +516,7 @@ brittany-pettersen:
     first_name: Brittany
     last_name: Pettersen
     office_party: Democratic
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 138744
     ballotpedia_id: 
     legiscan_person_id: 
@@ -527,7 +527,7 @@ erik-aadland:
     first_name: Erik
     last_name: Aadland
     office_party: Republican
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -537,7 +537,7 @@ carl-andersen:
     first_name: Carl
     last_name: Andersen
     office_party: Republican
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -547,7 +547,7 @@ brad-dempsey:
     first_name: Brad
     last_name: Dempsey
     office_party: Republican
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -557,7 +557,7 @@ laurel-imer:
     first_name: Laurel
     last_name: Imer
     office_party: Republican
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -567,7 +567,7 @@ tim-reichert:
     first_name: Tim
     last_name: Reichert
     office_party: Republican
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -577,7 +577,7 @@ yadira-caraveo:
     first_name: Yadira
     last_name: Caraveo
     office_party: Democratic
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 181770
     ballotpedia_id: 
     legiscan_person_id: 
@@ -588,7 +588,7 @@ johnny-humphrey:
     first_name: Johnny
     last_name: Humphrey
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -598,7 +598,7 @@ joshua-rodriguez:
     first_name: Joshua
     last_name: Rodriguez
     office_party: Democratic
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -608,7 +608,7 @@ chaz-tedesco:
     first_name: Chaz
     last_name: Tedesco
     office_party: Democratic
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 148923
     ballotpedia_id: 
     legiscan_person_id: 
@@ -619,7 +619,7 @@ tyler-allcorn:
     first_name: Tyler
     last_name: Allcorn
     office_party: Republican
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -629,7 +629,7 @@ ryan-gonzalez:
     first_name: Ryan
     last_name: Gonzalez
     office_party: Republican
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -639,7 +639,7 @@ jewels-gray:
     first_name: Jewels
     last_name: Gray
     office_party: Republican
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -649,7 +649,7 @@ barbara-kirkmeyer:
     first_name: Barbara
     last_name: Kirkmeyer
     office_party: Republican
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 29991
     ballotpedia_id: 
     legiscan_person_id: 
@@ -660,18 +660,18 @@ jan-kulmann:
     first_name: Jan
     last_name: Kulmann
     office_party: Republican
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 29991
     ballotpedia_id: 
     legiscan_person_id: 
-    upcoming_race_id: 
+    upming_race_id: 
     office_id: 
 
 lori-saine:
     first_name: Lori
     last_name: Saine
     office_party: Republican
-    home_state: CO
+    home_state: 
     votesmart_candidate_id: 138801
     ballotpedia_id: 
     legiscan_person_id: 
@@ -682,7 +682,7 @@ matthew-payette:
     first_name: Matthew
     last_name: Payette
     office_party: Independent
-    home_state: CO
+    home_state: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
@@ -692,9 +692,654 @@ steve-zorn:
     first_name: Steve
     last_name: Zorn
     office_party: Independent
-    home_state: CO
+    home_state: 
         votesmart_candidate_id: 
     ballotpedia_id: 
     legiscan_person_id: 
     upcoming_race_id: 
+    office_id: 
+
+jared-polis:
+    first_name: Jared
+    last_name: Polis
+    office_party: Democratic
+    home_state: CO
+    votesmart_candidate_id: 106220
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+dustin-rorex:
+    first_name: Dustin
+    last_name: Rorex
+    office_party: Democratic
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+zachariah-burck:
+    first_name: Zachariah
+    last_name: Burck
+    office_party: Republican
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+laurie-clark:
+    first_name: Laurie
+    last_name: Clark
+    office_party: Republican
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+jeffrey-fry:
+    first_name: Jeffrey
+    last_name: Fry
+    office_party: Republican
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+heidi-ganahl:
+    first_name: Heidi
+    last_name: Ganahl
+    office_party: Republican
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+darryl-gibbs:
+    first_name: Darryl
+    last_name: Gibbs
+    office_party: Republican
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+jon-gray-ginsberg:
+    first_name: Jon
+    last_name: Gray-Ginsberg
+    office_party: Republican
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+benjamin-huseman:
+    first_name: Benjamin
+    last_name: Huseman
+    office_party: Republican
+    home_state: CO
+    votesmart_candidate_id: 199510
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+jason-lopez:
+    first_name: Jason
+    last_name: Lopez
+    office_party: Republican
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+greg-lopen:
+    first_name: Greg
+    last_name: Lopen
+    office_party: Republican
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+danielle-neuschwanger:
+    first_name: Danielle
+    last_name: Neuschwanger
+    office_party: Republican
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+ralph-tingle:
+    first_name: Ralph
+    last_name: Tingle
+    office_party: Independent
+    home_state: CO
+    votesmart_candidate_id: 
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+zachary-varon:
+    first_name: Zachary
+    last_name: Varon
+    office_party: Independent
+    home_state: CO
+    votesmart_candidate_id: 
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+phil-weiser:
+    first_name: Phil
+    last_name: Weiser
+    office_party: Republican
+    home_state: CO
+    votesmart_candidate_id: 180419
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+john-kellner:
+    first_name: John
+    last_name: Kellner
+    office_party: Democratic
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+jena-griswold:
+    first_name: Jena
+    last_name: Griswold
+    office_party: Democratic
+    home_state: CO
+    votesmart_candidate_id: 180396
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+pam-anderson:
+    first_name: Pam
+    last_name: Anderson
+    office_party: Republican
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+mike-o'donnell:
+    first_name: Mike
+    last_name: O'Donnell
+    office_party: Republican
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+david-winney:
+    first_name: David
+    last_name: Winney
+    office_party: Republican
+    home_state: CO
+    votesmart_candidate_id: 
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+dave-young:
+    first_name: Dave
+    last_name: Young
+    office_party: Democratic
+    home_state: CO
+    votesmart_candidate_id: 134314
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+lang-sias:
+    first_name: Lang
+    last_name: Sias
+    office_party: Republican
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+joseph-shelton:
+    first_name: Joseph
+    last_name: Shelton
+    office_party: Democratic
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+gavin-rainey:
+    first_name: Gavin
+    last_name: Rainey
+    office_party: Republican
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+wanda-james:
+    first_name: Wanda
+    last_name: James
+    office_party: Democratic
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+scott-mangino:
+    first_name: Scott
+    last_name: Mangino
+    office_party: Democratic
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+johnnie-nguyen:
+    first_name: Johnnie
+    last_name: Nguyen
+    office_party: Democratic
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+michael-boyer:
+    first_name: Michael
+    last_name: Boyer
+    office_party: Republican
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+byron-pelton:
+    first_name: Byron
+    last_name: Pelton
+    office_party: Republican
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+tonya-van-beber:
+    first_name: Tonya
+    last_name: Van Beber
+    office_party: Republican
+    home_state: CO
+    votesmart_candidate_id: 191795
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+nick-hinrichsen:
+    first_name: Nick
+    last_name: Hinrichsen
+    office_party: Democratic
+    home_state: CO
+    votesmart_candidate_id: 202704
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+dylan-roberts:
+    first_name: Dylan
+    last_name: Roberts
+    office_party: Democratic
+    home_state: CO
+    votesmart_candidate_id: 179465
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+janice-rich:
+    first_name: Janice
+    last_name: Rich
+    office_party: Republican
+    home_state: CO
+    votesmart_candidate_id: 181791
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+paul-lundeen:
+    first_name: Paul
+    last_name: Lundeen
+    office_party: Republican
+    home_state: CO
+    votesmart_candidate_id: 181791
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+thomas-exum-sr:
+    first_name: Thomas
+    last_name: Exum Sr.
+    office_party: Democratic
+    home_state: CO
+    votesmart_candidate_id: 138722
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+rob-woodward:
+    first_name: Rob
+    last_name: Woodward
+    office_party: Republican
+    home_state: CO
+    votesmart_candidate_id: 181710
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+kyle-mullica:
+    first_name: Kyle
+    last_name: Mullica
+    office_party: Democratic
+    home_state: CO
+    votesmart_candidate_id: 148897
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+joseph-salazar:
+    first_name: Joseph
+    last_name: Salazar
+    office_party: Democratic
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+kevin-van-winkle:
+    first_name: Kevin
+    last_name: Van Winkle
+    office_party: Republican
+    home_state: CO
+    votesmart_candidate_id: 149366
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+robert-rodriguez:
+    first_name: Robert
+    last_name: Rodriguez
+    office_party: Democratic
+    home_state: CO
+    votesmart_candidate_id: 181713
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+julie-gonzalez:
+    first_name: Julie
+    last_name: Gonzalez
+    office_party: Democratic
+    home_state: CO
+    votesmart_candidate_id: 181717
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+javier-mabrey:
+    first_name: Javier
+    last_name: Mabrey
+    office_party: Democrat
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+elisabeth-epps:
+    first_name: Elisabeth
+    last_name: Epps
+    office_party: Democrat
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+katie-march:
+    first_name: Katie
+    last_name: March
+    office_party: Democrat
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+juli-henry:
+    first_name: Juli
+    last_name: Henry
+    office_party: Republican
+    home_state: CO
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+meghan-lukens:
+    first_name: Meghan
+    last_name: Lukens
+    office_party: Democrat
+    home_state: CO
+    votesmart_candidate_id: 
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+savannah-wolfson:
+    first_name: Savannah
+    last_name: Wolfson
+    office_party: Republican
+    home_state: CO
+    votesmart_candidate_id: 
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+jenny-willford:
+    first_name: Jenny
+    last_name: Willford
+    office_party: Republican
+    home_state: CO
+    votesmart_candidate_id: 199555
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+ruby-dickson:
+    first_name: Ruby
+    last_name: Dickson
+    office_party: Democrat
+    home_state: CO
+    votesmart_candidate_id: 
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+ken-stable:
+    first_name: Ken
+    last_name: Stable
+    office_party: Democrat
+    home_state: CO
+    votesmart_candidate_id: 
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+mandy-lindsay:
+    first_name: Mandy
+    last_name: Lindsay
+    office_party: Democrat
+    home_state: CO
+    votesmart_candidate_id: 201403
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+cory-parella:
+    first_name: Cory
+    last_name: Parella
+    office_party: Republican
+    home_state: CO
+    votesmart_candidate_id: 
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+kyle-leggott:
+    first_name: Kyle
+    last_name: Leggott
+    office_party: Democrat
+    home_state: CO
+    votesmart_candidate_id: 
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+eric-nelson:
+    first_name: Eric
+    last_name: Nelson
+    office_party: Democrat
+    home_state: CO
+    votesmart_candidate_id: 
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+gail-pough:
+    first_name: Gail
+    last_name: Pough
+    office_party: Democrat
+    home_state: CO
+    votesmart_candidate_id: 
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+austin-hein:
+    first_name: Austin
+    last_name: Hein
+    office_party: Republican
+    home_state: CO
+    votesmart_candidate_id: 
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+nina-anderson:
+    first_name: Nina
+    last_name: Anderson
+    office_party: Republican
+    home_state: CO
+    votesmart_candidate_id: 
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+rick-taggart:
+    first_name: Rick
+    last_name: Taggart
+    office_party: Republican
+    home_state: CO
+    votesmart_candidate_id: 157546
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+patricia-weber:
+    first_name: Patricia
+    last_name: Weber
+    office_party: Republican
+    home_state: CO
+    votesmart_candidate_id: 
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+colin-buerger:
+    first_name: Colin
+    last_name: Buerger
+    office_party: Democrat
+    home_state: CO
+    votesmart_candidate_id: 
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
+    office_id: 
+
+ryan-armagost:
+    first_name: Ryan
+    last_name: Armagost
+    office_party: Republican
+    home_state: CO
+    votesmart_candidate_id: 
+    ballotpedia_id: 
+    legiscan_person_id: 
+    upming_race_id: 
     office_id: 
