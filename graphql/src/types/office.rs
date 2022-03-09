@@ -26,7 +26,7 @@ pub struct OfficeResult {
 
 #[ComplexObject]
 impl OfficeResult {
-    async fn incumbent(&self, ctx: &Context<'_>) -> FieldResult<PoliticianResult> {
+    async fn incumbent(&self, ctx: &Context<'_>) -> FieldResult<Option<PoliticianResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query_as!(
             Politician,
@@ -36,11 +36,15 @@ impl OfficeResult {
             "#,
             uuid::Uuid::parse_str(&self.id.as_str()).unwrap()
         )
-        .fetch_one(&db_pool)
+        .fetch_optional(&db_pool)
         .await?;
 
-        let politician_result = PoliticianResult::from(record);
-        Ok(politician_result)
+        if let Some(record) = record {
+            let politician_result = PoliticianResult::from(record);
+            Ok(Some(politician_result))
+        } else {
+            Ok(None)
+        }
     }
 }
 
