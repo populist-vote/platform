@@ -200,7 +200,7 @@ async fn main() -> Result<(), Error> {
                     data.candidate.first_name, data.candidate.last_name
                 );
                 let slug = slugify!(&full_name);
-                let home_state = State::from_str(&data.candidate.home_state).unwrap();
+                let home_state = Some(State::from_str(&data.candidate.home_state).unwrap());
                 let party = Some(
                     PoliticalParty::from_str(&data.office.to_owned().unwrap().parties)
                         .unwrap_or_default(),
