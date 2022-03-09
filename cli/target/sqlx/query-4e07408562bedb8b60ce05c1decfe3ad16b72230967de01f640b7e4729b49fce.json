@@ -1,19 +1,13 @@
 {
-  "query": "\n        SELECT id FROM office WHERE slug = 'us-senate-co-1'\n    ",
+  "query": "\n                                    UPDATE bill\n                                    SET history = history || '[\"newString\"]'::jsonb\n                                    WHERE id = $1\n                                ",
   "describe": {
-    "columns": [
-      {
-        "ordinal": 0,
-        "name": "id",
-        "type_info": "Uuid"
-      }
-    ],
+    "columns": [],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Uuid"
+      ]
     },
-    "nullable": [
-      false
-    ]
+    "nullable": []
   },
-  "hash": "4de70a4567fe7237c2b8b263e463a08dc83fb37c98a417f7504b787632149dff"
+  "hash": "bcc85127cecb7b5f12f986189406c08955610c9f2aae9d3530b6843655a1b430"
 }
