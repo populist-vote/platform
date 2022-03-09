@@ -35,7 +35,7 @@ pub struct PoliticianResult {
     preferred_name: Option<String>,
     ballot_name: Option<String>,
     description: Option<String>,
-    home_state: State,
+    home_state: Option<State>,
     office_id: Option<ID>,
     thumbnail_image_url: Option<String>,
     website_url: Option<String>,

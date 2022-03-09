@@ -15,7 +15,9 @@ pub struct Office {
     pub political_scope: PoliticalScope,
     pub state: Option<State>,
     pub municipality: Option<String>,
-    pub incumbent_id: uuid::Uuid,
+    /// If a new office is introduced for redistricting or other reasons,
+    /// there may not be an incumbent
+    pub incumbent_id: Option<uuid::Uuid>,
     pub term_length: Option<i32>,
     pub created_at: DateTime,
     pub updated_at: DateTime,
@@ -30,7 +32,7 @@ pub struct CreateOfficeInput {
     pub political_scope: PoliticalScope,
     pub state: Option<State>,
     pub municipality: Option<String>,
-    pub incumbent_id: uuid::Uuid,
+    pub incumbent_id: Option<uuid::Uuid>,
     pub term_length: Option<i32>,
 }
 
