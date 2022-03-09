@@ -201,7 +201,7 @@ async fn main() -> Result<(), Error> {
                 );
                 let slug = slugify!(&full_name);
                 let home_state = State::from_str(&data.candidate.home_state).unwrap();
-                let office_party = Some(
+                let party = Some(
                     PoliticalParty::from_str(&data.office.to_owned().unwrap().parties)
                         .unwrap_or_default(),
                 );
@@ -212,7 +212,7 @@ async fn main() -> Result<(), Error> {
                     last_name,
                     slug,
                     home_state,
-                    office_party,
+                    party,
                     votesmart_candidate_id: Some(vs_id),
                     votesmart_candidate_bio: Some(serde_json::to_value(data.clone()).unwrap()),
                     ..Default::default()
