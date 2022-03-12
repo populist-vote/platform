@@ -91,12 +91,9 @@ pub struct RatingResult {
 impl PoliticianResult {
     async fn full_name(&self) -> String {
         match &self.middle_name {
-            Some(middle_name) => format!(
-                "{} {} {}",
-                &self.first_name,
-                middle_name.to_string(),
-                &self.last_name
-            ),
+            Some(middle_name) => {
+                format!("{} {} {}", &self.first_name, middle_name, &self.last_name)
+            }
             None => format!("{} {}", &self.first_name, &self.last_name),
         }
     }
@@ -155,10 +152,7 @@ impl PoliticianResult {
 
                 let rating = RatingResult {
                     vs_rating: vs_rating.to_owned(),
-                    organization: match organization {
-                        Some(org) => Some(OrganizationResult::from(org.to_owned())),
-                        None => None,
-                    },
+                    organization: organization.map(|org| OrganizationResult::from(org.to_owned())),
                 };
                 ratings.push(rating);
             });
@@ -185,18 +179,21 @@ impl PoliticianResult {
                 let start_year = years[0].parse::<i32>().unwrap();
                 let end_year = years[1]
                     .parse::<i32>()
-                    .unwrap_or(chrono::Local::now().year());
+                    .unwrap_or_else(|_| chrono::Local::now().year());
                 let years_in_public_office = (end_year - start_year).abs();
                 Ok(years_in_public_office)
             }
             VotesmartExperience::Array(exp_vec) => {
                 let years_in_office = exp_vec.into_iter().fold(0, |acc, x| {
-                    if x.title != "Candidate".to_string() {
+                    if x.title != "Candidate" {
                         let span = x
                             .span
                             .split("-")
                             // Sometimes span goes to 'present' so we need to convert that to current year
-                            .map(|n| n.parse::<i32>().unwrap_or(chrono::Utc::now().year()))
+                            .map(|n| {
+                                n.parse::<i32>()
+                                    .unwrap_or_else(|_| chrono::Utc::now().year())
+                            })
                             .collect::<Vec<i32>>();
                         if span.len() == 1 {
                             acc + (chrono::Utc::now().year() - span[0]).abs()
@@ -281,12 +278,7 @@ impl PoliticianResult {
         .await?;
 
         let results = records.into_iter().map(BillResult::from);
-        relay::query(
-            results.into_iter(),
-            relay::Params::new(after, before, first, last),
-            10,
-        )
-        .await
+        relay::query(results, relay::Params::new(after, before, first, last), 10).await
     }
 
     pub async fn current_office(&self, ctx: &Context<'_>) -> Result<Option<OfficeResult>> {
@@ -330,10 +322,7 @@ impl From<Politician> for PoliticianResult {
             ballot_name: p.ballot_name,
             description: p.description,
             home_state: p.home_state,
-            office_id: match p.office_id {
-                Some(id) => Some(ID::from(id)),
-                None => None,
-            },
+            office_id: p.office_id.map(ID::from),
             thumbnail_image_url: p.thumbnail_image_url,
             website_url: p.website_url,
             twitter_url: p.twitter_url,
@@ -347,10 +336,7 @@ impl From<Politician> for PoliticianResult {
                 p.votesmart_candidate_ratings.to_owned(),
             )
             .unwrap_or_default(),
-            upcoming_race_id: match p.upcoming_race_id {
-                Some(id) => Some(ID::from(id)),
-                None => None,
-            },
+            upcoming_race_id: p.upcoming_race_id.map(ID::from),
             created_at: p.created_at,
             updated_at: p.updated_at,
         }

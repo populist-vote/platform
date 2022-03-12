@@ -11,24 +11,15 @@ pub struct PoliticianQuery;
 
 #[derive(Enum, Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Chambers {
-    AllChambers,
+    All,
     House,
     Senate,
 }
 
-#[derive(InputObject)]
+#[derive(Default, InputObject)]
 pub struct PoliticianFilter {
     political_scope: Option<PoliticalScope>,
     chambers: Option<Chambers>,
-}
-
-impl Default for PoliticianFilter {
-    fn default() -> Self {
-        Self {
-            political_scope: None,
-            chambers: None,
-        }
-    }
 }
 
 #[Object(cache_control(max_age = 60))]
@@ -83,21 +74,10 @@ impl PoliticianQuery {
 
                 if let Some(political_scope) = filter.political_scope {
                     match political_scope {
-                        PoliticalScope::Federal => {
-                            if office_type == "Congressional" {
-                                return true;
-                            } else {
-                                return false;
-                            };
-                        }
+                        PoliticalScope::Federal => office_type == "Congressional",
                         PoliticalScope::State => {
-                            if office_type == "State Legislative"
+                            office_type == "State Legislative"
                                 || office_type == "State Gubernatorial"
-                            {
-                                return true;
-                            } else {
-                                return false;
-                            };
                         }
                         _ => true,
                     }
@@ -109,21 +89,9 @@ impl PoliticianQuery {
                 let office_title = &p.votesmart_candidate_bio["office"]["title"];
                 if let Some(chambers) = filter.chambers {
                     match chambers {
-                        Chambers::AllChambers => true,
-                        Chambers::House => {
-                            if office_title == "Representative" {
-                                return true;
-                            } else {
-                                return false;
-                            };
-                        }
-                        Chambers::Senate => {
-                            if office_title == "Senator" {
-                                return true;
-                            } else {
-                                return false;
-                            };
-                        }
+                        Chambers::All => true,
+                        Chambers::House => office_title == "Representative",
+                        Chambers::Senate => office_title == "Senator",
                     }
                 } else {
                     true

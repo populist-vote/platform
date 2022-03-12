@@ -51,10 +51,7 @@ async fn graphql_handler(
         .and_then(|value| value.to_str().ok())
         .map(|value| value.to_string());
 
-    let token_data = match token {
-        Some(token) => Some(jwt::validate_token(&token).unwrap()),
-        None => None,
-    };
+    let token_data = token.map(|token| jwt::validate_token(&token).unwrap());
 
     Json(schema.execute(req.0.data(token_data)).await)
 }

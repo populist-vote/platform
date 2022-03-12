@@ -1,7 +1,7 @@
 use crate::{
     context::ApiContext,
     mutation::StaffOnly,
-    types::{CreateUserResult, Error, LoginResult, UserResult},
+    types::{CreateUserResult, Error, LoginResult},
 };
 use async_graphql::*;
 use auth::{create_access_token_for_user, create_random_token, create_temporary_username};

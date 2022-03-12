@@ -11,7 +11,7 @@ async fn seed_bills() -> Result<(), Box<dyn Error>> {
     let dir = Path::new(&args[1]);
 
     let mut count = 0;
-    for entry in fs::read_dir(dir.to_owned())? {
+    for entry in fs::read_dir(dir)? {
         let path = entry?.path();
         let file = fs::File::open(path)?;
         let reader = io::BufReader::new(file);

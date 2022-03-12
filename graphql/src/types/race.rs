@@ -38,7 +38,7 @@ impl RaceResult {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = Office::find_by_id(
             &db_pool,
-            uuid::Uuid::parse_str(&self.office_id.as_str()).unwrap(),
+            uuid::Uuid::parse_str(self.office_id.as_str()).unwrap(),
         )
         .await?;
         Ok(OfficeResult::from(record))
@@ -73,10 +73,7 @@ impl From<Race> for RaceResult {
             early_voting_begins_date: r.early_voting_begins_date,
             election_date: r.election_date,
             official_website: r.official_website,
-            election_id: match r.election_id {
-                Some(id) => Some(ID::from(id)),
-                None => None,
-            },
+            election_id: r.election_id.map(ID::from),
             created_at: r.created_at,
             updated_at: r.updated_at,
         }
