@@ -3,7 +3,7 @@ use async_graphql::{MergedObject, Object};
 use super::{
     ballot_measure::BallotMeasureQuery, bill::BillQuery, election::ElectionQuery,
     issue_tag::IssueTagQuery, office::OfficeQuery, organization::OrganizationQuery,
-    politician::PoliticianQuery, race::RaceQuery,
+    politician::PoliticianQuery, race::RaceQuery, user::UserQuery,
 };
 
 #[derive(Default)]
@@ -27,4 +27,5 @@ pub struct Query(
     OrganizationQuery,
     PoliticianQuery,
     RaceQuery,
+    UserQuery,
 );

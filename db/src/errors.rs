@@ -5,4 +5,7 @@ pub enum Error {
 
     #[error("Your email or username was not found in our database")]
     EmailOrUsernameNotFound,
+
+    #[error("Reset token has expired or is not valid")]
+    ResetTokenInvalid,
 }

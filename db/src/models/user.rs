@@ -17,13 +17,44 @@ pub struct User {
     pub updated_at: DateTime,
 }
 
+#[derive(FromRow, Debug, Clone)]
+pub struct UserProfile {
+    pub id: uuid::Uuid,
+    pub first_name: String,
+    pub last_name: String,
+    pub address_id: uuid::Uuid,
+    pub user_id: uuid::Uuid,
+}
+
+#[derive(Serialize, Deserialize, InputObject)]
+pub struct Address {
+    line_1: String,
+    line_2: Option<String>,
+    city: String,
+    state: String,
+    country: String,
+    postal_code: String,
+}
+
 #[derive(Serialize, Deserialize, InputObject)]
 pub struct CreateUserInput {
     #[graphql(validator(email))]
-    email: String,
-    username: String,
-    password: String,
-    role: Option<Role>,
+    pub email: String,
+    pub username: String,
+    pub password: String,
+    pub role: Option<Role>,
+}
+
+#[derive(Serialize, Deserialize, InputObject)]
+pub struct CreateUserWithProfileInput {
+    #[graphql(validator(email))]
+    pub email: String,
+    pub username: String,
+    pub password: String,
+    pub address: Address,
+    pub first_name: String,
+    pub last_name: String,
+    pub confirmation_token: String,
 }
 
 #[derive(
@@ -46,7 +77,7 @@ impl User {
             User,
             r#"
                 INSERT INTO populist_user (email, username, password, role)
-                VALUES ($1, $2, $3, $4)
+                VALUES (LOWER($1), $2, $3, $4)
                 RETURNING id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at
             "#,
             input.email,
@@ -54,6 +85,50 @@ impl User {
             hash,
             role as Role
         ).fetch_one(db_pool).await?;
+
+        Ok(record)
+    }
+
+    pub async fn create_with_profile(
+        db_pool: &PgPool,
+        input: &CreateUserWithProfileInput,
+    ) -> Result<Self, Error> {
+        let hash = bcrypt::hash(&input.password).unwrap();
+        let record = sqlx::query_as!(
+            User,
+            r#"
+                WITH ins_user AS (
+                    INSERT INTO populist_user (email, username, password, role, confirmation_token)
+                    VALUES (LOWER($1), $2, $3, $4, $13)
+                    RETURNING id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at
+                ),
+                ins_address AS (
+                    INSERT INTO address (line_1, line_2, city, state, country, postal_code)
+                    VALUES ($5, $6, $7, $8, $9, $10)
+                    RETURNING id
+                ),
+                ins_profile AS (
+                    INSERT INTO user_profile (first_name, last_name, address_id, user_id)
+                    VALUES ($11, $12, (SELECT id FROM ins_address), (SELECT id FROM ins_user))
+                )
+                SELECT ins_user.* FROM ins_user
+            "#,
+            input.email,
+            input.username,
+            hash,
+            Role::BASIC as Role,
+            input.address.line_1,
+            input.address.line_2,
+            input.address.city,
+            input.address.state,
+            input.address.country,
+            input.address.postal_code,
+            input.first_name,
+            input.last_name,
+            input.confirmation_token
+        ).fetch_one(db_pool).await?;
+
+        // Need to handle case of existing user
 
         Ok(record)
     }
@@ -101,6 +176,50 @@ impl User {
         match record {
             Some(record) => Ok(record),
             None => Err(Error::EmailOrUsernameNotFound),
+        }
+    }
+
+    pub async fn validate_email_exists(db_pool: &PgPool, email: String) -> Result<bool, Error> {
+        let existing_user = sqlx::query!(
+            r#"
+            SELECT id FROM populist_user WHERE email = LOWER($1)
+        "#,
+            email
+        )
+        .fetch_optional(db_pool)
+        .await?;
+
+        if let Some(_user) = existing_user {
+            Ok(true)
+        } else {
+            Err(Error::EmailOrUsernameNotFound)
+        }
+    }
+
+    pub async fn update_password(
+        db_pool: &PgPool,
+        new_password: String,
+        reset_token: String,
+    ) -> Result<bool, Error> {
+        let hash = bcrypt::hash(&new_password).unwrap();
+
+        let update_result = sqlx::query!(
+            r#"
+                UPDATE populist_user
+                SET password = $1
+                WHERE reset_token = $2
+                AND reset_token_expires_at > now()
+            "#,
+            hash,
+            reset_token
+        )
+        .execute(db_pool)
+        .await;
+
+        if let Ok(_result) = update_result {
+            Ok(true)
+        } else {
+            Err(Error::ResetTokenInvalid)
         }
     }
 }

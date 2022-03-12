@@ -9,6 +9,7 @@ use async_graphql::{
     Request, Response,
 };
 
+use auth::jwt;
 use dotenv::dotenv;
 use graphql::{context::ApiContext, new_schema, PopulistSchema};
 use log::info;
@@ -44,12 +45,18 @@ async fn graphql_handler(
     req: Json<Request>,
     headers: &HeaderMap,
 ) -> Json<Response> {
+    // Perhaps extract the user from the token here to put that into context
     let token = headers
         .get("Authorization")
         .and_then(|value| value.to_str().ok())
         .map(|value| value.to_string());
 
-    Json(schema.execute(req.0.data(token)).await)
+    let token_data = match token {
+        Some(token) => Some(jwt::validate_token(&token).unwrap()),
+        None => None,
+    };
+
+    Json(schema.execute(req.0.data(token_data)).await)
 }
 
 #[handler]
@@ -94,6 +101,7 @@ async fn main() -> Result<(), std::io::Error> {
 
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
+
     let context = ApiContext::new(pool.connection.clone());
 
     let schema = new_schema()

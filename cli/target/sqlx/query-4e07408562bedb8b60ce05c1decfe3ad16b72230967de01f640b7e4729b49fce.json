@@ -1,13 +1,19 @@
 {
-  "query": "\n                                    UPDATE bill\n                                    SET history = history || '[\"newString\"]'::jsonb\n                                    WHERE id = $1\n                                ",
+  "query": "\n            SELECT votesmart_candidate_ratings FROM politician\n        ",
   "describe": {
-    "columns": [],
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "votesmart_candidate_ratings",
+        "type_info": "Jsonb"
+      }
+    ],
     "parameters": {
-      "Left": [
-        "Uuid"
-      ]
+      "Left": []
     },
-    "nullable": []
+    "nullable": [
+      false
+    ]
   },
-  "hash": "bcc85127cecb7b5f12f986189406c08955610c9f2aae9d3530b6843655a1b430"
+  "hash": "07a9c6dc585911be05890f4a8d9189fb8c84a6bc0b4440aa79230d516b2f0f07"
 }

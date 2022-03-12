@@ -6,7 +6,10 @@ pub enum Error {
     S3Error(#[from] anyhow::Error),
 
     #[error(transparent)]
-    DatabaseError(#[from] sqlx::Error),
+    DatabaseError(#[from] db::Error),
+
+    #[error(transparent)]
+    SqlxError(#[from] sqlx::Error),
 
     #[error("BadInput (field: {field:?}, reason: {message:?})")]
     BadInput { field: String, message: String },
@@ -17,14 +20,29 @@ pub enum Error {
     #[error(transparent)]
     VarError(#[from] std::env::VarError),
 
+    #[error("A user already exists with this email")]
+    UserExistsError,
+
     #[error("Your password was incorrect")]
     PasswordError,
 
     #[error("Your email or username was not found in our database")]
-    EmailOrUsernameNotFound(#[from] db::Error),
+    EmailOrUsernameNotFound,
 
     #[error(transparent)]
     AuthError(#[from] auth::errors::Error),
+
+    #[error("Your email address could not be confirmed")]
+    ConfirmationError,
+
+    #[error("We don't have an account associated with that email")]
+    EmailNotFound,
+
+    #[error("Passwords do not match")]
+    PasswordsDoNotMatch,
+
+    #[error("Reset token was exp")]
+    ResetTokenInvalid,
 }
 
 impl ErrorExtensions for Error {

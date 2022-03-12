@@ -5,6 +5,8 @@ use super::{
     user::UserMutation,
 };
 use async_graphql::{Context, Guard, MergedObject, Result};
+use auth::Claims;
+use jsonwebtoken::TokenData;
 #[derive(MergedObject, Default)]
 pub struct Mutation(
     ArgumentMutation,
@@ -32,15 +34,11 @@ pub struct StaffOnly;
 #[async_trait::async_trait]
 impl Guard for StaffOnly {
     async fn check(&self, ctx: &Context<'_>) -> Result<(), async_graphql::Error> {
-        if let Some(token) = ctx.data::<Option<String>>().unwrap() {
-            if let Ok(token_data) = auth::validate_token(token) {
-                match token_data.claims.role {
-                    db::Role::STAFF => Ok(()),
-                    db::Role::SUPERUSER => Ok(()),
-                    _ => Err("You don't have permission to to run this mutation".into()),
-                }
-            } else {
-                Err("You don't have permission to to run this mutation".into())
+        if let Some(token_data) = ctx.data_unchecked::<Option<TokenData<Claims>>>() {
+            match token_data.claims.role {
+                db::Role::STAFF => Ok(()),
+                db::Role::SUPERUSER => Ok(()),
+                _ => Err("You don't have permission to to run this mutation".into()),
             }
         } else {
             Err("You don't have permission to to run this mutation".into())

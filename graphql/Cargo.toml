@@ -11,6 +11,7 @@ bytes = "1.1.0"
 chrono = "0.4.19"
 auth = { path = "../auth" }
 db = { path = "../db" }
+mailers = { path = "../mailers" }
 tokio = { version = "1.8", features = ["full"] }
 legiscan = { path = "../legiscan", features = ["async-graphql"] }
 votesmart = { path = "../votesmart", features = ["async-graphql"] }
@@ -25,3 +26,4 @@ uuid = "0.8.2"
 http = "0.2.5"
 base64 = "0.13.0"
 async-trait = "0.1.52"
+jsonwebtoken = "7.2.0"

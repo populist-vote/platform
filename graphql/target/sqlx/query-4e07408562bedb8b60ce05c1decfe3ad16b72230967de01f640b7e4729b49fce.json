@@ -1,21 +1,15 @@
 {
-  "query": "\n                SELECT votesmart_candidate_bio FROM politician\n                WHERE id = $1\n            ",
+  "query": "\n                UPDATE populist_user \n                SET reset_token = $1,\n                    reset_token_expires_at = $2\n                WHERE email = LOWER($3)\n            ",
   "describe": {
-    "columns": [
-      {
-        "ordinal": 0,
-        "name": "votesmart_candidate_bio",
-        "type_info": "Jsonb"
-      }
-    ],
+    "columns": [],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Text",
+        "Timestamptz",
+        "Text"
       ]
     },
-    "nullable": [
-      false
-    ]
+    "nullable": []
   },
-  "hash": "b9dcef3a4dbcf4ec4af8c0bae59ed40bfceb00ed57ede6b81e22d51f93d08815"
+  "hash": "32fa3a2ee0792beb058194ab48e1e0d6690707a3d54a6610c217ad0d6625377a"
 }
