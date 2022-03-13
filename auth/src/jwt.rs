@@ -46,7 +46,7 @@ pub fn validate_token(token: &str) -> Result<TokenData<Claims>, Error> {
     let key = std::env::var("JWT_SECRET")?;
 
     match decode::<Claims>(
-        &token.to_string(),
+        token,
         &DecodingKey::from_secret(key.as_ref()),
         &Validation::default(),
     ) {

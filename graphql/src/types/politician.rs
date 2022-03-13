@@ -175,7 +175,7 @@ impl PoliticianResult {
         .unwrap();
         match experience {
             VotesmartExperience::Object(exp) => {
-                let years = exp.span.split("-").collect::<Vec<&str>>();
+                let years = exp.span.split('-').collect::<Vec<&str>>();
                 let start_year = years[0].parse::<i32>().unwrap();
                 let end_year = years[1]
                     .parse::<i32>()
@@ -188,7 +188,7 @@ impl PoliticianResult {
                     if x.title != "Candidate" {
                         let span = x
                             .span
-                            .split("-")
+                            .split('-')
                             // Sometimes span goes to 'present' so we need to convert that to current year
                             .map(|n| {
                                 n.parse::<i32>()

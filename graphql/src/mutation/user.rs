@@ -246,19 +246,19 @@ impl UserMutation {
         let update_result =
             User::update_password(&db_pool, input.password, input.reset_token).await;
 
-        if let Ok(_) = update_result {
+        if update_result.is_ok() {
             // Send out email with confirming password has been changed, link to login
             let prototype = EmailPrototype {
                 recipient: input.email.clone(),
                 subject: "Reset your Password".to_string(),
                 template_id: None,
-                template_data: Some(format!(
+                template_data: Some(
                     r#"
                 Your password has changed.  If you did this, just ignore this email.  If else, contact us right away at <info@populist.us>
 
                 Click here to sign in.
-            "#,
-                )),
+            "#.to_string(),
+                ),
             };
 
             mailers::EmailClient::send_mail(prototype)

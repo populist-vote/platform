@@ -17,7 +17,7 @@ impl EmailClient {
                 Content::new().set_content_type("text/html").set_value(
                     prototype
                         .template_data
-                        .unwrap_or("Some default email data".to_string()),
+                        .unwrap_or_else(|| "Some default email data".to_string()),
                 ),
             )
             .add_personalization(p);

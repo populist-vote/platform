@@ -27,7 +27,7 @@ impl UserQuery {
         .await?;
 
         if let Some(_user) = existing_user {
-            Err(Error::UserExistsError)
+            Ok(false)
         } else {
             Ok(true)
         }

@@ -22,7 +22,7 @@ pub struct PoliticianFilter {
     chambers: Option<Chambers>,
 }
 
-#[Object(cache_control(max_age = 60))]
+#[Object]
 impl PoliticianQuery {
     async fn politician_by_id(
         &self,

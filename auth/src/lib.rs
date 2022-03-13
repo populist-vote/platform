@@ -22,7 +22,7 @@ pub fn create_temporary_password() -> String {
 pub fn create_temporary_username(email: String) -> String {
     let mut rng = rand::thread_rng();
 
-    let base = email.split("@").collect::<Vec<&str>>()[0].to_string();
+    let base = email.split('@').collect::<Vec<&str>>()[0].to_string();
     let rnd_int: i32 = rng.gen();
-    format!("{}{}", base, rnd_int.to_string())
+    format!("{}{}", base, rnd_int)
 }
