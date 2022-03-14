@@ -192,7 +192,7 @@ impl User {
         if let Some(_user) = existing_user {
             Ok(true)
         } else {
-            Ok(false)
+            Err(Error::EmailOrUsernameNotFound)
         }
     }
 

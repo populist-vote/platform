@@ -20,5 +20,5 @@ impl From<User> for CreateUserResult {
 
 #[derive(SimpleObject)]
 pub struct LoginResult {
-    pub access_token: String,
+    pub user_id: ID,
 }

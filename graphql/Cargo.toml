@@ -7,6 +7,7 @@ publish = false
 [dependencies]
 anyhow = "1.0.45"
 async-graphql = { version = "3.0.10", features = ["uuid", "chrono", "unblock", "dataloader", "apollo_persisted_queries"] }
+async-graphql-poem = "3.0.18"
 bytes = "1.1.0"
 chrono = "0.4.19"
 auth = { path = "../auth" }
@@ -27,3 +28,4 @@ http = "0.2.5"
 base64 = "0.13.0"
 async-trait = "0.1.52"
 jsonwebtoken = "7.2.0"
+poem = { version = "1.2.59" }

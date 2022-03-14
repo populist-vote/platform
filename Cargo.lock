@@ -1149,6 +1149,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-graphql",
+ "async-graphql-poem",
  "async-trait",
  "auth",
  "base64 0.13.0",
@@ -1160,6 +1161,7 @@ dependencies = [
  "jsonwebtoken",
  "legiscan",
  "mailers",
+ "poem",
  "pwhash",
  "rust-s3",
  "serde",

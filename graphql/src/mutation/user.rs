@@ -7,6 +7,7 @@ use async_graphql::*;
 use auth::{create_access_token_for_user, create_random_token, create_temporary_username};
 use db::{Address, CreateUserInput, CreateUserWithProfileInput, User};
 use mailers::EmailPrototype;
+use poem::http::header::SET_COOKIE;
 use pwhash::bcrypt;
 use serde::{Deserialize, Serialize};
 
@@ -122,7 +123,11 @@ impl UserMutation {
                     .await
                     .expect("Something went wrong sending out a new user email");
 
-                Ok(LoginResult { access_token })
+                ctx.insert_http_header(SET_COOKIE, format!("access_token={}", access_token));
+
+                Ok(LoginResult {
+                    user_id: new_user.id.into(),
+                })
             }
             Err(err) => Err(err.into()),
         }
@@ -164,9 +169,12 @@ impl UserMutation {
             let password_is_valid = bcrypt::verify(input.password, &user.password);
 
             if password_is_valid {
-                let token = create_access_token_for_user(user)?;
+                let access_token = create_access_token_for_user(user.clone())?;
+
+                ctx.insert_http_header(SET_COOKIE, format!("access_token={}", access_token));
+
                 Ok(LoginResult {
-                    access_token: token,
+                    user_id: user.id.into(),
                 })
             } else {
                 Err(Error::PasswordError)
