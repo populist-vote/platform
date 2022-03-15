@@ -57,7 +57,7 @@ fn graphql_playground() -> impl IntoResponse {
 }
 
 pub fn cors(environment: Environment) -> Cors {
-    let cors = Cors::new();
+    let cors = Cors::new().allow_credentials(true);
 
     fn allowed_staging_origins(origin: &str) -> bool {
         let staging_origins = vec![
