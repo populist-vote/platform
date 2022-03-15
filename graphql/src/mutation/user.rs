@@ -123,7 +123,10 @@ impl UserMutation {
                     .await
                     .expect("Something went wrong sending out a new user email");
 
-                ctx.insert_http_header(SET_COOKIE, format!("access_token={}", access_token));
+                ctx.insert_http_header(
+                    SET_COOKIE,
+                    format!("access_token={}; HttpOnly", access_token),
+                );
 
                 Ok(LoginResult {
                     user_id: new_user.id.into(),
@@ -171,7 +174,10 @@ impl UserMutation {
             if password_is_valid {
                 let access_token = create_access_token_for_user(user.clone())?;
 
-                ctx.insert_http_header(SET_COOKIE, format!("access_token={}", access_token));
+                ctx.insert_http_header(
+                    SET_COOKIE,
+                    format!("access_token={}; HttpOnly", access_token),
+                );
 
                 Ok(LoginResult {
                     user_id: user.id.into(),

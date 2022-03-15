@@ -6,9 +6,10 @@ use async_graphql::{
         ApolloTracing,
     },
     http::{playground_source, GraphQLPlaygroundConfig},
-    Request, Response,
+    Request,
 };
 
+use async_graphql_poem::GraphQLResponse;
 use auth::jwt;
 use dotenv::dotenv;
 use graphql::{context::ApiContext, new_schema, PopulistSchema};
@@ -17,8 +18,8 @@ use poem::{
     get, handler,
     http::HeaderMap,
     listener::TcpListener,
-    middleware::{Compression, Cors},
-    web::{Data, Html, Json},
+    middleware::{Compression, CookieJarManager, Cors},
+    web::{cookie::CookieJar, Data, Html, Json},
     EndpointExt, IntoResponse, Route, Server,
 };
 use regex::Regex;
@@ -43,17 +44,11 @@ fn ping() -> Json<Value> {
 async fn graphql_handler(
     schema: Data<&PopulistSchema>,
     req: Json<Request>,
-    headers: &HeaderMap,
-) -> Json<Response> {
-    // Perhaps extract the user from the token here to put that into context
-    let token = headers
-        .get("Authorization")
-        .and_then(|value| value.to_str().ok())
-        .map(|value| value.to_string());
-
-    let token_data = token.map(|token| jwt::validate_token(&token).unwrap());
-
-    Json(schema.execute(req.0.data(token_data)).await)
+    cookie_jar: &CookieJar,
+) -> GraphQLResponse {
+    let token = cookie_jar.get("access_token");
+    let token_data = token.map(|token| jwt::validate_token(token.value_str()).unwrap());
+    schema.execute(req.0.data(token_data)).await.into()
 }
 
 #[handler]
@@ -112,7 +107,8 @@ async fn main() -> Result<(), std::io::Error> {
         .at("/", get(graphql_playground).post(graphql_handler))
         .data(schema)
         .with(cors(environment))
-        .with(Compression::default());
+        .with(Compression::default())
+        .with(CookieJarManager::default());
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
     let address = format!("0.0.0.0:{}", port);
