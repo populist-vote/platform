@@ -44,6 +44,7 @@ impl LegiscanProxy {
 async fn test_get_bill_text() {
     let proxy = LegiscanProxy::new().unwrap();
     let bill_text = proxy.get_bill_text(647508).await.unwrap();
+    println!("bill_text = {:?}", bill_text);
     assert_eq!(bill_text.bill_id, 428345);
     assert_eq!(bill_text.date, "2012-05-23");
 

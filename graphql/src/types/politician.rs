@@ -43,8 +43,8 @@ pub struct PoliticianResult {
     facebook_url: Option<String>,
     instagram_url: Option<String>,
     party: Option<PoliticalParty>,
-    votesmart_candidate_id: i32,
-    votesmart_candidate_bio: GetCandidateBioResponse,
+    votesmart_candidate_id: Option<i32>,
+    votesmart_candidate_bio: Option<GetCandidateBioResponse>,
     votesmart_candidate_ratings: Vec<VsRating>,
     upcoming_race_id: Option<ID>,
     created_at: DateTime,
@@ -99,18 +99,23 @@ impl PoliticianResult {
     }
 
     async fn age(&self) -> Option<i64> {
-        let dob = NaiveDate::parse_from_str(
-            &self.votesmart_candidate_bio.candidate.birth_date,
-            "%m/%d/%Y",
-        );
-        // Votesmart dob may be in a whack format
-        if let Ok(dob) = dob {
-            // There must be a better way to get NaiveDate.today but 🤷
-            let now =
-                NaiveDate::parse_from_str(&Local::now().format("%m/%d/%Y").to_string(), "%m/%d/%Y")
-                    .unwrap();
-            let age = (now - dob).num_weeks() / 52;
-            Some(age)
+        // TODO: Create our own DOB field so we dont have to rely on Votesmart
+
+        if let Some(vs_bio) = &self.votesmart_candidate_bio {
+            let dob = NaiveDate::parse_from_str(&vs_bio.candidate.birth_date, "%m/%d/%Y");
+            // Votesmart dob may be in a whack format
+            if let Ok(dob) = dob {
+                // There must be a better way to get NaiveDate.today but 🤷
+                let now = NaiveDate::parse_from_str(
+                    &Local::now().format("%m/%d/%Y").to_string(),
+                    "%m/%d/%Y",
+                )
+                .unwrap();
+                let age = (now - dob).num_weeks() / 52;
+                Some(age)
+            } else {
+                None
+            }
         } else {
             None
         }
@@ -168,46 +173,49 @@ impl PoliticianResult {
     /// Calculates the total years a politician has been in office using
     /// the votesmart politicial experience array.  Does not take into account
     /// objects where the politician is considered a 'candidate'
-    async fn years_in_public_office(&self) -> Result<i32> {
-        let experience: VotesmartExperience = serde_json::from_value(
-            self.votesmart_candidate_bio.candidate.political["experience"].to_owned(),
-        )
-        .unwrap();
-        match experience {
-            VotesmartExperience::Object(exp) => {
-                let years = exp.span.split('-').collect::<Vec<&str>>();
-                let start_year = years[0].parse::<i32>().unwrap();
-                let end_year = years[1]
-                    .parse::<i32>()
-                    .unwrap_or_else(|_| chrono::Local::now().year());
-                let years_in_public_office = (end_year - start_year).abs();
-                Ok(years_in_public_office)
-            }
-            VotesmartExperience::Array(exp_vec) => {
-                let years_in_office = exp_vec.into_iter().fold(0, |acc, x| {
-                    if x.title != "Candidate" {
-                        let span = x
-                            .span
-                            .split('-')
-                            // Sometimes span goes to 'present' so we need to convert that to current year
-                            .map(|n| {
-                                n.parse::<i32>()
-                                    .unwrap_or_else(|_| chrono::Utc::now().year())
-                            })
-                            .collect::<Vec<i32>>();
-                        if span.len() == 1 {
-                            acc + (chrono::Utc::now().year() - span[0]).abs()
+    async fn years_in_public_office(&self) -> Result<Option<i32>> {
+        if let Some(vs_bio) = &self.votesmart_candidate_bio {
+            let experience: VotesmartExperience =
+                serde_json::from_value(vs_bio.candidate.political["experience"].to_owned())
+                    .unwrap();
+            match experience {
+                VotesmartExperience::Object(exp) => {
+                    let years = exp.span.split('-').collect::<Vec<&str>>();
+                    let start_year = years[0].parse::<i32>().unwrap();
+                    let end_year = years[1]
+                        .parse::<i32>()
+                        .unwrap_or_else(|_| chrono::Local::now().year());
+                    let years_in_public_office = (end_year - start_year).abs();
+                    Ok(Some(years_in_public_office))
+                }
+                VotesmartExperience::Array(exp_vec) => {
+                    let years_in_office = exp_vec.into_iter().fold(0, |acc, x| {
+                        if x.title != "Candidate" {
+                            let span = x
+                                .span
+                                .split('-')
+                                // Sometimes span goes to 'present' so we need to convert that to current year
+                                .map(|n| {
+                                    n.parse::<i32>()
+                                        .unwrap_or_else(|_| chrono::Utc::now().year())
+                                })
+                                .collect::<Vec<i32>>();
+                            if span.len() == 1 {
+                                acc + (chrono::Utc::now().year() - span[0]).abs()
+                            } else {
+                                acc + (span[1] - span[0]).abs()
+                            }
                         } else {
-                            acc + (span[1] - span[0]).abs()
+                            acc
                         }
-                    } else {
-                        acc
-                    }
-                });
+                    });
 
-                Ok(years_in_office)
+                    Ok(Some(years_in_office))
+                }
+                VotesmartExperience::None => Ok(Some(0)),
             }
-            VotesmartExperience::None => Ok(0),
+        } else {
+            Ok(None)
         }
     }
 
@@ -329,7 +337,7 @@ impl From<Politician> for PoliticianResult {
             facebook_url: p.facebook_url,
             instagram_url: p.instagram_url,
             party: p.party,
-            votesmart_candidate_id: p.votesmart_candidate_id.unwrap(),
+            votesmart_candidate_id: p.votesmart_candidate_id,
             votesmart_candidate_bio: serde_json::from_value(p.votesmart_candidate_bio.to_owned())
                 .unwrap_or_default(),
             votesmart_candidate_ratings: serde_json::from_value(
