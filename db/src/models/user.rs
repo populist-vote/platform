@@ -196,7 +196,7 @@ impl User {
         }
     }
 
-    pub async fn update_password(
+    pub async fn reset_password(
         db_pool: &PgPool,
         new_password: String,
         reset_token: String,
@@ -220,6 +220,34 @@ impl User {
             Ok(true)
         } else {
             Err(Error::ResetTokenInvalid)
+        }
+    }
+
+    pub async fn update_password(
+        db_pool: &PgPool,
+        new_password: String,
+        user_id: uuid::Uuid,
+    ) -> Result<bool, Error> {
+        let hash = bcrypt::hash(&new_password).unwrap();
+
+        let update_result = sqlx::query!(
+            r#"
+                UPDATE populist_user
+                SET password = $1
+                WHERE id = $2
+            "#,
+            hash,
+            user_id
+        )
+        .execute(db_pool)
+        .await;
+
+        if let Ok(_) = update_result {
+            Ok(true)
+        } else {
+            Err(Error::Custom(
+                "Your password could not be updated".to_string(),
+            ))
         }
     }
 }

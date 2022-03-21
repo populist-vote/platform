@@ -8,4 +8,7 @@ pub enum Error {
 
     #[error("Reset token has expired or is not valid")]
     ResetTokenInvalid,
+
+    #[error("{0}")]
+    Custom(String),
 }

@@ -4,8 +4,9 @@ use crate::{
     types::{CreateUserResult, Error, LoginResult},
 };
 use async_graphql::*;
-use auth::{create_access_token_for_user, create_random_token, create_temporary_username};
+use auth::{create_access_token_for_user, create_random_token, create_temporary_username, Claims};
 use db::{Address, CreateUserInput, CreateUserWithProfileInput, User};
+use jsonwebtoken::TokenData;
 use mailers::{EmailClient, EmailPrototype};
 use poem::http::header::SET_COOKIE;
 use pwhash::bcrypt;
@@ -244,8 +245,7 @@ impl UserMutation {
 
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
 
-        let update_result =
-            User::update_password(&db_pool, input.password, input.reset_token).await;
+        let update_result = User::reset_password(&db_pool, input.password, input.reset_token).await;
 
         if update_result.is_ok() {
             // Send out email with confirming password has been changed, link to login
@@ -263,6 +263,32 @@ impl UserMutation {
             Ok(true)
         } else {
             Err(Error::ResetTokenInvalid)
+        }
+    }
+
+    async fn update_password(
+        &self,
+        ctx: &Context<'_>,
+        input: ResetPasswordInput,
+    ) -> Result<bool, Error> {
+        if input.password != input.confirm_password {
+            return Err(Error::PasswordsDoNotMatch);
+        };
+
+        let user = ctx.data::<Option<TokenData<Claims>>>().unwrap();
+        let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+
+        match user {
+            Some(user) => {
+                let update_result =
+                    User::update_password(&db_pool, input.password, user.claims.sub).await;
+                if update_result.is_ok() {
+                    Ok(true)
+                } else {
+                    Err(Error::ResetTokenInvalid)
+                }
+            }
+            None => Err(Error::Unauthorized),
         }
     }
 }
