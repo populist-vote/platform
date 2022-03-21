@@ -38,12 +38,13 @@ impl UserQuery {
         }
     }
 
-    async fn current_user(&self, ctx: &Context<'_>) -> Result<UserResult, Error> {
+    /// Providers current user based on JWT found in client's access_token cookie
+    async fn current_user(&self, ctx: &Context<'_>) -> Result<Option<UserResult>, Error> {
         let user = ctx.data::<Option<TokenData<Claims>>>().unwrap();
 
         match user {
-            Some(user) => Ok(UserResult::from(user)),
-            None => Err(Error::Unauthorized),
+            Some(user) => Ok(Some(UserResult::from(user))),
+            None => Ok(None),
         }
     }
 }
