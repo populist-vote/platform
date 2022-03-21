@@ -6,7 +6,7 @@ use crate::{
 use async_graphql::*;
 use auth::{create_access_token_for_user, create_random_token, create_temporary_username};
 use db::{Address, CreateUserInput, CreateUserWithProfileInput, User};
-use mailers::EmailPrototype;
+use mailers::{EmailClient, EmailPrototype};
 use poem::http::header::SET_COOKIE;
 use pwhash::bcrypt;
 use serde::{Deserialize, Serialize};
@@ -102,26 +102,12 @@ impl UserMutation {
                     confirmation_token
                 );
 
-                // Send out email with username, temp password, and link to confirm & set password
-                let prototype = EmailPrototype {
-                    recipient: input.email,
-                    subject: "Welcome to Populist".to_string(),
-                    template_id: None,
-                    template_data: Some(format!(
-                        r#"
-                Welcome to Populist!
-
-                Thanks for creating an account with us!  Visit the link below to to verify your email address.
-
-                {}
-            "#,
-                        account_confirmation_url
-                    )),
-                };
-
-                mailers::EmailClient::send_mail(prototype)
+                if EmailClient::send_welcome_email(new_user.email, account_confirmation_url)
                     .await
-                    .expect("Something went wrong sending out a new user email");
+                    .is_err()
+                {
+                    println!("Error sending welcome email");
+                }
 
                 ctx.insert_http_header(
                     SET_COOKIE,
@@ -151,10 +137,11 @@ impl UserMutation {
                 confirmation_token = NULL
             WHERE confirmation_token = $1 
             AND confirmed_at = NULL
+            RETURNING id
         "#,
             confirmation_token
         )
-        .execute(&db_pool)
+        .fetch_one(&db_pool)
         .await;
 
         if let Ok(_confirmed) = confirmed_user_result {
@@ -223,7 +210,7 @@ impl UserMutation {
             let prototype = EmailPrototype {
                 recipient: email,
                 subject: "Reset your Password".to_string(),
-                template_id: None,
+                template_id: "d-819b5a97194e4b3e99efa5ec2d9c6e6e".to_string(),
                 template_data: Some(format!(
                     r#"
                 Lets get you setup with a new password.
@@ -265,14 +252,8 @@ impl UserMutation {
             let prototype = EmailPrototype {
                 recipient: input.email.clone(),
                 subject: "Reset your Password".to_string(),
-                template_id: None,
-                template_data: Some(
-                    r#"
-                Your password has changed.  If you did this, just ignore this email.  If else, contact us right away at <info@populist.us>
-
-                Click here to sign in.
-            "#.to_string(),
-                ),
+                template_id: "d-a5a79e8740864187aadfdd0bc07bbb97".to_string(),
+                template_data: None,
             };
 
             mailers::EmailClient::send_mail(prototype)
