@@ -136,7 +136,7 @@ impl UserMutation {
             SET confirmed_at = now() AT TIME ZONE 'utc',
                 confirmation_token = NULL
             WHERE confirmation_token = $1 
-            AND confirmed_at = NULL
+            AND confirmed_at IS NULL
             RETURNING id
         "#,
             confirmation_token
