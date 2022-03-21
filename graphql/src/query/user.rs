@@ -1,6 +1,11 @@
 use async_graphql::{Context, Object, Result};
+use auth::Claims;
+use jsonwebtoken::TokenData;
 
-use crate::{context::ApiContext, types::Error};
+use crate::{
+    context::ApiContext,
+    types::{Error, UserResult},
+};
 
 #[derive(Default)]
 pub struct UserQuery;
@@ -30,6 +35,15 @@ impl UserQuery {
             Ok(false)
         } else {
             Ok(true)
+        }
+    }
+
+    async fn current_user(&self, ctx: &Context<'_>) -> Result<UserResult, Error> {
+        let user = ctx.data::<Option<TokenData<Claims>>>().unwrap();
+
+        match user {
+            Some(user) => Ok(UserResult::from(user)),
+            None => Err(Error::Unauthorized),
         }
     }
 }

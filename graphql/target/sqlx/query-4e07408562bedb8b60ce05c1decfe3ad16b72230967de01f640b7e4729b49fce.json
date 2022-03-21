@@ -1,21 +1,27 @@
 {
-  "query": "\n            UPDATE populist_user \n            SET confirmed_at = now() AT TIME ZONE 'utc',\n                confirmation_token = NULL\n            WHERE confirmation_token = $1 \n            AND confirmed_at IS NULL\n            RETURNING id\n        ",
+  "query": "\n            SELECT id, username FROM populist_user WHERE id = $1\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
         "name": "id",
         "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "username",
+        "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
-        "Text"
+        "Uuid"
       ]
     },
     "nullable": [
+      false,
       false
     ]
   },
-  "hash": "378bcb76f24be0d6bb95610121204040c5a98f5fe46a91cec9882456d558d084"
+  "hash": "28078712d89faa3a49b85d293ce0dab82510eca0dcadd695d7a245f406e6c33f"
 }

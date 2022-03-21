@@ -1,10 +1,14 @@
 use async_graphql::{SimpleObject, ID};
-use db::User;
+use auth::Claims;
+use db::{Role, User};
+use jsonwebtoken::TokenData;
 
 #[derive(SimpleObject)]
 pub struct UserResult {
-    username: String,
     id: ID,
+    username: String,
+    email: String,
+    role: Role,
 }
 
 #[derive(SimpleObject)]
@@ -21,4 +25,15 @@ impl From<User> for CreateUserResult {
 #[derive(SimpleObject)]
 pub struct LoginResult {
     pub user_id: ID,
+}
+
+impl From<&TokenData<Claims>> for UserResult {
+    fn from(user: &TokenData<Claims>) -> Self {
+        Self {
+            id: ID::from(user.claims.sub),
+            username: user.claims.username.clone(),
+            email: user.claims.email.clone(),
+            role: user.claims.role,
+        }
+    }
 }

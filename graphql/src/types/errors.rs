@@ -32,6 +32,9 @@ pub enum Error {
     #[error(transparent)]
     AuthError(#[from] auth::errors::Error),
 
+    #[error("No user authentication token was provided with request")]
+    Unauthorized,
+
     #[error("Your email address could not be confirmed")]
     ConfirmationError,
 

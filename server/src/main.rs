@@ -16,7 +16,6 @@ use graphql::{context::ApiContext, new_schema, PopulistSchema};
 use log::info;
 use poem::{
     get, handler,
-    http::HeaderMap,
     listener::TcpListener,
     middleware::{Compression, CookieJarManager, Cors},
     web::{cookie::CookieJar, Data, Html, Json},

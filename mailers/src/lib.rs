@@ -1,6 +1,5 @@
 use sendgrid::v3::{Content, Email, Message, Personalization, Sender};
 use serde_json::json;
-use std::collections::HashMap;
 
 static POPULIST_FROM_EMAIL: &str = "info@populist.us";
 
