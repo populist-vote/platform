@@ -17,7 +17,7 @@ use log::info;
 use poem::{
     get, handler,
     listener::TcpListener,
-    middleware::{Compression, CookieJarManager, Cors},
+    middleware::{Compression, CookieJarManager, Cors, ForceHttps},
     web::{cookie::CookieJar, Data, Html, Json},
     EndpointExt, IntoResponse, Route, Server,
 };
@@ -102,6 +102,7 @@ async fn main() -> Result<(), std::io::Error> {
         .finish();
 
     let environment = Environment::from_str(&std::env::var("ENVIRONMENT").unwrap()).unwrap();
+    let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
     let app = Route::new()
         .at("/", get(graphql_playground).post(graphql_handler))
         .data(schema)
@@ -109,11 +110,18 @@ async fn main() -> Result<(), std::io::Error> {
         .with(Compression::default())
         .with(CookieJarManager::default());
 
-    let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
     let address = format!("0.0.0.0:{}", port);
 
     info!("GraphQL Playground live at http://localhost:{}", &port);
 
     let listener = TcpListener::bind(&address);
+
+    // Force https for non local environments
+    if environment != Environment::Local {
+        return Server::new(listener)
+            .run(app.with(ForceHttps::default()))
+            .await;
+    }
+
     Server::new(listener).run(app).await
 }
