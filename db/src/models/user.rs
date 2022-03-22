@@ -244,7 +244,7 @@ impl User {
         .execute(db_pool)
         .await;
 
-        if let Ok(_) = update_result {
+        if update_result.is_ok() {
             Ok(true)
         } else {
             Err(Error::Custom(

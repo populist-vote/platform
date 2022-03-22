@@ -33,6 +33,12 @@ pub struct ResetPasswordInput {
     reset_token: String,
 }
 
+#[derive(Serialize, Deserialize, InputObject)]
+pub struct UpdatePasswordInput {
+    old_password: String,
+    new_password: String,
+}
+
 #[derive(Default)]
 pub struct UserMutation;
 
@@ -261,29 +267,45 @@ impl UserMutation {
         }
     }
 
-    // async fn update_password(
-    //     &self,
-    //     ctx: &Context<'_>,
-    //     input: ResetPasswordInput,
-    // ) -> Result<bool, Error> {
-    //     if input.password != input.confirm_password {
-    //         return Err(Error::PasswordsDoNotMatch);
-    //     };
+    async fn update_password(
+        &self,
+        ctx: &Context<'_>,
+        input: UpdatePasswordInput,
+    ) -> Result<bool, Error> {
+        let user = ctx.data::<Option<TokenData<Claims>>>().unwrap();
+        let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
 
-    //     let user = ctx.data::<Option<TokenData<Claims>>>().unwrap();
-    //     let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+        match user {
+            Some(user) => {
+                let user_pw_result = sqlx::query!(
+                    r#"
+            SELECT password FROM populist_user 
+            WHERE id = $1"#,
+                    user.claims.sub
+                )
+                .fetch_one(&db_pool)
+                .await;
 
-    //     match user {
-    //         Some(user) => {
-    //             let update_result =
-    //                 User::update_password(&db_pool, input.password, user.claims.sub).await;
-    //             if update_result.is_ok() {
-    //                 Ok(true)
-    //             } else {
-    //                 Err(Error::ResetTokenInvalid)
-    //             }
-    //         }
-    //         None => Err(Error::Unauthorized),
-    //     }
-    // }
+                if let Ok(user_pw) = user_pw_result {
+                    let password_is_valid = bcrypt::verify(input.old_password, &user_pw.password);
+
+                    if password_is_valid {
+                        let update_result =
+                            User::update_password(&db_pool, input.new_password, user.claims.sub)
+                                .await;
+                        if update_result.is_ok() {
+                            Ok(true)
+                        } else {
+                            Err(Error::ResetTokenInvalid)
+                        }
+                    } else {
+                        Err(Error::PasswordError)
+                    }
+                } else {
+                    Err(Error::EmailOrUsernameNotFound)
+                }
+            }
+            None => Err(Error::Unauthorized),
+        }
+    }
 }
