@@ -107,7 +107,7 @@ async fn main() -> Result<(), std::io::Error> {
         .at("/", get(graphql_playground).post(graphql_handler))
         .data(schema)
         .with(cors(environment))
-        // Will need to implement a custom X- Forwarded-Proto header for Heroku to get this to work
+        // Will need to implement a custom X-Forwarded-Proto header for Heroku to get this to work
         // https://help.heroku.com/VKLSBMJS/why-am-i-getting-a-message-too-many-redirects
         // .with_if(environment != Environment::Local, ForceHttps::default())
         .with(Compression::default())
