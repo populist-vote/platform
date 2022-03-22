@@ -200,24 +200,26 @@ impl User {
         db_pool: &PgPool,
         new_password: String,
         reset_token: String,
-    ) -> Result<bool, Error> {
+    ) -> Result<Self, Error> {
         let hash = bcrypt::hash(&new_password).unwrap();
 
-        let update_result = sqlx::query!(
+        let update_result = sqlx::query_as!(User,
             r#"
                 UPDATE populist_user
-                SET password = $1
+                SET password = $1,
+                    reset_token = NULL
                 WHERE reset_token = $2
                 AND reset_token_expires_at > now()
+                RETURNING id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at
             "#,
             hash,
             reset_token
         )
-        .execute(db_pool)
+        .fetch_optional(db_pool)
         .await;
 
-        if let Ok(_result) = update_result {
-            Ok(true)
+        if let Ok(Some(user)) = update_result {
+            Ok(user)
         } else {
             Err(Error::ResetTokenInvalid)
         }

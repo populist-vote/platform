@@ -29,7 +29,6 @@ pub struct BeginUserRegistrationInput {
 
 #[derive(Serialize, Deserialize, InputObject)]
 pub struct ResetPasswordInput {
-    email: String,
     password: String,
     confirm_password: String,
     reset_token: String,
@@ -250,7 +249,7 @@ impl UserMutation {
         if update_result.is_ok() {
             // Send out email with confirming password has been changed, link to login
             let prototype = EmailPrototype {
-                recipient: input.email.clone(),
+                recipient: update_result.unwrap().email,
                 subject: "Reset your Password".to_string(),
                 template_id: "d-a5a79e8740864187aadfdd0bc07bbb97".to_string(),
                 template_data: None,
