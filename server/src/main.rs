@@ -107,6 +107,9 @@ async fn main() -> Result<(), std::io::Error> {
         .at("/", get(graphql_playground).post(graphql_handler))
         .data(schema)
         .with(cors(environment))
+        // Will need to implement a custom X- Forwarded-Proto header for Heroku to get this to work
+        // https://help.heroku.com/VKLSBMJS/why-am-i-getting-a-message-too-many-redirects
+        // .with_if(environment != Environment::Local, ForceHttps::default())
         .with(Compression::default())
         .with(CookieJarManager::default());
 
@@ -115,13 +118,6 @@ async fn main() -> Result<(), std::io::Error> {
     info!("GraphQL Playground live at http://localhost:{}", &port);
 
     let listener = TcpListener::bind(&address);
-
-    // Force https for non local environments
-    if environment != Environment::Local {
-        return Server::new(listener)
-            .run(app.with(ForceHttps::default().https_port(port.parse::<u16>().unwrap_or(1234))))
-            .await;
-    }
 
     Server::new(listener).run(app).await
 }
