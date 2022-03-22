@@ -119,7 +119,7 @@ async fn main() -> Result<(), std::io::Error> {
     // Force https for non local environments
     if environment != Environment::Local {
         return Server::new(listener)
-            .run(app.with(ForceHttps::default()))
+            .run(app.with(ForceHttps::default().https_port(port.parse::<u16>().unwrap_or(1234))))
             .await;
     }
 
