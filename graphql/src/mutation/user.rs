@@ -29,8 +29,7 @@ pub struct BeginUserRegistrationInput {
 
 #[derive(Serialize, Deserialize, InputObject)]
 pub struct ResetPasswordInput {
-    password: String,
-    confirm_password: String,
+    new_password: String,
     reset_token: String,
 }
 
@@ -238,13 +237,10 @@ impl UserMutation {
         ctx: &Context<'_>,
         input: ResetPasswordInput,
     ) -> Result<bool, Error> {
-        if input.password != input.confirm_password {
-            return Err(Error::PasswordsDoNotMatch);
-        };
-
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
 
-        let update_result = User::reset_password(&db_pool, input.password, input.reset_token).await;
+        let update_result =
+            User::reset_password(&db_pool, input.new_password, input.reset_token).await;
 
         if update_result.is_ok() {
             // Send out email with confirming password has been changed, link to login
@@ -265,29 +261,29 @@ impl UserMutation {
         }
     }
 
-    async fn update_password(
-        &self,
-        ctx: &Context<'_>,
-        input: ResetPasswordInput,
-    ) -> Result<bool, Error> {
-        if input.password != input.confirm_password {
-            return Err(Error::PasswordsDoNotMatch);
-        };
+    // async fn update_password(
+    //     &self,
+    //     ctx: &Context<'_>,
+    //     input: ResetPasswordInput,
+    // ) -> Result<bool, Error> {
+    //     if input.password != input.confirm_password {
+    //         return Err(Error::PasswordsDoNotMatch);
+    //     };
 
-        let user = ctx.data::<Option<TokenData<Claims>>>().unwrap();
-        let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+    //     let user = ctx.data::<Option<TokenData<Claims>>>().unwrap();
+    //     let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
 
-        match user {
-            Some(user) => {
-                let update_result =
-                    User::update_password(&db_pool, input.password, user.claims.sub).await;
-                if update_result.is_ok() {
-                    Ok(true)
-                } else {
-                    Err(Error::ResetTokenInvalid)
-                }
-            }
-            None => Err(Error::Unauthorized),
-        }
-    }
+    //     match user {
+    //         Some(user) => {
+    //             let update_result =
+    //                 User::update_password(&db_pool, input.password, user.claims.sub).await;
+    //             if update_result.is_ok() {
+    //                 Ok(true)
+    //             } else {
+    //                 Err(Error::ResetTokenInvalid)
+    //             }
+    //         }
+    //         None => Err(Error::Unauthorized),
+    //     }
+    // }
 }
