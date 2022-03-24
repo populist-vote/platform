@@ -1,0 +1,15 @@
+{
+  "query": "\n                UPDATE populist_user \n                SET reset_token = $1,\n                    reset_token_expires_at = $2\n                WHERE email = LOWER($3)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Timestamptz",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "32fa3a2ee0792beb058194ab48e1e0d6690707a3d54a6610c217ad0d6625377a"
+}

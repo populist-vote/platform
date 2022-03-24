@@ -1,28 +1,25 @@
 {
-  "query": "\n                            UPDATE politician\n                            SET votesmart_candidate_ratings = $1\n                            WHERE id = $2\n                            RETURNING first_name, last_name\n                            ",
+  "query": "\n            SELECT id, votesmart_candidate_bio->'office' AS office FROM politician\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "first_name",
-        "type_info": "Text"
+        "name": "id",
+        "type_info": "Uuid"
       },
       {
         "ordinal": 1,
-        "name": "last_name",
-        "type_info": "Text"
+        "name": "office",
+        "type_info": "Jsonb"
       }
     ],
     "parameters": {
-      "Left": [
-        "Jsonb",
-        "Uuid"
-      ]
+      "Left": []
     },
     "nullable": [
       false,
-      false
+      null
     ]
   },
-  "hash": "d7be1cf3a22986c1b5bb93c6a93336a37c474fcced2c8cd43b0605563ce1a390"
+  "hash": "9fa6defc67a59298344558924f5fca791be5d40ded7b666de91794ad3b606845"
 }

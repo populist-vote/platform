@@ -7,7 +7,7 @@ use async_graphql::*;
 use auth::{create_access_token_for_user, create_random_token, create_temporary_username, Claims};
 use db::{Address, CreateUserInput, CreateUserWithProfileInput, User};
 use jsonwebtoken::TokenData;
-use mailers::{EmailClient, EmailPrototype};
+use mailers::EmailClient;
 use poem::http::header::SET_COOKIE;
 use pwhash::bcrypt;
 use serde::{Deserialize, Serialize};
@@ -107,12 +107,9 @@ impl UserMutation {
                     confirmation_token
                 );
 
-                if EmailClient::send_welcome_email(new_user.email, account_confirmation_url)
-                    .await
-                    .is_err()
-                {
-                    println!("Error sending welcome email");
-                }
+                EmailClient::default()
+                    .send_welcome_email(new_user.email, account_confirmation_url)
+                    .await;
 
                 ctx.insert_http_header(
                     SET_COOKIE,
@@ -213,25 +210,10 @@ impl UserMutation {
             );
 
             // Send out email with link to reset new password
-            let prototype = EmailPrototype {
-                recipient: email,
-                subject: "Reset your Password".to_string(),
-                template_id: "d-819b5a97194e4b3e99efa5ec2d9c6e6e".to_string(),
-                template_data: Some(format!(
-                    r#"
-                Lets get you setup with a new password.
-
-                Visit the link below to to setup a new password.
-
-                {}
-            "#,
-                    reset_password_url
-                )),
-            };
-
-            mailers::EmailClient::send_mail(prototype)
+            EmailClient::default()
+                .send_reset_password_email(email, reset_password_url)
                 .await
-                .expect("Something went wrong sending out a new user email");
+                .expect("Failed to send reset password email");
 
             Ok(true)
         } else {
@@ -249,18 +231,12 @@ impl UserMutation {
         let update_result =
             User::reset_password(&db_pool, input.new_password, input.reset_token).await;
 
-        if update_result.is_ok() {
-            // Send out email with confirming password has been changed, link to login
-            let prototype = EmailPrototype {
-                recipient: update_result.unwrap().email,
-                subject: "Reset your Password".to_string(),
-                template_id: "d-a5a79e8740864187aadfdd0bc07bbb97".to_string(),
-                template_data: None,
-            };
-
-            mailers::EmailClient::send_mail(prototype)
+        if let Ok(user) = update_result {
+            let email = user.email;
+            EmailClient::default()
+                .send_password_changed_email(email)
                 .await
-                .expect("Something went wrong sending out a new user email");
+                .expect("Failed to send password changed email");
 
             Ok(true)
         } else {
@@ -295,6 +271,10 @@ impl UserMutation {
                             User::update_password(&db_pool, input.new_password, user.claims.sub)
                                 .await;
                         if update_result.is_ok() {
+                            EmailClient::default()
+                                .send_password_changed_email(user.claims.email.clone())
+                                .await
+                                .expect("Failed to send password changed email");
                             Ok(true)
                         } else {
                             Err(Error::ResetTokenInvalid)
