@@ -77,7 +77,7 @@ impl User {
             User,
             r#"
                 INSERT INTO populist_user (email, username, password, role)
-                VALUES (LOWER($1), $2, $3, $4)
+                VALUES (LOWER($1), LOWER($2), $3, $4)
                 RETURNING id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at
             "#,
             input.email,
@@ -99,7 +99,7 @@ impl User {
             r#"
                 WITH ins_user AS (
                     INSERT INTO populist_user (email, username, password, role, confirmation_token)
-                    VALUES (LOWER($1), $2, $3, $4, $13)
+                    VALUES (LOWER($1), LOWER($2), $3, $4, $13)
                     RETURNING id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at
                 ),
                 ins_address AS (
@@ -166,7 +166,7 @@ impl User {
                     confirmed_at, 
                     updated_at 
                 FROM populist_user 
-                WHERE $1 IN(email, username);
+                WHERE LOWER($1) IN(email, username);
             "#,
             email_or_username
         )

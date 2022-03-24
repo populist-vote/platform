@@ -158,7 +158,8 @@ impl UserMutation {
 
     async fn login(&self, ctx: &Context<'_>, input: LoginInput) -> Result<LoginResult, Error> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
-        let user_lookup = User::find_by_email_or_username(&db_pool, input.email_or_username).await;
+        let email_or_username = input.email_or_username.to_lowercase();
+        let user_lookup = User::find_by_email_or_username(&db_pool, email_or_username).await;
 
         if let Ok(user) = user_lookup {
             let password_is_valid = bcrypt::verify(input.password, &user.password);

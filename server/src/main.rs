@@ -17,7 +17,7 @@ use log::info;
 use poem::{
     get, handler,
     listener::TcpListener,
-    middleware::{Compression, CookieJarManager, Cors, ForceHttps},
+    middleware::{Compression, CookieJarManager, Cors},
     web::{cookie::CookieJar, Data, Html, Json},
     EndpointExt, IntoResponse, Route, Server,
 };
@@ -107,7 +107,8 @@ async fn main() -> Result<(), std::io::Error> {
         .at("/", get(graphql_playground).post(graphql_handler))
         .data(schema)
         .with(cors(environment))
-        // Will need to implement a custom X-Forwarded-Proto header for Heroku to get this to work
+        // Will need to implement a custom X-Forwarded-Proto header for Heroku to
+        // get https redirects to work
         // https://help.heroku.com/VKLSBMJS/why-am-i-getting-a-message-too-many-redirects
         // .with_if(environment != Environment::Local, ForceHttps::default())
         .with(Compression::default())

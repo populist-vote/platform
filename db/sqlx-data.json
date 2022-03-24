@@ -156,6 +156,104 @@
       ]
     }
   },
+  "0bb160b9856705f4dc05f764b1972672fb6225878287ba7b5990f65717b8d393": {
+    "query": "\n                WITH ins_user AS (\n                    INSERT INTO populist_user (email, username, password, role, confirmation_token)\n                    VALUES (LOWER($1), LOWER($2), $3, $4, $13)\n                    RETURNING id, email, username, password, role AS \"role:Role\", created_at, confirmed_at, updated_at\n                ),\n                ins_address AS (\n                    INSERT INTO address (line_1, line_2, city, state, country, postal_code)\n                    VALUES ($5, $6, $7, $8, $9, $10)\n                    RETURNING id\n                ),\n                ins_profile AS (\n                    INSERT INTO user_profile (first_name, last_name, address_id, user_id)\n                    VALUES ($11, $12, (SELECT id FROM ins_address), (SELECT id FROM ins_user))\n                )\n                SELECT ins_user.* FROM ins_user\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "email",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "username",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "password",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "role:Role",
+          "type_info": {
+            "Custom": {
+              "name": "user_role",
+              "kind": {
+                "Enum": [
+                  "superuser",
+                  "staff",
+                  "premium",
+                  "basic"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 6,
+          "name": "confirmed_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 7,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "user_role",
+              "kind": {
+                "Enum": [
+                  "superuser",
+                  "staff",
+                  "premium",
+                  "basic"
+                ]
+              }
+            }
+          },
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    }
+  },
   "0dbe3b666d7726e78e78245a888fc228a62dc61ef59874419091138d998c5659": {
     "query": "\n                SELECT it.id, slug, name, description, category, it.created_at, it.updated_at FROM issue_tag it\n                JOIN politician_issue_tags\n                ON politician_issue_tags.issue_tag_id = it.id\n                WHERE politician_issue_tags.politician_id = $1\n            ",
     "describe": {
@@ -4249,80 +4347,6 @@
       "nullable": []
     }
   },
-  "82e3004df88abb971b81c25306f3cf6ffdb74c9e1150a1614bf6d31ce1f3a82e": {
-    "query": "\n                SELECT \n                    id, \n                    email, \n                    username, \n                    password, \n                    role AS \"role:Role\", \n                    created_at, \n                    confirmed_at, \n                    updated_at \n                FROM populist_user \n                WHERE $1 IN(email, username);\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "email",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "username",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "password",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 4,
-          "name": "role:Role",
-          "type_info": {
-            "Custom": {
-              "name": "user_role",
-              "kind": {
-                "Enum": [
-                  "superuser",
-                  "staff",
-                  "premium",
-                  "basic"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 5,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 6,
-          "name": "confirmed_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 7,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        false
-      ]
-    }
-  },
   "87b4df3ec8da5b11739357deaba9299ff3227b1e6e81e96a34b44965eca8ab8a": {
     "query": "\n                UPDATE office\n                SET slug = COALESCE($2, slug), \n                    title = COALESCE($3, title), \n                    political_scope = COALESCE($4, political_scope),\n                    state = COALESCE($5, state),\n                    municipality = COALESCE($6, municipality),\n                    district = COALESCE($7, district),\n                    incumbent_id = COALESCE($8, incumbent_id),\n                    office_type = COALESCE($9, office_type),\n                    term_length = COALESCE($10, term_length)\n                WHERE id = $1\n                RETURNING id, slug, title, office_type, district, political_scope AS \"political_scope:PoliticalScope\", incumbent_id, state AS \"state:State\", municipality, term_length, created_at, updated_at\n            ",
     "describe": {
@@ -5398,8 +5422,8 @@
       ]
     }
   },
-  "ac6138f34dcaef6d801db0998c831e76d6997d9c2fda1c2324962e98581540f8": {
-    "query": "\n                WITH ins_user AS (\n                    INSERT INTO populist_user (email, username, password, role, confirmation_token)\n                    VALUES (LOWER($1), $2, $3, $4, $13)\n                    RETURNING id, email, username, password, role AS \"role:Role\", created_at, confirmed_at, updated_at\n                ),\n                ins_address AS (\n                    INSERT INTO address (line_1, line_2, city, state, country, postal_code)\n                    VALUES ($5, $6, $7, $8, $9, $10)\n                    RETURNING id\n                ),\n                ins_profile AS (\n                    INSERT INTO user_profile (first_name, last_name, address_id, user_id)\n                    VALUES ($11, $12, (SELECT id FROM ins_address), (SELECT id FROM ins_user))\n                )\n                SELECT ins_user.* FROM ins_user\n            ",
+  "a78646d44606cf8981f07c856573dff3e8d02072db29d01414bf9fdeb7370d05": {
+    "query": "\n                INSERT INTO populist_user (email, username, password, role)\n                VALUES (LOWER($1), LOWER($2), $3, $4)\n                RETURNING id, email, username, password, role AS \"role:Role\", created_at, confirmed_at, updated_at\n            ",
     "describe": {
       "columns": [
         {
@@ -5472,16 +5496,7 @@
                 ]
               }
             }
-          },
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text"
+          }
         ]
       },
       "nullable": [
@@ -7658,6 +7673,80 @@
       "nullable": []
     }
   },
+  "e9a871dae7a756647a3c65f924ff4238f8d006ed273257321149fbdb954d8638": {
+    "query": "\n                SELECT \n                    id, \n                    email, \n                    username, \n                    password, \n                    role AS \"role:Role\", \n                    created_at, \n                    confirmed_at, \n                    updated_at \n                FROM populist_user \n                WHERE LOWER($1) IN(email, username);\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "email",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "username",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "password",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "role:Role",
+          "type_info": {
+            "Custom": {
+              "name": "user_role",
+              "kind": {
+                "Enum": [
+                  "superuser",
+                  "staff",
+                  "premium",
+                  "basic"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 6,
+          "name": "confirmed_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 7,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    }
+  },
   "ef1af88471581bf0ffa763db0b99635f550db0eff383cfc4a6521329b415337d": {
     "query": "\n                SELECT * FROM organization\n                WHERE slug = $1\n            ",
     "describe": {
@@ -8359,95 +8448,6 @@
         true,
         true,
         false,
-        false
-      ]
-    }
-  },
-  "ff2d5025c8418730a7890806b4cb5179192e34b919bccdf49c35c1faf05677a8": {
-    "query": "\n                INSERT INTO populist_user (email, username, password, role)\n                VALUES (LOWER($1), $2, $3, $4)\n                RETURNING id, email, username, password, role AS \"role:Role\", created_at, confirmed_at, updated_at\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "email",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "username",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "password",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 4,
-          "name": "role:Role",
-          "type_info": {
-            "Custom": {
-              "name": "user_role",
-              "kind": {
-                "Enum": [
-                  "superuser",
-                  "staff",
-                  "premium",
-                  "basic"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 5,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 6,
-          "name": "confirmed_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 7,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text",
-          "Text",
-          {
-            "Custom": {
-              "name": "user_role",
-              "kind": {
-                "Enum": [
-                  "superuser",
-                  "staff",
-                  "premium",
-                  "basic"
-                ]
-              }
-            }
-          }
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
         false
       ]
     }
