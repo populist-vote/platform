@@ -166,7 +166,10 @@ impl UserMutation {
 
                 ctx.insert_http_header(
                     SET_COOKIE,
-                    format!("access_token={}; HttpOnly", access_token),
+                    format!(
+                        "access_token={}; HttpOnly; SameSite=None; Secure",
+                        access_token
+                    ),
                 );
 
                 Ok(LoginResult {
