@@ -104,32 +104,19 @@ pub struct CreateOrConnectPoliticianInput {
     pub connect: Option<Vec<String>>, // Accept UUIDs or slugs
 }
 
-#[derive(InputObject)]
+#[derive(InputObject, Default, Debug)]
 pub struct PoliticianSearch {
     home_state: Option<State>,
     name: Option<String>,
     party: Option<PoliticalParty>,
 }
 
-impl Default for PoliticianSearch {
-    fn default() -> Self {
-        PoliticianSearch {
-            home_state: None,
-            name: None,
-            party: None,
-        }
-    }
-}
-
 impl CreatePoliticianInput {
     fn full_name(&self) -> String {
         match &self.middle_name {
-            Some(middle_name) => format!(
-                "{} {} {}",
-                &self.first_name,
-                middle_name.to_string(),
-                &self.last_name
-            ),
+            Some(middle_name) => {
+                format!("{} {} {}", &self.first_name, middle_name, &self.last_name)
+            }
             None => format!("{} {}", &self.first_name, &self.last_name),
         }
     }
@@ -181,6 +168,56 @@ impl Politician {
             input.upcoming_race_id
         )
         .fetch_one(db_pool)
+        .await?;
+
+        Ok(record)
+    }
+
+    pub async fn create_optional(
+        db_pool: &PgPool,
+        input: &CreatePoliticianInput,
+    ) -> Result<Option<Self>, sqlx::Error> {
+        let slug = slugify!(&CreatePoliticianInput::full_name(input));
+
+        let vs_candidate_bio = match input.votesmart_candidate_bio.to_owned() {
+            Some(bio) => bio,
+            None => json!({}),
+        };
+
+        let vs_candidate_ratings = match input.votesmart_candidate_ratings.to_owned() {
+            Some(ratings) => ratings,
+            None => json!([]),
+        };
+
+        let record = sqlx::query_as!(
+            Politician,
+            r#"
+                WITH ins_author AS (
+                    INSERT INTO author (author_type) VALUES ('politician')
+                    ON CONFLICT DO NOTHING
+                    RETURNING id AS author_id
+                ),
+                p AS (
+                    INSERT INTO politician (id, slug, first_name, middle_name, last_name, home_state, office_id, party, votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, website_url, upcoming_race_id) 
+                    VALUES ((SELECT author_id FROM ins_author), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                    RETURNING id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, party AS "party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, created_at, updated_at
+                )
+                SELECT p.* FROM p
+            "#,
+            slug,
+            input.first_name,
+            input.middle_name,
+            input.last_name,
+            input.home_state as Option<State>,
+            input.office_id,
+            input.party as Option<PoliticalParty>,
+            input.votesmart_candidate_id,
+            vs_candidate_bio,
+            vs_candidate_ratings,
+            input.website_url,
+            input.upcoming_race_id
+        )
+        .fetch_optional(db_pool)
         .await?;
 
         Ok(record)

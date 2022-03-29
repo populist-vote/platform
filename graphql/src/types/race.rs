@@ -35,13 +35,22 @@ pub struct RaceResult {
 #[ComplexObject]
 impl RaceResult {
     async fn office(&self, ctx: &Context<'_>) -> FieldResult<OfficeResult> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let record = Office::find_by_id(
-            &db_pool,
-            uuid::Uuid::parse_str(self.office_id.as_str()).unwrap(),
-        )
-        .await?;
-        Ok(OfficeResult::from(record))
+        let cached_office = ctx
+            .data::<ApiContext>()?
+            .loaders
+            .office_loader
+            .load_one(uuid::Uuid::parse_str(&self.office_id.clone()).unwrap())
+            .await?;
+
+        if let Some(office) = cached_office {
+            Ok(OfficeResult::from(office))
+        } else {
+            let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+            let record =
+                Office::find_by_id(&db_pool, uuid::Uuid::parse_str(&self.office_id).unwrap())
+                    .await?;
+            Ok(record.into())
+        }
     }
 
     async fn candidates(&self, ctx: &Context<'_>) -> FieldResult<Vec<PoliticianResult>> {

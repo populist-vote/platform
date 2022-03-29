@@ -1,5 +1,5 @@
 {
-  "query": "\n                SELECT id, slug, title, bill_number, legislation_status AS \"legislation_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, history, votesmart_bill_id, b.created_at, b.updated_at FROM bill b\n                JOIN bill_sponsors \n                ON bill_sponsors.bill_id = id\n                WHERE bill_sponsors.politician_id = $1\n            ",
+  "query": "\n            SELECT id, slug, title, office_position, office_id, race_type AS \"race_type:RaceType\", party AS \"party:PoliticalParty\", state AS \"state:State\", description, ballotpedia_link, early_voting_begins_date, election_date, official_website, election_id, created_at, updated_at FROM race\n            WHERE election_id = $1\n        ",
   "describe": {
     "columns": [
       {
@@ -19,26 +19,42 @@
       },
       {
         "ordinal": 3,
-        "name": "bill_number",
+        "name": "office_position",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "legislation_status:LegislationStatus",
+        "name": "office_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "race_type:RaceType",
         "type_info": {
           "Custom": {
-            "name": "legislation_status",
+            "name": "race_type",
             "kind": {
               "Enum": [
-                "introduced",
-                "passed_house",
-                "passed_senate",
-                "failed_house",
-                "failed_senate",
-                "resolving_differences",
-                "sent_to_executive",
-                "became_law",
-                "vetoed",
+                "primary",
+                "general"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "party:PoliticalParty",
+        "type_info": {
+          "Custom": {
+            "name": "political_party",
+            "kind": {
+              "Enum": [
+                "democratic",
+                "republican",
+                "libertarian",
+                "green",
+                "constitution",
                 "unknown"
               ]
             }
@@ -46,47 +62,106 @@
         }
       },
       {
-        "ordinal": 5,
+        "ordinal": 7,
+        "name": "state:State",
+        "type_info": {
+          "Custom": {
+            "name": "state",
+            "kind": {
+              "Enum": [
+                "AL",
+                "AK",
+                "AZ",
+                "AR",
+                "CA",
+                "CO",
+                "CT",
+                "DC",
+                "DE",
+                "FL",
+                "GA",
+                "HI",
+                "ID",
+                "IL",
+                "IN",
+                "IA",
+                "KS",
+                "KY",
+                "LA",
+                "ME",
+                "MD",
+                "MA",
+                "MI",
+                "MN",
+                "MS",
+                "MO",
+                "MT",
+                "NE",
+                "NV",
+                "NH",
+                "NJ",
+                "NM",
+                "NY",
+                "NC",
+                "ND",
+                "OH",
+                "OK",
+                "OR",
+                "PA",
+                "RI",
+                "SC",
+                "SD",
+                "TN",
+                "TX",
+                "UT",
+                "VT",
+                "VA",
+                "WA",
+                "WV",
+                "WI",
+                "WY"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 8,
         "name": "description",
         "type_info": "Text"
       },
       {
-        "ordinal": 6,
-        "name": "official_summary",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 7,
-        "name": "populist_summary",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 8,
-        "name": "full_text_url",
-        "type_info": "Text"
-      },
-      {
         "ordinal": 9,
-        "name": "legiscan_bill_id",
-        "type_info": "Int4"
+        "name": "ballotpedia_link",
+        "type_info": "Text"
       },
       {
         "ordinal": 10,
-        "name": "history",
-        "type_info": "Jsonb"
+        "name": "early_voting_begins_date",
+        "type_info": "Date"
       },
       {
         "ordinal": 11,
-        "name": "votesmart_bill_id",
-        "type_info": "Int4"
+        "name": "election_date",
+        "type_info": "Date"
       },
       {
         "ordinal": 12,
+        "name": "official_website",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "election_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 14,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 13,
+        "ordinal": 15,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
@@ -102,16 +177,18 @@
       false,
       false,
       false,
-      true,
-      true,
-      true,
-      true,
-      true,
       false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
       true,
       false,
       false
     ]
   },
-  "hash": "8c530a0c9163e67b1d4e72157e57d115eef68b40ebc4f3d149f3b93cb01e803a"
+  "hash": "2e275a1b4fba665c3f3080b4f41dcaf96b3109aa1e4712a4be8cf28f07f8576c"
 }

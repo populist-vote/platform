@@ -13,7 +13,7 @@ pub struct PoliticianLoader(PgPool);
 
 impl PoliticianLoader {
     pub fn new(pool: PgPool) -> Self {
-        Self(pool.to_owned())
+        Self(pool)
     }
 }
 

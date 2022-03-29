@@ -50,19 +50,10 @@ pub struct UpdateOfficeInput {
     pub term_length: Option<i32>,
 }
 
-#[derive(Debug, Serialize, Deserialize, InputObject)]
+#[derive(Default, Debug, Serialize, Deserialize, InputObject)]
 pub struct OfficeSearch {
     query: Option<String>,
     state: Option<State>,
-}
-
-impl Default for OfficeSearch {
-    fn default() -> Self {
-        Self {
-            query: None,
-            state: None,
-        }
-    }
 }
 
 impl Office {
