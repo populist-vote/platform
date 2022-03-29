@@ -1,14 +1,41 @@
-use async_graphql::{SimpleObject, ID};
+use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use auth::Claims;
-use db::{Role, User};
+use db::{Address, Role, User};
 use jsonwebtoken::TokenData;
 
-#[derive(SimpleObject)]
+use crate::context::ApiContext;
+
+use super::AddressResult;
+
+#[derive(SimpleObject, Debug, Clone)]
+#[graphql(complex)]
 pub struct UserResult {
     id: ID,
     username: String,
     email: String,
     role: Role,
+}
+
+#[ComplexObject]
+impl UserResult {
+    async fn address(&self, ctx: &Context<'_>) -> Result<Option<AddressResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let record = sqlx::query_as!(Address,
+            r#"
+            SELECT a.id, a.line_1, a.line_2, a.city, a.state, a.postal_code, a.country FROM address AS a
+            JOIN user_profile up ON user_id = $1
+            JOIN address ON up.address_id = a.id
+        "#,
+            uuid::Uuid::parse_str(&self.id)?,
+        )
+        .fetch_optional(&db_pool)
+        .await.unwrap();
+
+        match record {
+            Some(address) => Ok(Some(address.into())),
+            None => Ok(None),
+        }
+    }
 }
 
 #[derive(SimpleObject)]

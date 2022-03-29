@@ -28,12 +28,13 @@ pub struct UserProfile {
 
 #[derive(Serialize, Deserialize, InputObject)]
 pub struct Address {
-    line_1: String,
-    line_2: Option<String>,
-    city: String,
-    state: String,
-    country: String,
-    postal_code: String,
+    pub id: uuid::Uuid,
+    pub line_1: String,
+    pub line_2: Option<String>,
+    pub city: String,
+    pub state: String,
+    pub country: String,
+    pub postal_code: String,
 }
 
 #[derive(Serialize, Deserialize, InputObject)]

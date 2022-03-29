@@ -1,8 +1,10 @@
 use async_graphql::dataloader::{DataLoader, HashMapCache};
+use auth::Claims;
 use db::loaders::{
     office::OfficeLoader, organization::OrganizationLoader, politician::PoliticianLoader,
     race::RaceLoader,
 };
+use jsonwebtoken::TokenData;
 use sqlx::PgPool;
 
 pub struct ApiContext {

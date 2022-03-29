@@ -1,3 +1,4 @@
+mod address;
 mod argument;
 mod ballot_measure;
 mod bill;
@@ -12,6 +13,7 @@ mod upload;
 mod user;
 mod votesmart;
 
+pub use address::AddressResult;
 pub use argument::ArgumentResult;
 pub use ballot_measure::BallotMeasureResult;
 pub use bill::BillResult;

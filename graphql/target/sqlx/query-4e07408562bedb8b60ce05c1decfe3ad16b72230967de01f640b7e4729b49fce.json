@@ -1,21 +1,68 @@
 {
-  "query": "\n            SELECT id FROM populist_user WHERE email = $1\n        ",
+  "query": "\n            SELECT a.id, a.line_1, a.line_2, a.city, a.state, a.postal_code, a.country, a.geog FROM address AS a\n            JOIN user_profile up ON user_id = $1\n            JOIN address ON up.address_id = a.id\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
         "name": "id",
         "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "line_1",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "line_2",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "city",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "state",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "postal_code",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "country",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "geog",
+        "type_info": {
+          "Custom": {
+            "name": "geography",
+            "kind": "Simple"
+          }
+        }
       }
     ],
     "parameters": {
       "Left": [
-        "Text"
+        "Uuid"
       ]
     },
     "nullable": [
-      false
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true
     ]
   },
-  "hash": "7c3de9dc9a7a66c521d2884819f21bde79f41cbb86055b2e8012733795d0f72b"
+  "hash": "0222959453c25fbb797e400826cb108f108a1863feac63b0916066922c02dc6e"
 }
