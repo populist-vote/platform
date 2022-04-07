@@ -1,25 +1,19 @@
 {
-  "query": "\n            SELECT id, votesmart_candidate_bio->'office' AS office FROM politician\n        ",
+  "query": "\n        SELECT id FROM office WHERE slug = 'us-senate-co-1'\n    ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
         "name": "id",
         "type_info": "Uuid"
-      },
-      {
-        "ordinal": 1,
-        "name": "office",
-        "type_info": "Jsonb"
       }
     ],
     "parameters": {
       "Left": []
     },
     "nullable": [
-      false,
-      null
+      false
     ]
   },
-  "hash": "9fa6defc67a59298344558924f5fca791be5d40ded7b666de91794ad3b606845"
+  "hash": "4de70a4567fe7237c2b8b263e463a08dc83fb37c98a417f7504b787632149dff"
 }

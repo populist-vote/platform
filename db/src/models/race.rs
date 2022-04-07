@@ -60,19 +60,10 @@ pub struct UpdateRaceInput {
     pub election_id: Option<uuid::Uuid>,
 }
 
-#[derive(Debug, Serialize, Deserialize, InputObject)]
+#[derive(Debug, Default, Serialize, Deserialize, InputObject)]
 pub struct RaceSearch {
     query: Option<String>,
     state: Option<State>,
-}
-
-impl Default for RaceSearch {
-    fn default() -> Self {
-        Self {
-            query: None,
-            state: None,
-        }
-    }
 }
 
 impl Race {

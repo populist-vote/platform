@@ -20,7 +20,6 @@ async fn seed_2020_races() -> Result<(), Box<dyn Error>> {
     let us_senate_republican_primary = CreateRaceInput {
         slug: Some("us-senate-republican-primary-2020-colorado".to_string()),
         title: "U.S. Senate Republican Primary".to_string(),
-        office_position: "U.S. Senate".to_string(),
         description: Some(
             "Replublican primary election for the 2022 Colorado U.S. Senate Seat".to_string(),
         ),

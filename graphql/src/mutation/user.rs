@@ -5,7 +5,7 @@ use crate::{
 };
 use async_graphql::*;
 use auth::{create_access_token_for_user, create_random_token, create_temporary_username, Claims};
-use db::{Address, CreateUserInput, CreateUserWithProfileInput, User};
+use db::{Address, AddressInput, CreateUserInput, CreateUserWithProfileInput, User};
 use jsonwebtoken::TokenData;
 use mailers::EmailClient;
 use poem::http::header::SET_COOKIE;
@@ -22,7 +22,7 @@ pub struct LoginInput {
 pub struct BeginUserRegistrationInput {
     pub email: String,
     pub password: String,
-    pub address: Address,
+    pub address: AddressInput,
     pub first_name: String,
     pub last_name: String,
 }
@@ -107,9 +107,12 @@ impl UserMutation {
                     confirmation_token
                 );
 
-                EmailClient::default()
+                if let Err(err) = EmailClient::default()
                     .send_welcome_email(new_user.email, account_confirmation_url)
-                    .await;
+                    .await
+                {
+                    println!("Error sending welcome email: {}", err)
+                }
 
                 ctx.insert_http_header(
                     SET_COOKIE,

@@ -1,7 +1,5 @@
 use async_graphql::{Context, FieldResult, Object, Result};
-use auth::Claims;
 use db::{Election, ElectionSearchInput};
-use jsonwebtoken::TokenData;
 
 use crate::{context::ApiContext, types::ElectionResult};
 
@@ -23,7 +21,7 @@ impl ElectionQuery {
 
     // Need to think about this.
     // User is going to only want to see relevant election, based on locale
-    // Perhaps to start, implement an upcoming_election_by_state() resolver
+    // Perhaps to start, implement an races_by_state() resolver for
     async fn upcoming_elections(&self, ctx: &Context<'_>) -> Result<Vec<ElectionResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         // let sub = ctx.data::<Option<TokenData<Claims>>>();

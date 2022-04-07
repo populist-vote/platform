@@ -5,6 +5,8 @@ use sqlx::{FromRow, PgPool, Type};
 
 use crate::{DateTime, Error};
 
+use super::enums::State;
+
 #[derive(FromRow, Debug, Clone)]
 pub struct User {
     pub id: uuid::Uuid,
@@ -32,7 +34,17 @@ pub struct Address {
     pub line_1: String,
     pub line_2: Option<String>,
     pub city: String,
-    pub state: String,
+    pub state: State,
+    pub country: String,
+    pub postal_code: String,
+}
+
+#[derive(Serialize, Deserialize, InputObject)]
+pub struct AddressInput {
+    pub line_1: String,
+    pub line_2: Option<String>,
+    pub city: String,
+    pub state: State,
     pub country: String,
     pub postal_code: String,
 }
@@ -52,7 +64,7 @@ pub struct CreateUserWithProfileInput {
     pub email: String,
     pub username: String,
     pub password: String,
-    pub address: Address,
+    pub address: AddressInput,
     pub first_name: String,
     pub last_name: String,
     pub confirmation_token: String,
@@ -121,7 +133,7 @@ impl User {
             input.address.line_1,
             input.address.line_2,
             input.address.city,
-            input.address.state,
+            input.address.state.to_string(),
             input.address.country,
             input.address.postal_code,
             input.first_name,

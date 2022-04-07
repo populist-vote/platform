@@ -7,7 +7,7 @@ pub struct AddressResult {
     line_1: String,
     line_2: Option<String>,
     city: String,
-    state: String,
+    state: State,
     country: String,
     postal_code: String,
 }
