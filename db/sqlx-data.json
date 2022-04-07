@@ -164,104 +164,6 @@
       ]
     }
   },
-  "0bb160b9856705f4dc05f764b1972672fb6225878287ba7b5990f65717b8d393": {
-    "query": "\n                WITH ins_user AS (\n                    INSERT INTO populist_user (email, username, password, role, confirmation_token)\n                    VALUES (LOWER($1), LOWER($2), $3, $4, $13)\n                    RETURNING id, email, username, password, role AS \"role:Role\", created_at, confirmed_at, updated_at\n                ),\n                ins_address AS (\n                    INSERT INTO address (line_1, line_2, city, state, country, postal_code)\n                    VALUES ($5, $6, $7, $8, $9, $10)\n                    RETURNING id\n                ),\n                ins_profile AS (\n                    INSERT INTO user_profile (first_name, last_name, address_id, user_id)\n                    VALUES ($11, $12, (SELECT id FROM ins_address), (SELECT id FROM ins_user))\n                )\n                SELECT ins_user.* FROM ins_user\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "email",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "username",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "password",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 4,
-          "name": "role:Role",
-          "type_info": {
-            "Custom": {
-              "name": "user_role",
-              "kind": {
-                "Enum": [
-                  "superuser",
-                  "staff",
-                  "premium",
-                  "basic"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 5,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 6,
-          "name": "confirmed_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 7,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text",
-          "Text",
-          {
-            "Custom": {
-              "name": "user_role",
-              "kind": {
-                "Enum": [
-                  "superuser",
-                  "staff",
-                  "premium",
-                  "basic"
-                ]
-              }
-            }
-          },
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text"
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        false
-      ]
-    }
-  },
   "0dbe3b666d7726e78e78245a888fc228a62dc61ef59874419091138d998c5659": {
     "query": "\n                SELECT it.id, slug, name, description, category, it.created_at, it.updated_at FROM issue_tag it\n                JOIN politician_issue_tags\n                ON politician_issue_tags.issue_tag_id = it.id\n                WHERE politician_issue_tags.politician_id = $1\n            ",
     "describe": {
@@ -7651,6 +7553,102 @@
         true,
         true,
         false,
+        false
+      ]
+    }
+  },
+  "db1b9fff8cee4c1c40989d272328417c727d2483914facd08142a1f1f8a67281": {
+    "query": "\n                WITH ins_user AS (\n                    INSERT INTO populist_user (email, username, password, role, confirmation_token)\n                    VALUES (LOWER($1), LOWER($2), $3, $4, $11)\n                    RETURNING id, email, username, password, role AS \"role:Role\", created_at, confirmed_at, updated_at\n                ),\n                ins_address AS (\n                    INSERT INTO address (line_1, line_2, city, state, country, postal_code)\n                    VALUES ($5, $6, $7, $8, $9, $10)\n                    RETURNING id\n                ),\n                ins_profile AS (\n                    INSERT INTO user_profile (address_id, user_id)\n                    VALUES ((SELECT id FROM ins_address), (SELECT id FROM ins_user))\n                )\n                SELECT ins_user.* FROM ins_user\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "email",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "username",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "password",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "role:Role",
+          "type_info": {
+            "Custom": {
+              "name": "user_role",
+              "kind": {
+                "Enum": [
+                  "superuser",
+                  "staff",
+                  "premium",
+                  "basic"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 6,
+          "name": "confirmed_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 7,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "user_role",
+              "kind": {
+                "Enum": [
+                  "superuser",
+                  "staff",
+                  "premium",
+                  "basic"
+                ]
+              }
+            }
+          },
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
         false
       ]
     }
