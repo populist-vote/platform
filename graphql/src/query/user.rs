@@ -1,7 +1,7 @@
 use async_graphql::{Context, Object, Result, SimpleObject};
 use auth::Claims;
 use jsonwebtoken::TokenData;
-use zxcvbn::{feedback::Feedback, zxcvbn};
+use zxcvbn::zxcvbn;
 
 use crate::{
     context::ApiContext,

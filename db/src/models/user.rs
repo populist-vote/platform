@@ -63,11 +63,8 @@ pub struct CreateUserWithProfileInput {
     #[graphql(validator(email))]
     pub email: String,
     pub username: String,
-    #[graphql(validator(min_length = 12))]
     pub password: String,
     pub address: AddressInput,
-    pub first_name: String,
-    pub last_name: String,
     pub confirmation_token: String,
 }
 
@@ -113,7 +110,7 @@ impl User {
             r#"
                 WITH ins_user AS (
                     INSERT INTO populist_user (email, username, password, role, confirmation_token)
-                    VALUES (LOWER($1), LOWER($2), $3, $4, $13)
+                    VALUES (LOWER($1), LOWER($2), $3, $4, $11)
                     RETURNING id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at
                 ),
                 ins_address AS (
@@ -122,8 +119,8 @@ impl User {
                     RETURNING id
                 ),
                 ins_profile AS (
-                    INSERT INTO user_profile (first_name, last_name, address_id, user_id)
-                    VALUES ($11, $12, (SELECT id FROM ins_address), (SELECT id FROM ins_user))
+                    INSERT INTO user_profile (address_id, user_id)
+                    VALUES ((SELECT id FROM ins_address), (SELECT id FROM ins_user))
                 )
                 SELECT ins_user.* FROM ins_user
             "#,
@@ -137,8 +134,6 @@ impl User {
             input.address.state.to_string(),
             input.address.country,
             input.address.postal_code,
-            input.first_name,
-            input.last_name,
             input.confirmation_token
         ).fetch_one(db_pool).await?;
 

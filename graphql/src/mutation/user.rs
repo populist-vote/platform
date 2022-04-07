@@ -22,11 +22,9 @@ pub struct LoginInput {
 pub struct BeginUserRegistrationInput {
     #[graphql(validator(email))]
     pub email: String,
-    #[graphql(validator(min_length = 10))]
+    #[graphql(validator(min_length = 8))]
     pub password: String,
     pub address: AddressInput,
-    pub first_name: String,
-    pub last_name: String,
 }
 
 #[derive(Serialize, Deserialize, InputObject)]
@@ -92,8 +90,6 @@ impl UserMutation {
             username: temp_username,
             password: input.password,
             address: input.address,
-            first_name: input.first_name,
-            last_name: input.last_name,
             confirmation_token: confirmation_token.clone(),
         };
 
