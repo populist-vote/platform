@@ -1,7 +1,7 @@
-use async_graphql::{Context, Object, Result};
+use async_graphql::{Context, Object, Result, SimpleObject};
 use auth::Claims;
 use jsonwebtoken::TokenData;
-use zxcvbn::zxcvbn;
+use zxcvbn::{feedback::Feedback, zxcvbn};
 
 use crate::{
     context::ApiContext,
@@ -10,6 +10,12 @@ use crate::{
 
 #[derive(Default)]
 pub struct UserQuery;
+
+#[derive(Default, Debug, SimpleObject)]
+pub struct PasswordEntropyResult {
+    pub valid: bool,
+    pub score: u8,
+}
 
 #[Object]
 impl UserQuery {
@@ -39,12 +45,21 @@ impl UserQuery {
         }
     }
 
-    async fn validate_password_entropy(&self, password: String) -> Result<bool, Error> {
+    async fn validate_password_entropy(
+        &self,
+        password: String,
+    ) -> Result<PasswordEntropyResult, Error> {
         let estimate = zxcvbn(&password, &[]).unwrap();
         if estimate.score() < 3 {
-            return Err(Error::PasswordEntropy);
+            return Ok(PasswordEntropyResult {
+                valid: false,
+                score: estimate.score(),
+            });
         }
-        Ok(true)
+        Ok(PasswordEntropyResult {
+            valid: true,
+            score: estimate.score(),
+        })
     }
 
     /// Providers current user based on JWT found in client's access_token cookie

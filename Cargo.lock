@@ -3766,5 +3766,7 @@ dependencies = [
  "lazy_static",
  "quick-error 2.0.1",
  "regex",
+ "serde",
+ "serde_derive",
  "time 0.3.7",
 ]
