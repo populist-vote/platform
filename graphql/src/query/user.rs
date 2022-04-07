@@ -15,6 +15,7 @@ pub struct UserQuery;
 pub struct PasswordEntropyResult {
     pub valid: bool,
     pub score: u8,
+    pub message: Option<String>,
 }
 
 #[Object]
@@ -54,11 +55,13 @@ impl UserQuery {
             return Ok(PasswordEntropyResult {
                 valid: false,
                 score: estimate.score(),
+                message: Some("Your password is not strong enough".to_string()),
             });
         }
         Ok(PasswordEntropyResult {
             valid: true,
             score: estimate.score(),
+            message: None,
         })
     }
 
