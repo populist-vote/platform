@@ -44,6 +44,9 @@ pub enum Error {
     #[error("Passwords do not match")]
     PasswordsDoNotMatch,
 
+    #[error("Your password is not strong enough")]
+    PasswordEntropy,
+
     #[error("Reset token was invalid or expired")]
     ResetTokenInvalid,
 }

@@ -63,6 +63,7 @@ pub struct CreateUserWithProfileInput {
     #[graphql(validator(email))]
     pub email: String,
     pub username: String,
+    #[graphql(validator(min_length = 12))]
     pub password: String,
     pub address: AddressInput,
     pub first_name: String,

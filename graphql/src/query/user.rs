@@ -1,6 +1,7 @@
 use async_graphql::{Context, Object, Result};
 use auth::Claims;
 use jsonwebtoken::TokenData;
+use zxcvbn::zxcvbn;
 
 use crate::{
     context::ApiContext,
@@ -36,6 +37,14 @@ impl UserQuery {
         } else {
             Ok(true)
         }
+    }
+
+    async fn validate_password_entropy(&self, password: String) -> Result<bool, Error> {
+        let estimate = zxcvbn(&password, &[]).unwrap();
+        if estimate.score() < 3 {
+            return Err(Error::PasswordEntropy);
+        }
+        Ok(true)
     }
 
     /// Providers current user based on JWT found in client's access_token cookie

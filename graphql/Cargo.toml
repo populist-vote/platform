@@ -29,3 +29,4 @@ base64 = "0.13.0"
 async-trait = "0.1.52"
 jsonwebtoken = "7.2.0"
 poem = { version = "1.2.59" }
+zxcvbn = "2.2.1"

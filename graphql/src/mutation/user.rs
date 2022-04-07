@@ -5,7 +5,7 @@ use crate::{
 };
 use async_graphql::*;
 use auth::{create_access_token_for_user, create_random_token, create_temporary_username, Claims};
-use db::{Address, AddressInput, CreateUserInput, CreateUserWithProfileInput, User};
+use db::{AddressInput, CreateUserInput, CreateUserWithProfileInput, User};
 use jsonwebtoken::TokenData;
 use mailers::EmailClient;
 use poem::http::header::SET_COOKIE;
@@ -20,7 +20,9 @@ pub struct LoginInput {
 
 #[derive(Serialize, Deserialize, InputObject)]
 pub struct BeginUserRegistrationInput {
+    #[graphql(validator(email))]
     pub email: String,
+    #[graphql(validator(min_length = 10))]
     pub password: String,
     pub address: AddressInput,
     pub first_name: String,
