@@ -296,4 +296,16 @@ impl UserMutation {
             None => Err(Error::Unauthorized),
         }
     }
+
+    async fn logout(&self, ctx: &Context<'_>) -> Result<bool, Error> {
+        ctx.insert_http_header(
+            SET_COOKIE,
+            format!(
+                "access_token=null; expires={}; Max-Age=0; HttpOnly; SameSite=None; Secure",
+                (chrono::Utc::now() - chrono::Duration::hours(1)).format("%a, %d %b %Y %T GMT")
+            ),
+        );
+
+        Ok(true)
+    }
 }
