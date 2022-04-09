@@ -212,7 +212,7 @@ impl UserMutation {
             .await;
 
             let reset_password_url = format!(
-                "https://www.populist.us/auth/reset-password?token={}",
+                "https://www.populist.us/auth/password?token={}",
                 reset_token
             );
 
