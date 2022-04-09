@@ -49,7 +49,7 @@ pub struct UpdateRaceInput {
     pub slug: Option<String>,
     pub title: Option<String>,
     pub office_id: Option<uuid::Uuid>,
-    pub race_type: RaceType,
+    pub race_type: Option<RaceType>,
     pub party: Option<PoliticalParty>,
     pub description: Option<String>,
     pub ballotpedia_link: Option<String>,
