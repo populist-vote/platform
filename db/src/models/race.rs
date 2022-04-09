@@ -127,7 +127,7 @@ impl Race {
             input.slug,
             input.title,
             input.office_id,
-            input.race_type as RaceType,
+            input.race_type as Option<RaceType>,
             input.party as Option<PoliticalParty>,
             input.state as Option<State>,
             input.description,
