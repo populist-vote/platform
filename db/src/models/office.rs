@@ -54,6 +54,7 @@ pub struct UpdateOfficeInput {
 pub struct OfficeSearch {
     query: Option<String>,
     state: Option<State>,
+    political_scope: Option<PoliticalScope>,
 }
 
 impl Office {
@@ -171,10 +172,12 @@ impl Office {
                 SELECT id, slug, title, office_type, district, political_scope AS "political_scope:PoliticalScope", incumbent_id, state AS "state:State", municipality, term_length, created_at, updated_at FROM office
                 WHERE (($1::text = '') IS NOT FALSE OR to_tsvector(concat_ws(' ', slug, title)) @@ to_tsquery($1))
                 AND ($2::state IS NULL OR state = $2)
+                AND ($3::political_scope IS NULL OR political_scope = $3)
                 
             "#,
             search_query,
             input.state as Option<State>,
+            input.political_scope as Option<PoliticalScope>,
         )
         .fetch_all(db_pool)
         .await?;
