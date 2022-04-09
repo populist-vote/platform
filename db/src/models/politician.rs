@@ -324,7 +324,7 @@ impl Politician {
         search: &PoliticianSearch,
     ) -> Result<Vec<Self>, sqlx::Error> {
         let search_query =
-            crate::process_search_query(search.name.to_owned().unwrap_or("".to_string()));
+            crate::process_search_query(search.name.to_owned().unwrap_or_else(|| "".to_string()));
 
         let records = sqlx::query_as!(
             Politician,

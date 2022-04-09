@@ -162,6 +162,9 @@ impl Office {
     }
 
     pub async fn search(db_pool: &PgPool, input: &OfficeSearch) -> Result<Vec<Self>, sqlx::Error> {
+        let search_query =
+            crate::process_search_query(input.query.to_owned().unwrap_or_else(|| "".to_string()));
+
         let records = sqlx::query_as!(
             Office,
             r#"
@@ -170,7 +173,7 @@ impl Office {
                 AND ($2::state IS NULL OR state = $2)
                 
             "#,
-            input.query,
+            search_query,
             input.state as Option<State>,
         )
         .fetch_all(db_pool)
