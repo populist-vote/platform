@@ -64,7 +64,6 @@ pub fn cors(environment: Environment) -> Cors {
             "https://api.staging.populist.us",
             "https://staging.populist.us",
             "http://localhost:3030",
-            "https://localhost:3030",
         ];
         let re = Regex::new(r"https://web-.*?-populist\.vercel\.app$").unwrap();
         re.is_match(origin) || staging_origins.contains(&origin)
@@ -74,6 +73,7 @@ pub fn cors(environment: Environment) -> Cors {
         Environment::Local => cors,
         Environment::Staging => cors.allow_origins_fn(allowed_staging_origins),
         Environment::Production => cors.allow_origins(vec![
+            "http://localhost:3030",
             "https://populist-api-production.herokuapp.com",
             "https://api.populist.us",
             "https://populist.us",
