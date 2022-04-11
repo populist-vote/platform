@@ -87,6 +87,20 @@ pub struct RatingResult {
     organization: Option<OrganizationResult>,
 }
 
+fn calculate_age(dob: String) -> Result<i64> {
+    let now = NaiveDate::parse_from_str(&Local::now().format("%m/%d/%Y").to_string(), "%m/%d/%Y")
+        .unwrap();
+    let dob = NaiveDate::parse_from_str(&dob, "%m/%d/%Y")?;
+    let age = (now - dob).num_days() / 365;
+    Ok(age)
+}
+
+#[test]
+fn test_calculate_age() {
+    let dob = "05/13/1984".to_string();
+    assert_eq!(calculate_age(dob), Ok(37));
+}
+
 #[ComplexObject]
 impl PoliticianResult {
     async fn full_name(&self) -> String {
@@ -102,16 +116,7 @@ impl PoliticianResult {
         // TODO: Create our own DOB field so we dont have to rely on Votesmart
 
         if let Some(vs_bio) = &self.votesmart_candidate_bio {
-            let dob = NaiveDate::parse_from_str(&vs_bio.candidate.birth_date, "%m/%d/%Y");
-            // Votesmart dob may be in a whack format
-            if let Ok(dob) = dob {
-                // There must be a better way to get NaiveDate.today but 🤷
-                let now = NaiveDate::parse_from_str(
-                    &Local::now().format("%m/%d/%Y").to_string(),
-                    "%m/%d/%Y",
-                )
-                .unwrap();
-                let age = (now - dob).num_weeks() / 52;
+            if let Ok(age) = calculate_age(vs_bio.candidate.birth_date.clone()) {
                 Some(age)
             } else {
                 None
