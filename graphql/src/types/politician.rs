@@ -99,6 +99,9 @@ fn calculate_age(dob: String) -> Result<i64> {
 fn test_calculate_age() {
     let dob = "05/13/1984".to_string();
     assert_eq!(calculate_age(dob), Ok(37));
+
+    let dob = "02/09/1992".to_string();
+    assert_eq!(calculate_age(dob), Ok(30));
 }
 
 #[ComplexObject]

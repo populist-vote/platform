@@ -17,6 +17,10 @@ async fn seed_2020_races() -> Result<(), Box<dyn Error>> {
     .await
     .unwrap();
 
+    // Copy one of the primaries and change meta data to reflect it is a general race
+    // If winner_id exists on these races, update these politicians "upcoming_race_id" to reflect the win
+    // If winner_id exists, nullify "upcoming_race_id" for losers
+
     let us_senate_republican_primary = CreateRaceInput {
         slug: Some("us-senate-republican-primary-2020-colorado".to_string()),
         title: "U.S. Senate Republican Primary".to_string(),
@@ -27,12 +31,12 @@ async fn seed_2020_races() -> Result<(), Box<dyn Error>> {
             "https://ballotpedia.org/United_States_Senate_election_in_Colorado,_2022".to_string(),
         ),
         early_voting_begins_date: None,
-        election_date: Some(chrono::NaiveDate::from_ymd(2022, 6, 28)),
         party: Some(PoliticalParty::Republican),
         office_id: office.id,
         official_website: None,
         race_type: db::models::enums::RaceType::Primary,
         state: Some(State::CO),
+        winner_id: None,
         election_id: None,
     };
 

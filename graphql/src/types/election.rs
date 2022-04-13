@@ -27,7 +27,7 @@ impl ElectionResult {
         let records = sqlx::query_as!(
             Race,
             r#"
-            SELECT id, slug, title, office_id, race_type AS "race_type:RaceType", party AS "party:PoliticalParty", state AS "state:State", description, ballotpedia_link, early_voting_begins_date, election_date, official_website, election_id, created_at, updated_at FROM race
+            SELECT id, slug, title, office_id, race_type AS "race_type:RaceType", party AS "party:PoliticalParty", state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_id, official_website, election_id, created_at, updated_at FROM race
             WHERE election_id = $1
         "#,
             uuid::Uuid::parse_str(&self.id).unwrap()
@@ -58,7 +58,7 @@ impl ElectionResult {
             let records = sqlx::query_as!(
             Race,
             r#"
-            SELECT id, slug, title, office_id, race_type AS "race_type:RaceType", party AS "party:PoliticalParty", state AS "state:State", description, ballotpedia_link, early_voting_begins_date, election_date, official_website, election_id, created_at, updated_at FROM race
+            SELECT id, slug, title, office_id, race_type AS "race_type:RaceType", party AS "party:PoliticalParty", state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_id, official_website, election_id, created_at, updated_at FROM race
             WHERE election_id = $1 AND state = $2
         "#,
             uuid::Uuid::parse_str(&self.id).unwrap(),

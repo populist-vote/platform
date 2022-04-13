@@ -1,5 +1,5 @@
 use crate::{context::ApiContext, types::OfficeResult};
-use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
+use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use db::{
     models::{
         enums::{PoliticalParty, RaceType, State},
@@ -24,7 +24,7 @@ pub struct RaceResult {
     description: Option<String>,
     ballotpedia_link: Option<String>,
     early_voting_begins_date: Option<chrono::NaiveDate>,
-    election_date: Option<chrono::NaiveDate>,
+    winner_id: Option<ID>,
     official_website: Option<String>,
     election_id: Option<ID>,
     created_at: DateTime,
@@ -33,7 +33,7 @@ pub struct RaceResult {
 
 #[ComplexObject]
 impl RaceResult {
-    async fn office(&self, ctx: &Context<'_>) -> FieldResult<OfficeResult> {
+    async fn office(&self, ctx: &Context<'_>) -> Result<OfficeResult> {
         let cached_office = ctx
             .data::<ApiContext>()?
             .loaders
@@ -52,7 +52,7 @@ impl RaceResult {
         }
     }
 
-    async fn candidates(&self, ctx: &Context<'_>) -> FieldResult<Vec<PoliticianResult>> {
+    async fn candidates(&self, ctx: &Context<'_>) -> Result<Vec<PoliticianResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let records = sqlx::query_as!(Politician, r#"
             SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, party AS "party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, created_at, updated_at FROM politician
@@ -62,6 +62,21 @@ impl RaceResult {
         ).fetch_all(&db_pool).await?;
         let results = records.into_iter().map(PoliticianResult::from).collect();
         Ok(results)
+    }
+
+    async fn election_date(&self, ctx: &Context<'_>) -> Result<Option<chrono::NaiveDate>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let record = sqlx::query!(
+            r#"
+            SELECT election_date FROM election
+            WHERE id = $1
+            "#,
+            uuid::Uuid::parse_str(self.election_id.clone().unwrap_or_default().as_str()).unwrap()
+        )
+        .fetch_optional(&db_pool)
+        .await?;
+
+        Ok(record.map(|r| r.election_date))
     }
 }
 
@@ -78,7 +93,7 @@ impl From<Race> for RaceResult {
             description: r.description,
             ballotpedia_link: r.ballotpedia_link,
             early_voting_begins_date: r.early_voting_begins_date,
-            election_date: r.election_date,
+            winner_id: r.winner_id.map(ID::from),
             official_website: r.official_website,
             election_id: r.election_id.map(ID::from),
             created_at: r.created_at,
