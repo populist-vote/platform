@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS \"home_state:State\", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, party AS \"party:PoliticalParty\", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, created_at, updated_at FROM politician\n            WHERE upcoming_race_id = $1\n            ",
+  "query": "\n                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS \"home_state:State\", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, party AS \"party:PoliticalParty\", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, upcoming_race_id, created_at, updated_at FROM politician\n                WHERE office_id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -236,5 +236,5 @@
       false
     ]
   },
-  "hash": "015d0f95b65c5b35447d3a4bd1a68b34871add4a6fda76edb3f1ef2c8f14082f"
+  "hash": "1818fa4a43fda8b9299abdaac979e432fb2a939161c91e8872034a13b67f776c"
 }
