@@ -1319,18 +1319,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "geocodio"
-version = "0.1.0"
-dependencies = [
- "dotenv",
- "reqwest",
- "serde",
- "serde_json",
- "thiserror",
- "tokio",
-]
-
-[[package]]
 name = "getrandom"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
