@@ -9,3 +9,6 @@
 [submodule "open-secrets"]
 	path = open-secrets 
 	url = https://github.com/populist-vote/open-secrets.git
+[submodule "geocodio"]
+	path = geocodio
+	url = https://github.com/populist-vote/geocodio.git
