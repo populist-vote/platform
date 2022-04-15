@@ -4,10 +4,6 @@ members = [
     "cli",
     "db",
     "graphql",
-    "geocodio",
-    "legiscan",
     "mailers",
-    "open-secrets",
-    "votesmart",
     "server"
 ]
