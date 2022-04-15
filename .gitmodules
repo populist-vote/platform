@@ -1,15 +1,12 @@
 [submodule "votesmart"]
 	path = votesmart
 	url = https://github.com/populist-vote/votesmart.git
-
 [submodule "legiscan"]
 	path = legiscan
 	url = https://github.com/populist-vote/legiscan.git
-
 [submodule "open-secrets"]
-	path = open-secrets 
+	path = open-secrets
 	url = https://github.com/populist-vote/open-secrets.git
-
 [submodule "geocodio"]
 	path = geocodio
 	url = https://github.com/populist-vote/geocodio.git
