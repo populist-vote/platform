@@ -5,5 +5,10 @@ members = [
     "db",
     "graphql",
     "mailers",
-    "server"
+    "server",
+    "geocodio",
+    "votesmart",
+    "legiscan",
+    "open-secrets",
 ]
+
