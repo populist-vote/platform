@@ -42,7 +42,7 @@ impl VotesmartProxy {
 
 /// Endpoint function namespaces.
 impl VotesmartProxy {
-    /// Offic endpoint methods.
+    /// Office endpoint methods.
     pub const fn office(&self) -> Office<'_> {
         Office(self)
     }
@@ -58,27 +58,27 @@ impl VotesmartProxy {
     pub const fn state(&self) -> State<'_> {
         State(self)
     }
-    /// Address endpont methods.
+    /// Address endpoint methods.
     pub const fn address(&self) -> Address<'_> {
         Address(self)
     }
-    /// Candidates endpont methods.
+    /// Candidates endpoint methods.
     pub const fn candidates(&self) -> Candidates<'_> {
         Candidates(self)
     }
-    /// Committee endpont methods.
+    /// Committee endpoint methods.
     pub const fn committee(&self) -> Committee<'_> {
         Committee(self)
     }
-    /// District endpont methods.
+    /// District endpoint methods.
     pub const fn district(&self) -> District<'_> {
         District(self)
     }
-    /// Election endpont methods.
+    /// Election endpoint methods.
     pub const fn election(&self) -> Election<'_> {
         Election(self)
     }
-    /// Leadership endpont methods.
+    /// Leadership endpoint methods.
     pub const fn leadership(&self) -> Leadership<'_> {
         Leadership(self)
     }
