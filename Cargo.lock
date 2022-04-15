@@ -1331,6 +1331,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "geocodio"
+version = "0.1.0"
+source = "git+https://github.com/populist-vote/geocodio#a16a431c73cac9730d55e99c255fdfa32e6e8e20"
+dependencies = [
+ "dotenv",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1371,6 +1384,7 @@ dependencies = [
  "chrono",
  "db",
  "dotenv",
+ "geocodio 0.1.0 (git+https://github.com/populist-vote/geocodio)",
  "http",
  "jsonwebtoken",
  "legiscan 0.1.3 (git+https://github.com/populist-vote/legiscan)",
