@@ -7,8 +7,8 @@ publish = false
 [dependencies]
 db = { path = "../db" }
 graphql = { path = "../graphql" }
-legiscan = { path = "../legiscan" }
-votesmart = { path = "../votesmart" }
+legiscan = { git = "https://github.com/populist-vote/legiscan" }
+votesmart = { git = "https://github.com/populist-vote/votesmart" }
 dotenv = "0.15.0"
 structopt = "0.3.25"
 serde = "*"

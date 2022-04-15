@@ -5,8 +5,8 @@ edition = "2021"
 publish = false
 
 [dependencies]
-legiscan = { path = "../legiscan", features = ["async-graphql"] }
-votesmart = { path = "../votesmart" }
+legiscan = { git = "https://github.com/populist-vote/legiscan", features = ["async-graphql"] }
+votesmart = { git = "https://github.com/populist-vote/votesmart" }
 chrono = { version = "0.4.19", features = ["serde"] }
 sqlx = { version = "0.5.9", features = [ "runtime-tokio-rustls", "postgres", "chrono", "uuid", "json", "offline" ] }
 tokio = { version = "1.8", features = ["full"] }
