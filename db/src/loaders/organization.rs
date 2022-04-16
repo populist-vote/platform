@@ -11,7 +11,7 @@ pub struct OrganizationLoader(PgPool);
 
 impl OrganizationLoader {
     pub fn new(pool: PgPool) -> Self {
-        Self(pool.to_owned())
+        Self(pool)
     }
 }
 

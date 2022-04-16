@@ -56,23 +56,12 @@ pub struct UpdateBillInput {
     pub arguments: Option<Vec<CreateArgumentInput>>,
 }
 
-#[derive(InputObject)]
+#[derive(Default, InputObject)]
 pub struct BillSearch {
     slug: Option<String>,
     title: Option<String>,
     bill_number: Option<String>,
     legislation_status: Option<LegislationStatus>,
-}
-
-impl Default for BillSearch {
-    fn default() -> Self {
-        Self {
-            slug: None,
-            title: None,
-            bill_number: None,
-            legislation_status: None,
-        }
-    }
 }
 
 impl Bill {

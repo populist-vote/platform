@@ -54,15 +54,11 @@ async fn create_offices() -> Result<(), Box<dyn Error>> {
         let new_office_input = CreateOfficeInput {
             slug: Some(slugify!(format!(
                 "{} {} {}",
-                office
-                    .name
-                    .first()
-                    .unwrap_or(&"unknown".to_string())
-                    .to_owned(),
+                office.name.first().unwrap_or(&"unknown".to_string()),
                 office.district,
                 rng.gen::<i16>()
             )
-            .replace(".", "")
+            .replace('.', "")
             .as_str())),
             title: office
                 .name

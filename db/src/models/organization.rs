@@ -66,15 +66,9 @@ pub struct UpdateOrganizationInput {
     pub issue_tags: Option<CreateOrConnectIssueTagInput>,
 }
 
-#[derive(InputObject)]
+#[derive(Default, InputObject)]
 pub struct OrganizationSearch {
     name: Option<String>,
-}
-
-impl Default for OrganizationSearch {
-    fn default() -> Self {
-        OrganizationSearch { name: None }
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize, InputObject)]

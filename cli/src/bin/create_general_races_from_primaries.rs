@@ -21,11 +21,11 @@ async fn seed_2020_races() -> Result<(), Box<dyn Error>> {
     // If winner_id exists on these races, update these politicians "upcoming_race_id" to reflect the win
     // If winner_id exists, nullify "upcoming_race_id" for losers
 
-    let us_senate_republican_primary = CreateRaceInput {
+    let _us_senate_republican_primary = CreateRaceInput {
         slug: Some("us-senate-republican-primary-2020-colorado".to_string()),
         title: "U.S. Senate Republican Primary".to_string(),
         description: Some(
-            "Replublican primary election for the 2022 Colorado U.S. Senate Seat".to_string(),
+            "Republican primary election for the 2022 Colorado U.S. Senate Seat".to_string(),
         ),
         ballotpedia_link: Some(
             "https://ballotpedia.org/United_States_Senate_election_in_Colorado,_2022".to_string(),

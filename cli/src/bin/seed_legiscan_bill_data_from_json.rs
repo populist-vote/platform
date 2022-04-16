@@ -69,7 +69,7 @@ async fn seed_bills() -> Result<(), Box<dyn Error>> {
             arguments: None,
         };
         db::Bill::create(&pool.connection, &input).await?;
-        println!("Creating bill: {}", bill.bill_id.to_owned());
+        println!("Creating bill: {}", bill.bill_id);
         count += 1;
     }
     println!("Created {} new bill records", count);

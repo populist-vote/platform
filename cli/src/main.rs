@@ -51,7 +51,7 @@ struct GetBillArgs {
     #[structopt(about = "Legiscan bill ID")]
     bill_id: i32,
     #[structopt(short, long, about = "Create populist record")]
-    create_record: bool,
+    _create_record: bool,
     #[structopt(short, long, about = "Update populist record")]
     update_record: bool,
     #[structopt(short, long, about = "Print fetched JSON data to console")]
@@ -63,11 +63,11 @@ struct GetBillTextArgs {
     #[structopt(about = "Legiscan bill ID")]
     bill_id: i32,
     #[structopt(short, long, about = "Create populist record")]
-    create_record: bool,
+    _create_record: bool,
     #[structopt(short, long, about = "Update populist record")]
-    update_record: bool,
+    _update_record: bool,
     #[structopt(short, long, about = "Print fetched JSON data to console")]
-    pretty_print: bool,
+    _pretty_print: bool,
 }
 
 #[derive(Clone, Debug, StructOpt)]
@@ -75,9 +75,9 @@ struct GetBillActionArgs {
     #[structopt(about = "Legiscan action ID")]
     action_id: i32,
     #[structopt(short, long, about = "Create populist record")]
-    create_record: bool,
+    _create_record: bool,
     #[structopt(short, long, about = "Update populist record")]
-    update_record: bool,
+    _update_record: bool,
     #[structopt(short, long, about = "Print fetched JSON data to console")]
     pretty_print: bool,
 }

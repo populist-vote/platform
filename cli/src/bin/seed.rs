@@ -1,5 +1,3 @@
-use db::CreateOrConnectIssueTagInput;
-use slugify::slugify;
 use std::{error, fs, io, path, process};
 
 async fn seed() -> Result<(), Box<dyn error::Error>> {
@@ -49,7 +47,7 @@ async fn seed() -> Result<(), Box<dyn error::Error>> {
             //     }
             // }
             "politicians" => {
-                for (name, politician) in yaml.into_iter() {
+                for (_name, politician) in yaml.into_iter() {
                     // println!("politician = {:?}", politician);
 
                     let input: db::CreatePoliticianInput =

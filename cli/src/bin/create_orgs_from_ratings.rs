@@ -1,4 +1,3 @@
-use db::{CreateOrganizationInput, Organization};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::process;
@@ -34,7 +33,7 @@ pub struct GeneralInfo {
 
 async fn create_organizations() -> Result<(), Box<dyn Error>> {
     db::init_pool().await.unwrap();
-    let proxy = VotesmartProxy::new().unwrap();
+    let _proxy = VotesmartProxy::new().unwrap();
     let pool = db::pool().await;
 
     let ratings_records = sqlx::query!(
@@ -61,7 +60,7 @@ async fn create_organizations() -> Result<(), Box<dyn Error>> {
         })
         .collect::<std::collections::HashSet<i32>>();
 
-    for sig_id in unique_sig_ids {
+    for _sig_id in unique_sig_ids {
         // let existing_org = sqlx::query_as!(
         //     Organization,
         //     r#"
@@ -73,32 +72,32 @@ async fn create_organizations() -> Result<(), Box<dyn Error>> {
         // .await
         // .unwrap();
 
-        let vs_response = proxy.rating().get_sig(sig_id).await?;
-        let json = vs_response.json::<serde_json::Value>().await.unwrap()["sig"].to_owned();
-        let sig: VotesmartSig = serde_json::from_value(json).unwrap_or_default();
-        let address_line_1 = sig.address.split(",").collect::<Vec<&str>>()[0].to_string();
-        let temp_address = sig.address.split(",").collect::<Vec<&str>>();
-        let address_line_2 = temp_address.get(1).unwrap_or(&"").to_string();
-        let city = sig.city;
-        let state = sig.state;
-        let zip = sig.zip;
-        let description = sig.description;
-        let email = sig.email;
-        let name = sig.name;
-        let website = sig.url;
-        let phone = sig.phone1;
+        // let vs_response = proxy.rating().get_sig(sig_id).await?;
+        // let json = vs_response.json::<serde_json::Value>().await.unwrap()["sig"].to_owned();
+        // let sig: VotesmartSig = serde_json::from_value(json).unwrap_or_default();
+        // let address_line_1 = sig.address.split(",").collect::<Vec<&str>>()[0].to_string();
+        // let temp_address = sig.address.split(",").collect::<Vec<&str>>();
+        // let address_line_2 = temp_address.get(1).unwrap_or(&"").to_string();
+        // let city = sig.city;
+        // let state = sig.state;
+        // let zip = sig.zip;
+        // let description = sig.description;
+        // let email = sig.email;
+        // let name = sig.name;
+        // let website = sig.url;
+        // let phone = sig.phone1;
 
-        let existing_org = sqlx::query_as!(
-            Organization,
-            r#"
-                UPDATE organization SET votesmart_sig_id = $1 
-                WHERE name ILIKE $2
-                "#,
-            sig_id,
-            name
-        )
-        .fetch_optional(&pool.connection)
-        .await;
+        // let existing_org = sqlx::query_as!(
+        //     Organization,
+        //     r#"
+        //         UPDATE organization SET votesmart_sig_id = $1
+        //         WHERE name ILIKE $2
+        //         "#,
+        //     sig_id,
+        //     name
+        // )
+        // .fetch_optional(&pool.connection)
+        // .await;
         // .unwrap();
         // if let Some(org) = existing_org {
         //     sqlx::query!(
