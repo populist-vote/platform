@@ -10,7 +10,7 @@ use super::{OrganizationResult, PoliticianResult};
 
 #[derive(Debug, Clone, Union)]
 enum AuthorResult {
-    PoliticianResult(PoliticianResult),
+    PoliticianResult(Box<PoliticianResult>),
     OrganizationResult(OrganizationResult),
 }
 
@@ -32,10 +32,15 @@ impl ArgumentResult {
     async fn author(&self, ctx: &Context<'_>) -> FieldResult<AuthorResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let result = match self.author_type {
-            AuthorType::Politician => AuthorResult::PoliticianResult(PoliticianResult::from(
-                Politician::find_by_id(&db_pool, uuid::Uuid::parse_str(self.author_id.as_str())?)
+            AuthorType::Politician => {
+                AuthorResult::PoliticianResult(Box::new(PoliticianResult::from(
+                    Politician::find_by_id(
+                        &db_pool,
+                        uuid::Uuid::parse_str(self.author_id.as_str())?,
+                    )
                     .await?,
-            )),
+                )))
+            }
             AuthorType::Organization => AuthorResult::OrganizationResult(OrganizationResult::from(
                 Organization::find_by_id(&db_pool, uuid::Uuid::parse_str(self.author_id.as_str())?)
                     .await?,

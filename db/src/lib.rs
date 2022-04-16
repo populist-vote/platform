@@ -22,8 +22,8 @@ pub use pool::*;
 /// This function takes in a string and returns a ts_query safe string for postgres
 /// For example "barack oba" becomes "barack | oba:*"
 fn process_search_query(query: String) -> String {
-    if query.len() == 0 {
-        return "".to_string();
+    if query.is_empty() {
+        "".to_string()
     } else {
         format!(
             "{}{}",

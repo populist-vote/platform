@@ -12,10 +12,4 @@ members = [
     "legiscan",
     "open-secrets",
 ]
-exclude = [
-    "geocodio",
-    "votesmart",
-    "legiscan",
-    "open-secrets",
-]
 

@@ -14,9 +14,9 @@ auth = { path = "../auth" }
 db = { path = "../db" }
 mailers = { path = "../mailers" }
 tokio = { version = "1.8", features = ["full"] }
-legiscan = { git = "https://github.com/populist-vote/legiscan", features = ["async-graphql"] }
-votesmart = { git = "https://github.com/populist-vote/votesmart", features = ["async-graphql"] }
-geocodio = { git = "https://github.com/populist-vote/geocodio" }
+legiscan = { path = "../legiscan", features = ["async-graphql"] }
+votesmart = { path = "../votesmart", features = ["async-graphql"] }
+geocodio = { path = "../geocodio" }
 dotenv = "0.15.0"
 pwhash = "1.0.0"
 rust-s3 = "0.28.0"
