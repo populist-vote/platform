@@ -21,12 +21,7 @@ impl BillQuery {
         let records = Bill::search(&db_pool, &search).await?;
         let results = records.into_iter().map(BillResult::from);
 
-        relay::query(
-            results.into_iter(),
-            relay::Params::new(after, before, first, last),
-            10,
-        )
-        .await
+        relay::query(results, relay::Params::new(after, before, first, last), 10).await
     }
 
     async fn bill_by_slug(&self, ctx: &Context<'_>, slug: String) -> Option<BillResult> {

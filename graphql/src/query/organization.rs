@@ -23,12 +23,7 @@ impl OrganizationQuery {
         let records = Organization::search(&db_pool, &search.unwrap_or_default()).await?;
         let results = records.into_iter().map(OrganizationResult::from);
 
-        relay::query(
-            results.into_iter(),
-            relay::Params::new(after, before, first, last),
-            10,
-        )
-        .await
+        relay::query(results, relay::Params::new(after, before, first, last), 10).await
     }
 
     async fn organization_by_slug(
