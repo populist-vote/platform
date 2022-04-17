@@ -69,7 +69,8 @@ impl ElectionResult {
             SELECT
                 a.congressional_district,
                 a.state_senate_district,
-                a.state_house_district
+                a.state_house_district,
+                a.state AS "state:State"
             FROM
                 address AS a
                 JOIN user_profile up ON user_id = $1
@@ -104,14 +105,17 @@ impl ElectionResult {
                 JOIN office o ON office_id = o.id
             WHERE
                 election_id = $1
-                AND((o.district = $2::TEXT
+                AND o.state = $2
+                AND((o.title = 'U.S. Senate')
+                OR (o.district = $3::TEXT
                     AND o.political_scope::political_scope = 'federal')
-                OR(o.district = $3::TEXT
-                    AND o.title = 'State Senate')
                 OR(o.district = $4::TEXT
+                    AND o.title = 'State Senate')
+                OR(o.district = $5::TEXT
                     AND o.title = 'State House'));
                 "#,
                 uuid::Uuid::parse_str(&self.id).unwrap(),
+                user_address_data.state as State,
                 user_address_data
                     .congressional_district
                     .map(|d| d.to_string()),

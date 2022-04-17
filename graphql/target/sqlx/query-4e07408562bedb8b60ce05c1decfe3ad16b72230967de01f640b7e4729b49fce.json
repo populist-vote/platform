@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT\n                a.congressional_district,\n                a.state_senate_district,\n                a.state_house_district\n            FROM\n                address AS a\n                JOIN user_profile up ON user_id = $1\n                JOIN address ON up.address_id = a.id\n                ",
+  "query": "\n            SELECT\n                a.congressional_district,\n                a.state_senate_district,\n                a.state_house_district,\n                a.state AS \"state:State\"\n            FROM\n                address AS a\n                JOIN user_profile up ON user_id = $1\n                JOIN address ON up.address_id = a.id\n                ",
   "describe": {
     "columns": [
       {
@@ -16,6 +16,11 @@
         "ordinal": 2,
         "name": "state_house_district",
         "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "state:State",
+        "type_info": "Text"
       }
     ],
     "parameters": {
@@ -26,8 +31,9 @@
     "nullable": [
       true,
       true,
-      true
+      true,
+      false
     ]
   },
-  "hash": "1353acff11094894429a09dce2c51625a363fb10b7ac9175e34f3735dc4b7073"
+  "hash": "b2c2fa54e07191badb0c1b0998e1d8bef6e10c06b72b2c71213b977f9c2446d2"
 }
