@@ -27,45 +27,104 @@ impl ElectionResult {
         let records = sqlx::query_as!(
             Race,
             r#"
-            SELECT id, slug, title, office_id, race_type AS "race_type:RaceType", party AS "party:PoliticalParty", state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_id, official_website, election_id, created_at, updated_at FROM race
-            WHERE election_id = $1
-        "#,
+            SELECT
+                id,
+                slug,
+                title,
+                office_id,
+                race_type AS "race_type:RaceType",
+                party AS "party:PoliticalParty",
+                state AS "state:State",
+                description,
+                ballotpedia_link,
+                early_voting_begins_date,
+                winner_id,
+                official_website,
+                election_id,
+                created_at,
+                updated_at
+            FROM
+                race
+            WHERE
+                election_id = $1
+            "#,
             uuid::Uuid::parse_str(&self.id).unwrap()
         )
         .fetch_all(&db_pool)
-        .await.unwrap();
+        .await
+        .unwrap();
 
         let results = records.into_iter().map(RaceResult::from).collect();
         Ok(results)
     }
 
-    /// Show races relevant to the users state
-    async fn races_by_users_state(&self, ctx: &Context<'_>) -> Result<Vec<RaceResult>> {
+    /// Show races relevant to the user based on their address
+    async fn races_by_user_districts(&self, ctx: &Context<'_>) -> Result<Vec<RaceResult>> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
         let token = ctx.data::<Option<TokenData<Claims>>>();
 
         if let Some(token_data) = token.unwrap() {
-            let users_state = sqlx::query!(
+            let user_address_data = sqlx::query!(
                 r#"
-        SELECT a.state AS "state:State" FROM address AS a
-        JOIN user_profile up ON user_id = $1
-        JOIN address ON up.address_id = a.id "#,
+            SELECT
+                a.congressional_district,
+                a.state_senate_district,
+                a.state_house_district
+            FROM
+                address AS a
+                JOIN user_profile up ON user_id = $1
+                JOIN address ON up.address_id = a.id
+                "#,
                 token_data.claims.sub
             )
             .fetch_one(&db_pool)
             .await?;
 
             let records = sqlx::query_as!(
-            Race,
-            r#"
-            SELECT id, slug, title, office_id, race_type AS "race_type:RaceType", party AS "party:PoliticalParty", state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_id, official_website, election_id, created_at, updated_at FROM race
-            WHERE election_id = $1 AND state = $2
-        "#,
-            uuid::Uuid::parse_str(&self.id).unwrap(),
-            users_state.state as State
-        )
-        .fetch_all(&db_pool)
-        .await.unwrap();
+                Race,
+                r#"
+            SELECT
+                r.id,
+                r.slug,
+                r.title,
+                r.office_id,
+                r.race_type AS "race_type:RaceType",
+                r.party AS "party:PoliticalParty",
+                r.state AS "state:State",
+                r.description,
+                r.ballotpedia_link,
+                r.early_voting_begins_date,
+                r.winner_id,
+                r.official_website,
+                r.election_id,
+                r.created_at,
+                r.updated_at
+            FROM
+                race r
+                JOIN office o ON office_id = o.id
+            WHERE
+                election_id = $1
+                AND((o.district = $2::TEXT
+                    AND o.political_scope::political_scope = 'federal')
+                OR(o.district = $3::TEXT
+                    AND o.title = 'State Senate')
+                OR(o.district = $4::TEXT
+                    AND o.title = 'State House'));
+                "#,
+                uuid::Uuid::parse_str(&self.id).unwrap(),
+                user_address_data
+                    .congressional_district
+                    .map(|d| d.to_string()),
+                user_address_data
+                    .state_senate_district
+                    .map(|d| d.to_string()),
+                user_address_data
+                    .state_house_district
+                    .map(|d| d.to_string()),
+            )
+            .fetch_all(&db_pool)
+            .await
+            .unwrap();
 
             let results = records.into_iter().map(RaceResult::from).collect();
             Ok(results)

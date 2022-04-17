@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT a.id, a.line_1, a.line_2, a.city, a.state AS \"state:State\", a.postal_code, a.country, a.congressional_district, a.state_senate_district, a.state_house_district FROM address AS a\n            JOIN user_profile up ON user_id = $1\n            JOIN address ON up.address_id = a.id\n        ",
+  "query": "\n            SELECT\n                id,\n                slug,\n                title,\n                office_id,\n                race_type AS \"race_type:RaceType\",\n                party AS \"party:PoliticalParty\",\n                state AS \"state:State\",\n                description,\n                ballotpedia_link,\n                early_voting_begins_date,\n                winner_id,\n                official_website,\n                election_id,\n                created_at,\n                updated_at\n            FROM\n                race\n            WHERE\n                election_id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -9,48 +9,164 @@
       },
       {
         "ordinal": 1,
-        "name": "line_1",
+        "name": "slug",
         "type_info": "Text"
       },
       {
         "ordinal": 2,
-        "name": "line_2",
+        "name": "title",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "city",
-        "type_info": "Text"
+        "name": "office_id",
+        "type_info": "Uuid"
       },
       {
         "ordinal": 4,
-        "name": "state:State",
-        "type_info": "Text"
+        "name": "race_type:RaceType",
+        "type_info": {
+          "Custom": {
+            "name": "race_type",
+            "kind": {
+              "Enum": [
+                "primary",
+                "general"
+              ]
+            }
+          }
+        }
       },
       {
         "ordinal": 5,
-        "name": "postal_code",
-        "type_info": "Text"
+        "name": "party:PoliticalParty",
+        "type_info": {
+          "Custom": {
+            "name": "political_party",
+            "kind": {
+              "Enum": [
+                "democratic",
+                "republican",
+                "libertarian",
+                "green",
+                "constitution",
+                "unknown"
+              ]
+            }
+          }
+        }
       },
       {
         "ordinal": 6,
-        "name": "country",
-        "type_info": "Text"
+        "name": "state:State",
+        "type_info": {
+          "Custom": {
+            "name": "state",
+            "kind": {
+              "Enum": [
+                "AL",
+                "AK",
+                "AZ",
+                "AR",
+                "CA",
+                "CO",
+                "CT",
+                "DC",
+                "DE",
+                "FL",
+                "GA",
+                "HI",
+                "ID",
+                "IL",
+                "IN",
+                "IA",
+                "KS",
+                "KY",
+                "LA",
+                "ME",
+                "MD",
+                "MA",
+                "MI",
+                "MN",
+                "MS",
+                "MO",
+                "MT",
+                "NE",
+                "NV",
+                "NH",
+                "NJ",
+                "NM",
+                "NY",
+                "NC",
+                "ND",
+                "OH",
+                "OK",
+                "OR",
+                "PA",
+                "RI",
+                "SC",
+                "SD",
+                "TN",
+                "TX",
+                "UT",
+                "VT",
+                "VA",
+                "WA",
+                "WV",
+                "WI",
+                "WY",
+                "AS",
+                "FM",
+                "GU",
+                "MH",
+                "MP",
+                "PW",
+                "PR",
+                "VI"
+              ]
+            }
+          }
+        }
       },
       {
         "ordinal": 7,
-        "name": "congressional_district",
-        "type_info": "Int4"
+        "name": "description",
+        "type_info": "Text"
       },
       {
         "ordinal": 8,
-        "name": "state_senate_district",
-        "type_info": "Int4"
+        "name": "ballotpedia_link",
+        "type_info": "Text"
       },
       {
         "ordinal": 9,
-        "name": "state_house_district",
-        "type_info": "Int4"
+        "name": "early_voting_begins_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 10,
+        "name": "winner_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 11,
+        "name": "official_website",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "election_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 13,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 14,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
       }
     ],
     "parameters": {
@@ -61,15 +177,20 @@
     "nullable": [
       false,
       false,
-      true,
-      false,
       false,
       false,
       false,
       true,
       true,
-      true
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
     ]
   },
-  "hash": "51ce7418687d91e1b1811aad6cacf18fd0d185945d925d644cc5e9173e2231e8"
+  "hash": "3383aa0b58b6a0da1453acc5117bc18418e6e228d9a822b2e02db990a49fbdef"
 }
