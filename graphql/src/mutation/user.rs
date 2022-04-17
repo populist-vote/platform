@@ -5,7 +5,8 @@ use crate::{
 };
 use async_graphql::*;
 use auth::{create_access_token_for_user, create_random_token, create_temporary_username, Claims};
-use db::{AddressInput, CreateUserInput, CreateUserWithProfileInput, User};
+use db::{AddressInput, Coordinates, CreateUserInput, CreateUserWithProfileInput, User};
+use geocodio::GeocodioProxy;
 use jsonwebtoken::TokenData;
 use mailers::EmailClient;
 use poem::http::header::SET_COOKIE;
@@ -85,44 +86,85 @@ impl UserMutation {
         // Create confirmation token so user can securely confirm their email is legitimate
         let confirmation_token = create_random_token().unwrap();
 
-        let new_user_input = CreateUserWithProfileInput {
-            email: input.email.clone(),
-            username: temp_username,
-            password: input.password,
-            address: input.address,
-            confirmation_token: confirmation_token.clone(),
-        };
+        // Use geocodio to get congressional district and state legislative districts
+        let address_clone = input.address.clone();
+        let geocodio = GeocodioProxy::new().unwrap();
+        let geocode_result = geocodio
+            .geocode(
+                geocodio::AddressParams::AddressInput(geocodio::AddressInput {
+                    line_1: address_clone.line_1,
+                    line_2: address_clone.line_2,
+                    city: address_clone.city,
+                    state: address_clone.state.to_string(),
+                    country: address_clone.country,
+                    postal_code: address_clone.postal_code,
+                }),
+                Some(&["cd", "stateleg"]),
+            )
+            .await;
 
-        let new_record = User::create_with_profile(&db_pool, &new_user_input).await;
+        match geocode_result {
+            Ok(geocodio_data) => {
+                let coordinates = geocodio_data.results[0].location.clone();
 
-        match new_record {
-            Ok(new_user) => {
-                // Create Access Token to log user in
-                let access_token = create_access_token_for_user(new_user.clone())?;
+                let primary_result = geocodio_data.results[0].fields.as_ref().unwrap();
+                let congressional_district =
+                    primary_result.congressional_districts.as_ref().unwrap()[0].district_number;
+                let state_legislative_districts =
+                    primary_result.state_legislative_districts.as_ref().unwrap();
+                let state_house_district = &state_legislative_districts.house[0].district_number;
+                let state_senate_district = &state_legislative_districts.senate[0].district_number;
 
-                let account_confirmation_url = format!(
-                    "https://www.populist.us/auth/confirm?token={}",
-                    confirmation_token
-                );
+                let new_user_input = CreateUserWithProfileInput {
+                    email: input.email.clone(),
+                    username: temp_username,
+                    password: input.password,
+                    address: AddressInput {
+                        coordinates: Some(Coordinates {
+                            latitude: coordinates.latitude,
+                            longitude: coordinates.longitude,
+                        }),
+                        congressional_district: Some(congressional_district.into()),
+                        state_house_district: Some(state_house_district.parse::<i32>().unwrap()),
+                        state_senate_district: Some(state_senate_district.parse::<i32>().unwrap()),
+                        ..input.address
+                    },
+                    confirmation_token: confirmation_token.clone(),
+                };
 
-                if let Err(err) = EmailClient::default()
-                    .send_welcome_email(new_user.email, account_confirmation_url)
-                    .await
-                {
-                    println!("Error sending welcome email: {}", err)
+                let new_record = User::create_with_profile(&db_pool, &new_user_input).await;
+
+                match new_record {
+                    Ok(new_user) => {
+                        // Create Access Token to log user in
+                        let access_token = create_access_token_for_user(new_user.clone())?;
+
+                        let account_confirmation_url = format!(
+                            "https://www.populist.us/auth/confirm?token={}",
+                            confirmation_token
+                        );
+
+                        if let Err(err) = EmailClient::default()
+                            .send_welcome_email(new_user.email, account_confirmation_url)
+                            .await
+                        {
+                            println!("Error sending welcome email: {}", err)
+                        }
+
+                        ctx.insert_http_header(
+                            SET_COOKIE,
+                            format!(
+                                "access_token={}; HttpOnly; SameSite=None; Secure",
+                                access_token
+                            ),
+                        );
+
+                        Ok(LoginResult {
+                            user_id: new_user.id.into(),
+                        })
+                    }
+                    Err(err) => Err(err.into()),
                 }
-
-                ctx.insert_http_header(
-                    SET_COOKIE,
-                    format!(
-                        "access_token={}; HttpOnly; SameSite=None; Secure",
-                        access_token
-                    ),
-                );
-
-                Ok(LoginResult {
-                    user_id: new_user.id.into(),
-                })
             }
             Err(err) => Err(err.into()),
         }

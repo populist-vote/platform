@@ -20,6 +20,9 @@ pub enum Error {
     #[error(transparent)]
     VarError(#[from] std::env::VarError),
 
+    #[error(transparent)]
+    GeocodioError(#[from] geocodio::Error),
+
     #[error("A user already exists with this email")]
     UserExistsError,
 

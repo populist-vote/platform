@@ -22,7 +22,7 @@ impl UserResult {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query_as!(Address,
             r#"
-            SELECT a.id, a.line_1, a.line_2, a.city, a.state AS "state:State", a.postal_code, a.country FROM address AS a
+            SELECT a.id, a.line_1, a.line_2, a.city, a.state AS "state:State", a.postal_code, a.country, a.congressional_district, a.state_senate_district, a.state_house_district FROM address AS a
             JOIN user_profile up ON user_id = $1
             JOIN address ON up.address_id = a.id
         "#,

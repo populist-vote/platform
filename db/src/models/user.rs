@@ -37,9 +37,12 @@ pub struct Address {
     pub state: State,
     pub country: String,
     pub postal_code: String,
+    pub congressional_district: Option<i32>,
+    pub state_senate_district: Option<i32>,
+    pub state_house_district: Option<i32>,
 }
 
-#[derive(Serialize, Deserialize, InputObject)]
+#[derive(Serialize, Deserialize, Clone, InputObject)]
 pub struct AddressInput {
     pub line_1: String,
     pub line_2: Option<String>,
@@ -47,6 +50,16 @@ pub struct AddressInput {
     pub state: State,
     pub country: String,
     pub postal_code: String,
+    pub coordinates: Option<Coordinates>,
+    pub congressional_district: Option<i32>,
+    pub state_senate_district: Option<i32>,
+    pub state_house_district: Option<i32>,
+}
+
+#[derive(Serialize, Deserialize, Clone, InputObject)]
+pub struct Coordinates {
+    pub latitude: f64,
+    pub longitude: f64,
 }
 
 #[derive(Serialize, Deserialize, InputObject)]
@@ -105,17 +118,27 @@ impl User {
         input: &CreateUserWithProfileInput,
     ) -> Result<Self, Error> {
         let hash = bcrypt::hash(&input.password).unwrap();
+
+        // Very cumbersome to get PostGIS geography type to insert with sqlx
+        let coordinates: geo_types::Geometry<f64> = input
+            .address
+            .coordinates
+            .as_ref()
+            .map(|c| geo::Point::new(c.latitude, c.longitude))
+            .unwrap()
+            .into();
+
         let record = sqlx::query_as!(
             User,
             r#"
                 WITH ins_user AS (
                     INSERT INTO populist_user (email, username, password, role, confirmation_token)
-                    VALUES (LOWER($1), LOWER($2), $3, $4, $11)
+                    VALUES (LOWER($1), LOWER($2), $3, $4, $15)
                     RETURNING id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at
                 ),
                 ins_address AS (
-                    INSERT INTO address (line_1, line_2, city, state, country, postal_code)
-                    VALUES ($5, $6, $7, $8, $9, $10)
+                    INSERT INTO address (line_1, line_2, city, state, country, postal_code, geog, congressional_district, state_senate_district, state_house_district)
+                    VALUES ($5, $6, $7, $8, $9, $10, $11::geography, $12, $13, $14)
                     RETURNING id
                 ),
                 ins_profile AS (
@@ -134,7 +157,11 @@ impl User {
             input.address.state.to_string(),
             input.address.country,
             input.address.postal_code,
-            input.confirmation_token
+            wkb::geom_to_wkb(&coordinates).unwrap() as _,
+            input.address.congressional_district,
+            input.address.state_senate_district,
+            input.address.state_house_district,
+            input.confirmation_token,
         ).fetch_one(db_pool).await?;
 
         // Need to handle case of existing user
