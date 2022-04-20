@@ -70,7 +70,9 @@ impl ElectionResult {
                 a.congressional_district,
                 a.state_senate_district,
                 a.state_house_district,
-                a.state AS "state:State"
+                a.state AS "state:State",
+                a.county,
+                a.city
             FROM
                 address AS a
                 JOIN user_profile up ON user_id = $1
@@ -105,17 +107,18 @@ impl ElectionResult {
                 JOIN office o ON office_id = o.id
             WHERE
                 election_id = $1
-                AND o.state = $2
-                AND((o.title = 'U.S. Senate')
-                OR (o.district = $3::TEXT
-                    AND o.political_scope::political_scope = 'federal')
-                OR(o.district = $4::TEXT
-                    AND o.title = 'State Senate')
-                OR(o.district = $5::TEXT
-                    AND o.title = 'State House'));
+                AND o.election_scope = 'national'
+                OR (o.election_scope = 'state' AND o.state = $2)
+                OR (o.election_scope = 'city' AND o.municipality = $3)
+                OR (o.election_scope = 'county' AND o.municipality = $4)  
+                OR (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5)
+                OR (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6)
+                OR (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7)
                 "#,
                 uuid::Uuid::parse_str(&self.id).unwrap(),
                 user_address_data.state as State,
+                user_address_data.city,
+                user_address_data.county,
                 user_address_data
                     .congressional_district
                     .map(|d| d.to_string()),

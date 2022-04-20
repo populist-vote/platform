@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT\n                r.id,\n                r.slug,\n                r.title,\n                r.office_id,\n                r.race_type AS \"race_type:RaceType\",\n                r.party AS \"party:PoliticalParty\",\n                r.state AS \"state:State\",\n                r.description,\n                r.ballotpedia_link,\n                r.early_voting_begins_date,\n                r.winner_id,\n                r.official_website,\n                r.election_id,\n                r.created_at,\n                r.updated_at\n            FROM\n                race r\n                JOIN office o ON office_id = o.id\n            WHERE\n                election_id = $1\n                AND o.state = $2\n                AND((o.title = 'U.S. Senate')\n                OR (o.district = $3::TEXT\n                    AND o.political_scope::political_scope = 'federal')\n                OR(o.district = $4::TEXT\n                    AND o.title = 'State Senate')\n                OR(o.district = $5::TEXT\n                    AND o.title = 'State House'));\n                ",
+  "query": "\n            SELECT\n                r.id,\n                r.slug,\n                r.title,\n                r.office_id,\n                r.race_type AS \"race_type:RaceType\",\n                r.party AS \"party:PoliticalParty\",\n                r.state AS \"state:State\",\n                r.description,\n                r.ballotpedia_link,\n                r.early_voting_begins_date,\n                r.winner_id,\n                r.official_website,\n                r.election_id,\n                r.created_at,\n                r.updated_at\n            FROM\n                race r\n                JOIN office o ON office_id = o.id\n            WHERE\n                election_id = $1\n                AND o.election_scope = 'national'\n                OR (o.election_scope = 'state' AND o.state = $2)\n                OR (o.election_scope = 'city' AND o.municipality = $3)\n                OR (o.election_scope = 'county' AND o.municipality = $4)  \n                OR (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5)\n                OR (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6)\n                OR (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7)\n                ",
   "describe": {
     "columns": [
       {
@@ -242,6 +242,8 @@
         },
         "Text",
         "Text",
+        "Text",
+        "Text",
         "Text"
       ]
     },
@@ -263,5 +265,5 @@
       false
     ]
   },
-  "hash": "7ff9243905528a8cd1c767ddec8d725ad3defce629fd77495d29d31b380c88ae"
+  "hash": "1e31143bb35191aa130b92f82d72d6bef226d215f0939e8a37ab9ff6661159a9"
 }
