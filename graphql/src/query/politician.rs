@@ -22,6 +22,7 @@ pub struct PoliticianFilter {
     chambers: Option<Chambers>,
 }
 
+#[allow(clippy::too_many_arguments)]
 #[Object]
 impl PoliticianQuery {
     async fn politician_by_id(
@@ -54,6 +55,7 @@ impl PoliticianQuery {
         }
     }
 
+    #[allow(clippy::needless_collect)]
     async fn politicians(
         &self,
         ctx: &Context<'_>,

@@ -106,7 +106,7 @@ impl UserMutation {
         match geocode_result {
             Ok(geocodio_data) => {
                 let coordinates = geocodio_data.results[0].location.clone();
-
+                let county = geocodio_data.results[0].address_components.county.clone();
                 let primary_result = geocodio_data.results[0].fields.as_ref().unwrap();
                 let congressional_district =
                     primary_result.congressional_districts.as_ref().unwrap()[0].district_number;
@@ -124,6 +124,7 @@ impl UserMutation {
                             latitude: coordinates.latitude,
                             longitude: coordinates.longitude,
                         }),
+                        county,
                         congressional_district: Some(congressional_district.into()),
                         state_house_district: Some(state_house_district.parse::<i32>().unwrap()),
                         state_senate_district: Some(state_senate_district.parse::<i32>().unwrap()),

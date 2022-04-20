@@ -35,6 +35,7 @@ pub struct Address {
     pub line_2: Option<String>,
     pub city: String,
     pub state: State,
+    pub county: Option<String>,
     pub country: String,
     pub postal_code: String,
     pub congressional_district: Option<i32>,
@@ -47,6 +48,7 @@ pub struct AddressInput {
     pub line_1: String,
     pub line_2: Option<String>,
     pub city: String,
+    pub county: Option<String>,
     pub state: State,
     pub country: String,
     pub postal_code: String,
@@ -133,12 +135,12 @@ impl User {
             r#"
                 WITH ins_user AS (
                     INSERT INTO populist_user (email, username, password, role, confirmation_token)
-                    VALUES (LOWER($1), LOWER($2), $3, $4, $15)
+                    VALUES (LOWER($1), LOWER($2), $3, $4, $16)
                     RETURNING id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at
                 ),
                 ins_address AS (
-                    INSERT INTO address (line_1, line_2, city, state, country, postal_code, geog, congressional_district, state_senate_district, state_house_district)
-                    VALUES ($5, $6, $7, $8, $9, $10, $11::geography, $12, $13, $14)
+                    INSERT INTO address (line_1, line_2, city, state, county, country, postal_code, geog, congressional_district, state_senate_district, state_house_district)
+                    VALUES ($5, $6, $7, $8, $9, $10, $11, $12::geography, $13, $14, $15)
                     RETURNING id
                 ),
                 ins_profile AS (
@@ -155,6 +157,7 @@ impl User {
             input.address.line_2,
             input.address.city,
             input.address.state.to_string(),
+            input.address.county,
             input.address.country,
             input.address.postal_code,
             wkb::geom_to_wkb(&coordinates).unwrap() as _,

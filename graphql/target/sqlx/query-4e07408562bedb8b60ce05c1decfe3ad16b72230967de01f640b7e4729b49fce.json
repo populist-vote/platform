@@ -1,25 +1,10 @@
 {
-  "query": "\n            SELECT\n                a.congressional_district,\n                a.state_senate_district,\n                a.state_house_district,\n                a.state AS \"state:State\"\n            FROM\n                address AS a\n                JOIN user_profile up ON user_id = $1\n                JOIN address ON up.address_id = a.id\n                ",
+  "query": "\n            SELECT password FROM populist_user \n            WHERE id = $1",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "congressional_district",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 1,
-        "name": "state_senate_district",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 2,
-        "name": "state_house_district",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 3,
-        "name": "state:State",
+        "name": "password",
         "type_info": "Text"
       }
     ],
@@ -29,11 +14,8 @@
       ]
     },
     "nullable": [
-      true,
-      true,
-      true,
       false
     ]
   },
-  "hash": "b2c2fa54e07191badb0c1b0998e1d8bef6e10c06b72b2c71213b977f9c2446d2"
+  "hash": "b5f8bb777be364f196aa0da547e7527cf58249eb9e172e46e977c9525c8bd508"
 }
