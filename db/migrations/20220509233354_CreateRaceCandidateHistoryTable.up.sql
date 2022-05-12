@@ -23,4 +23,3 @@ INSERT INTO race_candidates (
 	SELECT upcoming_race_id, id FROM politician
 	WHERE upcoming_race_id IS NOT NULL
 ;
-
