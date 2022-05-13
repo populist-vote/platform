@@ -3,6 +3,7 @@ default-members = ["server"]
 members = [
     "auth",
     "cli",
+    "config",
     "db",
     "graphql",
     "mailers",

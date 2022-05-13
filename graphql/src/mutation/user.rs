@@ -141,7 +141,8 @@ impl UserMutation {
                         let access_token = create_access_token_for_user(new_user.clone())?;
 
                         let account_confirmation_url = format!(
-                            "https://www.populist.us/auth/confirm?token={}",
+                            "{}/auth/confirm?token={}",
+                            config::Config::default().web_app_url,
                             confirmation_token
                         );
 
@@ -255,7 +256,8 @@ impl UserMutation {
             .await;
 
             let reset_password_url = format!(
-                "https://www.populist.us/auth/password?token={}",
+                "{}/auth/password?token={}",
+                config::Config::default().web_app_url,
                 reset_token
             );
 

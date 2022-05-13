@@ -1,6 +1,29 @@
 mod errors;
 pub use crate::errors::Error;
-use std::{fmt, str::FromStr};
+use std::{env, fmt, str::FromStr};
+use url::Url;
+
+#[derive(Debug, Clone)]
+pub struct Config {
+    pub environment: Environment,
+    pub web_app_url: Url,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        let environment = env::var("ENVIRONMENT").unwrap_or_else(|_| "local".into());
+        let environment = Environment::from_str(&environment).unwrap();
+        let web_app_url = match environment {
+            Environment::Production => Url::parse("https://www.populist.us").unwrap(),
+            Environment::Staging => Url::parse("https://staging.populist.us").unwrap(),
+            _ => Url::parse("http://localhost:3030").unwrap(),
+        };
+        Config {
+            environment,
+            web_app_url,
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Environment {

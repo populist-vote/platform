@@ -11,6 +11,7 @@ use async_graphql::{
 
 use async_graphql_poem::GraphQLResponse;
 use auth::jwt;
+use config::Environment;
 use dotenv::dotenv;
 use graphql::{context::ApiContext, new_schema, PopulistSchema};
 use log::info;
@@ -23,7 +24,6 @@ use poem::{
 };
 use regex::Regex;
 use serde_json::Value;
-use server::Environment;
 
 #[handler]
 fn root() -> impl IntoResponse {

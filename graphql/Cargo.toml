@@ -5,14 +5,16 @@ edition = "2021"
 publish = false
 
 [dependencies]
+auth = { path = "../auth" }
+config = { path = "../config" }
+db = { path = "../db" }
+mailers = { path = "../mailers" }
+
 anyhow = "1.0.45"
 async-graphql = { version = "3.0.10", features = ["uuid", "chrono", "unblock", "dataloader", "apollo_persisted_queries"] }
 async-graphql-poem = "3.0.18"
 bytes = "1.1.0"
 chrono = "0.4.19"
-auth = { path = "../auth" }
-db = { path = "../db" }
-mailers = { path = "../mailers" }
 tokio = { version = "1.8", features = ["full"] }
 legiscan = { path = "../legiscan", features = ["async-graphql"] }
 votesmart = { path = "../votesmart", features = ["async-graphql"] }
