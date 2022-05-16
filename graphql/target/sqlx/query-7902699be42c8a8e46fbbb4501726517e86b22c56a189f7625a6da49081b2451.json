@@ -1,5 +1,5 @@
 {
-  "query": "\n                SELECT\n                    id,\n                    slug,\n                    first_name,\n                    middle_name,\n                    last_name,\n                    nickname,\n                    preferred_name,\n                    ballot_name,\n                    description,\n                    home_state AS \"home_state:State\",\n                    office_id,\n                    thumbnail_image_url,\n                    website_url,\n                    facebook_url,\n                    twitter_url,\n                    instagram_url,\n                    party AS \"party:PoliticalParty\",\n                    votesmart_candidate_id,\n                    votesmart_candidate_bio,\n                    votesmart_candidate_ratings,\n                    legiscan_people_id,\n                    upcoming_race_id,\n                    p.created_at,\n                    p.updated_at\n                FROM\n                    politician p\n                    JOIN race_candidates rc ON race_id = $1\n                WHERE\n                    p.id = rc.candidate_id\n                    AND rc.is_running = TRUE\n            ",
+  "query": "\n                SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS \"home_state:State\", office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, party AS \"party:PoliticalParty\", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, crp_candidate_id, fec_candidate_id, upcoming_race_id, created_at, updated_at FROM politician\n                WHERE office_id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -190,16 +190,26 @@
       },
       {
         "ordinal": 21,
+        "name": "crp_candidate_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 22,
+        "name": "fec_candidate_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 23,
         "name": "upcoming_race_id",
         "type_info": "Uuid"
       },
       {
-        "ordinal": 22,
+        "ordinal": 24,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 23,
+        "ordinal": 25,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
@@ -232,9 +242,11 @@
       false,
       true,
       true,
+      true,
+      true,
       false,
       false
     ]
   },
-  "hash": "67800c730f85c6204ecb91d9c417512414bc7054b977934d84bdd9846e1ddf41"
+  "hash": "bcabc2a385998e72e48fc27e7259ecf241688f5b4699f36931e34b792f59a2cd"
 }

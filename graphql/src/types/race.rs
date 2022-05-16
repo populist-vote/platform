@@ -80,6 +80,8 @@ impl RaceResult {
                     votesmart_candidate_bio,
                     votesmart_candidate_ratings,
                     legiscan_people_id,
+                    crp_candidate_id, 
+                    fec_candidate_id,
                     upcoming_race_id,
                     p.created_at,
                     p.updated_at
