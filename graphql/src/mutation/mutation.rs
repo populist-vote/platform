@@ -2,7 +2,7 @@ use super::{
     argument::ArgumentMutation, ballot_measure::BallotMeasureMutation, bill::BillMutation,
     election::ElectionMutation, issue_tag::IssueTagMutation, office::OfficeMutation,
     organization::OrganizationMutation, politician::PoliticianMutation, race::RaceMutation,
-    user::UserMutation,
+    user::UserMutation, voting_guide::VotingGuideMutation,
 };
 use async_graphql::{Context, Guard, MergedObject, Result};
 use auth::Claims;
@@ -19,6 +19,7 @@ pub struct Mutation(
     UserMutation,
     OfficeMutation,
     RaceMutation,
+    VotingGuideMutation,
 );
 
 // Could genericize and expand this struct to take a role (for gating certain API calls to certains roles, e.g.)

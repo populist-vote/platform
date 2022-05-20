@@ -12,6 +12,7 @@ mod race;
 mod upload;
 mod user;
 mod votesmart;
+mod voting_guide;
 
 pub use address::AddressResult;
 pub use argument::ArgumentResult;
@@ -26,3 +27,7 @@ pub use politician::PoliticianResult;
 pub use race::RaceResult;
 pub use upload::FileInfo;
 pub use user::{CreateUserResult, LoginResult, UserResult};
+pub use voting_guide::{
+    UpsertVotingGuideCandidateInput, UpsertVotingGuideInput, VotingGuideCandidateResult,
+    VotingGuideResult,
+};
