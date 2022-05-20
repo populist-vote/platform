@@ -1,5 +1,6 @@
 use crate::{
     context::ApiContext,
+    is_admin,
     mutation::StaffOnly,
     types::{CreateUserResult, Error, LoginResult},
 };
@@ -45,7 +46,7 @@ pub struct UserMutation;
 
 #[Object]
 impl UserMutation {
-    #[graphql(guard = "StaffOnly")]
+    #[graphql(guard = "StaffOnly", visible = "is_admin")]
     async fn create_user(
         &self,
         ctx: &Context<'_>,
@@ -57,6 +58,7 @@ impl UserMutation {
         Ok(CreateUserResult::from(new_record))
     }
 
+    #[graphql(visible = "is_admin")]
     async fn begin_user_registration(
         &self,
         ctx: &Context<'_>,
@@ -172,6 +174,7 @@ impl UserMutation {
         }
     }
 
+    #[graphql(visible = "is_admin")]
     async fn confirm_user_email(
         &self,
         ctx: &Context<'_>,
@@ -201,6 +204,7 @@ impl UserMutation {
         }
     }
 
+    #[graphql(visible = "is_admin")]
     async fn login(&self, ctx: &Context<'_>, input: LoginInput) -> Result<LoginResult, Error> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
         let email_or_username = input.email_or_username.to_lowercase();
@@ -231,6 +235,7 @@ impl UserMutation {
         }
     }
 
+    #[graphql(visible = "is_admin")]
     async fn request_password_reset(
         &self,
         ctx: &Context<'_>,
@@ -273,6 +278,7 @@ impl UserMutation {
         }
     }
 
+    #[graphql(visible = "is_admin")]
     async fn reset_password(
         &self,
         ctx: &Context<'_>,
@@ -296,6 +302,7 @@ impl UserMutation {
         }
     }
 
+    #[graphql(visible = "is_admin")]
     async fn update_password(
         &self,
         ctx: &Context<'_>,
@@ -342,6 +349,7 @@ impl UserMutation {
         }
     }
 
+    #[graphql(visible = "is_admin")]
     async fn logout(&self, ctx: &Context<'_>) -> Result<bool, Error> {
         ctx.insert_http_header(
             SET_COOKIE,

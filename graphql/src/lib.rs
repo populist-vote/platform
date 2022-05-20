@@ -10,9 +10,11 @@ use crate::query::Query;
 
 // use crate::subscription::Subscription;
 use crate::types::Error;
-use async_graphql::{EmptySubscription, Schema, SchemaBuilder, ID};
+use async_graphql::{Context, EmptySubscription, Schema, SchemaBuilder, ID};
 
+use auth::Claims;
 use dotenv::dotenv;
+use jsonwebtoken::TokenData;
 use s3::bucket::Bucket;
 use s3::creds::Credentials;
 
@@ -56,4 +58,15 @@ pub async fn upload_to_s3(file: File) -> Result<u16, Error> {
     // TODO return s3 asset URL
     println!("{}", code);
     Ok(code)
+}
+
+pub fn is_admin(ctx: &Context<'_>) -> bool {
+    if let Some(token_data) = ctx.data_unchecked::<Option<TokenData<Claims>>>() {
+        matches!(
+            token_data.claims.role,
+            db::Role::STAFF | db::Role::SUPERUSER
+        )
+    } else {
+        false
+    }
 }
