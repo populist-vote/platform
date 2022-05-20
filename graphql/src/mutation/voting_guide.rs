@@ -97,4 +97,27 @@ impl VotingGuideMutation {
             note: record.note,
         })
     }
+
+    async fn delete_voting_guide(
+        &self,
+        ctx: &Context<'_>,
+        id: String,
+    ) -> Result<DeleteVotingGuideResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let record = sqlx::query!(
+            r#"
+            DELETE FROM voting_guide
+            WHERE id = $1
+            RETURNING
+                id
+        "#,
+            Uuid::parse_str(id.as_str()).unwrap(),
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(DeleteVotingGuideResult {
+            id: record.id.to_string(),
+        })
+    }
 }

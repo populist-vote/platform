@@ -1,36 +1,21 @@
 {
-  "query": "\n            INSERT INTO voting_guide_candidates (voting_guide_id, candidate_id, is_endorsement, note)\n                VALUES($1, $2, $3, $4) ON CONFLICT (voting_guide_id, candidate_id)\n                DO\n                UPDATE\n                SET\n                    is_endorsement = $3,\n                    note = $4\n            RETURNING\n                candidate_id,\n                is_endorsement,\n                note\n        ",
+  "query": "\n            DELETE FROM voting_guide\n            WHERE id = $1\n            RETURNING\n                id\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "candidate_id",
+        "name": "id",
         "type_info": "Uuid"
-      },
-      {
-        "ordinal": 1,
-        "name": "is_endorsement",
-        "type_info": "Bool"
-      },
-      {
-        "ordinal": 2,
-        "name": "note",
-        "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid",
-        "Uuid",
-        "Bool",
-        "Text"
+        "Uuid"
       ]
     },
     "nullable": [
-      false,
-      false,
-      true
+      false
     ]
   },
-  "hash": "ebc3118ea348160fd5090b050daca621d327ce0a20c5c1eb4b4e943888a550d9"
+  "hash": "a9d971191a04c23d36dcdd69d1872c580ea082c4daea224f2a55de0ad189978b"
 }

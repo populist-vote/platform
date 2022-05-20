@@ -18,4 +18,17 @@ impl VotingGuideQuery {
 
         Ok(record.into())
     }
+
+    async fn voting_guides_by_user_id(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(desc = "User id")] user_id: String,
+    ) -> Result<Vec<VotingGuideResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records =
+            VotingGuide::find_by_user_id(&db_pool, uuid::Uuid::parse_str(&user_id).unwrap())
+                .await?;
+
+        Ok(records.into_iter().map(|record| record.into()).collect())
+    }
 }

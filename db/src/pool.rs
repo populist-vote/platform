@@ -2,13 +2,14 @@ use crate::Error;
 use once_cell::sync::OnceCell;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
+pub type DatabaseConnection = sqlx::pool::PoolConnection<Postgres>;
 #[derive(Debug)]
 pub struct DatabasePool {
     pub connection: Pool<Postgres>,
 }
 
 impl DatabasePool {
-    async fn new() -> Result<DatabasePool, Error> {
+    pub async fn new() -> Result<DatabasePool, Error> {
         dotenv::dotenv().ok();
         let db_url = std::env::var("DATABASE_URL").expect("Could not parse DATABSE_URL");
 
@@ -18,6 +19,10 @@ impl DatabasePool {
             .await?;
 
         Ok(DatabasePool { connection: pool })
+    }
+
+    pub async fn acquire(&self) -> Result<DatabaseConnection, Error> {
+        Ok(self.connection.acquire().await?)
     }
 }
 

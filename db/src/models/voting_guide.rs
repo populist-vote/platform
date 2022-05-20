@@ -36,4 +36,31 @@ impl VotingGuide {
 
         Ok(record)
     }
+
+    pub async fn find_by_user_id(
+        db_pool: &PgPool,
+        user_id: uuid::Uuid,
+    ) -> Result<Vec<Self>, sqlx::Error> {
+        let records = sqlx::query_as!(
+            VotingGuide,
+            r#"
+                SELECT
+                    id,
+                    user_id,
+                    title,
+                    description,
+                    created_at,
+                    updated_at
+                FROM
+                    voting_guide
+                WHERE
+                    user_id = $1
+            "#,
+            user_id
+        )
+        .fetch_all(db_pool)
+        .await?;
+
+        Ok(records)
+    }
 }
