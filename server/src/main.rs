@@ -94,6 +94,13 @@ async fn main() -> Result<(), std::io::Error> {
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
 
+    // Embed migrations into binary
+    let migrator = pool.connection.clone();
+    sqlx::migrate!("../db/migrations")
+        .run(&migrator)
+        .await
+        .unwrap();
+
     let context = ApiContext::new(pool.connection.clone());
 
     let schema = new_schema()

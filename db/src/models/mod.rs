@@ -10,3 +10,4 @@ pub mod politician;
 pub mod race;
 pub mod user;
 pub mod vote;
+pub mod voting_guide;
