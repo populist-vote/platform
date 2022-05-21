@@ -17,6 +17,7 @@ use graphql::{context::ApiContext, new_schema, PopulistSchema};
 use log::info;
 use poem::{
     get, handler,
+    http::HeaderMap,
     listener::TcpListener,
     middleware::{Compression, CookieJarManager, Cors},
     web::{cookie::CookieJar, Data, Html, Json},
@@ -43,10 +44,21 @@ fn ping() -> Json<Value> {
 async fn graphql_handler(
     schema: Data<&PopulistSchema>,
     req: Json<Request>,
+    headers: &HeaderMap,
     cookie_jar: &CookieJar,
 ) -> GraphQLResponse {
-    let token = cookie_jar.get("access_token");
-    let token_data = token.map(|token| jwt::validate_token(token.value_str()).unwrap());
+    let authorization_header = headers
+        .get("authorization")
+        .and_then(|header| header.to_str().ok())
+        .and_then(|header| header.split_whitespace().nth(1));
+    let bearer_token_data = authorization_header.map(|token| jwt::validate_token(token).unwrap());
+
+    let cookie = cookie_jar.get("access_token");
+    let cookie_token_data = cookie.map(|token| jwt::validate_token(token.value_str()).unwrap());
+
+    // Use the bearer token if it's present, otherwise use the cookie
+    let token_data = bearer_token_data.or(cookie_token_data);
+
     schema.execute(req.0.data(token_data)).await.into()
 }
 
