@@ -72,6 +72,9 @@ async fn create_offices() -> Result<(), Box<dyn Error>> {
             political_scope,
             state: Some(State::from_str(&office.state_id).unwrap_or_default()),
             incumbent_id: Some(politician.id),
+            district_type: None,
+            chamber: None,
+            election_scope: db::ElectionScope::National,
         };
 
         let new_office = Office::create(&pool.connection, &new_office_input).await?;
