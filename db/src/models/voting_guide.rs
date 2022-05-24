@@ -6,6 +6,7 @@ use crate::DateTime;
 pub struct VotingGuide {
     pub id: uuid::Uuid,
     pub user_id: uuid::Uuid,
+    pub election_id: uuid::Uuid,
     pub title: Option<String>,
     pub description: Option<String>,
     pub created_at: DateTime,
@@ -20,6 +21,7 @@ impl VotingGuide {
                 SELECT
                     id,
                     user_id,
+                    election_id,
                     title,
                     description,
                     created_at,
@@ -47,6 +49,7 @@ impl VotingGuide {
                 SELECT
                     id,
                     user_id,
+                    election_id,
                     title,
                     description,
                     created_at,

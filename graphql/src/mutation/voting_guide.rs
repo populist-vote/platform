@@ -37,8 +37,8 @@ impl VotingGuideMutation {
         let new_record = sqlx::query_as!(
             VotingGuide,
             r#"
-            INSERT INTO voting_guide (id, user_id, title, description)
-                VALUES($1, $2, $3, $4) ON CONFLICT (id)
+            INSERT INTO voting_guide (id, user_id, election_id, title, description)
+                VALUES($1, $2, $3, $4, $5) ON CONFLICT (id)
                 DO
                 UPDATE
                 SET
@@ -47,6 +47,7 @@ impl VotingGuideMutation {
             RETURNING
                 id,
                 user_id,
+                election_id,
                 title,
                 description,
                 created_at,
@@ -54,6 +55,7 @@ impl VotingGuideMutation {
         "#,
             Uuid::parse_str(input.id.unwrap_or_default().as_str()).unwrap_or(Uuid::new_v4()),
             user_id,
+            Uuid::parse_str(input.election_id.as_str()).unwrap(),
             input.title,
             input.description,
         )

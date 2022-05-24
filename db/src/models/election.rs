@@ -100,6 +100,20 @@ impl Election {
         Ok(())
     }
 
+    pub async fn find_by_id(db_pool: &PgPool, id: uuid::Uuid) -> Result<Self, sqlx::Error> {
+        sqlx::query_as!(
+            Election,
+            r#"
+                SELECT id, slug, title, description, election_date
+                FROM election
+                WHERE id=$1
+            "#,
+            id
+        )
+        .fetch_one(db_pool)
+        .await
+    }
+
     pub async fn index(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
         let records = sqlx::query_as!(
             Election,

@@ -1,13 +1,14 @@
 use async_graphql::{ComplexObject, Context, InputObject, Result, SimpleObject, ID};
-use db::{models::voting_guide::VotingGuide, Politician};
+use db::{models::voting_guide::VotingGuide, Politician, Election};
 
 use crate::context::ApiContext;
 
-use super::PoliticianResult;
+use super::{PoliticianResult, ElectionResult};
 
 #[derive(InputObject)]
 pub struct UpsertVotingGuideInput {
     pub id: Option<ID>,
+    pub election_id: ID,
     pub title: Option<String>,
     pub description: Option<String>,
 }
@@ -25,6 +26,7 @@ pub struct UpsertVotingGuideCandidateInput {
 pub struct VotingGuideResult {
     id: ID,
     user_id: ID,
+    election_id: ID,
     title: Option<String>,
     description: Option<String>,
 }
@@ -39,6 +41,12 @@ pub struct VotingGuideCandidateResult {
 
 #[ComplexObject]
 impl VotingGuideResult {
+    async fn election(&self, ctx: &Context<'_>) -> Result<ElectionResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let election = Election::find_by_id(&db_pool, uuid::Uuid::parse_str(self.election_id.as_str()).unwrap()).await?;
+        Ok(election.into())
+    }
+    
     async fn candidates(&self, ctx: &Context<'_>) -> Result<Vec<VotingGuideCandidateResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
 
@@ -89,6 +97,7 @@ impl From<VotingGuide> for VotingGuideResult {
         VotingGuideResult {
             id: record.id.into(),
             user_id: record.user_id.into(),
+            election_id: record.election_id.into(),
             title: record.title,
             description: record.description,
         }

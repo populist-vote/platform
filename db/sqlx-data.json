@@ -107,7 +107,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -275,7 +283,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -494,7 +510,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -593,7 +617,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -1093,7 +1125,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -1198,7 +1238,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -1680,7 +1728,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -2272,7 +2328,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -2513,7 +2577,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -2834,7 +2906,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -3256,7 +3336,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -3826,7 +3914,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -3984,7 +4080,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -4146,7 +4250,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -4311,7 +4423,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -4470,7 +4590,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -4539,56 +4667,6 @@
       },
       "nullable": [
         null
-      ]
-    }
-  },
-  "766a1cd375220d7644fa01301caaadee523c5abb078a9f2d857fc9a7c96ae885": {
-    "query": "\n                SELECT\n                    id,\n                    user_id,\n                    title,\n                    description,\n                    created_at,\n                    updated_at\n                FROM\n                    voting_guide\n                WHERE\n                    user_id = $1\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "user_id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 2,
-          "name": "title",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "description",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 4,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 5,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        true,
-        true,
-        false,
-        false
       ]
     }
   },
@@ -4710,7 +4788,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -4933,6 +5019,62 @@
       ]
     }
   },
+  "8bffa6a7ca9cb8665af4ff6560dc12936d7ac1f0146c35549d84697bb18927f2": {
+    "query": "\n                SELECT\n                    id,\n                    user_id,\n                    election_id,\n                    title,\n                    description,\n                    created_at,\n                    updated_at\n                FROM\n                    voting_guide\n                WHERE\n                    id = $1\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "user_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 2,
+          "name": "election_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 3,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 6,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
   "8c94e3b908188aed474e59964a89f01c29f90a74ccb2c36ab9f258b0a121ada7": {
     "query": "\n                UPDATE issue_tag\n                SET slug = COALESCE($2, slug),\n                    name = COALESCE($3, name),\n                    description = COALESCE($4, description),\n                    category = COALESCE($5, category)\n                WHERE id = $1\n                RETURNING id, slug, name, description, category, created_at, updated_at           \n            ",
     "describe": {
@@ -5151,7 +5293,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -5249,7 +5399,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -5557,7 +5715,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -5691,7 +5857,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -6270,7 +6444,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -6531,7 +6713,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -6646,7 +6836,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -6670,6 +6868,62 @@
         false,
         false,
         false,
+        false,
+        false
+      ]
+    }
+  },
+  "b6ad5d03fce22185cfc6da5ec0bd5b670240cc6dc7e8b2ba55467eab076f1955": {
+    "query": "\n                SELECT\n                    id,\n                    user_id,\n                    election_id,\n                    title,\n                    description,\n                    created_at,\n                    updated_at\n                FROM\n                    voting_guide\n                WHERE\n                    user_id = $1\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "user_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 2,
+          "name": "election_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 3,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 6,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
         false,
         false
       ]
@@ -6833,7 +7087,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -6897,56 +7159,6 @@
         true,
         true,
         true,
-        true,
-        true,
-        false,
-        false
-      ]
-    }
-  },
-  "bd1133325e38ce4bf062ed5b5d6b388277ae4bbc675de741d2064061715d1148": {
-    "query": "\n                SELECT\n                    id,\n                    user_id,\n                    title,\n                    description,\n                    created_at,\n                    updated_at\n                FROM\n                    voting_guide\n                WHERE\n                    id = $1\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "user_id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 2,
-          "name": "title",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "description",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 4,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 5,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      },
-      "nullable": [
-        false,
-        false,
         true,
         true,
         false,
@@ -7096,7 +7308,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -7284,7 +7504,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -7395,7 +7623,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -7545,7 +7781,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -7676,7 +7920,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -7705,6 +7957,50 @@
         true,
         true,
         false,
+        false
+      ]
+    }
+  },
+  "d9ed2465360ce218b8f792db12f7542614c6b203b20d92b65bd88f19bd43b8fe": {
+    "query": "\n                SELECT id, slug, title, description, election_date\n                FROM election\n                WHERE id=$1\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "election_date",
+          "type_info": "Date"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
         false
       ]
     }
@@ -8573,7 +8869,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -8658,7 +8962,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -8812,7 +9124,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -8945,7 +9265,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }

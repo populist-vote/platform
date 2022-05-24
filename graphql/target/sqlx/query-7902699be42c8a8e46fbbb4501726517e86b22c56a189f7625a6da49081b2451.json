@@ -1,5 +1,5 @@
 {
-  "query": "\n            INSERT INTO voting_guide (id, user_id, title, description)\n                VALUES($1, $2, $3, $4) ON CONFLICT (id)\n                DO\n                UPDATE\n                SET\n                    title = $3,\n                    description = $4\n            RETURNING\n                id,\n                user_id,\n                title,\n                description,\n                created_at,\n                updated_at\n        ",
+  "query": "\n            SELECT\n                r.id,\n                r.slug,\n                r.title,\n                r.office_id,\n                r.race_type AS \"race_type:RaceType\",\n                r.party AS \"party:PoliticalParty\",\n                r.state AS \"state:State\",\n                r.description,\n                r.ballotpedia_link,\n                r.early_voting_begins_date,\n                r.winner_id,\n                r.official_website,\n                r.election_id,\n                r.created_at,\n                r.updated_at\n            FROM\n                race r\n                JOIN office o ON office_id = o.id\n            WHERE\n                election_id = $1\n                AND o.election_scope = 'national'\n                OR (o.election_scope = 'state' AND o.state = $2)\n                OR (o.election_scope = 'city' AND o.municipality = $3)\n                OR (o.election_scope = 'county' AND o.municipality = $4)  \n                OR (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5)\n                OR (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6)\n                OR (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7)\n                ",
   "describe": {
     "columns": [
       {
@@ -9,8 +9,8 @@
       },
       {
         "ordinal": 1,
-        "name": "user_id",
-        "type_info": "Uuid"
+        "name": "slug",
+        "type_info": "Text"
       },
       {
         "ordinal": 2,
@@ -19,16 +19,152 @@
       },
       {
         "ordinal": 3,
+        "name": "office_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "race_type:RaceType",
+        "type_info": {
+          "Custom": {
+            "name": "race_type",
+            "kind": {
+              "Enum": [
+                "primary",
+                "general"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "party:PoliticalParty",
+        "type_info": {
+          "Custom": {
+            "name": "political_party",
+            "kind": {
+              "Enum": [
+                "democratic",
+                "republican",
+                "libertarian",
+                "green",
+                "constitution",
+                "unknown"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "state:State",
+        "type_info": {
+          "Custom": {
+            "name": "state",
+            "kind": {
+              "Enum": [
+                "AL",
+                "AK",
+                "AZ",
+                "AR",
+                "CA",
+                "CO",
+                "CT",
+                "DC",
+                "DE",
+                "FL",
+                "GA",
+                "HI",
+                "ID",
+                "IL",
+                "IN",
+                "IA",
+                "KS",
+                "KY",
+                "LA",
+                "ME",
+                "MD",
+                "MA",
+                "MI",
+                "MN",
+                "MS",
+                "MO",
+                "MT",
+                "NE",
+                "NV",
+                "NH",
+                "NJ",
+                "NM",
+                "NY",
+                "NC",
+                "ND",
+                "OH",
+                "OK",
+                "OR",
+                "PA",
+                "RI",
+                "SC",
+                "SD",
+                "TN",
+                "TX",
+                "UT",
+                "VT",
+                "VA",
+                "WA",
+                "WV",
+                "WI",
+                "WY",
+                "AS",
+                "FM",
+                "GU",
+                "MH",
+                "MP",
+                "PW",
+                "PR",
+                "VI"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 7,
         "name": "description",
         "type_info": "Text"
       },
       {
-        "ordinal": 4,
+        "ordinal": 8,
+        "name": "ballotpedia_link",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "early_voting_begins_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 10,
+        "name": "winner_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 11,
+        "name": "official_website",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "election_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 13,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 5,
+        "ordinal": 14,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
@@ -36,7 +172,77 @@
     "parameters": {
       "Left": [
         "Uuid",
-        "Uuid",
+        {
+          "Custom": {
+            "name": "state",
+            "kind": {
+              "Enum": [
+                "AL",
+                "AK",
+                "AZ",
+                "AR",
+                "CA",
+                "CO",
+                "CT",
+                "DC",
+                "DE",
+                "FL",
+                "GA",
+                "HI",
+                "ID",
+                "IL",
+                "IN",
+                "IA",
+                "KS",
+                "KY",
+                "LA",
+                "ME",
+                "MD",
+                "MA",
+                "MI",
+                "MN",
+                "MS",
+                "MO",
+                "MT",
+                "NE",
+                "NV",
+                "NH",
+                "NJ",
+                "NM",
+                "NY",
+                "NC",
+                "ND",
+                "OH",
+                "OK",
+                "OR",
+                "PA",
+                "RI",
+                "SC",
+                "SD",
+                "TN",
+                "TX",
+                "UT",
+                "VT",
+                "VA",
+                "WA",
+                "WV",
+                "WI",
+                "WY",
+                "AS",
+                "FM",
+                "GU",
+                "MH",
+                "MP",
+                "PW",
+                "PR",
+                "VI"
+              ]
+            }
+          }
+        },
+        "Text",
+        "Text",
+        "Text",
         "Text",
         "Text"
       ]
@@ -44,11 +250,20 @@
     "nullable": [
       false,
       false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
       true,
       true,
       false,
       false
     ]
   },
-  "hash": "c1de453c19a3045312a55439054a7be7dc3ffcdc6b2e4389317b5047bf6f9192"
+  "hash": "1e31143bb35191aa130b92f82d72d6bef226d215f0939e8a37ab9ff6661159a9"
 }

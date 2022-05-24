@@ -2,11 +2,13 @@
 CREATE TABLE voting_guide (
     id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id uuid NOT NULL,
+    election_id uuid NOT NULL,
     title TEXT,
     description TEXT,
     created_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
     updated_at timestamptz NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
-    CONSTRAINT fk_user FOREIGN KEY(user_id) REFERENCES populist_user(id)
+    CONSTRAINT fk_user FOREIGN KEY(user_id) REFERENCES populist_user(id),
+    CONSTRAINT fk_election FOREIGN KEY(election_id) REFERENCES election(id)
 );
 
 CREATE TRIGGER set_updated_at
