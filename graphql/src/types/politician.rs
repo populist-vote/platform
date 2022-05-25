@@ -116,8 +116,6 @@ impl PoliticianResult {
     }
 
     async fn age(&self) -> Option<i64> {
-        // TODO: Create our own DOB field so we dont have to rely on Votesmart
-
         if let Some(vs_bio) = &self.votesmart_candidate_bio {
             if let Ok(age) = calculate_age(vs_bio.candidate.birth_date.clone()) {
                 Some(age)

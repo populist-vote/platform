@@ -69,6 +69,7 @@ impl RaceResult {
                     ballot_name,
                     description,
                     home_state AS "home_state:State",
+                    date_of_birth,
                     office_id,
                     thumbnail_image_url,
                     website_url,
