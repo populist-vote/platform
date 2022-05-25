@@ -36,6 +36,7 @@ pub struct PoliticianResult {
     ballot_name: Option<String>,
     description: Option<String>,
     home_state: Option<State>,
+    date_of_birth: Option<NaiveDate>,
     office_id: Option<ID>,
     thumbnail_image_url: Option<String>,
     website_url: Option<String>,
@@ -87,20 +88,19 @@ pub struct RatingResult {
     organization: Option<OrganizationResult>,
 }
 
-fn calculate_age(dob: String) -> Result<i64> {
+fn calculate_age(dob: NaiveDate) -> Result<i64> {
     let now = NaiveDate::parse_from_str(&Local::now().format("%m/%d/%Y").to_string(), "%m/%d/%Y")
         .unwrap();
-    let dob = NaiveDate::parse_from_str(&dob, "%m/%d/%Y")?;
     let age = (now - dob).num_days() / 365;
     Ok(age)
 }
 
 #[test]
 fn test_calculate_age() {
-    let dob = "05/13/1984".to_string();
-    assert_eq!(calculate_age(dob), Ok(37));
+    let dob = NaiveDate::parse_from_str("05/13/1984", "%m/%d/%Y").unwrap();
+    assert_eq!(calculate_age(dob), Ok(38));
 
-    let dob = "02/09/1992".to_string();
+    let dob = NaiveDate::parse_from_str("02/09/1992", "%m/%d/%Y").unwrap();
     assert_eq!(calculate_age(dob), Ok(30));
 }
 
@@ -116,14 +116,9 @@ impl PoliticianResult {
     }
 
     async fn age(&self) -> Option<i64> {
-        if let Some(vs_bio) = &self.votesmart_candidate_bio {
-            if let Ok(age) = calculate_age(vs_bio.candidate.birth_date.clone()) {
-                Some(age)
-            } else {
-                None
-            }
-        } else {
-            None
+        match self.date_of_birth {
+            Some(dob) => calculate_age(dob).ok(),
+            None => None,
         }
     }
 
@@ -336,6 +331,7 @@ impl From<Politician> for PoliticianResult {
             ballot_name: p.ballot_name,
             description: p.description,
             home_state: p.home_state,
+            date_of_birth: p.date_of_birth,
             office_id: p.office_id.map(ID::from),
             thumbnail_image_url: p.thumbnail_image_url,
             website_url: p.website_url,
