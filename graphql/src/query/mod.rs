@@ -1,3 +1,4 @@
+mod auth;
 mod ballot_measure;
 mod bill;
 mod election;
@@ -6,7 +7,6 @@ mod office;
 mod organization;
 mod politician;
 mod race;
-mod auth;
 mod voting_guide;
 
 #[allow(clippy::module_inception)]
