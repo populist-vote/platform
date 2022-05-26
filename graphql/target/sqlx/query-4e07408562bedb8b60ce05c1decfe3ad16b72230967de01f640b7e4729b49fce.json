@@ -1,11 +1,11 @@
 {
-  "query": "\n            SELECT election_date FROM election\n            WHERE id = $1\n            ",
+  "query": "\n            DELETE FROM voting_guide\n            WHERE id = $1\n            RETURNING\n                id\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "election_date",
-        "type_info": "Date"
+        "name": "id",
+        "type_info": "Uuid"
       }
     ],
     "parameters": {
@@ -17,5 +17,5 @@
       false
     ]
   },
-  "hash": "bc6b5601820931b5f6b59c105cf45b569364fd61ce48e79c7ba706d98eaf1ba2"
+  "hash": "a9d971191a04c23d36dcdd69d1872c580ea082c4daea224f2a55de0ad189978b"
 }

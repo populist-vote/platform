@@ -3,7 +3,7 @@ use db::{models::voting_guide::VotingGuide, Election, Politician};
 
 use crate::context::ApiContext;
 
-use super::{ElectionResult, PoliticianResult};
+use super::{ElectionResult, PoliticianResult, UserResult};
 
 #[derive(InputObject)]
 pub struct UpsertVotingGuideInput {
@@ -41,6 +41,37 @@ pub struct VotingGuideCandidateResult {
 
 #[ComplexObject]
 impl VotingGuideResult {
+    async fn user(&self, ctx: &Context<'_>) -> Result<UserResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let user = sqlx::query!(
+            r#"
+            SELECT
+                u.id,
+                u.username,
+                u.email,
+                up.first_name,
+                up.last_name
+            FROM
+                populist_user u
+                JOIN user_profile up ON u.id = up.user_id
+            WHERE
+                u.id = $1
+        "#,
+            uuid::Uuid::parse_str(self.user_id.as_str()).unwrap()
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(UserResult {
+            id: user.id.into(),
+            username: user.username,
+            email: user.email,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            avatar_url: None,
+        })
+    }
+
     async fn election(&self, ctx: &Context<'_>) -> Result<ElectionResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let election = Election::find_by_id(

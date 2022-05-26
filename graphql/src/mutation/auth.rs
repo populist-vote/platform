@@ -42,10 +42,10 @@ pub struct UpdatePasswordInput {
 }
 
 #[derive(Default)]
-pub struct UserMutation;
+pub struct AuthMutation;
 
 #[Object]
-impl UserMutation {
+impl AuthMutation {
     #[graphql(guard = "StaffOnly", visible = "is_admin")]
     async fn create_user(
         &self,

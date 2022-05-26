@@ -5,11 +5,11 @@ use zxcvbn::zxcvbn;
 
 use crate::{
     context::ApiContext,
-    types::{Error, UserResult},
+    types::{AuthTokenResult, Error},
 };
 
 #[derive(Default)]
-pub struct UserQuery;
+pub struct AuthQuery;
 
 #[derive(Default, Debug, SimpleObject)]
 pub struct PasswordEntropyResult {
@@ -19,7 +19,7 @@ pub struct PasswordEntropyResult {
 }
 
 #[Object]
-impl UserQuery {
+impl AuthQuery {
     /// Validate that a user does not already exist with this email
     async fn validate_email_available(
         &self,
@@ -65,12 +65,12 @@ impl UserQuery {
         })
     }
 
-    /// Providers current user based on JWT found in client's access_token cookie
-    async fn current_user(&self, ctx: &Context<'_>) -> Result<Option<UserResult>, Error> {
+    /// Provides current user based on JWT found in client's access_token cookie
+    async fn current_user(&self, ctx: &Context<'_>) -> Result<Option<AuthTokenResult>, Error> {
         let user = ctx.data::<Option<TokenData<Claims>>>().unwrap();
 
         match user {
-            Some(user) => Ok(Some(UserResult::from(user))),
+            Some(user) => Ok(Some(AuthTokenResult::from(user))),
             None => Ok(None),
         }
     }

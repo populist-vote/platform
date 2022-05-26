@@ -33,3 +33,4 @@ async-trait = "0.1.52"
 jsonwebtoken = "7.2.0"
 poem = { version = "1.2.59" }
 zxcvbn = { version = "2.2.1", features = ["ser"] }
+url = "2.2.2"
