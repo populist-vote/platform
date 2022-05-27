@@ -143,7 +143,7 @@ impl AuthMutation {
                         let access_token = create_access_token_for_user(new_user.clone())?;
 
                         let account_confirmation_url = format!(
-                            "{}/auth/confirm?token={}",
+                            "{}auth/confirm?token={}",
                             config::Config::default().web_app_url,
                             confirmation_token
                         );
@@ -261,7 +261,7 @@ impl AuthMutation {
             .await;
 
             let reset_password_url = format!(
-                "{}/auth/password?token={}",
+                "{}auth/password?token={}",
                 config::Config::default().web_app_url,
                 reset_token
             );
