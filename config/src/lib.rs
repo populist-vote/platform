@@ -77,3 +77,37 @@ impl fmt::Display for Environment {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_environment_from_str() {
+        assert_eq!(
+            Environment::from_str("production").unwrap(),
+            Environment::Production
+        );
+        assert_eq!(
+            Environment::from_str("staging").unwrap(),
+            Environment::Staging
+        );
+        assert_eq!(
+            Environment::from_str("development").unwrap(),
+            Environment::Development
+        );
+        assert_eq!(Environment::from_str("test").unwrap(), Environment::Test);
+        assert_eq!(Environment::from_str("local").unwrap(), Environment::Local);
+        assert_eq!(
+            Environment::from_str("unknown").unwrap(),
+            Environment::Unknown
+        );
+    }
+
+    #[test]
+    fn test_config_default() {
+        let config = Config::default();
+        assert_eq!(config.environment, Environment::Local);
+        assert_eq!(config.web_app_url.to_string(), "http://localhost:3030/");
+    }
+}
