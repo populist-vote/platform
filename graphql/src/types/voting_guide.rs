@@ -39,6 +39,12 @@ pub struct VotingGuideCandidateResult {
     pub note: Option<String>,
 }
 
+#[derive(SimpleObject, Debug, Clone)]
+pub struct ElectionVotingGuides {
+    pub election: ElectionResult,
+    pub voting_guides: Vec<VotingGuideResult>,
+}
+
 #[ComplexObject]
 impl VotingGuideResult {
     async fn user(&self, ctx: &Context<'_>) -> Result<UserResult> {

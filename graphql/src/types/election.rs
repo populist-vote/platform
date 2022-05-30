@@ -10,7 +10,7 @@ use crate::context::ApiContext;
 
 use super::RaceResult;
 
-#[derive(SimpleObject)]
+#[derive(SimpleObject, Clone, Debug)]
 #[graphql(complex)]
 pub struct ElectionResult {
     id: ID,
