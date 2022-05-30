@@ -36,3 +36,11 @@ fn process_search_query(query: String) -> String {
         )
     }
 }
+
+#[test]
+fn test_process_search_query() {
+    assert_eq!(process_search_query("".to_string()), "");
+    assert_eq!(process_search_query("foo".to_string()), "foo:*");
+    assert_eq!(process_search_query("foo bar".to_string()), "foo | bar:*");
+    assert_eq!(process_search_query("foo bar baz".to_string()), "foo | bar | baz:*");
+}

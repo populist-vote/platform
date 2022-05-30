@@ -344,7 +344,7 @@ impl Politician {
             Politician,
             r#"
                 SELECT id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", date_of_birth, office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, party AS "party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, crp_candidate_id, fec_candidate_id, upcoming_race_id, created_at, updated_at FROM politician
-                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector(concat_ws(' ', first_name, middle_name, last_name, nickname, preferred_name, ballot_name)) @@ to_tsquery($1))
+                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', first_name, middle_name, last_name, nickname, preferred_name, ballot_name)) @@ to_tsquery('simple', $1))
                 AND ($2::state IS NULL OR home_state = $2)
                 AND ($3::political_party IS NULL OR party = $3)
                 ORDER BY last_name ASC
