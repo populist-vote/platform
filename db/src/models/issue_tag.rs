@@ -168,11 +168,48 @@ impl IssueTag {
         let records = sqlx::query_as!(
             Politician,
             r#"
-                SELECT p.id, slug, first_name, middle_name, last_name, nickname, preferred_name, ballot_name, description, home_state AS "home_state:State", date_of_birth, office_id, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, party AS "party:PoliticalParty", votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, crp_candidate_id, fec_candidate_id, upcoming_race_id, p.created_at, p.updated_at FROM politician p
+                SELECT p.id,
+                        slug,
+                        first_name,
+                        middle_name,
+                        last_name,
+                        suffix,
+                        nickname,
+                        preferred_name,
+                        ballot_name,
+                        biography,
+                        biography_source,
+                        home_state AS "home_state:State",
+                        date_of_birth,
+                        office_id,
+                        thumbnail_image_url,
+                        website_url,
+                        campaign_website_url,
+                        facebook_url,
+                        twitter_url,
+                        instagram_url,
+                        youtube_url,
+                        linkedin_url,
+                        tiktok_url,
+                        email,
+                        party AS "party:PoliticalParty",
+                        votesmart_candidate_id,
+                        votesmart_candidate_bio,
+                        votesmart_candidate_ratings,
+                        legiscan_people_id,
+                        crp_candidate_id,
+                        fec_candidate_id,
+                        upcoming_race_id,
+                        p.created_at,
+                        p.updated_at FROM politician p
                 JOIN politician_issue_tags
                 ON politician_issue_tags.politician_id = p.id
                 WHERE politician_issue_tags.issue_tag_id = $1
-            "#, issue_tag_id).fetch_all(db_pool).await?;
+            "#,
+            issue_tag_id
+        )
+        .fetch_all(db_pool)
+        .await?;
 
         Ok(records)
     }
