@@ -19,6 +19,8 @@ Next, you'll need to run the migrations with `sqlx migrate run`
 
 To start the api server, run `cargo watch -x run` which will type check, compile, and run your code. The GraphQL playground will then be live at http://localhost:1234 for you to execute queries and mutations against the specified database.
 
+To run certain mutations and queries which require staff or superuser permissions, you can add an `Authorization` token to the HTTP headers section of the playground. You can login to `https://staging.populist.us` or `https://populist.us` and grab the value from the `access_token` cookie in your browsers developer tools. Add this to the http headers like so: `"Authorization" : "Bearer <TOKEN>"`
+
 ## Command Line
 
 The `/cli` crate compiles an executable binary that serves as the Populist CLI. You can run the cli locally and learn more about usage with `./target/debug/cli --help`
