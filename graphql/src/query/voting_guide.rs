@@ -1,4 +1,4 @@
-use async_graphql::{Context, Object, Result};
+use async_graphql::{Context, Object, Result, ID};
 use db::models::voting_guide::VotingGuide;
 
 use crate::{context::ApiContext, types::VotingGuideResult};
@@ -11,7 +11,7 @@ impl VotingGuideQuery {
     async fn voting_guide_by_id(
         &self,
         ctx: &Context<'_>,
-        #[graphql(desc = "Voting guide id")] id: String,
+        #[graphql(desc = "Voting guide id")] id: ID,
     ) -> Result<VotingGuideResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = VotingGuide::find_by_id(&db_pool, uuid::Uuid::parse_str(&id).unwrap()).await?;
@@ -22,7 +22,7 @@ impl VotingGuideQuery {
     async fn voting_guides_by_user_id(
         &self,
         ctx: &Context<'_>,
-        #[graphql(desc = "User id")] user_id: String,
+        #[graphql(desc = "User id")] user_id: ID,
     ) -> Result<Vec<VotingGuideResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let records =
@@ -30,5 +30,40 @@ impl VotingGuideQuery {
                 .await?;
 
         Ok(records.into_iter().map(|record| record.into()).collect())
+    }
+
+    /// Returns a single voting guide for the given election and user
+    async fn election_voting_guide_by_user_id(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(desc = "Election ID")] election_id: ID,
+        #[graphql(desc = "User ID")] user_id: ID,
+    ) -> Result<VotingGuideResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let record = sqlx::query_as!(
+            VotingGuide,
+            r#"
+            SELECT
+                    id,
+                    user_id,
+                    election_id,
+                    title,
+                    description,
+                    created_at,
+                    updated_at
+                FROM
+                    voting_guide
+                WHERE
+                    election_id = $1 AND
+                    user_id = $2
+
+        "#,
+            uuid::Uuid::parse_str(&election_id).unwrap(),
+            uuid::Uuid::parse_str(&user_id).unwrap()
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(record.into())
     }
 }
