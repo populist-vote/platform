@@ -74,11 +74,11 @@ impl VotingGuideMutation {
         let record = sqlx::query!(
             r#"
             INSERT INTO voting_guide_candidates (voting_guide_id, candidate_id, is_endorsement, note)
-                VALUES($1, $2, $3, $4) ON CONFLICT (voting_guide_id, candidate_id)
+                VALUES($1, $2, COALESCE($3, FALSE), $4) ON CONFLICT (voting_guide_id, candidate_id)
                 DO
                 UPDATE
                 SET
-                    is_endorsement = $3,
+                    is_endorsement = COALESCE($3, FALSE),
                     note = $4
             RETURNING
                 candidate_id,
