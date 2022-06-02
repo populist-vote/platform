@@ -38,7 +38,7 @@ impl VotingGuideQuery {
         ctx: &Context<'_>,
         #[graphql(desc = "Election ID")] election_id: ID,
         #[graphql(desc = "User ID")] user_id: ID,
-    ) -> Result<VotingGuideResult> {
+    ) -> Result<Option<VotingGuideResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query_as!(
             VotingGuide,
@@ -61,9 +61,9 @@ impl VotingGuideQuery {
             uuid::Uuid::parse_str(&election_id).unwrap(),
             uuid::Uuid::parse_str(&user_id).unwrap()
         )
-        .fetch_one(&db_pool)
+        .fetch_optional(&db_pool)
         .await?;
 
-        Ok(record.into())
+        Ok(record.map(|record| record.into()))
     }
 }
