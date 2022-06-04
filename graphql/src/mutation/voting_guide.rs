@@ -78,8 +78,8 @@ impl VotingGuideMutation {
                 DO
                 UPDATE
                 SET
-                    is_endorsement = COALESCE($3, FALSE),
-                    note = $4
+                    is_endorsement = COALESCE($3, voting_guide_candidates.is_endorsement, FALSE),
+                    note = COALESCE($4, voting_guide_candidates.note)
             RETURNING
                 candidate_id,
                 is_endorsement,
