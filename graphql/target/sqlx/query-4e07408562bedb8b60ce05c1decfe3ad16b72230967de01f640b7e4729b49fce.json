@@ -1,5 +1,5 @@
 {
-  "query": "\n            INSERT INTO voting_guide_candidates (voting_guide_id, candidate_id, is_endorsement, note)\n                VALUES($1, $2, COALESCE($3, FALSE), $4) ON CONFLICT (voting_guide_id, candidate_id)\n                DO\n                UPDATE\n                SET\n                    is_endorsement = COALESCE($3, voting_guide_candidates.is_endorsement, FALSE),\n                    note = COALESCE($4, voting_guide_candidates.note)\n            RETURNING\n                candidate_id,\n                is_endorsement,\n                note\n        ",
+  "query": "\n            UPDATE voting_guide_candidates\n            SET note = NULL\n            WHERE voting_guide_id = $1 AND candidate_id = $2\n            RETURNING\n                candidate_id,\n                is_endorsement,\n                note\n        ",
   "describe": {
     "columns": [
       {
@@ -21,9 +21,7 @@
     "parameters": {
       "Left": [
         "Uuid",
-        "Uuid",
-        "Bool",
-        "Text"
+        "Uuid"
       ]
     },
     "nullable": [
@@ -32,5 +30,5 @@
       true
     ]
   },
-  "hash": "9e890429f07398e7e5297c601739a2d285929cd864e9baf91f57e82e573a5855"
+  "hash": "c2c46ee84c24b520439da7dd5b5cbf48794f5b52d2f9a92bfaf9704a0761d8a5"
 }

@@ -122,4 +122,34 @@ impl VotingGuideMutation {
             id: record.id.to_string(),
         })
     }
+
+    async fn delete_voting_guide_candidate_note(
+        &self,
+        ctx: &Context<'_>,
+        voting_guide_id: String,
+        candidate_id: String,
+    ) -> Result<VotingGuideCandidateResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let record = sqlx::query!(
+            r#"
+            UPDATE voting_guide_candidates
+            SET note = NULL
+            WHERE voting_guide_id = $1 AND candidate_id = $2
+            RETURNING
+                candidate_id,
+                is_endorsement,
+                note
+        "#,
+            Uuid::parse_str(voting_guide_id.as_str()).unwrap(),
+            Uuid::parse_str(candidate_id.as_str()).unwrap(),
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(VotingGuideCandidateResult {
+            candidate_id: record.candidate_id.into(),
+            is_endorsement: record.is_endorsement,
+            note: record.note,
+        })
+    }
 }
