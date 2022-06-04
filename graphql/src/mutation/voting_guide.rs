@@ -5,7 +5,7 @@ use crate::{
         VotingGuideResult,
     },
 };
-use async_graphql::{Context, Object, Result, SimpleObject};
+use async_graphql::{Context, Object, Result, SimpleObject, ID};
 use auth::Claims;
 use db::models::voting_guide::VotingGuide;
 use jsonwebtoken::TokenData;
@@ -16,7 +16,7 @@ pub struct VotingGuideMutation;
 
 #[derive(SimpleObject)]
 struct DeleteVotingGuideResult {
-    id: String,
+    id: ID,
 }
 
 #[Object]
@@ -103,7 +103,7 @@ impl VotingGuideMutation {
     async fn delete_voting_guide(
         &self,
         ctx: &Context<'_>,
-        id: String,
+        id: ID,
     ) -> Result<DeleteVotingGuideResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query!(
@@ -119,15 +119,15 @@ impl VotingGuideMutation {
         .await?;
 
         Ok(DeleteVotingGuideResult {
-            id: record.id.to_string(),
+            id: record.id.into(),
         })
     }
 
     async fn delete_voting_guide_candidate_note(
         &self,
         ctx: &Context<'_>,
-        voting_guide_id: String,
-        candidate_id: String,
+        voting_guide_id: ID,
+        candidate_id: ID,
     ) -> Result<VotingGuideCandidateResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query!(
