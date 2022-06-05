@@ -22,13 +22,22 @@ pub struct User {
 #[derive(FromRow, Debug, Clone)]
 pub struct UserProfile {
     pub id: uuid::Uuid,
-    pub first_name: String,
-    pub last_name: String,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
     pub address_id: uuid::Uuid,
     pub user_id: uuid::Uuid,
 }
 
-#[derive(Serialize, Deserialize, InputObject)]
+#[derive(FromRow, Debug, Clone)]
+pub struct UserWithProfile {
+    pub id: uuid::Uuid,
+    pub email: String,
+    pub username: String,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, InputObject)]
 pub struct Address {
     pub id: uuid::Uuid,
     pub line_1: String,

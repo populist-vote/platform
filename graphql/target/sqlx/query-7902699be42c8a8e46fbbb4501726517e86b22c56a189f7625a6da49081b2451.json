@@ -1,5 +1,5 @@
 {
-  "query": "\n            INSERT INTO voting_guide (id, user_id, election_id, title, description)\n                VALUES($1, $2, $3, $4, $5) ON CONFLICT (id)\n                DO\n                UPDATE\n                SET\n                    title = $3,\n                    description = $4\n            RETURNING\n                id,\n                user_id,\n                election_id,\n                title,\n                description,\n                created_at,\n                updated_at\n        ",
+  "query": "\n            UPDATE address a\n            SET line_1 = $2,\n            line_2 = $3,\n            city = $4,\n            state = $5,\n            postal_code = $6,\n            country = $7\n            FROM user_profile up\n            WHERE up.address_id = a.id\n            AND up.user_id = $1\n            RETURNING a.id, line_1, line_2, city, state AS \"state:State\", postal_code, country, county, congressional_district, state_senate_district, state_house_district\n        ",
   "describe": {
     "columns": [
       {
@@ -9,40 +9,62 @@
       },
       {
         "ordinal": 1,
-        "name": "user_id",
-        "type_info": "Uuid"
+        "name": "line_1",
+        "type_info": "Text"
       },
       {
         "ordinal": 2,
-        "name": "election_id",
-        "type_info": "Uuid"
+        "name": "line_2",
+        "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "title",
+        "name": "city",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "description",
+        "name": "state:State",
         "type_info": "Text"
       },
       {
         "ordinal": 5,
-        "name": "created_at",
-        "type_info": "Timestamptz"
+        "name": "postal_code",
+        "type_info": "Text"
       },
       {
         "ordinal": 6,
-        "name": "updated_at",
-        "type_info": "Timestamptz"
+        "name": "country",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "county",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "congressional_district",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 9,
+        "name": "state_senate_district",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 10,
+        "name": "state_house_district",
+        "type_info": "Int4"
       }
     ],
     "parameters": {
       "Left": [
         "Uuid",
-        "Uuid",
-        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
         "Text",
         "Text"
       ]
@@ -50,12 +72,16 @@
     "nullable": [
       false,
       false,
+      true,
+      false,
+      false,
+      false,
       false,
       true,
       true,
-      false,
-      false
+      true,
+      true
     ]
   },
-  "hash": "fbe195dc1dc227ee320fa642422a3928f87cf899a8f40123d8f5c873fb1422c5"
+  "hash": "3774b6c1c78b2f09dc4d2251c21c432182aae6ff77f7bfda5ce96dac245f4701"
 }

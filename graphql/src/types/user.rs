@@ -1,7 +1,7 @@
 use super::AddressResult;
 use crate::{context::ApiContext, is_admin, mutation::StaffOnly};
-use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
-use db::{models::enums::State, Address};
+use async_graphql::{ComplexObject, Context, InputObject, Result, SimpleObject, ID};
+use db::{models::enums::State, Address, UserWithProfile};
 
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
@@ -11,7 +11,14 @@ pub struct UserResult {
     pub email: String,
     pub first_name: Option<String>,
     pub last_name: Option<String>,
-    pub avatar_url: Option<String>,
+}
+
+#[derive(InputObject)]
+pub struct UpdateUserProfileInput {
+    pub email: Option<String>,
+    pub username: Option<String>,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
 }
 
 #[ComplexObject]
@@ -33,6 +40,18 @@ impl UserResult {
         match record {
             Some(address) => Ok(Some(address.into())),
             None => Ok(None),
+        }
+    }
+}
+
+impl From<UserWithProfile> for UserResult {
+    fn from(user: UserWithProfile) -> Self {
+        Self {
+            id: user.id.into(),
+            username: user.username,
+            email: user.email,
+            first_name: user.first_name,
+            last_name: user.last_name,
         }
     }
 }

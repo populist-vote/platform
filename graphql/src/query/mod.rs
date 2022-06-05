@@ -7,6 +7,7 @@ mod office;
 mod organization;
 mod politician;
 mod race;
+mod user;
 mod voting_guide;
 
 #[allow(clippy::module_inception)]

@@ -1,34 +1,57 @@
 {
-  "query": "\n            UPDATE voting_guide_candidates\n            SET note = NULL\n            WHERE voting_guide_id = $1 AND candidate_id = $2\n            RETURNING\n                candidate_id,\n                is_endorsement,\n                note\n        ",
+  "query": "\n            UPDATE address a\n            SET line_1 = $2,\n            line_2 = $3,\n            city = $4,\n            state = $5,\n            postal_code = $6,\n            country = $7\n            FROM user_profile up\n            WHERE up.address_id = a.id\n            AND up.user_id = $1\n            RETURNING line_1, line_2, city, state AS \"state:State\", postal_code, country\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "candidate_id",
-        "type_info": "Uuid"
+        "name": "line_1",
+        "type_info": "Text"
       },
       {
         "ordinal": 1,
-        "name": "is_endorsement",
-        "type_info": "Bool"
+        "name": "line_2",
+        "type_info": "Text"
       },
       {
         "ordinal": 2,
-        "name": "note",
+        "name": "city",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "state:State",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "postal_code",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "country",
         "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
         "Uuid",
-        "Uuid"
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text"
       ]
     },
     "nullable": [
       false,
+      true,
       false,
-      true
+      false,
+      false,
+      false
     ]
   },
-  "hash": "c2c46ee84c24b520439da7dd5b5cbf48794f5b52d2f9a92bfaf9704a0761d8a5"
+  "hash": "9668347c3e4cf9e9fc53415668260e57f265adbbe1c4361720970b1a28165d46"
 }

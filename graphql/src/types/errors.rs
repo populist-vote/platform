@@ -32,6 +32,12 @@ pub enum Error {
     #[error("Your email or username was not found in our database")]
     EmailOrUsernameNotFound,
 
+    #[error("No user was found in our database")]
+    UserNotFound,
+
+    #[error("This username is already taken")]
+    UsernameTaken,
+
     #[error(transparent)]
     AuthError(#[from] auth::errors::Error),
 
