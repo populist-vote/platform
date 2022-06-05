@@ -957,6 +957,7 @@ dependencies = [
  "dotenv",
  "geo",
  "geo-types",
+ "geocodio",
  "geozero",
  "itertools",
  "lazy_static",

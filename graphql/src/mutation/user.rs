@@ -1,6 +1,6 @@
 use async_graphql::{Context, Object, Result, SimpleObject};
 use auth::Claims;
-use db::{models::enums::State, Address, AddressInput};
+use db::{AddressInput, User};
 use jsonwebtoken::TokenData;
 
 use crate::{
@@ -168,40 +168,9 @@ impl UserMutation {
             .unwrap()
             .claims
             .sub;
-        let updated_record_result = sqlx::query_as!(
-            Address,
-            r#"
-            UPDATE address a
-            SET line_1 = $2,
-            line_2 = $3,
-            city = $4,
-            state = $5,
-            postal_code = $6,
-            country = $7
-            FROM user_profile up
-            WHERE up.address_id = a.id
-            AND up.user_id = $1
-            RETURNING a.id, line_1, line_2, city, state AS "state:State", postal_code, country, county, congressional_district, state_senate_district, state_house_district
-        "#,
-            user_id,
-            address.line_1,
-            address.line_2,
-            address.city,
-            address.state as State,
-            address.postal_code,
-            address.country,
-        )
-        .fetch_one(&db_pool)
-        .await;
 
-        // Run query to fetch new district data
+        let result = User::update_address(&db_pool, user_id, address).await?;
 
-        match updated_record_result {
-            Ok(updated_record) => Ok(updated_record.into()),
-            Err(err) => match err {
-                sqlx::Error::RowNotFound => Err(Error::UserNotFound.into()),
-                _ => Err(err.into()),
-            },
-        }
+        Ok(result.into())
     }
 }

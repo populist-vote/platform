@@ -7,6 +7,7 @@ publish = false
 [dependencies]
 legiscan = { path = "../legiscan", features = ["async-graphql"] }
 votesmart = { path = "../votesmart" }
+geocodio = { path = "../geocodio" }
 chrono = { version = "0.4.19", features = ["serde"] }
 sqlx = { version = "0.5.9", features = [ "runtime-tokio-rustls", "postgres", "chrono", "uuid", "json", "offline" ] }
 tokio = { version = "1.8", features = ["full"] }

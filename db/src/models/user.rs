@@ -1,4 +1,5 @@
 use async_graphql::{Enum, InputObject};
+use geocodio::GeocodioProxy;
 use pwhash::bcrypt;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool, Type};
@@ -298,6 +299,92 @@ impl User {
             Err(Error::Custom(
                 "Your password could not be updated".to_string(),
             ))
+        }
+    }
+
+    pub async fn update_address(
+        db_pool: &PgPool,
+        user_id: uuid::Uuid,
+        address: AddressInput,
+    ) -> Result<Address, Error> {
+        let geocodio = GeocodioProxy::new().unwrap();
+        let address_clone = address.clone();
+        let geocode_result = geocodio
+            .geocode(
+                geocodio::AddressParams::AddressInput(geocodio::AddressInput {
+                    line_1: address_clone.line_1,
+                    line_2: address_clone.line_2,
+                    city: address_clone.city,
+                    state: address_clone.state.to_string(),
+                    country: address_clone.country,
+                    postal_code: address_clone.postal_code,
+                }),
+                Some(&["cd", "stateleg"]),
+            )
+            .await;
+
+        match geocode_result {
+            Ok(geocodio_data) => {
+                let coordinates = geocodio_data.results[0].location.clone();
+                let county = geocodio_data.results[0].address_components.county.clone();
+                let primary_result = geocodio_data.results[0].fields.as_ref().unwrap();
+                let congressional_district: i32 =
+                    primary_result.congressional_districts.as_ref().unwrap()[0]
+                        .district_number
+                        .into();
+                let state_legislative_districts =
+                    primary_result.state_legislative_districts.as_ref().unwrap();
+                let state_house_district = &state_legislative_districts.house[0].district_number;
+                let state_senate_district = &state_legislative_districts.senate[0].district_number;
+
+                let coordinates: geo_types::Geometry<f64> = Some(coordinates)
+                    .as_ref()
+                    .map(|c| geo::Point::new(c.latitude, c.longitude))
+                    .unwrap()
+                    .into();
+
+                let updated_record_result = sqlx::query_as!(
+                    Address,
+                    r#"
+                    UPDATE address a
+                    SET line_1 = $2,
+                    line_2 = $3,
+                    city = $4,
+                    state = $5,
+                    county = $6,
+                    postal_code = $7,
+                    country = $8,
+                    geog = $9::geography,
+                    congressional_district = $10,
+                    state_house_district = $11,
+                    state_senate_district = $12
+                    FROM user_profile up
+                    WHERE up.address_id = a.id
+                    AND up.user_id = $1
+                    RETURNING a.id, line_1, line_2, city, state AS "state:State", postal_code, country, county, congressional_district, state_senate_district, state_house_district
+                "#,
+                    user_id,
+                    address.line_1,
+                    address.line_2,
+                    address.city,
+                    address.state as State,
+                    county,
+                    address.postal_code,
+                    address.country,
+                    wkb::geom_to_wkb(&coordinates).unwrap() as _,
+                    Some(congressional_district),
+                    Some(state_house_district.parse::<i32>().unwrap()),
+                    Some(state_senate_district.parse::<i32>().unwrap()),
+                )
+                .fetch_one(db_pool)
+                .await;
+
+                match updated_record_result {
+                    Ok(updated_record) => Ok(updated_record),
+                    Err(err) => Err(err.into()),
+                }
+            }
+            Err(err) => Err(Error::Custom(err.to_string())),
         }
     }
 }
