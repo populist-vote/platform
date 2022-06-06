@@ -13,7 +13,7 @@ Next, you'll need to run the migrations with `sqlx migrate run`
 
 ## Database
 
-[sqlx] is used for managing asyncronous database operations. This project relies heavily on compile-time query verification using `sqlx` macros, namely `query_as!` If you do not have a DATABASE_URL specified in your .env file, you will not be able to compile the binary for this crate. You can run sqlx in offline mode by setting SQLX_OFFLINE=true. You can enable "offline mode" to cache the results of the SQL query analysis using the sqlx-cli. If you make schema alterations, run the command `cargo sqlx prepare` which will write your query data to `sqlx-data.json` at the `/db` root.
+[sqlx] is used for managing asynchronous database operations. This project relies heavily on compile-time query verification using `sqlx` macros, namely `query_as!` If you do not have a DATABASE_URL specified in your .env file, you will not be able to compile the binary for this crate. You can run sqlx in offline mode by setting SQLX_OFFLINE=true. You can enable "offline mode" to cache the results of the SQL query analysis using the sqlx-cli. If you make schema alterations, run the command `cargo sqlx prepare` which will write your query data to `sqlx-data.json` at the `/db` root.
 
 ## API Server
 
