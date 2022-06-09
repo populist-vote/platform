@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT a.id, a.line_1, a.line_2, a.city, a.county, a.state AS \"state:State\", a.postal_code, a.country, a.congressional_district, a.state_senate_district, a.state_house_district FROM address AS a\n            JOIN user_profile up ON user_id = $1\n            JOIN address ON up.address_id = a.id\n        ",
+  "query": "\n            SELECT u.id, u.username, u.email, first_name, last_name FROM user_profile up\n            JOIN populist_user u ON user_id = $1\n        ",
   "describe": {
     "columns": [
       {
@@ -9,53 +9,23 @@
       },
       {
         "ordinal": 1,
-        "name": "line_1",
+        "name": "username",
         "type_info": "Text"
       },
       {
         "ordinal": 2,
-        "name": "line_2",
+        "name": "email",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "city",
+        "name": "first_name",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "county",
+        "name": "last_name",
         "type_info": "Text"
-      },
-      {
-        "ordinal": 5,
-        "name": "state:State",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 6,
-        "name": "postal_code",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 7,
-        "name": "country",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 8,
-        "name": "congressional_district",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 9,
-        "name": "state_senate_district",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 10,
-        "name": "state_house_district",
-        "type_info": "Int4"
       }
     ],
     "parameters": {
@@ -66,16 +36,10 @@
     "nullable": [
       false,
       false,
-      true,
       false,
-      true,
-      false,
-      false,
-      false,
-      true,
       true,
       true
     ]
   },
-  "hash": "3f0cfdfe223e1df0cfb1d4e45ebff9a93bdea21423d94b2331b71f62d1fdc7ca"
+  "hash": "8a901600de7c744d691029da4cb57f6dda2ed926caf0eaaad15d77357b5cde19"
 }
