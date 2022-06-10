@@ -18,9 +18,7 @@ pub struct Politician {
     pub middle_name: Option<String>,
     pub last_name: String,
     pub suffix: Option<String>,
-    pub nickname: Option<String>,
     pub preferred_name: Option<String>,
-    pub ballot_name: Option<String>,
     pub biography: Option<String>,
     pub biography_source: Option<String>,
     pub home_state: Option<State>,
@@ -55,9 +53,7 @@ pub struct CreatePoliticianInput {
     pub middle_name: Option<String>,
     pub last_name: String,
     pub suffix: Option<String>,
-    pub nickname: Option<String>,
     pub preferred_name: Option<String>,
-    pub ballot_name: Option<String>,
     pub biography: Option<String>,
     pub biography_source: Option<String>,
     pub home_state: Option<State>,
@@ -92,9 +88,7 @@ pub struct UpdatePoliticianInput {
     pub middle_name: Option<String>,
     pub last_name: Option<String>,
     pub suffix: Option<String>,
-    pub nickname: Option<String>,
     pub preferred_name: Option<String>,
-    pub ballot_name: Option<String>,
     pub biography: Option<String>,
     pub biography_source: Option<String>,
     pub home_state: Option<State>,
@@ -143,12 +137,14 @@ pub struct PoliticianSearch {
 
 impl CreatePoliticianInput {
     fn full_name(&self) -> String {
-        match &self.middle_name {
-            Some(middle_name) => {
-                format!("{} {} {}", &self.first_name, middle_name, &self.last_name)
-            }
-            None => format!("{} {}", &self.first_name, &self.last_name),
-        }
+        format!(
+            "{first_name} {last_name} {suffix}",
+            first_name = &self.preferred_name.as_ref().unwrap_or(&self.first_name),
+            last_name = &self.last_name,
+            suffix = &self.suffix.as_ref().unwrap_or(&"".to_string())
+        )
+        .trim_end()
+        .to_string()
     }
 }
 
@@ -185,9 +181,7 @@ impl Politician {
                         middle_name,
                         last_name,
                         suffix,
-                        nickname,
                         preferred_name,
-                        ballot_name,
                         biography,
                         biography_source,
                         home_state,
@@ -239,9 +233,7 @@ impl Politician {
                             $25,
                             $26,
                             $27,
-                            $28,
-                            $29,
-                            $30)
+                            $28)
                     RETURNING
                         id,
                         slug,
@@ -249,9 +241,7 @@ impl Politician {
                         middle_name,
                         last_name,
                         suffix,
-                        nickname,
                         preferred_name,
-                        ballot_name,
                         biography,
                         biography_source,
                         home_state AS "home_state:State",
@@ -288,9 +278,7 @@ impl Politician {
             input.middle_name,
             input.last_name,
             input.suffix,
-            input.nickname,
             input.preferred_name,
-            input.ballot_name,
             input.biography,
             input.biography_source,
             input.home_state as Option<State>,
@@ -354,9 +342,7 @@ impl Politician {
                         middle_name,
                         last_name,
                         suffix,
-                        nickname,
                         preferred_name,
-                        ballot_name,
                         biography,
                         biography_source,
                         home_state AS "home_state:State",
@@ -419,32 +405,30 @@ impl Politician {
                     middle_name = COALESCE($4, middle_name),
                     last_name = COALESCE($5, last_name),
                     suffix = COALESCE($6, suffix),
-                    nickname = COALESCE($7, nickname),
-                    preferred_name = COALESCE($8, preferred_name),
-                    ballot_name = COALESCE($9, ballot_name),
-                    biography = COALESCE($10, biography),
-                    biography_source = COALESCE($11, biography_source),
-                    home_state= COALESCE($12, home_state),
-                    date_of_birth = COALESCE($13, date_of_birth),
-                    office_id = COALESCE($14, office_id),
-                    thumbnail_image_url = COALESCE($15, thumbnail_image_url),
-                    website_url = COALESCE($16, website_url),
-                    campaign_website_url = COALESCE($17, campaign_website_url),
-                    facebook_url = COALESCE($18, facebook_url),
-                    twitter_url = COALESCE($19, twitter_url),
-                    instagram_url = COALESCE($20, instagram_url),
-                    youtube_url = COALESCE($21, youtube_url),
-                    linkedin_url = COALESCE($22, linkedin_url),
-                    tiktok_url = COALESCE($23, tiktok_url),
-                    email = COALESCE($24, email),
-                    party = COALESCE($25, party),
+                    preferred_name = COALESCE($7, preferred_name),
+                    biography = COALESCE($8, biography),
+                    biography_source = COALESCE($9, biography_source),
+                    home_state= COALESCE($10, home_state),
+                    date_of_birth = COALESCE($11, date_of_birth),
+                    office_id = COALESCE($12, office_id),
+                    thumbnail_image_url = COALESCE($13, thumbnail_image_url),
+                    website_url = COALESCE($14, website_url),
+                    campaign_website_url = COALESCE($15, campaign_website_url),
+                    facebook_url = COALESCE($16, facebook_url),
+                    twitter_url = COALESCE($17, twitter_url),
+                    instagram_url = COALESCE($18, instagram_url),
+                    youtube_url = COALESCE($19, youtube_url),
+                    linkedin_url = COALESCE($20, linkedin_url),
+                    tiktok_url = COALESCE($21, tiktok_url),
+                    email = COALESCE($22, email),
+                    party = COALESCE($23, party),
                     votesmart_candidate_id = COALESCE($2, votesmart_candidate_id),
-                    votesmart_candidate_bio = COALESCE($26, votesmart_candidate_bio),
-                    votesmart_candidate_ratings = COALESCE($27, votesmart_candidate_ratings),
-                    legiscan_people_id = COALESCE($28, legiscan_people_id),
-                    crp_candidate_id = COALESCE($29, crp_candidate_id),
-                    fec_candidate_id = COALESCE($30, fec_candidate_id),
-                    upcoming_race_id = COALESCE($31, upcoming_race_id)
+                    votesmart_candidate_bio = COALESCE($24, votesmart_candidate_bio),
+                    votesmart_candidate_ratings = COALESCE($25, votesmart_candidate_ratings),
+                    legiscan_people_id = COALESCE($26, legiscan_people_id),
+                    crp_candidate_id = COALESCE($27, crp_candidate_id),
+                    fec_candidate_id = COALESCE($28, fec_candidate_id),
+                    upcoming_race_id = COALESCE($29, upcoming_race_id)
                 WHERE id=$1
                 OR votesmart_candidate_id = $2
                 RETURNING
@@ -454,9 +438,7 @@ impl Politician {
                         middle_name,
                         last_name,
                         suffix,
-                        nickname,
                         preferred_name,
-                        ballot_name,
                         biography,
                         biography_source,
                         home_state AS "home_state:State",
@@ -489,9 +471,7 @@ impl Politician {
             input.middle_name,
             input.last_name,
             input.suffix,
-            input.nickname,
             input.preferred_name,
-            input.ballot_name,
             input.biography,
             input.biography_source,
             input.home_state as Option<State>,
@@ -537,9 +517,7 @@ impl Politician {
                         middle_name,
                         last_name,
                         suffix,
-                        nickname,
                         preferred_name,
-                        ballot_name,
                         biography,
                         biography_source,
                         home_state AS "home_state:State",
@@ -581,9 +559,7 @@ impl Politician {
                         middle_name,
                         last_name,
                         suffix,
-                        nickname,
                         preferred_name,
-                        ballot_name,
                         biography,
                         biography_source,
                         home_state AS "home_state:State",
@@ -628,9 +604,7 @@ impl Politician {
                         middle_name,
                         last_name,
                         suffix,
-                        nickname,
                         preferred_name,
-                        ballot_name,
                         biography,
                         biography_source,
                         home_state AS "home_state:State",
@@ -682,9 +656,7 @@ impl Politician {
                         middle_name,
                         last_name,
                         suffix,
-                        nickname,
                         preferred_name,
-                        ballot_name,
                         biography,
                         biography_source,
                         home_state AS "home_state:State",
@@ -710,7 +682,7 @@ impl Politician {
                         upcoming_race_id,
                         created_at,
                         updated_at FROM politician
-                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', first_name, middle_name, last_name, nickname, preferred_name, ballot_name)) @@ to_tsquery('simple', $1))
+                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', first_name, middle_name, last_name, preferred_name)) @@ to_tsquery('simple', $1))
                 AND ($2::state IS NULL OR home_state = $2)
                 AND ($3::political_party IS NULL OR party = $3)
                 ORDER BY last_name ASC
@@ -753,9 +725,7 @@ impl Politician {
                         middle_name,
                         last_name,
                         suffix,
-                        nickname,
                         preferred_name,
-                        ballot_name,
                         biography,
                         biography_source,
                         home_state AS "home_state:State",
