@@ -42,6 +42,8 @@ pub struct Politician {
     pub crp_candidate_id: Option<String>,
     pub fec_candidate_id: Option<String>,
     pub upcoming_race_id: Option<uuid::Uuid>,
+    pub race_wins: Option<i32>,
+    pub race_losses: Option<i32>,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
@@ -80,6 +82,8 @@ pub struct CreatePoliticianInput {
     pub crp_candidate_id: Option<String>,
     pub fec_candidate_id: Option<String>,
     pub upcoming_race_id: Option<uuid::Uuid>,
+    pub race_wins: Option<i32>,
+    pub race_losses: Option<i32>,
 }
 
 #[derive(InputObject, Default, Serialize, Deserialize)]
@@ -115,6 +119,8 @@ pub struct UpdatePoliticianInput {
     pub crp_candidate_id: Option<String>,
     pub fec_candidate_id: Option<String>,
     pub upcoming_race_id: Option<uuid::Uuid>,
+    pub race_wins: Option<i32>,
+    pub race_losses: Option<i32>,
 }
 
 pub enum PoliticianIdentifier {
@@ -203,7 +209,9 @@ impl Politician {
                         legiscan_people_id,
                         crp_candidate_id,
                         fec_candidate_id,
-                        upcoming_race_id)
+                        upcoming_race_id,
+                        race_wins,
+                        race_losses)
                         VALUES(
                             (SELECT author_id FROM ins_author),
                             $1,
@@ -233,7 +241,9 @@ impl Politician {
                             $25,
                             $26,
                             $27,
-                            $28)
+                            $28,
+                            $29,
+                            $30)
                     RETURNING
                         id,
                         slug,
@@ -265,6 +275,8 @@ impl Politician {
                         crp_candidate_id,
                         fec_candidate_id,
                         upcoming_race_id,
+                        race_wins,
+                        race_losses,
                         created_at,
                         updated_at
                 )
@@ -300,7 +312,9 @@ impl Politician {
             input.legiscan_people_id,
             input.crp_candidate_id,
             input.fec_candidate_id,
-            input.upcoming_race_id
+            input.upcoming_race_id,
+            input.race_wins,
+            input.race_losses,
         )
         .fetch_one(db_pool)
         .await?;
@@ -327,49 +341,86 @@ impl Politician {
         let record = sqlx::query_as!(
             Politician,
             r#"
-                WITH ins_author AS (
-                    INSERT INTO author (author_type) VALUES ('politician')
-                    ON CONFLICT DO NOTHING
-                    RETURNING id AS author_id
-                ),
-                p AS (
-                    INSERT INTO politician (id, slug, first_name, middle_name, last_name, home_state, date_of_birth, office_id, party, votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, website_url, upcoming_race_id) 
-                    VALUES ((SELECT author_id FROM ins_author), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-                    RETURNING
-                        id,
-                        slug,
-                        first_name,
-                        middle_name,
-                        last_name,
-                        suffix,
-                        preferred_name,
-                        biography,
-                        biography_source,
-                        home_state AS "home_state:State",
-                        date_of_birth,
-                        office_id,
-                        thumbnail_image_url,
-                        website_url,
-                        campaign_website_url,
-                        facebook_url,
-                        twitter_url,
-                        instagram_url,
-                        youtube_url,
-                        linkedin_url,
-                        tiktok_url,
-                        email,
-                        party AS "party:PoliticalParty",
-                        votesmart_candidate_id,
-                        votesmart_candidate_bio,
-                        votesmart_candidate_ratings,
-                        legiscan_people_id,
-                        crp_candidate_id,
-                        fec_candidate_id,
-                        upcoming_race_id,
-                        created_at,
-                        updated_at
-                )
-                SELECT p.* FROM p
+            WITH ins_author AS (
+            INSERT INTO author (author_type)
+                    VALUES('politician') ON CONFLICT DO NOTHING
+                RETURNING
+                    id AS author_id
+            ),
+            p AS (
+            INSERT INTO politician (id,
+                    slug,
+                    first_name,
+                    middle_name,
+                    last_name,
+                    home_state,
+                    date_of_birth,
+                    office_id,
+                    party,
+                    votesmart_candidate_id,
+                    votesmart_candidate_bio,
+                    votesmart_candidate_ratings,
+                    website_url,
+                    upcoming_race_id,
+                    race_wins,
+                    race_losses)
+                    VALUES(
+                        (SELECT author_id FROM ins_author),
+                        $1,
+                        $2,
+                        $3,
+                        $4,
+                        $5,
+                        $6,
+                        $7,
+                        $8,
+                        $9,
+                        $10,
+                        $11,
+                        $12,
+                        $13,
+                        $14,
+                        $15)
+                RETURNING
+                    id,
+                    slug,
+                    first_name,
+                    middle_name,
+                    last_name,
+                    suffix,
+                    preferred_name,
+                    biography,
+                    biography_source,
+                    home_state AS "home_state:State",
+                    date_of_birth,
+                    office_id,
+                    thumbnail_image_url,
+                    website_url,
+                    campaign_website_url,
+                    facebook_url,
+                    twitter_url,
+                    instagram_url,
+                    youtube_url,
+                    linkedin_url,
+                    tiktok_url,
+                    email,
+                    party AS "party:PoliticalParty",
+                    votesmart_candidate_id,
+                    votesmart_candidate_bio,
+                    votesmart_candidate_ratings,
+                    legiscan_people_id,
+                    crp_candidate_id,
+                    fec_candidate_id,
+                    upcoming_race_id,
+                    race_wins,
+                    race_losses,
+                    created_at,
+                    updated_at
+            )
+            SELECT
+                p.*
+            FROM
+                p
             "#,
             slug,
             input.first_name,
@@ -383,7 +434,9 @@ impl Politician {
             vs_candidate_bio,
             vs_candidate_ratings,
             input.website_url,
-            input.upcoming_race_id
+            input.upcoming_race_id,
+            input.race_wins,
+            input.race_losses,
         )
         .fetch_optional(db_pool)
         .await?;
@@ -428,7 +481,9 @@ impl Politician {
                     legiscan_people_id = COALESCE($26, legiscan_people_id),
                     crp_candidate_id = COALESCE($27, crp_candidate_id),
                     fec_candidate_id = COALESCE($28, fec_candidate_id),
-                    upcoming_race_id = COALESCE($29, upcoming_race_id)
+                    upcoming_race_id = COALESCE($29, upcoming_race_id),
+                    race_wins = COALESCE($30, race_wins),
+                    race_losses = COALESCE($31, race_losses)
                 WHERE id=$1
                 OR votesmart_candidate_id = $2
                 RETURNING
@@ -462,6 +517,8 @@ impl Politician {
                         crp_candidate_id,
                         fec_candidate_id,
                         upcoming_race_id,
+                        race_wins,
+                        race_losses,
                         created_at,
                         updated_at
             "#,
@@ -493,7 +550,9 @@ impl Politician {
             input.legiscan_people_id,
             input.crp_candidate_id,
             input.fec_candidate_id,
-            input.upcoming_race_id
+            input.upcoming_race_id,
+            input.race_wins,
+            input.race_losses,
         )
         .fetch_one(db_pool)
         .await?;
@@ -541,6 +600,8 @@ impl Politician {
                         crp_candidate_id,
                         fec_candidate_id,
                         upcoming_race_id,
+                        race_wins,
+                        race_losses,
                         created_at,
                         updated_at FROM politician"#,
         )
@@ -583,6 +644,8 @@ impl Politician {
                         crp_candidate_id,
                         fec_candidate_id,
                         upcoming_race_id,
+                        race_wins,
+                        race_losses,
                         created_at,
                         updated_at FROM politician
                 WHERE id = $1
@@ -628,6 +691,8 @@ impl Politician {
                         crp_candidate_id,
                         fec_candidate_id,
                         upcoming_race_id,
+                        race_wins,
+                        race_losses,
                         created_at,
                         updated_at FROM politician
                 WHERE slug = $1
@@ -680,6 +745,8 @@ impl Politician {
                         crp_candidate_id,
                         fec_candidate_id,
                         upcoming_race_id,
+                        race_wins,
+                        race_losses,
                         created_at,
                         updated_at FROM politician
                 WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', first_name, middle_name, last_name, preferred_name)) @@ to_tsquery('simple', $1))
@@ -749,6 +816,8 @@ impl Politician {
                         crp_candidate_id,
                         fec_candidate_id,
                         upcoming_race_id,
+                        race_wins,
+                        race_losses,
                         p.created_at,
                         p.updated_at FROM politician p
                 JOIN politician_politician_endorsements

@@ -37,9 +37,7 @@ impl OfficeResult {
                         middle_name,
                         last_name,
                         suffix,
-                        nickname,
                         preferred_name,
-                        ballot_name,
                         biography,
                         biography_source,
                         home_state AS "home_state:State",
@@ -63,6 +61,8 @@ impl OfficeResult {
                         crp_candidate_id,
                         fec_candidate_id,
                         upcoming_race_id,
+                        race_wins,
+                        race_losses,
                         created_at,
                         updated_at FROM politician
                 WHERE office_id = $1

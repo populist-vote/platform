@@ -174,9 +174,7 @@ impl IssueTag {
                         middle_name,
                         last_name,
                         suffix,
-                        nickname,
                         preferred_name,
-                        ballot_name,
                         biography,
                         biography_source,
                         home_state AS "home_state:State",
@@ -200,6 +198,8 @@ impl IssueTag {
                         crp_candidate_id,
                         fec_candidate_id,
                         upcoming_race_id,
+                        race_wins,
+                        race_losses,
                         p.created_at,
                         p.updated_at FROM politician p
                 JOIN politician_issue_tags

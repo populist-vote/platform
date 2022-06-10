@@ -1,21 +1,34 @@
 {
-  "query": "\n            SELECT id FROM populist_user WHERE email = $1\n        ",
+  "query": "\n            UPDATE voting_guide_candidates\n            SET note = NULL\n            WHERE voting_guide_id = $1 AND candidate_id = $2\n            RETURNING\n                candidate_id,\n                is_endorsement,\n                note\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id",
+        "name": "candidate_id",
         "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "is_endorsement",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 2,
+        "name": "note",
+        "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
-        "Text"
+        "Uuid",
+        "Uuid"
       ]
     },
     "nullable": [
-      false
+      false,
+      false,
+      true
     ]
   },
-  "hash": "7c3de9dc9a7a66c521d2884819f21bde79f41cbb86055b2e8012733795d0f72b"
+  "hash": "c2c46ee84c24b520439da7dd5b5cbf48794f5b52d2f9a92bfaf9704a0761d8a5"
 }

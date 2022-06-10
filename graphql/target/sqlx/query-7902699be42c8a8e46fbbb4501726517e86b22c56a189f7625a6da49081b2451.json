@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT u.id, u.username, u.email, first_name, last_name FROM user_profile up\n            JOIN populist_user u ON user_id = $1\n        ",
+  "query": "\n                SELECT\n                    id,\n                    slug,\n                    first_name,\n                    middle_name,\n                    last_name,\n                    suffix,\n                    preferred_name,\n                    biography,\n                    biography_source,\n                    home_state AS \"home_state:State\",\n                    date_of_birth,\n                    office_id,\n                    thumbnail_image_url,\n                    website_url,\n                    campaign_website_url,\n                    facebook_url,\n                    twitter_url,\n                    instagram_url,\n                    youtube_url,\n                    linkedin_url,\n                    tiktok_url,\n                    email,\n                    party AS \"party:PoliticalParty\",\n                    votesmart_candidate_id,\n                    votesmart_candidate_bio,\n                    votesmart_candidate_ratings,\n                    legiscan_people_id,\n                    crp_candidate_id,\n                    fec_candidate_id,\n                    upcoming_race_id,\n                    race_wins,\n                    race_losses,\n                    p.created_at,\n                    p.updated_at\n                FROM\n                    politician p\n                    JOIN race_candidates rc ON race_id = $1\n                WHERE\n                    p.id = rc.candidate_id\n                    AND rc.is_running = TRUE\n            ",
   "describe": {
     "columns": [
       {
@@ -9,23 +9,249 @@
       },
       {
         "ordinal": 1,
-        "name": "username",
+        "name": "slug",
         "type_info": "Text"
       },
       {
         "ordinal": 2,
-        "name": "email",
+        "name": "first_name",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "first_name",
+        "name": "middle_name",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
         "name": "last_name",
         "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "suffix",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "preferred_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "biography",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "biography_source",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "home_state:State",
+        "type_info": {
+          "Custom": {
+            "name": "state",
+            "kind": {
+              "Enum": [
+                "AL",
+                "AK",
+                "AZ",
+                "AR",
+                "CA",
+                "CO",
+                "CT",
+                "DC",
+                "DE",
+                "FL",
+                "GA",
+                "HI",
+                "ID",
+                "IL",
+                "IN",
+                "IA",
+                "KS",
+                "KY",
+                "LA",
+                "ME",
+                "MD",
+                "MA",
+                "MI",
+                "MN",
+                "MS",
+                "MO",
+                "MT",
+                "NE",
+                "NV",
+                "NH",
+                "NJ",
+                "NM",
+                "NY",
+                "NC",
+                "ND",
+                "OH",
+                "OK",
+                "OR",
+                "PA",
+                "RI",
+                "SC",
+                "SD",
+                "TN",
+                "TX",
+                "UT",
+                "VT",
+                "VA",
+                "WA",
+                "WV",
+                "WI",
+                "WY",
+                "AS",
+                "FM",
+                "GU",
+                "MH",
+                "MP",
+                "PW",
+                "PR",
+                "VI"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 10,
+        "name": "date_of_birth",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 11,
+        "name": "office_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 12,
+        "name": "thumbnail_image_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "website_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 14,
+        "name": "campaign_website_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 15,
+        "name": "facebook_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 16,
+        "name": "twitter_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 17,
+        "name": "instagram_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 18,
+        "name": "youtube_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 19,
+        "name": "linkedin_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 20,
+        "name": "tiktok_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 21,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 22,
+        "name": "party:PoliticalParty",
+        "type_info": {
+          "Custom": {
+            "name": "political_party",
+            "kind": {
+              "Enum": [
+                "democratic",
+                "republican",
+                "libertarian",
+                "green",
+                "constitution",
+                "unknown"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 23,
+        "name": "votesmart_candidate_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 24,
+        "name": "votesmart_candidate_bio",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 25,
+        "name": "votesmart_candidate_ratings",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 26,
+        "name": "legiscan_people_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 27,
+        "name": "crp_candidate_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 28,
+        "name": "fec_candidate_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 29,
+        "name": "upcoming_race_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 30,
+        "name": "race_wins",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 31,
+        "name": "race_losses",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 32,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 33,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
       }
     ],
     "parameters": {
@@ -38,8 +264,37 @@
       false,
       false,
       true,
-      true
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false
     ]
   },
-  "hash": "8a901600de7c744d691029da4cb57f6dda2ed926caf0eaaad15d77357b5cde19"
+  "hash": "c4c08624637ba4861b22af871ca61a43279fb341ef45d175b3245e08679374dc"
 }
