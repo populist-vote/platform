@@ -1,5 +1,6 @@
 use async_graphql::{Context, Object, Result, ID};
 use db::models::voting_guide::VotingGuide;
+use uuid::Uuid;
 
 use crate::{context::ApiContext, types::VotingGuideResult};
 
@@ -8,6 +9,41 @@ pub struct VotingGuideQuery;
 
 #[Object]
 impl VotingGuideQuery {
+    async fn voting_guides_by_ids(
+        &self,
+        ctx: &Context<'_>,
+        ids: Vec<ID>,
+    ) -> Result<Vec<VotingGuideResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let ids: Vec<Uuid> = ids
+            .into_iter()
+            .map(|id| Uuid::parse_str(id.as_str()).unwrap())
+            .collect();
+
+        let records = sqlx::query_as!(
+            VotingGuide,
+            r#"
+            SELECT
+                id,
+                user_id,
+                election_id,
+                title,
+                description,
+                created_at,
+                updated_at
+            FROM
+                voting_guide
+            WHERE
+                id = ANY ($1)
+            "#,
+            &ids,
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        Ok(records.into_iter().map(|record| record.into()).collect())
+    }
+
     async fn voting_guide_by_id(
         &self,
         ctx: &Context<'_>,
