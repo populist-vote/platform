@@ -1,34 +1,51 @@
 {
-  "query": "\n            UPDATE voting_guide_candidates\n            SET note = NULL\n            WHERE voting_guide_id = $1 AND candidate_id = $2\n            RETURNING\n                candidate_id,\n                is_endorsement,\n                note\n        ",
+  "query": "\n            SELECT\n                a.congressional_district,\n                a.state_senate_district,\n                a.state_house_district,\n                a.state AS \"state:State\",\n                a.county,\n                a.city\n            FROM\n                address AS a\n                JOIN user_profile up ON user_id = $1\n                JOIN address ON up.address_id = a.id\n                ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "candidate_id",
-        "type_info": "Uuid"
+        "name": "congressional_district",
+        "type_info": "Int4"
       },
       {
         "ordinal": 1,
-        "name": "is_endorsement",
-        "type_info": "Bool"
+        "name": "state_senate_district",
+        "type_info": "Int4"
       },
       {
         "ordinal": 2,
-        "name": "note",
+        "name": "state_house_district",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "state:State",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "county",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "city",
         "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid",
         "Uuid"
       ]
     },
     "nullable": [
+      true,
+      true,
+      true,
       false,
-      false,
-      true
+      true,
+      false
     ]
   },
-  "hash": "c2c46ee84c24b520439da7dd5b5cbf48794f5b52d2f9a92bfaf9704a0761d8a5"
+  "hash": "8cd9cccc4e11e3f5ac54f881612fdb7c4410542e16c221c857475bbb603069ca"
 }

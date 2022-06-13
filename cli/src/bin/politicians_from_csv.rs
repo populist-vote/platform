@@ -55,8 +55,8 @@ async fn example() -> Result<(), Box<dyn Error>> {
 
         let record = sqlx::query!(
             r#"
-            INSERT INTO politician (slug, first_name, middle_name, last_name, suffix, preferred_name, biography, biography_source, home_state, date_of_birth, office_id, thumbnail_image_url, website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, party, votesmart_candidate_id, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses)
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28) 
+            INSERT INTO politician (slug, first_name, middle_name, last_name, suffix, preferred_name, biography, biography_source, home_state, date_of_birth, thumbnail_image_url, website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, party, votesmart_candidate_id, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses)
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27) 
             ON CONFLICT (slug) DO UPDATE
             SET
                 suffix = $5,
@@ -65,18 +65,17 @@ async fn example() -> Result<(), Box<dyn Error>> {
                 biography_source = $8,
                 home_state = $9,
                 date_of_birth = $10,
-                office_id = $11,
-                thumbnail_image_url = $12,
-                website_url = $13,
-                campaign_website_url = $14,
-                facebook_url = $15,
-                twitter_url = $16,
-                instagram_url = $17,
-                youtube_url = $18,
-                linkedin_url = $19,
-                tiktok_url = $20,
-                email = $21,
-                party = $22
+                thumbnail_image_url = $11,
+                website_url = $12,
+                campaign_website_url = $13,
+                facebook_url = $14,
+                twitter_url = $15,
+                instagram_url = $16,
+                youtube_url = $17,
+                linkedin_url = $18,
+                tiktok_url = $19,
+                email = $20,
+                party = $21
             RETURNING id
             "#, 
             new_record_input.slug,
@@ -89,7 +88,6 @@ async fn example() -> Result<(), Box<dyn Error>> {
             new_record_input.biography_source,
             new_record_input.home_state as Option<State>,
             new_record_input.date_of_birth.map(|d| NaiveDate::parse_from_str(&d, "%m/%d/%Y").unwrap()),
-            new_record_input.office_id,
             new_record_input.thumbnail_image_url,
             new_record_input.website_url,
             new_record_input.campaign_website_url,
@@ -109,7 +107,7 @@ async fn example() -> Result<(), Box<dyn Error>> {
             new_record_input.race_losses
         )
         .fetch_one(&pool.connection)
-        .await?;
+        .await;
 
         println!("Created or updated {}", new_record_input.last_name)
     }
