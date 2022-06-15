@@ -34,7 +34,7 @@ pub struct LoginResult {
 
 #[ComplexObject]
 impl AuthTokenResult {
-    async fn user_profile(&self, ctx: &Context<'_>, user_id: ID) -> Result<UserResult> {
+    async fn user_profile(&self, ctx: &Context<'_>) -> Result<UserResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query_as!(
             UserWithProfile,
@@ -42,7 +42,7 @@ impl AuthTokenResult {
             SELECT u.id, u.username, u.email, first_name, last_name FROM user_profile up
             JOIN populist_user u ON up.user_id = u.id WHERE u.id = $1
         "#,
-            uuid::Uuid::parse_str(user_id.as_str()).unwrap(),
+            uuid::Uuid::parse_str(&self.id).unwrap(),
         )
         .fetch_optional(&db_pool)
         .await?;
