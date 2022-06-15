@@ -298,10 +298,21 @@ impl PoliticianResult {
     pub async fn current_office(&self, ctx: &Context<'_>) -> Result<Option<OfficeResult>> {
         let office_result = match &self.office_id {
             Some(id) => {
-                let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-                let office =
-                    Office::find_by_id(&db_pool, uuid::Uuid::parse_str(id).unwrap()).await?;
-                Some(OfficeResult::from(office))
+                let cached_office = ctx
+                    .data::<ApiContext>()?
+                    .loaders
+                    .office_loader
+                    .load_one(uuid::Uuid::parse_str(id).unwrap())
+                    .await?;
+
+                if let Some(office) = cached_office {
+                    Some(OfficeResult::from(office))
+                } else {
+                    let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+                    let record =
+                        Office::find_by_id(&db_pool, uuid::Uuid::parse_str(id).unwrap()).await?;
+                    Some(record.into())
+                }
             }
             None => None,
         };
