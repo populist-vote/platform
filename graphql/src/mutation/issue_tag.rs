@@ -1,7 +1,7 @@
 use async_graphql::*;
 use db::{CreateIssueTagInput, IssueTag, UpdateIssueTagInput};
 
-use crate::{context::ApiContext, mutation::StaffOnly, types::IssueTagResult};
+use crate::{context::ApiContext, guard::StaffOnly, types::IssueTagResult};
 
 #[derive(Default)]
 pub struct IssueTagMutation;

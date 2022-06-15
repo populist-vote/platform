@@ -8,7 +8,7 @@ use std::str::FromStr;
 
 use crate::{
     context::ApiContext,
-    mutation::StaffOnly,
+    guard::StaffOnly,
     types::{Error, OrganizationResult},
 };
 #[derive(Default)]

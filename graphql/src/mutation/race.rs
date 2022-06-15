@@ -1,7 +1,7 @@
 use async_graphql::{Context, Object, Result, SimpleObject};
 use db::{CreateRaceInput, Race, UpdateRaceInput};
 
-use crate::{context::ApiContext, mutation::StaffOnly, types::RaceResult};
+use crate::{context::ApiContext, guard::StaffOnly, types::RaceResult};
 
 #[derive(Default)]
 pub struct RaceMutation;

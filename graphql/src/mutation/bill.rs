@@ -3,7 +3,7 @@ use db::{Bill, CreateArgumentInput, CreateBillInput, UpdateBillInput};
 use sqlx::{Pool, Postgres};
 
 use crate::context::ApiContext;
-use crate::mutation::StaffOnly;
+use crate::guard::StaffOnly;
 use crate::types::BillResult;
 #[derive(Default)]
 pub struct BillMutation;

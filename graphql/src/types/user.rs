@@ -1,5 +1,5 @@
 use super::AddressResult;
-use crate::{context::ApiContext, is_admin, mutation::StaffOnly};
+use crate::{context::ApiContext, guard::UserGuard, is_admin};
 use async_graphql::{ComplexObject, Context, InputObject, Result, SimpleObject, ID};
 use db::{models::enums::State, Address, UserWithProfile};
 
@@ -23,7 +23,7 @@ pub struct UpdateUserProfileInput {
 
 #[ComplexObject]
 impl UserResult {
-    #[graphql(guard = "StaffOnly", visible = "is_admin")] // Change this to be a guard if user = requesting user.
+    #[graphql(guard = "UserGuard::new(&self.id)", visible = "is_admin")]
     async fn address(&self, ctx: &Context<'_>) -> Result<Option<AddressResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query_as!(Address,

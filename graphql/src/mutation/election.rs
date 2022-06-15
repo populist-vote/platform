@@ -1,7 +1,7 @@
 use async_graphql::*;
 use db::{CreateElectionInput, Election, UpdateElectionInput};
 
-use crate::{context::ApiContext, mutation::StaffOnly, types::ElectionResult};
+use crate::{context::ApiContext, guard::StaffOnly, types::ElectionResult};
 #[derive(Default)]
 pub struct ElectionMutation;
 

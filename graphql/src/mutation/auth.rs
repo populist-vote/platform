@@ -1,7 +1,7 @@
 use crate::{
     context::ApiContext,
+    guard::StaffOnly,
     is_admin,
-    mutation::StaffOnly,
     types::{CreateUserResult, Error, LoginResult},
 };
 use async_graphql::*;

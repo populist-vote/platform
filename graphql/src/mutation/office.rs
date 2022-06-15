@@ -1,7 +1,7 @@
 use async_graphql::{Context, Object, Result, SimpleObject};
 use db::{CreateOfficeInput, Office, UpdateOfficeInput};
 
-use crate::{context::ApiContext, mutation::StaffOnly, types::OfficeResult};
+use crate::{context::ApiContext, guard::StaffOnly, types::OfficeResult};
 
 #[derive(Default)]
 pub struct OfficeMutation;

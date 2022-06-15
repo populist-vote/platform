@@ -8,7 +8,7 @@ use sqlx::{Pool, Postgres};
 
 use crate::{
     context::ApiContext,
-    mutation::StaffOnly,
+    guard::StaffOnly,
     types::{Error, PoliticianResult},
     upload_to_s3, File,
 };

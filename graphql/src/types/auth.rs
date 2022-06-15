@@ -1,14 +1,9 @@
-use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
+use async_graphql::{SimpleObject, ID};
 use auth::Claims;
-use db::{Role, User, UserWithProfile};
+use db::{Role, User};
 use jsonwebtoken::TokenData;
 
-use crate::{context::ApiContext, Error};
-
-use super::UserResult;
-
 #[derive(SimpleObject, Debug, Clone)]
-#[graphql(complex)]
 pub struct AuthTokenResult {
     id: ID,
     username: String,
@@ -19,28 +14,6 @@ pub struct AuthTokenResult {
 #[derive(SimpleObject)]
 pub struct CreateUserResult {
     id: ID,
-}
-
-#[ComplexObject]
-impl AuthTokenResult {
-    async fn user_profile(&self, ctx: &Context<'_>) -> Result<UserResult> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let record = sqlx::query_as!(
-            UserWithProfile,
-            r#"
-            SELECT u.id, u.username, u.email, first_name, last_name FROM user_profile up
-            JOIN populist_user u ON user_id = $1
-        "#,
-            uuid::Uuid::parse_str(self.id.as_str()).unwrap(),
-        )
-        .fetch_optional(&db_pool)
-        .await?;
-
-        match record {
-            Some(user) => Ok(user.into()),
-            None => Err(Error::UserNotFound.into()),
-        }
-    }
 }
 
 impl From<User> for CreateUserResult {

@@ -1,51 +1,21 @@
 {
-  "query": "\n            SELECT\n                a.congressional_district,\n                a.state_senate_district,\n                a.state_house_district,\n                a.state AS \"state:State\",\n                a.county,\n                a.city\n            FROM\n                address AS a\n                JOIN user_profile up ON user_id = $1\n                JOIN address ON up.address_id = a.id\n                ",
+  "query": "\n            SELECT id FROM populist_user WHERE email = $1\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "congressional_district",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 1,
-        "name": "state_senate_district",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 2,
-        "name": "state_house_district",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 3,
-        "name": "state:State",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 4,
-        "name": "county",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 5,
-        "name": "city",
-        "type_info": "Text"
+        "name": "id",
+        "type_info": "Uuid"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Text"
       ]
     },
     "nullable": [
-      true,
-      true,
-      true,
-      false,
-      true,
       false
     ]
   },
-  "hash": "8cd9cccc4e11e3f5ac54f881612fdb7c4410542e16c221c857475bbb603069ca"
+  "hash": "7c3de9dc9a7a66c521d2884819f21bde79f41cbb86055b2e8012733795d0f72b"
 }

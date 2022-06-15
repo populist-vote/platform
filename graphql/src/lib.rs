@@ -1,4 +1,5 @@
 pub mod context;
+pub mod guard;
 pub mod mutation;
 pub mod query;
 pub mod relay;
