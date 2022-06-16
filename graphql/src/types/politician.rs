@@ -112,12 +112,14 @@ fn test_calculate_age() {
 #[ComplexObject]
 impl PoliticianResult {
     async fn full_name(&self) -> String {
-        match &self.middle_name {
-            Some(middle_name) => {
-                format!("{} {} {}", &self.first_name, middle_name, &self.last_name)
-            }
-            None => format!("{} {}", &self.first_name, &self.last_name),
-        }
+        format!(
+            "{first_name} {last_name} {suffix}",
+            first_name = &self.preferred_name.as_ref().unwrap_or(&self.first_name),
+            last_name = &self.last_name,
+            suffix = &self.suffix.as_ref().unwrap_or(&"".to_string())
+        )
+        .trim_end()
+        .to_string()
     }
 
     async fn age(&self) -> Option<i64> {
