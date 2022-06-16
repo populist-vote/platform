@@ -334,8 +334,22 @@ impl User {
                         .into();
                 let state_legislative_districts =
                     primary_result.state_legislative_districts.as_ref().unwrap();
-                let state_house_district = &state_legislative_districts.house[0].district_number;
-                let state_senate_district = &state_legislative_districts.senate[0].district_number;
+
+                let state_house_district = &state_legislative_districts.house[0]
+                    .district_number
+                    .parse::<i32>();
+                let state_house_district = match state_house_district {
+                    Ok(district) => Some(district),
+                    Err(_) => None,
+                };
+
+                let state_senate_district = &state_legislative_districts.senate[0]
+                    .district_number
+                    .parse::<i32>();
+                let state_senate_district = match state_senate_district {
+                    Ok(district) => Some(district),
+                    Err(_) => None,
+                };
 
                 let coordinates: geo_types::Geometry<f64> = Some(coordinates)
                     .as_ref()
@@ -373,8 +387,8 @@ impl User {
                     address.country,
                     wkb::geom_to_wkb(&coordinates).unwrap() as _,
                     Some(congressional_district),
-                    Some(state_house_district.parse::<i32>().unwrap()),
-                    Some(state_senate_district.parse::<i32>().unwrap()),
+                    state_house_district,
+                    state_senate_district,
                 )
                 .fetch_one(db_pool)
                 .await;
