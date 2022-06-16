@@ -384,7 +384,9 @@ impl User {
                     Err(err) => Err(err.into()),
                 }
             }
-            Err(err) => Err(Error::Custom(err.to_string())),
+            Err(_) => Err(Error::Custom(
+                "This is not a valid voting address".to_string(),
+            )),
         }
     }
 }
