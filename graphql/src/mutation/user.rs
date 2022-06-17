@@ -1,6 +1,7 @@
 use async_graphql::{Context, Object, Result, SimpleObject, ID};
 use auth::Claims;
 use db::{AddressInput, User};
+use http::header::SET_COOKIE;
 use jsonwebtoken::TokenData;
 
 use crate::{
@@ -194,6 +195,14 @@ impl UserMutation {
         )
         .fetch_one(&db_pool)
         .await?;
+
+        ctx.insert_http_header(
+            SET_COOKIE,
+            format!(
+                "access_token=null; expires={}; Max-Age=0; HttpOnly; SameSite=None; Secure",
+                (chrono::Utc::now() - chrono::Duration::hours(1)).format("%a, %d %b %Y %T GMT")
+            ),
+        );
 
         Ok(result.id.into())
     }
