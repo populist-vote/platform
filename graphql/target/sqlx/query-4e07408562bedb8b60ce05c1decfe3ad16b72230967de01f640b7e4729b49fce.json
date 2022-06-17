@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT id FROM populist_user WHERE email = $1\n        ",
+  "query": "\n            DELETE FROM populist_user WHERE id = $1\n            RETURNING id\n        ",
   "describe": {
     "columns": [
       {
@@ -10,12 +10,12 @@
     ],
     "parameters": {
       "Left": [
-        "Text"
+        "Uuid"
       ]
     },
     "nullable": [
       false
     ]
   },
-  "hash": "7c3de9dc9a7a66c521d2884819f21bde79f41cbb86055b2e8012733795d0f72b"
+  "hash": "b16a90415ad9c7504dee58ddb432807631c759dab889dce18e7d180488419a0f"
 }

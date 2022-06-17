@@ -1,4 +1,4 @@
-use async_graphql::{Context, Object, Result, SimpleObject};
+use async_graphql::{Context, Object, Result, SimpleObject, ID};
 use auth::Claims;
 use db::{AddressInput, User};
 use jsonwebtoken::TokenData;
@@ -172,5 +172,29 @@ impl UserMutation {
         let result = User::update_address(&db_pool, user_id, address).await?;
 
         Ok(result.into())
+    }
+
+    #[graphql(visible = "is_admin")]
+    async fn delete_account(&self, ctx: &Context<'_>) -> Result<ID> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let user_id = ctx
+            .data::<Option<TokenData<Claims>>>()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .claims
+            .sub;
+
+        let result = sqlx::query!(
+            r#"
+            DELETE FROM populist_user WHERE id = $1
+            RETURNING id
+        "#,
+            user_id
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(result.id.into())
     }
 }
