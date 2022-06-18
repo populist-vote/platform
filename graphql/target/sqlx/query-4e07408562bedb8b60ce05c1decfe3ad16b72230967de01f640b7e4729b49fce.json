@@ -1,21 +1,37 @@
 {
-  "query": "\n            DELETE FROM populist_user WHERE id = $1\n            RETURNING id\n        ",
+  "query": "\n            INSERT INTO voting_guide_candidates (voting_guide_id, candidate_id, is_endorsement, note)\n                VALUES($1, $2, COALESCE($3, FALSE), $4) ON CONFLICT (voting_guide_id, candidate_id)\n                DO\n                UPDATE\n                SET\n                    is_endorsement = COALESCE($3, voting_guide_candidates.is_endorsement, FALSE),\n                    note = COALESCE($4, voting_guide_candidates.note)\n            WHERE (SELECT user_id FROM voting_guide WHERE id = $1) = $5\n            RETURNING\n                candidate_id,\n                is_endorsement,\n                note\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id",
+        "name": "candidate_id",
         "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "is_endorsement",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 2,
+        "name": "note",
+        "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
+        "Uuid",
+        "Uuid",
+        "Bool",
+        "Text",
         "Uuid"
       ]
     },
     "nullable": [
-      false
+      false,
+      false,
+      true
     ]
   },
-  "hash": "b16a90415ad9c7504dee58ddb432807631c759dab889dce18e7d180488419a0f"
+  "hash": "8ab1b2b1af80ada2573bdbca3e0538d90e8201b7b6614d208514163fed118f24"
 }

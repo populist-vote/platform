@@ -71,6 +71,13 @@ impl VotingGuideMutation {
         input: UpsertVotingGuideCandidateInput,
     ) -> Result<VotingGuideCandidateResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let user_id = ctx
+            .data::<Option<TokenData<Claims>>>()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .claims
+            .sub;
         let record = sqlx::query!(
             r#"
             INSERT INTO voting_guide_candidates (voting_guide_id, candidate_id, is_endorsement, note)
@@ -80,6 +87,7 @@ impl VotingGuideMutation {
                 SET
                     is_endorsement = COALESCE($3, voting_guide_candidates.is_endorsement, FALSE),
                     note = COALESCE($4, voting_guide_candidates.note)
+            WHERE (SELECT user_id FROM voting_guide WHERE id = $1) = $5
             RETURNING
                 candidate_id,
                 is_endorsement,
@@ -89,6 +97,7 @@ impl VotingGuideMutation {
             Uuid::parse_str(input.candidate_id.as_str()).unwrap(),
             input.is_endorsement,
             input.note,
+            user_id,
         )
         .fetch_one(&db_pool)
         .await?;

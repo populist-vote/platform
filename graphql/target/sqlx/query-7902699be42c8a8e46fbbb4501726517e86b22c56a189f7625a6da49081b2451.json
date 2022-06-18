@@ -1,5 +1,5 @@
 {
-  "query": "\n                SELECT id, slug, title, bill_number, legislation_status AS \"legislation_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, history, votesmart_bill_id, b.created_at, b.updated_at FROM bill b\n                JOIN bill_sponsors \n                ON bill_sponsors.bill_id = id\n                WHERE bill_sponsors.politician_id = $1\n            ",
+  "query": "\n            SELECT a.id, a.line_1, a.line_2, a.city, a.county, a.state AS \"state:State\", a.postal_code, a.country, a.congressional_district, a.state_senate_district, a.state_house_district FROM address AS a\n            JOIN user_profile up ON user_id = $1\n            JOIN address ON up.address_id = a.id\n        ",
   "describe": {
     "columns": [
       {
@@ -9,86 +9,53 @@
       },
       {
         "ordinal": 1,
-        "name": "slug",
+        "name": "line_1",
         "type_info": "Text"
       },
       {
         "ordinal": 2,
-        "name": "title",
+        "name": "line_2",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "bill_number",
+        "name": "city",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "legislation_status:LegislationStatus",
-        "type_info": {
-          "Custom": {
-            "name": "legislation_status",
-            "kind": {
-              "Enum": [
-                "introduced",
-                "passed_house",
-                "passed_senate",
-                "failed_house",
-                "failed_senate",
-                "resolving_differences",
-                "sent_to_executive",
-                "became_law",
-                "vetoed",
-                "unknown"
-              ]
-            }
-          }
-        }
+        "name": "county",
+        "type_info": "Text"
       },
       {
         "ordinal": 5,
-        "name": "description",
+        "name": "state:State",
         "type_info": "Text"
       },
       {
         "ordinal": 6,
-        "name": "official_summary",
+        "name": "postal_code",
         "type_info": "Text"
       },
       {
         "ordinal": 7,
-        "name": "populist_summary",
+        "name": "country",
         "type_info": "Text"
       },
       {
         "ordinal": 8,
-        "name": "full_text_url",
-        "type_info": "Text"
+        "name": "congressional_district",
+        "type_info": "Int4"
       },
       {
         "ordinal": 9,
-        "name": "legiscan_bill_id",
+        "name": "state_senate_district",
         "type_info": "Int4"
       },
       {
         "ordinal": 10,
-        "name": "history",
-        "type_info": "Jsonb"
-      },
-      {
-        "ordinal": 11,
-        "name": "votesmart_bill_id",
+        "name": "state_house_district",
         "type_info": "Int4"
-      },
-      {
-        "ordinal": 12,
-        "name": "created_at",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 13,
-        "name": "updated_at",
-        "type_info": "Timestamptz"
       }
     ],
     "parameters": {
@@ -99,19 +66,16 @@
     "nullable": [
       false,
       false,
-      false,
-      false,
-      false,
-      true,
-      true,
-      true,
-      true,
       true,
       false,
       true,
       false,
-      false
+      false,
+      false,
+      true,
+      true,
+      true
     ]
   },
-  "hash": "8c530a0c9163e67b1d4e72157e57d115eef68b40ebc4f3d149f3b93cb01e803a"
+  "hash": "3f0cfdfe223e1df0cfb1d4e45ebff9a93bdea21423d94b2331b71f62d1fdc7ca"
 }
