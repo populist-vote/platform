@@ -6,7 +6,7 @@ use db::{
         office::Office,
         politician::Politician,
     },
-    DateTime,
+    DateTime, ElectionScope,
 };
 
 #[derive(SimpleObject, Debug, Clone)]
@@ -18,6 +18,7 @@ pub struct OfficeResult {
     office_type: Option<String>,
     district: Option<String>,
     political_scope: PoliticalScope,
+    election_scope: ElectionScope,
     state: Option<State>,
     municipality: Option<String>,
     created_at: DateTime,
@@ -90,6 +91,7 @@ impl From<Office> for OfficeResult {
             office_type: o.office_type,
             district: o.district,
             political_scope: o.political_scope,
+            election_scope: o.election_scope,
             state: o.state,
             municipality: o.municipality,
             created_at: o.created_at,
