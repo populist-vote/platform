@@ -1,37 +1,29 @@
 {
-  "query": "\n            INSERT INTO voting_guide_candidates (voting_guide_id, candidate_id, is_endorsement, note)\n                VALUES($1, $2, COALESCE($3, FALSE), $4) ON CONFLICT (voting_guide_id, candidate_id)\n                DO\n                UPDATE\n                SET\n                    is_endorsement = COALESCE($3, voting_guide_candidates.is_endorsement, FALSE),\n                    note = COALESCE($4, voting_guide_candidates.note)\n            WHERE (SELECT user_id FROM voting_guide WHERE id = $1) = $5\n            RETURNING\n                candidate_id,\n                is_endorsement,\n                note\n        ",
+  "query": "\n            UPDATE user_profile SET first_name = $1, last_name = $2\n            WHERE user_id = $3\n            RETURNING first_name, last_name\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "candidate_id",
-        "type_info": "Uuid"
+        "name": "first_name",
+        "type_info": "Text"
       },
       {
         "ordinal": 1,
-        "name": "is_endorsement",
-        "type_info": "Bool"
-      },
-      {
-        "ordinal": 2,
-        "name": "note",
+        "name": "last_name",
         "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid",
-        "Uuid",
-        "Bool",
+        "Text",
         "Text",
         "Uuid"
       ]
     },
     "nullable": [
-      false,
-      false,
+      true,
       true
     ]
   },
-  "hash": "8ab1b2b1af80ada2573bdbca3e0538d90e8201b7b6614d208514163fed118f24"
+  "hash": "722cfb9974f5c78359106ea1754801fb454006b9c2919919b6fae75919f3afee"
 }

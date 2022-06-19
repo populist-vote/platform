@@ -1344,6 +1344,156 @@
       ]
     }
   },
+  "93de20a6f00b41aea7ccc24d594baec17dbb2b8cb66c97b54722c0ae0a537899": {
+    "query": "\n            UPDATE populist_user SET username = $1\n            WHERE id = $2\n            RETURNING id, email, username, password, role AS \"role:Role\", created_at, confirmed_at, updated_at\n        ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "email",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "username",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "password",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "role:Role",
+          "type_info": {
+            "Custom": {
+              "name": "user_role",
+              "kind": {
+                "Enum": [
+                  "superuser",
+                  "staff",
+                  "premium",
+                  "basic"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 6,
+          "name": "confirmed_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 7,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    }
+  },
+  "9a729b061294493dec40a66d979fa4bdaa369823cf29c9c3aeda9981b59e7b5b": {
+    "query": "\n            UPDATE populist_user SET email = $1\n            WHERE id = $2\n            RETURNING id, email, username, password, role AS \"role:Role\", created_at, confirmed_at, updated_at\n        ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "email",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "username",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "password",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "role:Role",
+          "type_info": {
+            "Custom": {
+              "name": "user_role",
+              "kind": {
+                "Enum": [
+                  "superuser",
+                  "staff",
+                  "premium",
+                  "basic"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 6,
+          "name": "confirmed_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 7,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ]
+    }
+  },
   "a07d35cc871557a18f7072e324420298b53a200dc2d8d7cb968024039976851f": {
     "query": "\n            SELECT\n                    id,\n                    user_id,\n                    election_id,\n                    title,\n                    description,\n                    created_at,\n                    updated_at\n                FROM\n                    voting_guide\n                WHERE\n                    election_id = $1 AND\n                    user_id = $2\n\n        ",
     "describe": {
@@ -1897,48 +2047,6 @@
         true,
         true,
         false,
-        false
-      ]
-    }
-  },
-  "d51e5ddeea88c31664afb92d96701797407af64c36e05986df4215a5c4718d47": {
-    "query": "\n            UPDATE populist_user SET username = $1\n            WHERE id = $2\n            RETURNING username\n        ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "username",
-          "type_info": "Text"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Uuid"
-        ]
-      },
-      "nullable": [
-        false
-      ]
-    }
-  },
-  "f04d8b244bddc0a0669f60a2ec41265fb9fcbdb0992a2c0e81e78e89b9dad1bf": {
-    "query": "\n            UPDATE populist_user SET email = $1\n            WHERE id = $2\n            RETURNING email\n        ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "email",
-          "type_info": "Text"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Uuid"
-        ]
-      },
-      "nullable": [
         false
       ]
     }

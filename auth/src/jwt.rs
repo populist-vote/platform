@@ -4,6 +4,7 @@ use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, 
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -36,7 +37,7 @@ pub fn create_access_token_for_user(user_record: User) -> Result<String, Error> 
         &EncodingKey::from_secret(key.as_bytes()),
     ) {
         Ok(t) => t,
-        Err(e) => panic!("Something went wrong encoding a JWT: {}", e), //TODO properly handle this
+        Err(e) => panic!("Something went wrong encoding a JWT: {}", e),
     };
 
     Ok(token)

@@ -1,6 +1,6 @@
 use async_graphql::{Context, Object, Result, SimpleObject, ID};
-use auth::Claims;
-use db::{AddressInput, User};
+use auth::{create_access_token_for_user, Claims};
+use db::{AddressInput, Role, User};
 use http::header::SET_COOKIE;
 use jsonwebtoken::TokenData;
 
@@ -45,11 +45,12 @@ impl UserMutation {
             .unwrap()
             .claims
             .sub;
-        let updated_record_result = sqlx::query!(
+        let updated_record = sqlx::query_as!(
+            User,
             r#"
             UPDATE populist_user SET username = $1
             WHERE id = $2
-            RETURNING username
+            RETURNING id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at
         "#,
             username,
             user_id,
@@ -57,10 +58,20 @@ impl UserMutation {
         .fetch_one(&db_pool)
         .await;
 
-        match updated_record_result {
-            Ok(updated_record) => Ok(UpdateUsernameResult {
-                username: updated_record.username,
-            }),
+        match updated_record {
+            Ok(user) => {
+                let access_token = create_access_token_for_user(user.clone())?;
+                ctx.insert_http_header(
+                    SET_COOKIE,
+                    format!(
+                        "access_token={}; HttpOnly; SameSite=None; Secure",
+                        access_token
+                    ),
+                );
+                Ok(UpdateUsernameResult {
+                    username: user.username,
+                })
+            }
             Err(err) => match err {
                 sqlx::Error::RowNotFound => Err(Error::UserNotFound.into()),
                 sqlx::Error::Database(err)
@@ -87,11 +98,12 @@ impl UserMutation {
             .unwrap()
             .claims
             .sub;
-        let updated_record_result = sqlx::query!(
+        let updated_record = sqlx::query_as!(
+            User,
             r#"
             UPDATE populist_user SET email = $1
             WHERE id = $2
-            RETURNING email
+            RETURNING id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at
         "#,
             email,
             user_id,
@@ -99,10 +111,18 @@ impl UserMutation {
         .fetch_one(&db_pool)
         .await;
 
-        match updated_record_result {
-            Ok(updated_record) => Ok(UpdateEmailResult {
-                email: updated_record.email,
-            }),
+        match updated_record {
+            Ok(user) => {
+                let access_token = create_access_token_for_user(user.clone())?;
+                ctx.insert_http_header(
+                    SET_COOKIE,
+                    format!(
+                        "access_token={}; HttpOnly; SameSite=None; Secure",
+                        access_token
+                    ),
+                );
+                Ok(UpdateEmailResult { email: user.email })
+            }
             Err(err) => match err {
                 sqlx::Error::RowNotFound => Err(Error::UserNotFound.into()),
                 sqlx::Error::Database(err)
@@ -130,7 +150,7 @@ impl UserMutation {
             .unwrap()
             .claims
             .sub;
-        let updated_record_result = sqlx::query!(
+        let updated_record = sqlx::query!(
             r#"
             UPDATE user_profile SET first_name = $1, last_name = $2
             WHERE user_id = $3
@@ -143,10 +163,10 @@ impl UserMutation {
         .fetch_one(&db_pool)
         .await;
 
-        match updated_record_result {
-            Ok(updated_record) => Ok(UpdateNameResult {
-                first_name: updated_record.first_name,
-                last_name: updated_record.last_name,
+        match updated_record {
+            Ok(user_profile) => Ok(UpdateNameResult {
+                first_name: user_profile.first_name,
+                last_name: user_profile.last_name,
             }),
             Err(err) => match err {
                 sqlx::Error::RowNotFound => Err(Error::UserNotFound.into()),
