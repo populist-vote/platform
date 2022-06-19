@@ -24,7 +24,7 @@ pub fn create_temporary_username(email: String) -> String {
     let mut rng = rand::thread_rng();
 
     let mut base = email.split('@').collect::<Vec<&str>>()[0].to_string();
-    base.retain(|c| !r#"(),"-;:'"#.contains(c));
+    base.retain(|c| !r#"+(),"-;:'"#.contains(c));
     let rnd_int: i32 = rng.gen();
     format!("{}{}", base, rnd_int)
 }
