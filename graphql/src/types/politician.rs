@@ -53,6 +53,8 @@ pub struct PoliticianResult {
     votesmart_candidate_bio: Option<GetCandidateBioResponse>,
     votesmart_candidate_ratings: Vec<VsRating>,
     upcoming_race_id: Option<ID>,
+    race_wins: Option<i32>,
+    race_losses: Option<i32>,
     created_at: DateTime,
     updated_at: DateTime,
 }
@@ -370,6 +372,8 @@ impl From<Politician> for PoliticianResult {
             )
             .unwrap_or_default(),
             upcoming_race_id: p.upcoming_race_id.map(ID::from),
+            race_wins: p.race_wins,
+            race_losses: p.race_losses,
             created_at: p.created_at,
             updated_at: p.updated_at,
         }
