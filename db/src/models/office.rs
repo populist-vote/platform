@@ -50,6 +50,8 @@ pub enum District {
     StateSenate,
     StateHouse,
     School,
+    City,
+    County,
 }
 
 #[derive(
