@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use async_graphql::{
     extensions::{
         apollo_persisted_queries::{ApolloPersistedQueries, LruCacheStorage},
@@ -8,13 +6,11 @@ use async_graphql::{
     http::{playground_source, GraphQLPlaygroundConfig},
     Request,
 };
-
 use async_graphql_poem::GraphQLResponse;
 use auth::jwt;
 use config::Environment;
 use dotenv::dotenv;
 use graphql::{context::ApiContext, new_schema, PopulistSchema};
-use log::info;
 use poem::{
     get, handler,
     http::HeaderMap,
@@ -25,6 +21,9 @@ use poem::{
 };
 use regex::Regex;
 use serde_json::Value;
+use std::str::FromStr;
+use tracing::{info, Level};
+use tracing_subscriber::FmtSubscriber;
 
 #[handler]
 fn root() -> impl IntoResponse {
@@ -102,6 +101,10 @@ pub fn cors(environment: Environment) -> Cors {
 async fn main() -> Result<(), std::io::Error> {
     dotenv().ok();
     pretty_env_logger::init();
+    let subscriber = FmtSubscriber::builder()
+        .with_max_level(Level::TRACE)
+        .finish();
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
@@ -142,3 +145,5 @@ async fn main() -> Result<(), std::io::Error> {
 
     Server::new(listener).run(app).await
 }
+
+
