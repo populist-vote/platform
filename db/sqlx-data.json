@@ -40,7 +40,9 @@
                   "us_congressional",
                   "state_senate",
                   "state_house",
-                  "school"
+                  "school",
+                  "city",
+                  "county"
                 ]
               }
             }
@@ -272,7 +274,9 @@
                   "us_congressional",
                   "state_senate",
                   "state_house",
-                  "school"
+                  "school",
+                  "city",
+                  "county"
                 ]
               }
             }
@@ -693,7 +697,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -1240,7 +1249,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -2063,7 +2077,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -2354,7 +2373,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -2507,7 +2531,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -2628,7 +2657,9 @@
                   "us_congressional",
                   "state_senate",
                   "state_house",
-                  "school"
+                  "school",
+                  "city",
+                  "county"
                 ]
               }
             }
@@ -3377,7 +3408,9 @@
                   "us_congressional",
                   "state_senate",
                   "state_house",
-                  "school"
+                  "school",
+                  "city",
+                  "county"
                 ]
               }
             }
@@ -4063,7 +4096,9 @@
                   "us_congressional",
                   "state_senate",
                   "state_house",
-                  "school"
+                  "school",
+                  "city",
+                  "county"
                 ]
               }
             }
@@ -4294,7 +4329,9 @@
                   "us_congressional",
                   "state_senate",
                   "state_house",
-                  "school"
+                  "school",
+                  "city",
+                  "county"
                 ]
               }
             }
@@ -4534,7 +4571,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -4948,7 +4990,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -5103,7 +5150,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -5241,7 +5293,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -6284,7 +6341,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -6424,7 +6486,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -6570,7 +6637,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -6879,7 +6951,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -7200,7 +7277,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -7355,7 +7437,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -7867,7 +7954,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -8002,7 +8094,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -9252,7 +9349,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -9397,7 +9499,9 @@
                   "us_congressional",
                   "state_senate",
                   "state_house",
-                  "school"
+                  "school",
+                  "city",
+                  "county"
                 ]
               }
             }
@@ -9690,7 +9794,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }
@@ -9827,7 +9936,12 @@
                   "libertarian",
                   "green",
                   "constitution",
-                  "unknown"
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
                 ]
               }
             }

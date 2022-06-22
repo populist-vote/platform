@@ -106,14 +106,23 @@ impl ElectionResult {
                 race r
                 JOIN office o ON office_id = o.id
             WHERE
-                election_id = $1
-                AND o.election_scope = 'national'
-                OR (o.election_scope = 'state' AND o.state = $2)
-                OR (o.election_scope = 'city' AND o.municipality = $3)
-                OR (o.election_scope = 'county' AND o.municipality = $4)  
-                OR (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5)
-                OR (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6)
-                OR (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7)
+                r.election_id = $1
+                AND(o.election_scope = 'national'
+                    OR(o.election_scope = 'state'
+                        AND o.state = $2)
+                    OR(o.election_scope = 'city'
+                        AND o.municipality = $3)
+                    OR(o.election_scope = 'county'
+                        AND o.municipality = $4)
+                    OR(o.election_scope = 'district'
+                        AND o.district_type = 'us_congressional'
+                        AND o.district = $5)
+                    OR(o.election_scope = 'district'
+                        AND o.district_type = 'state_senate'
+                        AND o.district = $6)
+                    OR(o.election_scope = 'district'
+                        AND o.district_type = 'state_house'
+                        AND o.district = $7))
                 "#,
                 uuid::Uuid::parse_str(&self.id).unwrap(),
                 user_address_data.state as State,
