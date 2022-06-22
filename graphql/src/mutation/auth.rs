@@ -171,7 +171,7 @@ impl AuthMutation {
                 }
             }
             Err(err) => match err {
-                geocodio::Error::BadAddress(err) => Err(Error::BadAddress),
+                geocodio::Error::BadAddress(_err) => Err(Error::BadAddress),
                 _ => Err(err.into()),
             },
         }
