@@ -58,6 +58,9 @@ pub enum Error {
 
     #[error("Reset token was invalid or expired")]
     ResetTokenInvalid,
+
+    #[error("Please provide a valid voting address")]
+    BadAddress,
 }
 
 impl ErrorExtensions for Error {

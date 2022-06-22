@@ -170,7 +170,10 @@ impl AuthMutation {
                     Err(err) => Err(err.into()),
                 }
             }
-            Err(err) => Err(err.into()),
+            Err(err) => match err {
+                geocodio::Error::BadAddress(err) => Err(Error::BadAddress),
+                _ => Err(err.into()),
+            },
         }
     }
 
