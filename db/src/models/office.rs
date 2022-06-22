@@ -31,6 +31,7 @@ pub struct Office {
     Display, Enum, Debug, Copy, Clone, Eq, PartialEq, EnumString, sqlx::Type, Serialize, Deserialize,
 )]
 #[strum(ascii_case_insensitive)]
+#[serde(rename_all = "lowercase")]
 #[sqlx(type_name = "election_scope", rename_all = "lowercase")]
 pub enum ElectionScope {
     National,
@@ -44,9 +45,10 @@ pub enum ElectionScope {
     Display, Enum, Debug, Copy, Clone, Eq, PartialEq, EnumString, sqlx::Type, Serialize, Deserialize,
 )]
 #[strum(ascii_case_insensitive)]
+#[serde(rename_all = "snake_case")]
 #[sqlx(type_name = "district_type", rename_all = "snake_case")]
 pub enum District {
-    USCongressional,
+    UsCongressional,
     StateSenate,
     StateHouse,
     School,
@@ -58,6 +60,7 @@ pub enum District {
     Display, Enum, Debug, Copy, Clone, Eq, PartialEq, EnumString, sqlx::Type, Serialize, Deserialize,
 )]
 #[strum(ascii_case_insensitive)]
+#[serde(rename_all = "lowercase")]
 #[sqlx(type_name = "chamber", rename_all = "lowercase")]
 pub enum Chamber {
     House,

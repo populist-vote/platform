@@ -17,6 +17,7 @@ use strum_macros::{Display, EnumIter, EnumString};
     Deserialize,
 )]
 #[sqlx(type_name = "political_scope", rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
 pub enum PoliticalScope {
     Local,
     State,
@@ -181,6 +182,7 @@ impl FullState for State {
 )]
 #[strum(ascii_case_insensitive)]
 #[sqlx(type_name = "political_party", rename_all = "lowercase")]
+// #[serde(rename_all = "lowercase")]
 pub enum PoliticalParty {
     Democratic,
     Republican,
@@ -201,6 +203,7 @@ impl Default for PoliticalParty {
 )]
 #[strum(ascii_case_insensitive)]
 #[sqlx(type_name = "race_type", rename_all = "lowercase")]
+// #[serde(rename_all = "lowercase")]
 pub enum RaceType {
     Primary,
     General,
