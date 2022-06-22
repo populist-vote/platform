@@ -181,14 +181,20 @@ impl FullState for State {
     Enum, Debug, Copy, Clone, Eq, PartialEq, EnumString, sqlx::Type, Serialize, Deserialize,
 )]
 #[strum(ascii_case_insensitive)]
-#[sqlx(type_name = "political_party", rename_all = "lowercase")]
-// #[serde(rename_all = "lowercase")]
+#[sqlx(type_name = "political_party", rename_all = "snake_case")]
+// #[serde(rename_all = "snake_case")]
 pub enum PoliticalParty {
     Democratic,
     Republican,
     Libertarian,
+    Freedom,
+    Unity,
     Green,
     Constitution,
+    Independent,
+    #[serde(rename = "Approval Voting")]
+    ApprovalVoting,
+    Unaffiliated,
     Unknown,
 }
 

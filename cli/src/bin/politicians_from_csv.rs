@@ -44,7 +44,7 @@ struct PoliticianRow {
     pub upcoming_race_id: Option<uuid::Uuid>,
 }
 
-async fn example() -> Result<(), Box<dyn Error>> {
+async fn upsert_politicians_from_csv() -> Result<(), Box<dyn Error>> {
     // Init database connection singleton
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
@@ -57,7 +57,7 @@ async fn example() -> Result<(), Box<dyn Error>> {
         let record = sqlx::query!(
             r#"
             INSERT INTO politician (slug, first_name, middle_name, last_name, suffix, preferred_name, biography, biography_source, home_state, date_of_birth, thumbnail_image_url, website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, party, votesmart_candidate_id, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses, upcoming_race_id)
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28) 
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
             ON CONFLICT (slug) DO UPDATE
             SET
                 suffix = $5,
@@ -81,7 +81,7 @@ async fn example() -> Result<(), Box<dyn Error>> {
                 race_losses = $27,
                 upcoming_race_id = $28
             RETURNING id
-            "#, 
+            "#,
             new_record_input.slug,
             new_record_input.first_name,
             new_record_input.middle_name,
@@ -122,8 +122,8 @@ async fn example() -> Result<(), Box<dyn Error>> {
 
 #[tokio::main]
 async fn main() {
-    if let Err(err) = example().await {
-        println!("error running example: {}", err);
+    if let Err(err) = upsert_politicians_from_csv().await {
+        println!("error upserting politicians: {}", err);
         process::exit(1);
     }
 }
