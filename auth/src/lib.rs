@@ -22,11 +22,11 @@ pub fn create_temporary_password() -> String {
 /// Create a username with the email root and a random number
 pub fn create_temporary_username(email: String) -> String {
     let mut rng = rand::thread_rng();
-
-    let mut base = email.split('@').collect::<Vec<&str>>()[0].to_string();
-    base.retain(|c| !r#"+(),"-;:'"#.contains(c));
+    let base = email.split('@').collect::<Vec<&str>>()[0].to_string();
     let rnd_int: i32 = rng.gen();
-    let raw = format!("{}{}", base, rnd_int);
+    let mut raw = format!("{}{}", base, rnd_int);
+    // Strip all undesirable characters per the postgres constraint
+    raw.retain(|c| !r#"+(),"-;:'-"#.contains(c));
     truncate(&raw, 20).to_string()
 }
 
