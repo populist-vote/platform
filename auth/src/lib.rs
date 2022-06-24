@@ -36,3 +36,12 @@ fn truncate(s: &str, max_chars: usize) -> &str {
         Some((idx, _)) => &s[..idx],
     }
 }
+
+#[test]
+fn test_create_temporary_username() {
+    let input = "lai.henry+69@gmail.com";
+    let result = create_temporary_username(input.to_string());
+    assert!(regex::Regex::new(r"^{3,20}[a-zA-Z0-9._]")
+        .unwrap()
+        .is_match(&result));
+}
