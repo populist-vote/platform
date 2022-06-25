@@ -22,7 +22,20 @@ impl ElectionQuery {
     async fn next_election(&self, ctx: &Context<'_>) -> FieldResult<ElectionResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query_as!(Election,
-            "SELECT id, slug, title, description, election_date FROM election WHERE election_date > NOW() LIMIT 1", )
+            "SELECT
+                id,
+                slug,
+                title,
+                description,
+                election_date
+            FROM
+                election
+            WHERE
+                election_date > NOW()
+            ORDER BY
+                election_date ASC
+            LIMIT 1" 
+            )
             .fetch_one(&db_pool)
             .await?;
         Ok(record.into())
