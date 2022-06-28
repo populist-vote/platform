@@ -1,14 +1,16 @@
-use async_graphql::{Context, Object, Result, SimpleObject, ID};
-use auth::{create_access_token_for_user, Claims};
-use db::{AddressInput, Role, User};
-use http::header::SET_COOKIE;
-use jsonwebtoken::TokenData;
-
 use crate::{
     context::ApiContext,
     is_admin,
     types::{AddressResult, Error},
+    upload_to_s3, File,
 };
+
+use async_graphql::{Context, Object, Result, SimpleObject, Upload, ID};
+use auth::{create_access_token_for_user, Claims};
+use db::{AddressInput, Role, User};
+use http::header::SET_COOKIE;
+use jsonwebtoken::TokenData;
+use std::io::Read;
 
 #[derive(Default)]
 pub struct UserMutation;
@@ -31,6 +33,45 @@ struct UpdateNameResult {
 
 #[Object]
 impl UserMutation {
+    #[graphql(visible = "is_admin")]
+    async fn upload_profile_picture(&self, ctx: &Context<'_>, file: Upload) -> Result<bool> {
+        let user_id = ctx
+            .data::<Option<TokenData<Claims>>>()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .claims
+            .sub;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let upload = file.value(ctx).unwrap();
+        let mut content = Vec::new();
+        let filename = upload.filename.clone();
+        let mimetype = upload.content_type.clone();
+
+        upload.into_read().read_to_end(&mut content).unwrap();
+        let file_info = File {
+            id: ID::from(uuid::Uuid::new_v4()),
+            filename,
+            content,
+            mimetype,
+        };
+        let url = upload_to_s3(file_info, "user-assets".to_string())
+            .await?
+            .to_string();
+        let _updated_record = sqlx::query!(
+            r#"
+            UPDATE user_profile SET profile_picture_url = $1
+            WHERE user_id = $2
+            RETURNING profile_picture_url
+        "#,
+            url,
+            user_id
+        )
+        .fetch_one(&db_pool)
+        .await;
+        Ok(true)
+    }
+
     #[graphql(visible = "is_admin")]
     async fn update_username(
         &self,

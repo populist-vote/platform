@@ -11,6 +11,7 @@ pub struct UserResult {
     pub email: String,
     pub first_name: Option<String>,
     pub last_name: Option<String>,
+    pub profile_picture_url: Option<String>,
 }
 
 #[derive(InputObject)]
@@ -52,6 +53,7 @@ impl From<UserWithProfile> for UserResult {
             email: user.email,
             first_name: user.first_name,
             last_name: user.last_name,
+            profile_picture_url: user.profile_picture_url,
         }
     }
 }

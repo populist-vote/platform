@@ -19,7 +19,6 @@ slab = "0.4.5"
 dotenv = "*"
 anyhow = "1.0.45"
 sqlx = { version = "0.5.9", features = ["postgres", "offline"] }
-pretty_env_logger = "0.4.0"
 uuid = "0.8.2"
 thiserror = "1.0.30"
 pwhash = "1.0.0"

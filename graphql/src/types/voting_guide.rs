@@ -56,7 +56,8 @@ impl VotingGuideResult {
                 u.username,
                 u.email,
                 up.first_name,
-                up.last_name
+                up.last_name,
+                up.profile_picture_url
             FROM
                 populist_user u
                 JOIN user_profile up ON u.id = up.user_id
@@ -74,6 +75,7 @@ impl VotingGuideResult {
             email: user.email,
             first_name: user.first_name,
             last_name: user.last_name,
+            profile_picture_url: user.profile_picture_url,
         })
     }
 

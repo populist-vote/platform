@@ -10,10 +10,9 @@ use crate::{
     context::ApiContext,
     guard::StaffOnly,
     types::{Error, PoliticianResult},
-    upload_to_s3, File,
 };
 
-use std::{io::Read, str::FromStr};
+use std::str::FromStr;
 #[derive(Default)]
 pub struct PoliticianMutation;
 
@@ -203,25 +202,6 @@ impl PoliticianMutation {
         }
 
         Ok(PoliticianResult::from(updated_record))
-    }
-
-    // TODO make this generic and accept an associated model e.g Politician
-    #[graphql(guard = "StaffOnly")]
-    async fn upload_politician_thumbnail(&self, ctx: &Context<'_>, file: Upload) -> Result<u16> {
-        let upload = file.value(ctx).unwrap();
-        let mut content = Vec::new();
-        let filename = upload.filename.clone();
-        let mimetype = upload.content_type.clone();
-
-        upload.into_read().read_to_end(&mut content).unwrap();
-        let file_info = File {
-            id: ID::from(uuid::Uuid::new_v4()),
-            filename,
-            content,
-            mimetype,
-        };
-
-        Ok(upload_to_s3(file_info).await?)
     }
 
     #[graphql(guard = "StaffOnly")]

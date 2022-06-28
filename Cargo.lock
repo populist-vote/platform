@@ -2919,7 +2919,6 @@ dependencies = [
  "dotenv",
  "graphql",
  "poem",
- "pretty_env_logger",
  "pwhash",
  "regex",
  "serde_json",

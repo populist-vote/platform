@@ -1,5 +1,6 @@
 use async_graphql::{Context, Object, Result, ID};
 use db::models::voting_guide::VotingGuide;
+use tracing::info;
 use uuid::Uuid;
 
 use crate::{context::ApiContext, types::VotingGuideResult};
@@ -41,6 +42,7 @@ impl VotingGuideQuery {
         .fetch_all(&db_pool)
         .await?;
 
+        info!("called voting_guides_by_ids");
         Ok(records.into_iter().map(|record| record.into()).collect())
     }
 
@@ -65,6 +67,7 @@ impl VotingGuideQuery {
             VotingGuide::find_by_user_id(&db_pool, uuid::Uuid::parse_str(&user_id).unwrap())
                 .await?;
 
+        info!("called voting_guides_by_user_id");
         Ok(records.into_iter().map(|record| record.into()).collect())
     }
 

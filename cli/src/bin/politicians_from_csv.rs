@@ -1,13 +1,11 @@
 use chrono::NaiveDate;
 use db::models::enums::PoliticalParty;
 use db::models::enums::State;
-use db::CreatePoliticianInput;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::error::Error;
 use std::io;
 use std::process;
-use votesmart::VotesmartProxy;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct PoliticianRow {
@@ -52,9 +50,9 @@ async fn upsert_politicians_from_csv() -> Result<(), Box<dyn Error>> {
     // Build the CSV reader and iterate over each record.
     let mut rdr = csv::Reader::from_reader(io::stdin());
     for result in rdr.deserialize() {
-        let mut new_record_input: PoliticianRow = result?;
+        let new_record_input: PoliticianRow = result?;
 
-        let record = sqlx::query!(
+        let _record = sqlx::query!(
             r#"
             INSERT INTO politician (slug, first_name, middle_name, last_name, suffix, preferred_name, biography, biography_source, home_state, date_of_birth, thumbnail_image_url, website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, party, votesmart_candidate_id, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses, upcoming_race_id, office_id)
             VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)

@@ -36,6 +36,7 @@ pub struct UserWithProfile {
     pub username: String,
     pub first_name: Option<String>,
     pub last_name: Option<String>,
+    pub profile_picture_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, InputObject)]

@@ -1,11 +1,11 @@
 {
-  "query": "\n            SELECT password FROM populist_user \n            WHERE id = $1",
+  "query": "\n            DELETE FROM populist_user WHERE id = $1\n            RETURNING id\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "password",
-        "type_info": "Text"
+        "name": "id",
+        "type_info": "Uuid"
       }
     ],
     "parameters": {
@@ -17,5 +17,5 @@
       false
     ]
   },
-  "hash": "b5f8bb777be364f196aa0da547e7527cf58249eb9e172e46e977c9525c8bd508"
+  "hash": "b16a90415ad9c7504dee58ddb432807631c759dab889dce18e7d180488419a0f"
 }

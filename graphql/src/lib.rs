@@ -15,9 +15,13 @@ use async_graphql::{Context, EmptySubscription, Schema, SchemaBuilder, ID};
 
 use auth::Claims;
 use dotenv::dotenv;
+use http::header::HeaderName;
+use http::HeaderMap;
 use jsonwebtoken::TokenData;
 use s3::bucket::Bucket;
 use s3::creds::Credentials;
+use tracing::info;
+use url::Url;
 
 pub type PopulistSchema = Schema<Query, Mutation, EmptySubscription>;
 
@@ -32,7 +36,8 @@ pub struct File {
     pub mimetype: Option<String>,
 }
 
-pub async fn upload_to_s3(file: File) -> Result<u16, Error> {
+pub async fn upload_to_s3(file: File, directory: String) -> Result<Url, Error> {
+    info!("Uploading file to s3");
     dotenv().ok();
     let accesss_key = std::env::var("AWS_ACCESS_KEY")?;
     let secret_key = std::env::var("AWS_SECRET_KEY")?;
@@ -47,18 +52,26 @@ pub async fn upload_to_s3(file: File) -> Result<u16, Error> {
         None,
     )?;
     let bucket = Bucket::new(bucket_name, region, credentials)?;
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        HeaderName::from_static("content-type"),
+        "multipart/form-data".parse().unwrap(),
+    );
 
-    let (_, code) = bucket
+    let path = format!("{}/{}", directory, &file.filename);
+
+    bucket
         .put_object_with_content_type(
-            &file.filename,
+            format!("{}/{}", directory, &file.filename),
             &file.content,
             &file.mimetype.unwrap_or_else(|| "".to_string()),
         )
         .await?;
 
-    // TODO return s3 asset URL
-    println!("{}", code);
-    Ok(code)
+    let bucket_base_url = std::env::var("S3_BUCKET_BASE_URL").expect("S3_BUCKET_BASE_URL not set");
+    let image_url = Url::parse(format!("{}/{}", bucket_base_url, path).as_str()).unwrap();
+
+    Ok(image_url)
 }
 
 pub fn is_admin(ctx: &Context<'_>) -> bool {

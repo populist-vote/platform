@@ -4,9 +4,8 @@ use async_graphql::{
         ApolloTracing,
     },
     http::{playground_source, GraphQLPlaygroundConfig},
-    Request,
 };
-use async_graphql_poem::GraphQLResponse;
+use async_graphql_poem::{GraphQLRequest, GraphQLResponse};
 use auth::jwt;
 use config::Environment;
 use dotenv::dotenv;
@@ -42,7 +41,7 @@ fn ping() -> Json<Value> {
 #[handler]
 async fn graphql_handler(
     schema: Data<&PopulistSchema>,
-    req: Json<Request>,
+    req: GraphQLRequest,
     headers: &HeaderMap,
     cookie_jar: &CookieJar,
 ) -> GraphQLResponse {
@@ -51,7 +50,6 @@ async fn graphql_handler(
         .and_then(|header| header.to_str().ok())
         .and_then(|header| header.split_whitespace().nth(1));
     let bearer_token_data = authorization_header.map(|token| jwt::validate_token(token).unwrap());
-
     let cookie = cookie_jar.get("access_token");
     let cookie_token_data = cookie.map(|token| jwt::validate_token(token.value_str()).unwrap());
 
@@ -100,9 +98,9 @@ pub fn cors(environment: Environment) -> Cors {
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
     dotenv().ok();
-    pretty_env_logger::init();
+
     let subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::TRACE)
+        .with_max_level(Level::DEBUG)
         .finish();
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 

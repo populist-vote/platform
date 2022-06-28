@@ -18,7 +18,7 @@ impl UserQuery {
         let record = sqlx::query_as!(
             UserWithProfile,
             r#"
-            SELECT u.id, u.username, u.email, first_name, last_name FROM user_profile up
+            SELECT u.id, u.username, u.email, first_name, last_name, profile_picture_url FROM user_profile up
             JOIN populist_user u ON up.user_id = u.id WHERE u.id = $1
         "#,
             uuid::Uuid::parse_str(user_id.as_str()).unwrap(),
