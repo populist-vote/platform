@@ -1,5 +1,5 @@
 {
-  "query": "SELECT id, slug, title, description, election_date FROM election WHERE slug = $1",
+  "query": "SELECT\n                id,\n                slug,\n                title,\n                description,\n                election_date\n            FROM\n                election\n            WHERE\n                election_date > NOW() + interval '-7 days'\n            ORDER BY\n                election_date ASC\n            LIMIT 1",
   "describe": {
     "columns": [
       {
@@ -29,9 +29,7 @@
       }
     ],
     "parameters": {
-      "Left": [
-        "Text"
-      ]
+      "Left": []
     },
     "nullable": [
       false,
@@ -41,5 +39,5 @@
       false
     ]
   },
-  "hash": "4137cc0c0aa768aae934488f0d0c5deb86683f401ef4cf0cdc52fa5e030b85ee"
+  "hash": "fe7c341623d910ec858aa2e1ff6d1b5324b843d18aecdad501ba92573e16391e"
 }

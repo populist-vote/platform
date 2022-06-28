@@ -32,7 +32,7 @@ impl ElectionQuery {
             FROM
                 election
             WHERE
-                election_date > NOW()
+                election_date > NOW() + interval '-7 days'
             ORDER BY
                 election_date ASC
             LIMIT 1"
