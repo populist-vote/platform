@@ -25,10 +25,17 @@ pub struct RaceResult {
     ballotpedia_link: Option<String>,
     early_voting_begins_date: Option<chrono::NaiveDate>,
     winner_id: Option<ID>,
+    total_votes: Option<i32>,
     official_website: Option<String>,
     election_id: Option<ID>,
     created_at: DateTime,
     updated_at: DateTime,
+}
+
+#[derive(SimpleObject, Debug, Clone)]
+pub struct RaceCandidate {
+    politician: PoliticianResult,
+    votes: i32,
 }
 
 #[ComplexObject]
@@ -142,6 +149,7 @@ impl From<Race> for RaceResult {
             ballotpedia_link: r.ballotpedia_link,
             early_voting_begins_date: r.early_voting_begins_date,
             winner_id: r.winner_id.map(ID::from),
+            total_votes: r.total_votes,
             official_website: r.official_website,
             election_id: r.election_id.map(ID::from),
             created_at: r.created_at,
