@@ -1,3 +1,4 @@
+mod admin;
 mod auth;
 mod ballot_measure;
 mod bill;

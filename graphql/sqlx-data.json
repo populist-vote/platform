@@ -209,7 +209,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -283,6 +291,24 @@
         true,
         false,
         false
+      ]
+    }
+  },
+  "30bca53d55bfab253f80abfd026fdb41d2dde4c517ed859bb96e6c591780683d": {
+    "query": "\n            SELECT COUNT(*) FROM populist_user\n        ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "count",
+          "type_info": "Int8"
+        }
+      ],
+      "parameters": {
+        "Left": []
+      },
+      "nullable": [
+        null
       ]
     }
   },
@@ -762,7 +788,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -1645,7 +1679,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -1976,7 +2018,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
@@ -2086,7 +2136,15 @@
                   "WA",
                   "WV",
                   "WI",
-                  "WY"
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
                 ]
               }
             }
