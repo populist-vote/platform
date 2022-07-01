@@ -1,4 +1,4 @@
-use async_graphql::{Context, Enum, FieldResult, InputObject, Object};
+use async_graphql::{Context, Enum, InputObject, Object, Result};
 use db::models::enums::PoliticalScope;
 use db::{Politician, PoliticianSearch};
 
@@ -25,11 +25,7 @@ pub struct PoliticianFilter {
 #[allow(clippy::too_many_arguments)]
 #[Object]
 impl PoliticianQuery {
-    async fn politician_by_id(
-        &self,
-        _ctx: &Context<'_>,
-        _id: String,
-    ) -> FieldResult<PoliticianResult> {
+    async fn politician_by_id(&self, _ctx: &Context<'_>, _id: String) -> Result<PoliticianResult> {
         // Look up politician by id in the database
         todo!()
     }
@@ -38,7 +34,7 @@ impl PoliticianQuery {
         &self,
         ctx: &Context<'_>,
         slug: String,
-    ) -> FieldResult<PoliticianResult> {
+    ) -> Result<PoliticianResult> {
         let cached_politician = ctx
             .data::<ApiContext>()?
             .loaders

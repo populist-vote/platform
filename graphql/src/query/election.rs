@@ -11,10 +11,10 @@ impl ElectionQuery {
     async fn elections(
         &self,
         ctx: &Context<'_>,
-        #[graphql(desc = "Search by slug or title")] search: ElectionSearchInput,
+        #[graphql(desc = "Search by slug or title")] search: Option<ElectionSearchInput>,
     ) -> FieldResult<Vec<ElectionResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let records = Election::search(&db_pool, &search).await?;
+        let records = Election::search(&db_pool, &search.unwrap_or_default()).await?;
         let results = records.into_iter().map(ElectionResult::from).collect();
         Ok(results)
     }
