@@ -1,19 +1,21 @@
 {
-  "query": "\n            SELECT COUNT(*) FROM populist_user\n        ",
+  "query": "\n            SELECT election_date FROM election\n            WHERE id = $1\n            ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "count",
-        "type_info": "Int8"
+        "name": "election_date",
+        "type_info": "Date"
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Uuid"
+      ]
     },
     "nullable": [
-      null
+      false
     ]
   },
-  "hash": "30bca53d55bfab253f80abfd026fdb41d2dde4c517ed859bb96e6c591780683d"
+  "hash": "bc6b5601820931b5f6b59c105cf45b569364fd61ce48e79c7ba706d98eaf1ba2"
 }
