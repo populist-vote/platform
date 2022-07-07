@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT election_date FROM election\n            WHERE id = $1\n            ",
+  "query": "\n                SELECT election_date FROM election\n                WHERE id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -17,5 +17,5 @@
       false
     ]
   },
-  "hash": "bc6b5601820931b5f6b59c105cf45b569364fd61ce48e79c7ba706d98eaf1ba2"
+  "hash": "0b84aeb0a22ca32d25172feae4e52641cc351a1b5195638118bb43c8cef79c22"
 }

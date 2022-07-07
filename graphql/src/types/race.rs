@@ -24,18 +24,28 @@ pub struct RaceResult {
     description: Option<String>,
     ballotpedia_link: Option<String>,
     early_voting_begins_date: Option<chrono::NaiveDate>,
-    winner_id: Option<ID>,
-    total_votes: Option<i32>,
     official_website: Option<String>,
     election_id: Option<ID>,
     created_at: DateTime,
     updated_at: DateTime,
 }
 
-#[derive(SimpleObject, Debug, Clone)]
 pub struct RaceCandidate {
-    politician: PoliticianResult,
-    votes: i32,
+    candidate_id: uuid::Uuid,
+    votes: Option<i32>,
+}
+
+#[derive(SimpleObject, Debug, Clone)]
+pub struct RaceCandidateResult {
+    candidate_id: ID,
+    votes: Option<i32>,
+}
+
+#[derive(SimpleObject, Debug, Clone)]
+pub struct RaceResultsResult {
+    votes_by_candidate: Vec<RaceCandidateResult>,
+    total_votes: Option<i32>,
+    winner: Option<PoliticianResult>,
 }
 
 #[ComplexObject]
@@ -119,12 +129,71 @@ impl RaceResult {
         Ok(results)
     }
 
+    async fn results(&self, ctx: &Context<'_>) -> Result<RaceResultsResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+
+        let race_candidate_records = sqlx::query_as!(
+            RaceCandidate,
+            r#"
+                SELECT
+                    id AS candidate_id,
+                    rc.votes
+                FROM
+                    politician p
+                    JOIN race_candidates rc ON race_id = $1
+                WHERE
+                    p.id = rc.candidate_id AND 
+                    rc.race_id = $1
+
+            "#,
+            uuid::Uuid::parse_str(&self.id).unwrap()
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        let race_candidate_results = race_candidate_records
+            .into_iter()
+            .map(RaceCandidateResult::from)
+            .collect();
+
+        let race_results = sqlx::query!(
+            r#"
+            SELECT
+              total_votes,
+              winner_id
+            FROM
+              race
+            WHERE
+              id = $1
+        "#,
+            uuid::Uuid::parse_str(&self.id).unwrap()
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        let winner = match ctx.look_ahead().field("winner").exists() {
+            true => match race_results.winner_id {
+                Some(winner_id) => Some(PoliticianResult::from(
+                    Politician::find_by_id(&db_pool, winner_id).await?,
+                )),
+                _ => None,
+            },
+            false => None,
+        };
+
+        Ok(RaceResultsResult {
+            votes_by_candidate: race_candidate_results,
+            total_votes: race_results.total_votes,
+            winner,
+        })
+    }
+
     async fn election_date(&self, ctx: &Context<'_>) -> Result<Option<chrono::NaiveDate>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query!(
             r#"
-            SELECT election_date FROM election
-            WHERE id = $1
+                SELECT election_date FROM election
+                WHERE id = $1
             "#,
             uuid::Uuid::parse_str(self.election_id.clone().unwrap_or_default().as_str()).unwrap()
         )
@@ -148,12 +217,19 @@ impl From<Race> for RaceResult {
             description: r.description,
             ballotpedia_link: r.ballotpedia_link,
             early_voting_begins_date: r.early_voting_begins_date,
-            winner_id: r.winner_id.map(ID::from),
-            total_votes: r.total_votes,
             official_website: r.official_website,
             election_id: r.election_id.map(ID::from),
             created_at: r.created_at,
             updated_at: r.updated_at,
+        }
+    }
+}
+
+impl From<RaceCandidate> for RaceCandidateResult {
+    fn from(r: RaceCandidate) -> Self {
+        Self {
+            candidate_id: ID::from(r.candidate_id),
+            votes: r.votes,
         }
     }
 }
