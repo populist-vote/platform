@@ -1,43 +1,27 @@
 {
-  "query": "SELECT\n                id,\n                slug,\n                title,\n                description,\n                election_date\n            FROM\n                election\n            -- WHERE\n            -- \telection_date > NOW() + interval '-7 days'\n            ORDER BY\n                election_date ASC\n            LIMIT 1",
+  "query": "\n                SELECT\n                    id AS candidate_id,\n                    rc.votes\n                FROM\n                    politician p\n                    JOIN race_candidates rc ON race_id = $1\n                WHERE\n                    p.id = rc.candidate_id AND \n                    rc.race_id = $1\n\n            ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id",
+        "name": "candidate_id",
         "type_info": "Uuid"
       },
       {
         "ordinal": 1,
-        "name": "slug",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 2,
-        "name": "title",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 3,
-        "name": "description",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 4,
-        "name": "election_date",
-        "type_info": "Date"
+        "name": "votes",
+        "type_info": "Int4"
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Uuid"
+      ]
     },
     "nullable": [
       false,
-      false,
-      false,
-      true,
-      false
+      true
     ]
   },
-  "hash": "594d9bf62acb5a77ca8fd74a554b6d1d829dd6def64e568f2cd9285177dfb32c"
+  "hash": "ed031afd6fc08a90688d84b3915518fd002bd44d59036ae07fb513f5845991de"
 }

@@ -1,21 +1,22 @@
 {
-  "query": "\n            SELECT election_date FROM election\n            WHERE id = $1\n            ",
+  "query": "\n            SELECT\n                ROUND(CAST(CAST(rc.votes AS FLOAT) / CAST(r.total_votes AS FLOAT) * 100 AS NUMERIC), 2)::FLOAT AS \"percentage\"\n            FROM\n                race_candidates rc\n                JOIN race r ON rc.race_id = $2\n            WHERE\n                rc.candidate_id = $1\n                AND rc.race_id = $2\n                AND rc.votes IS NOT NULL\n                AND r.id = $2\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "election_date",
-        "type_info": "Date"
+        "name": "percentage",
+        "type_info": "Float8"
       }
     ],
     "parameters": {
       "Left": [
+        "Uuid",
         "Uuid"
       ]
     },
     "nullable": [
-      false
+      null
     ]
   },
-  "hash": "bc6b5601820931b5f6b59c105cf45b569364fd61ce48e79c7ba706d98eaf1ba2"
+  "hash": "4e7f4063261b2d004b613313df135d073cf2d6a97061efb07698049f8c89a1c3"
 }
