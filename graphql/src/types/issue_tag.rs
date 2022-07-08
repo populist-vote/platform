@@ -1,5 +1,5 @@
 use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
-use db::{models::issue_tag::IssueTag, DateTime};
+use db::models::issue_tag::IssueTag;
 
 use crate::context::ApiContext;
 
@@ -12,8 +12,6 @@ pub struct IssueTagResult {
     slug: String,
     name: String,
     description: Option<String>,
-    created_at: DateTime,
-    updated_at: DateTime,
 }
 
 #[ComplexObject]
@@ -45,8 +43,6 @@ impl From<IssueTag> for IssueTagResult {
             slug: it.slug,
             name: it.name,
             description: it.description,
-            created_at: it.created_at,
-            updated_at: it.updated_at,
         }
     }
 }

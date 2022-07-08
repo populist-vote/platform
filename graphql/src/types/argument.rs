@@ -1,7 +1,7 @@
 use async_graphql::{ComplexObject, Context, FieldResult, Result, SimpleObject, Union, ID};
 use db::{
     models::{enums::AuthorType, vote::Vote},
-    Argument, DateTime, Organization, Politician,
+    Argument, Organization, Politician,
 };
 
 use crate::context::ApiContext;
@@ -23,8 +23,6 @@ pub struct ArgumentResult {
     title: String,
     position: String,
     body: Option<String>,
-    created_at: DateTime,
-    updated_at: DateTime,
 }
 
 #[ComplexObject]
@@ -66,8 +64,6 @@ impl From<Argument> for ArgumentResult {
             title: a.title,
             body: a.body,
             position: a.position.to_string(),
-            created_at: a.created_at,
-            updated_at: a.updated_at,
         }
     }
 }

@@ -9,7 +9,7 @@ use db::{
         enums::{LegislationStatus, PoliticalParty, State},
         politician::Politician,
     },
-    DateTime, Office, Race,
+    Office, Race,
 };
 use serde::{Deserialize, Serialize};
 
@@ -55,8 +55,6 @@ pub struct PoliticianResult {
     upcoming_race_id: Option<ID>,
     race_wins: Option<i32>,
     race_losses: Option<i32>,
-    created_at: DateTime,
-    updated_at: DateTime,
 }
 
 #[derive(SimpleObject, Debug, Clone)]
@@ -364,37 +362,6 @@ impl PoliticianResult {
             Ok(None)
         }
     }
-
-    async fn vote_percentage(&self, ctx: &Context<'_>, race_id: uuid::Uuid) -> Result<Option<f64>> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let record = sqlx::query!(
-            r#"
-            SELECT
-                ROUND(CAST(CAST(rc.votes AS FLOAT) / CAST(r.total_votes AS FLOAT) * 100 AS NUMERIC), 2)::FLOAT AS "percentage"
-            FROM
-                race_candidates rc
-                JOIN race r ON rc.race_id = $2
-            WHERE
-                rc.candidate_id = $1
-                AND rc.race_id = $2
-                AND rc.votes IS NOT NULL
-                AND r.id = $2
-        "#,
-            uuid::Uuid::parse_str(&self.id).unwrap(),
-            race_id
-        )
-        .fetch_optional(&db_pool)
-        .await?;
-
-        if let Some(record) = record {
-            match record.percentage {
-                Some(percentage) => Ok(Some(percentage)),
-                None => Ok(None),
-            }
-        } else {
-            Ok(None)
-        }
-    }
 }
 
 impl From<Politician> for PoliticianResult {
@@ -433,8 +400,6 @@ impl From<Politician> for PoliticianResult {
             upcoming_race_id: p.upcoming_race_id.map(ID::from),
             race_wins: p.race_wins,
             race_losses: p.race_losses,
-            created_at: p.created_at,
-            updated_at: p.updated_at,
         }
     }
 }

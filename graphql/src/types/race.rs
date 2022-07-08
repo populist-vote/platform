@@ -6,7 +6,7 @@ use db::{
         politician::Politician,
         race::Race,
     },
-    DateTime, Office,
+    Office,
 };
 
 use super::PoliticianResult;
@@ -26,11 +26,10 @@ pub struct RaceResult {
     early_voting_begins_date: Option<chrono::NaiveDate>,
     official_website: Option<String>,
     election_id: Option<ID>,
-    created_at: DateTime,
-    updated_at: DateTime,
 }
 
 pub struct RaceCandidate {
+    race_id: uuid::Uuid,
     candidate_id: uuid::Uuid,
     votes: Option<i32>,
 }
@@ -38,6 +37,8 @@ pub struct RaceCandidate {
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
 pub struct RaceCandidateResult {
+    #[graphql(visible = false)]
+    race_id: ID,
     candidate_id: ID,
     votes: Option<i32>,
 }
@@ -138,7 +139,8 @@ impl RaceResult {
             r#"
                 SELECT
                     id AS candidate_id,
-                    rc.votes
+                    rc.votes,
+                    rc.race_id
                 FROM
                     politician p
                     JOIN race_candidates rc ON race_id = $1
@@ -207,7 +209,7 @@ impl RaceResult {
 
 #[ComplexObject]
 impl RaceCandidateResult {
-    async fn vote_percentage(&self, ctx: &Context<'_>, race_id: uuid::Uuid) -> Result<Option<f64>> {
+    async fn vote_percentage(&self, ctx: &Context<'_>) -> Result<Option<f64>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query!(
             r#"
@@ -223,7 +225,7 @@ impl RaceCandidateResult {
                 AND r.id = $2
         "#,
             uuid::Uuid::parse_str(&self.candidate_id).unwrap(),
-            race_id
+            uuid::Uuid::parse_str(&self.race_id).unwrap(),
         )
         .fetch_optional(&db_pool)
         .await?;
@@ -254,8 +256,6 @@ impl From<Race> for RaceResult {
             early_voting_begins_date: r.early_voting_begins_date,
             official_website: r.official_website,
             election_id: r.election_id.map(ID::from),
-            created_at: r.created_at,
-            updated_at: r.updated_at,
         }
     }
 }
@@ -263,6 +263,7 @@ impl From<Race> for RaceResult {
 impl From<RaceCandidate> for RaceCandidateResult {
     fn from(r: RaceCandidate) -> Self {
         Self {
+            race_id: ID::from(r.race_id),
             candidate_id: ID::from(r.candidate_id),
             votes: r.votes,
         }

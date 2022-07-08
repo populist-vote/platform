@@ -1,9 +1,6 @@
 use crate::{context::ApiContext, types::ArgumentResult};
 use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
-use db::{
-    models::{bill::Bill, enums::LegislationStatus},
-    DateTime,
-};
+use db::models::{bill::Bill, enums::LegislationStatus};
 use legiscan::Bill as LegiscanBill;
 use sqlx::{types::Json, Row};
 use uuid::Uuid;
@@ -21,8 +18,6 @@ pub struct BillResult {
     full_text_url: Option<String>,
     legiscan_bill_id: Option<i32>,
     history: serde_json::Value,
-    created_at: DateTime,
-    updated_at: DateTime,
 }
 
 #[ComplexObject]
@@ -67,8 +62,6 @@ impl From<Bill> for BillResult {
             full_text_url: b.full_text_url,
             legiscan_bill_id: b.legiscan_bill_id,
             history: b.history,
-            created_at: b.created_at,
-            updated_at: b.updated_at,
         }
     }
 }

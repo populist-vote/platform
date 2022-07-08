@@ -1,10 +1,7 @@
 use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
-use db::{
-    models::{
-        ballot_measure::BallotMeasure,
-        enums::{LegislationStatus, State},
-    },
-    DateTime,
+use db::models::{
+    ballot_measure::BallotMeasure,
+    enums::{LegislationStatus, State},
 };
 
 #[derive(SimpleObject)]
@@ -23,8 +20,6 @@ pub struct BallotMeasureResult {
     official_summary: Option<String>,
     populist_summary: Option<String>,
     full_text_url: Option<String>,
-    created_at: DateTime,
-    updated_at: DateTime,
 }
 
 #[ComplexObject]
@@ -51,8 +46,6 @@ impl From<BallotMeasure> for BallotMeasureResult {
             official_summary: b.official_summary,
             populist_summary: b.populist_summary,
             full_text_url: b.full_text_url,
-            created_at: b.created_at,
-            updated_at: b.updated_at,
         }
     }
 }
