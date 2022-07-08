@@ -36,6 +36,7 @@ pub struct RaceCandidate {
 }
 
 #[derive(SimpleObject, Debug, Clone)]
+#[graphql(complex)]
 pub struct RaceCandidateResult {
     candidate_id: ID,
     votes: Option<i32>,
@@ -201,6 +202,40 @@ impl RaceResult {
         .await?;
 
         Ok(record.map(|r| r.election_date))
+    }
+}
+
+#[ComplexObject]
+impl RaceCandidateResult {
+    async fn vote_percentage(&self, ctx: &Context<'_>, race_id: uuid::Uuid) -> Result<Option<f64>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let record = sqlx::query!(
+            r#"
+            SELECT
+                ROUND(CAST(CAST(rc.votes AS FLOAT) / CAST(r.total_votes AS FLOAT) * 100 AS NUMERIC), 2)::FLOAT AS "percentage"
+            FROM
+                race_candidates rc
+                JOIN race r ON rc.race_id = $2
+            WHERE
+                rc.candidate_id = $1
+                AND rc.race_id = $2
+                AND rc.votes IS NOT NULL
+                AND r.id = $2
+        "#,
+            uuid::Uuid::parse_str(&self.candidate_id).unwrap(),
+            race_id
+        )
+        .fetch_optional(&db_pool)
+        .await?;
+
+        if let Some(record) = record {
+            match record.percentage {
+                Some(percentage) => Ok(Some(percentage)),
+                None => Ok(None),
+            }
+        } else {
+            Ok(None)
+        }
     }
 }
 
