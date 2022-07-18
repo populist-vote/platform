@@ -11,6 +11,7 @@ use config::Environment;
 use dotenv::dotenv;
 use graphql::{context::ApiContext, new_schema, PopulistSchema};
 use poem::{
+    endpoint::StaticFilesEndpoint,
     get, handler,
     http::HeaderMap,
     listener::TcpListener,
@@ -25,9 +26,7 @@ use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 
 #[handler]
-fn root() -> impl IntoResponse {
-    Html(r#"<h1>Populist API Docs</h1>"#)
-}
+fn docs() -> impl IntoResponse {}
 
 /// Simple server health check
 // TODO: Make this a GraphQL subscription
@@ -126,6 +125,12 @@ async fn main() -> Result<(), std::io::Error> {
     let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
     let app = Route::new()
         .at("/", get(graphql_playground).post(graphql_handler))
+        .nest(
+            "/docs",
+            StaticFilesEndpoint::new("docs/public")
+                .show_files_listing()
+                .index_file("index.html"),
+        )
         .data(schema)
         .with(cors(environment))
         // Will need to implement a custom X-Forwarded-Proto header for Heroku to
