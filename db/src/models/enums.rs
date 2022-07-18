@@ -233,6 +233,7 @@ pub enum ArgumentPosition {
 #[derive(Enum, Debug, Copy, Clone, Eq, PartialEq, sqlx::Type)]
 #[sqlx(type_name = "legislation_status", rename_all = "snake_case")]
 pub enum LegislationStatus {
+    /// Some explanation of the status. Document these for the schema
     Introduced,
     PassedHouse,
     PassedSenate,
