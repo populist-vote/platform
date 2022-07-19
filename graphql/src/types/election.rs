@@ -1,3 +1,5 @@
+use super::RaceResult;
+use crate::context::ApiContext;
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use auth::Claims;
 use db::{
@@ -5,10 +7,6 @@ use db::{
     Election, Race,
 };
 use jsonwebtoken::TokenData;
-
-use crate::context::ApiContext;
-
-use super::RaceResult;
 
 #[derive(SimpleObject, Clone, Debug)]
 #[graphql(complex)]
@@ -84,8 +82,7 @@ impl ElectionResult {
                 token_data.claims.sub
             )
             .fetch_one(&db_pool)
-            .await
-            .expect("This one");
+            .await?;
 
             let records = sqlx::query_as!(
                 Race,
