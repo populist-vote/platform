@@ -1814,20 +1814,6 @@
       ]
     }
   },
-  "32fa3a2ee0792beb058194ab48e1e0d6690707a3d54a6610c217ad0d6625377a": {
-    "query": "\n                UPDATE populist_user \n                SET reset_token = $1,\n                    reset_token_expires_at = $2\n                WHERE email = LOWER($3)\n            ",
-    "describe": {
-      "columns": [],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Timestamptz",
-          "Text"
-        ]
-      },
-      "nullable": []
-    }
-  },
   "36912e8687e44a478af3a310b48608124720131c8e53bdc19812d099b4ab5747": {
     "query": "\n                INSERT INTO politician_issue_tags (politician_id, issue_tag_id) \n                VALUES ($1, $2)\n            ",
     "describe": {
@@ -1851,26 +1837,6 @@
         ]
       },
       "nullable": []
-    }
-  },
-  "378bcb76f24be0d6bb95610121204040c5a98f5fe46a91cec9882456d558d084": {
-    "query": "\n            UPDATE populist_user \n            SET confirmed_at = now() AT TIME ZONE 'utc',\n                confirmation_token = NULL\n            WHERE confirmation_token = $1 \n            AND confirmed_at IS NULL\n            RETURNING id\n        ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      },
-      "nullable": [
-        false
-      ]
     }
   },
   "37d8da7d7057f0af855773be3c51759b5c085bc04c5184e1365a7a22fc865fe4": {
@@ -4015,34 +3981,6 @@
       ]
     }
   },
-  "722cfb9974f5c78359106ea1754801fb454006b9c2919919b6fae75919f3afee": {
-    "query": "\n            UPDATE user_profile SET first_name = $1, last_name = $2\n            WHERE user_id = $3\n            RETURNING first_name, last_name\n        ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "first_name",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 1,
-          "name": "last_name",
-          "type_info": "Text"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text",
-          "Uuid"
-        ]
-      },
-      "nullable": [
-        true,
-        true
-      ]
-    }
-  },
   "74369a4f9d187fad46d0c2b3c96957b30453fc856124565c217529fd498f27ac": {
     "query": "\n                SELECT SUM (direction) AS total\n                FROM vote\n                WHERE votable_id = $1\n            ",
     "describe": {
@@ -4251,26 +4189,6 @@
         true,
         true,
         false,
-        false
-      ]
-    }
-  },
-  "7c3de9dc9a7a66c521d2884819f21bde79f41cbb86055b2e8012733795d0f72b": {
-    "query": "\n            SELECT id FROM populist_user WHERE email = $1\n        ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      },
-      "nullable": [
         false
       ]
     }
@@ -5288,81 +5206,6 @@
       ]
     }
   },
-  "93de20a6f00b41aea7ccc24d594baec17dbb2b8cb66c97b54722c0ae0a537899": {
-    "query": "\n            UPDATE populist_user SET username = $1\n            WHERE id = $2\n            RETURNING id, email, username, password, role AS \"role:Role\", created_at, confirmed_at, updated_at\n        ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "email",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "username",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "password",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 4,
-          "name": "role:Role",
-          "type_info": {
-            "Custom": {
-              "name": "user_role",
-              "kind": {
-                "Enum": [
-                  "superuser",
-                  "staff",
-                  "premium",
-                  "basic"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 5,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 6,
-          "name": "confirmed_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 7,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Uuid"
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        false
-      ]
-    }
-  },
   "96409130ec696f78b17610bf9673cc0501136f38cdff66d4b203e8da9572176d": {
     "query": "\n                UPDATE race\n                SET slug = COALESCE($2, slug), \n                    title = COALESCE($3, title), \n                    office_id = COALESCE($4, office_id),\n                    race_type = COALESCE($5, race_type),\n                    party = COALESCE($6, party),\n                    state = COALESCE($7, state),\n                    description = COALESCE($8, description),\n                    ballotpedia_link = COALESCE($9, ballotpedia_link),\n                    early_voting_begins_date = COALESCE($10, early_voting_begins_date),\n                    winner_id = COALESCE($11, winner_id),\n                    official_website = COALESCE($12, official_website),\n                    election_id = COALESCE($13, election_id),\n                    total_votes = COALESCE($14, total_votes)\n                WHERE id = $1\n                RETURNING id, slug, title, office_id, race_type AS \"race_type:RaceType\", party AS \"party:PoliticalParty\", state AS \"state:State\", description, ballotpedia_link, early_voting_begins_date, winner_id, total_votes, official_website, election_id, created_at, updated_at\n            ",
     "describe": {
@@ -5956,81 +5799,6 @@
       ]
     }
   },
-  "9a729b061294493dec40a66d979fa4bdaa369823cf29c9c3aeda9981b59e7b5b": {
-    "query": "\n            UPDATE populist_user SET email = $1\n            WHERE id = $2\n            RETURNING id, email, username, password, role AS \"role:Role\", created_at, confirmed_at, updated_at\n        ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "email",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "username",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "password",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 4,
-          "name": "role:Role",
-          "type_info": {
-            "Custom": {
-              "name": "user_role",
-              "kind": {
-                "Enum": [
-                  "superuser",
-                  "staff",
-                  "premium",
-                  "basic"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 5,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 6,
-          "name": "confirmed_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 7,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Uuid"
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        false
-      ]
-    }
-  },
   "a3bc77f01c39f1e0016250a2ebe63df26bab4ef6eda6fe3dcf8887139b2ce9c0": {
     "query": "\n                SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, o.created_at, o.updated_at  FROM organization o\n                JOIN politician_organization_endorsements\n                ON politician_organization_endorsements.organization_id = o.id\n                WHERE politician_organization_endorsements.politician_id = $1\n            ",
     "describe": {
@@ -6471,26 +6239,6 @@
       ]
     }
   },
-  "b16a90415ad9c7504dee58ddb432807631c759dab889dce18e7d180488419a0f": {
-    "query": "\n            DELETE FROM populist_user WHERE id = $1\n            RETURNING id\n        ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      },
-      "nullable": [
-        false
-      ]
-    }
-  },
   "b2d17a78dc7479596da3e7d60a9c64d3c578782b743afccd86cf8176bbad3b50": {
     "query": "\n                INSERT INTO ballot_measure \n                (election_id, slug, title, legislation_status, description, official_summary, \n                populist_summary, full_text_url, ballot_state, ballot_measure_code, \n                measure_type, definitions) \n                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) \n                RETURNING id, election_id, slug, title, legislation_status AS \"legislation_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, ballot_state AS \"ballot_state:State\", ballot_measure_code, measure_type, definitions, created_at, updated_at\n            ",
     "describe": {
@@ -6756,26 +6504,6 @@
         false,
         false,
         false,
-        false
-      ]
-    }
-  },
-  "b5f8bb777be364f196aa0da547e7527cf58249eb9e172e46e977c9525c8bd508": {
-    "query": "\n            SELECT password FROM populist_user \n            WHERE id = $1",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "password",
-          "type_info": "Text"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      },
-      "nullable": [
         false
       ]
     }
@@ -8707,27 +8435,6 @@
         true,
         false,
         false
-      ]
-    }
-  },
-  "d5f7ec0f93752a23eba26f96237ed78d8a41f129fb1385fbf581f128edacd77d": {
-    "query": "\n            UPDATE user_profile SET profile_picture_url = $1\n            WHERE user_id = $2\n            RETURNING profile_picture_url\n        ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "profile_picture_url",
-          "type_info": "Text"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Uuid"
-        ]
-      },
-      "nullable": [
-        true
       ]
     }
   },
