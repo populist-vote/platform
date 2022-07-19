@@ -1,4 +1,4 @@
-use async_graphql::{Context, FieldResult, Object, Result};
+use async_graphql::{Context, FieldResult, Object, Result, ID};
 use db::{Election, ElectionSearchInput};
 
 use crate::{context::ApiContext, types::ElectionResult};
@@ -11,10 +11,10 @@ impl ElectionQuery {
     async fn elections(
         &self,
         ctx: &Context<'_>,
-        #[graphql(desc = "Search by slug or title")] search: ElectionSearchInput,
+        #[graphql(desc = "Search by slug or title")] search: Option<ElectionSearchInput>,
     ) -> FieldResult<Vec<ElectionResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let records = Election::search(&db_pool, &search).await?;
+        let records = Election::search(&db_pool, &search.unwrap_or_default()).await?;
         let results = records.into_iter().map(ElectionResult::from).collect();
         Ok(results)
     }
@@ -23,7 +23,7 @@ impl ElectionQuery {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query_as!(
             Election,
-            "SELECT
+            r#"SELECT
                 id,
                 slug,
                 title,
@@ -31,29 +31,17 @@ impl ElectionQuery {
                 election_date
             FROM
                 election
-            -- WHERE
-            -- 	election_date > NOW() + interval '-7 days'
+            WHERE election_date > NOW()
             ORDER BY
                 election_date ASC
-            LIMIT 1"
+            LIMIT 1"#
         )
         .fetch_one(&db_pool)
         .await?;
         Ok(record.into())
     }
 
-    async fn upcoming_elections(&self, ctx: &Context<'_>) -> Result<Vec<ElectionResult>> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        // let sub = ctx.data::<Option<TokenData<Claims>>>();
-        let records = sqlx::query_as!(Election,
-            "SELECT id, slug, title, description, election_date FROM election WHERE election_date > NOW()", )
-            .fetch_all(&db_pool)
-            .await?;
-        let results = records.into_iter().map(ElectionResult::from).collect();
-        Ok(results)
-    }
-
-    async fn election_by_id(&self, ctx: &Context<'_>, id: String) -> Result<ElectionResult> {
+    async fn election_by_id(&self, ctx: &Context<'_>, id: ID) -> Result<ElectionResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query_as!(
             Election,

@@ -31,7 +31,7 @@ pub struct UpdateElectionInput {
     pub election_date: Option<chrono::NaiveDate>,
 }
 
-#[derive(InputObject)]
+#[derive(InputObject, Default)]
 pub struct ElectionSearchInput {
     pub slug: Option<String>,
     pub title: Option<String>,
@@ -134,6 +134,7 @@ impl Election {
                 SELECT id, slug, title, description, election_date FROM election
                 WHERE ($1::text IS NULL OR slug = $1)
                 AND ($2::text IS NULL OR title = $2)
+                ORDER BY election_date ASC
             "#,
             search.slug,
             search.title,

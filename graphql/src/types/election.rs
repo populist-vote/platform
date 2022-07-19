@@ -1,3 +1,5 @@
+use super::RaceResult;
+use crate::context::ApiContext;
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use auth::Claims;
 use db::{
@@ -5,10 +7,6 @@ use db::{
     Election, Race,
 };
 use jsonwebtoken::TokenData;
-
-use crate::context::ApiContext;
-
-use super::RaceResult;
 
 #[derive(SimpleObject, Clone, Debug)]
 #[graphql(complex)]
@@ -67,17 +65,19 @@ impl ElectionResult {
         if let Some(token_data) = token.unwrap() {
             let user_address_data = sqlx::query!(
                 r#"
-            SELECT
-                a.congressional_district,
-                a.state_senate_district,
-                a.state_house_district,
-                a.state AS "state:State",
-                a.county,
-                a.city
-            FROM
-                address AS a
-                JOIN user_profile up ON user_id = $1
-                JOIN address ON up.address_id = a.id
+                SELECT
+                    a.congressional_district,
+                    a.state_senate_district,
+                    a.state_house_district,
+                    a.state AS "state:State",
+                    a.county,
+                    a.city
+                FROM
+                    address AS a
+                    JOIN user_profile up ON user_id = $1
+                WHERE
+                    up.user_id = $1 AND 
+                    up.address_id = a.id
                 "#,
                 token_data.claims.sub
             )
@@ -141,12 +141,11 @@ impl ElectionResult {
                     .map(|d| d.to_string()),
             )
             .fetch_all(&db_pool)
-            .await
-            .unwrap();
-
+            .await?;
             let results = records.into_iter().map(RaceResult::from).collect();
             Ok(results)
         } else {
+            tracing::debug!("No races found with user address data");
             Err("No user address data found".into())
         }
     }
