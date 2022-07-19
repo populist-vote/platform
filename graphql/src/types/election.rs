@@ -149,6 +149,52 @@ impl ElectionResult {
             Err("No user address data found".into())
         }
     }
+
+    async fn races_by_voting_guide(
+        &self,
+        ctx: &Context<'_>,
+        voting_guide_id: ID,
+    ) -> Result<Vec<RaceResult>> {
+        let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+
+        let records = sqlx::query_as!(
+            Race,
+            r#"
+            SELECT
+                id,
+                slug,
+                title,
+                office_id,
+                race_type AS "race_type:RaceType",
+                party AS "party:PoliticalParty",
+                state AS "state:State",
+                description,
+                ballotpedia_link,
+                early_voting_begins_date,
+                winner_id,
+                total_votes,
+                official_website,
+                election_id,
+                r.created_at,
+                r.updated_at
+            FROM
+                race r
+            JOIN race_candidates rc ON rc.race_id = r.id
+            JOIN voting_guide_candidates vgc ON vgc.candidate_id = rc.candidate_id
+            WHERE
+                r.election_id = $1 AND
+                vgc.voting_guide_id = $2
+            "#,
+            uuid::Uuid::parse_str(&self.id).unwrap(),
+            uuid::Uuid::parse_str(&voting_guide_id).unwrap()
+        )
+        .fetch_all(&db_pool)
+        .await
+        .unwrap();
+
+        let results = records.into_iter().map(RaceResult::from).collect();
+        Ok(results)
+    }
 }
 
 impl From<Election> for ElectionResult {
