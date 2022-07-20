@@ -1,14 +1,25 @@
 {
-  "query": "\n            UPDATE race\n            SET total_votes = $1,\n                winner_id = (SELECT candidate_id FROM race_candidates WHERE race_id = $2 ORDER BY votes DESC LIMIT 1)\n            WHERE id = $2\n            ",
+  "query": "\n        SELECT\n            office_id,\n            winner_id\n        FROM\n            race r\n            JOIN office ON r.office_id = office.id\n        WHERE\n            winner_id IS NOT NULL\n            AND race_type = 'primary'\n            AND r.office_id = office.id\n   ",
   "describe": {
-    "columns": [],
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "office_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "winner_id",
+        "type_info": "Uuid"
+      }
+    ],
     "parameters": {
-      "Left": [
-        "Int4",
-        "Uuid"
-      ]
+      "Left": []
     },
-    "nullable": []
+    "nullable": [
+      true,
+      true
+    ]
   },
-  "hash": "fce572fca4689baee4735aa6ae6c6abc9e38fa3941e7ae7ebb5e6dbea279408a"
+  "hash": "0f110602a378c44b7b98371cd77f70574ff1b5a521bf8f1486abfffa97b62614"
 }
