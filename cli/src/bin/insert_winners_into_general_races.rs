@@ -1,8 +1,6 @@
 use std::error::Error;
 use std::process;
 
-// TODO: dedupe race_candidate records in staging and prod and add compound unique constraint
-
 async fn insert_primary_winners_into_general_races() -> Result<(), Box<dyn Error>> {
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
@@ -28,7 +26,8 @@ async fn insert_primary_winners_into_general_races() -> Result<(), Box<dyn Error
         sqlx::query!(
             r#"
             INSERT INTO race_candidates (race_id, candidate_id)
-            VALUES((SELECT id FROM race WHERE race.office_id = $1 LIMIT 1), $2)
+            VALUES((SELECT id FROM race WHERE race.office_id = $1 AND race.race_type = 'general' LIMIT 1), $2)
+            ON CONFLICT DO NOTHING
         "#,
             winner.office_id,
             winner.winner_id

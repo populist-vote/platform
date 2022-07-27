@@ -5,7 +5,6 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::io;
 use std::process;
-use std::thread::sleep;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct RaceCandidateResult {
@@ -49,19 +48,6 @@ async fn import_race_results_from_csv() -> Result<(), Box<dyn Error>> {
                 total_counts.insert(record.race_id.clone(), candidate.total_votes);
             }
         }
-
-        // If this candidate is the winner, do:
-        // let _query = sqlx::query!(
-        //     r#"
-        //     UPDATE race
-        //     SET winner_id = $1
-        //     WHERE id = $2
-        //     "#,
-        // candidate.candidate_id,
-        // candidate.race_id
-        // )
-        // .fetch_optional(&pool.connection)
-        // .await;
     }
 
     for (race_id, count) in &total_counts {

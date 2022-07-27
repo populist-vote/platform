@@ -184,8 +184,8 @@
       ]
     }
   },
-  "28c00c7d79a9a1b1840cefcb25d5bf07bcdbd9d4be7357a722ffaf47c7db2ee0": {
-    "query": "\n            SELECT\n                id,\n                slug,\n                title,\n                office_id,\n                race_type AS \"race_type:RaceType\",\n                party AS \"party:PoliticalParty\",\n                state AS \"state:State\",\n                description,\n                ballotpedia_link,\n                early_voting_begins_date,\n                winner_id,\n                total_votes,\n                official_website,\n                election_id,\n                created_at,\n                updated_at\n            FROM\n                race\n            WHERE\n                election_id = $1\n            ",
+  "2cc7d9f1758e50c5bf9e8d21ddeb127db7bca6d4ba90d95a717886659d69950e": {
+    "query": "\n            SELECT\n                id,\n                slug,\n                title,\n                office_id,\n                race_type AS \"race_type:RaceType\",\n                party AS \"party:PoliticalParty\",\n                state AS \"state:State\",\n                description,\n                ballotpedia_link,\n                early_voting_begins_date,\n                winner_id,\n                total_votes,\n                official_website,\n                election_id,\n                r.created_at,\n                r.updated_at\n            FROM\n                race r\n            JOIN race_candidates rc ON rc.race_id = r.id\n            JOIN voting_guide_candidates vgc ON vgc.candidate_id = rc.candidate_id\n            WHERE\n                r.election_id = $1 AND\n                vgc.voting_guide_id = $2\n            ORDER BY title DESC\n            ",
     "describe": {
       "columns": [
         {
@@ -359,6 +359,7 @@
       ],
       "parameters": {
         "Left": [
+          "Uuid",
           "Uuid"
         ]
       },
@@ -1065,6 +1066,204 @@
       ]
     }
   },
+  "85bc33fc4a4b194c74d9b1bda3c7fcef40d9ddd61fbfc425578d319481c64f10": {
+    "query": "\n            SELECT\n                id,\n                slug,\n                title,\n                office_id,\n                race_type AS \"race_type:RaceType\",\n                party AS \"party:PoliticalParty\",\n                state AS \"state:State\",\n                description,\n                ballotpedia_link,\n                early_voting_begins_date,\n                winner_id,\n                total_votes,\n                official_website,\n                election_id,\n                created_at,\n                updated_at\n            FROM\n                race\n            WHERE\n                election_id = $1\n            ORDER BY title DESC\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "office_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 4,
+          "name": "race_type:RaceType",
+          "type_info": {
+            "Custom": {
+              "name": "race_type",
+              "kind": {
+                "Enum": [
+                  "primary",
+                  "general"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "party:PoliticalParty",
+          "type_info": {
+            "Custom": {
+              "name": "political_party",
+              "kind": {
+                "Enum": [
+                  "democratic",
+                  "republican",
+                  "libertarian",
+                  "green",
+                  "constitution",
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 6,
+          "name": "state:State",
+          "type_info": {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 7,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "ballotpedia_link",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "early_voting_begins_date",
+          "type_info": "Date"
+        },
+        {
+          "ordinal": 10,
+          "name": "winner_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 11,
+          "name": "total_votes",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 12,
+          "name": "official_website",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 13,
+          "name": "election_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 14,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 15,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
   "8ab1b2b1af80ada2573bdbca3e0538d90e8201b7b6614d208514163fed118f24": {
     "query": "\n            INSERT INTO voting_guide_candidates (voting_guide_id, candidate_id, is_endorsement, note)\n                VALUES($1, $2, COALESCE($3, FALSE), $4) ON CONFLICT (voting_guide_id, candidate_id)\n                DO\n                UPDATE\n                SET\n                    is_endorsement = COALESCE($3, voting_guide_candidates.is_endorsement, FALSE),\n                    note = COALESCE($4, voting_guide_candidates.note)\n            WHERE (SELECT user_id FROM voting_guide WHERE id = $1) = $5\n            RETURNING\n                candidate_id,\n                is_endorsement,\n                note\n        ",
     "describe": {
@@ -1581,6 +1780,269 @@
       ]
     }
   },
+  "bb3c5b133a5b1ce4137d1bfa371a2c927021e23bb643d7d5ab835774eab49123": {
+    "query": "\n            SELECT\n                r.id,\n                r.slug,\n                r.title,\n                r.office_id,\n                r.race_type AS \"race_type:RaceType\",\n                r.party AS \"party:PoliticalParty\",\n                r.state AS \"state:State\",\n                r.description,\n                r.ballotpedia_link,\n                r.early_voting_begins_date,\n                r.winner_id,\n                r.total_votes,\n                r.official_website,\n                r.election_id,\n                r.created_at,\n                r.updated_at\n            FROM\n                race r\n                JOIN office o ON office_id = o.id\n            WHERE\n                r.election_id = $1\n                AND(o.election_scope = 'national'\n                    OR(o.election_scope = 'state'\n                        AND o.state = $2)\n                    OR(o.election_scope = 'city'\n                        AND o.municipality = $3)\n                    OR(o.election_scope = 'county'\n                        AND o.municipality = $4)\n                    OR(o.election_scope = 'district'\n                        AND o.district_type = 'us_congressional'\n                        AND o.district = $5)\n                    OR(o.election_scope = 'district'\n                        AND o.district_type = 'state_senate'\n                        AND o.district = $6)\n                    OR(o.election_scope = 'district'\n                        AND o.district_type = 'state_house'\n                        AND o.district = $7))\n            ORDER BY title DESC\n                ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "office_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 4,
+          "name": "race_type:RaceType",
+          "type_info": {
+            "Custom": {
+              "name": "race_type",
+              "kind": {
+                "Enum": [
+                  "primary",
+                  "general"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 5,
+          "name": "party:PoliticalParty",
+          "type_info": {
+            "Custom": {
+              "name": "political_party",
+              "kind": {
+                "Enum": [
+                  "democratic",
+                  "republican",
+                  "libertarian",
+                  "green",
+                  "constitution",
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 6,
+          "name": "state:State",
+          "type_info": {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 7,
+          "name": "description",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "ballotpedia_link",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "early_voting_begins_date",
+          "type_info": "Date"
+        },
+        {
+          "ordinal": 10,
+          "name": "winner_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 11,
+          "name": "total_votes",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 12,
+          "name": "official_website",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 13,
+          "name": "election_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 14,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 15,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              }
+            }
+          },
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
   "c2c46ee84c24b520439da7dd5b5cbf48794f5b52d2f9a92bfaf9704a0761d8a5": {
     "query": "\n            UPDATE voting_guide_candidates\n            SET note = NULL\n            WHERE voting_guide_id = $1 AND candidate_id = $2\n            RETURNING\n                candidate_id,\n                is_endorsement,\n                note\n        ",
     "describe": {
@@ -1928,269 +2390,6 @@
       },
       "nullable": [
         true
-      ]
-    }
-  },
-  "ea8d9712a1579bc6a3daec6799d069d0de87063e0725219b52b8cdad8f2fe96c": {
-    "query": "\n            SELECT\n                r.id,\n                r.slug,\n                r.title,\n                r.office_id,\n                r.race_type AS \"race_type:RaceType\",\n                r.party AS \"party:PoliticalParty\",\n                r.state AS \"state:State\",\n                r.description,\n                r.ballotpedia_link,\n                r.early_voting_begins_date,\n                r.winner_id,\n                r.total_votes,\n                r.official_website,\n                r.election_id,\n                r.created_at,\n                r.updated_at\n            FROM\n                race r\n                JOIN office o ON office_id = o.id\n            WHERE\n                r.election_id = $1\n                AND(o.election_scope = 'national'\n                    OR(o.election_scope = 'state'\n                        AND o.state = $2)\n                    OR(o.election_scope = 'city'\n                        AND o.municipality = $3)\n                    OR(o.election_scope = 'county'\n                        AND o.municipality = $4)\n                    OR(o.election_scope = 'district'\n                        AND o.district_type = 'us_congressional'\n                        AND o.district = $5)\n                    OR(o.election_scope = 'district'\n                        AND o.district_type = 'state_senate'\n                        AND o.district = $6)\n                    OR(o.election_scope = 'district'\n                        AND o.district_type = 'state_house'\n                        AND o.district = $7))\n                ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "slug",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "title",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "office_id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 4,
-          "name": "race_type:RaceType",
-          "type_info": {
-            "Custom": {
-              "name": "race_type",
-              "kind": {
-                "Enum": [
-                  "primary",
-                  "general"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 5,
-          "name": "party:PoliticalParty",
-          "type_info": {
-            "Custom": {
-              "name": "political_party",
-              "kind": {
-                "Enum": [
-                  "democratic",
-                  "republican",
-                  "libertarian",
-                  "green",
-                  "constitution",
-                  "unknown",
-                  "independent",
-                  "freedom",
-                  "unity",
-                  "approval_voting",
-                  "unaffiliated"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 6,
-          "name": "state:State",
-          "type_info": {
-            "Custom": {
-              "name": "state",
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 7,
-          "name": "description",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 8,
-          "name": "ballotpedia_link",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 9,
-          "name": "early_voting_begins_date",
-          "type_info": "Date"
-        },
-        {
-          "ordinal": 10,
-          "name": "winner_id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 11,
-          "name": "total_votes",
-          "type_info": "Int4"
-        },
-        {
-          "ordinal": 12,
-          "name": "official_website",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 13,
-          "name": "election_id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 14,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 15,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          {
-            "Custom": {
-              "name": "state",
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              }
-            }
-          },
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text"
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false
       ]
     }
   },

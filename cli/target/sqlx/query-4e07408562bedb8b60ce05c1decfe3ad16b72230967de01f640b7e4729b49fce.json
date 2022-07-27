@@ -1,25 +1,14 @@
 {
-  "query": "\n        SELECT\n            office_id,\n            winner_id\n        FROM\n            race r\n            JOIN office ON r.office_id = office.id\n        WHERE\n            winner_id IS NOT NULL\n            AND race_type = 'primary'\n            AND r.office_id = office.id\n   ",
+  "query": "\n            INSERT INTO race_candidates (race_id, candidate_id)\n            VALUES((SELECT id FROM race WHERE race.office_id = $1 AND race.race_type = 'general' LIMIT 1), $2)\n            ON CONFLICT DO NOTHING\n        ",
   "describe": {
-    "columns": [
-      {
-        "ordinal": 0,
-        "name": "office_id",
-        "type_info": "Uuid"
-      },
-      {
-        "ordinal": 1,
-        "name": "winner_id",
-        "type_info": "Uuid"
-      }
-    ],
+    "columns": [],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
     },
-    "nullable": [
-      true,
-      true
-    ]
+    "nullable": []
   },
-  "hash": "0f110602a378c44b7b98371cd77f70574ff1b5a521bf8f1486abfffa97b62614"
+  "hash": "ac45f74b1825a224b0c44ce018be0ab557d7801b6f1dcf3537a80bca8ea2006e"
 }

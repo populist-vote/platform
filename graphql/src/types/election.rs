@@ -46,6 +46,7 @@ impl ElectionResult {
                 race
             WHERE
                 election_id = $1
+            ORDER BY title DESC
             "#,
             uuid::Uuid::parse_str(&self.id).unwrap()
         )
@@ -125,6 +126,7 @@ impl ElectionResult {
                     OR(o.election_scope = 'district'
                         AND o.district_type = 'state_house'
                         AND o.district = $7))
+            ORDER BY title DESC
                 "#,
                 uuid::Uuid::parse_str(&self.id).unwrap(),
                 user_address_data.state as State,
@@ -184,6 +186,7 @@ impl ElectionResult {
             WHERE
                 r.election_id = $1 AND
                 vgc.voting_guide_id = $2
+            ORDER BY title DESC
             "#,
             uuid::Uuid::parse_str(&self.id).unwrap(),
             uuid::Uuid::parse_str(&voting_guide_id).unwrap()
