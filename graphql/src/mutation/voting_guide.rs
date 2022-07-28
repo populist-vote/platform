@@ -1,5 +1,6 @@
 use crate::{
     context::ApiContext,
+    is_admin,
     types::{
         UpsertVotingGuideCandidateInput, UpsertVotingGuideInput, VotingGuideCandidateResult,
         VotingGuideResult,
@@ -15,12 +16,14 @@ use uuid::Uuid;
 pub struct VotingGuideMutation;
 
 #[derive(SimpleObject)]
+#[graphql(visible = "is_admin")]
 struct DeleteVotingGuideResult {
     id: ID,
 }
 
 #[Object]
 impl VotingGuideMutation {
+    #[graphql(visible = "is_admin")]
     async fn upsert_voting_guide(
         &self,
         ctx: &Context<'_>,
@@ -65,6 +68,7 @@ impl VotingGuideMutation {
         Ok(new_record.into())
     }
 
+    #[graphql(visible = "is_admin")]
     async fn upsert_voting_guide_candidate(
         &self,
         ctx: &Context<'_>,
@@ -109,6 +113,7 @@ impl VotingGuideMutation {
         })
     }
 
+    #[graphql(visible = "is_admin")]
     async fn delete_voting_guide(
         &self,
         ctx: &Context<'_>,
@@ -132,6 +137,7 @@ impl VotingGuideMutation {
         })
     }
 
+    #[graphql(visible = "is_admin")]
     async fn delete_voting_guide_candidate_note(
         &self,
         ctx: &Context<'_>,

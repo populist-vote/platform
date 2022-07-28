@@ -1,3 +1,9 @@
+use crate::{
+    context::ApiContext,
+    guard::StaffOnly,
+    is_admin,
+    types::{Error, OrganizationResult},
+};
 use async_graphql::*;
 use db::{
     CreateOrConnectIssueTagInput, CreateOrganizationInput, IssueTag, IssueTagIdentifier,
@@ -5,16 +11,11 @@ use db::{
 };
 use sqlx::{Pool, Postgres};
 use std::str::FromStr;
-
-use crate::{
-    context::ApiContext,
-    guard::StaffOnly,
-    types::{Error, OrganizationResult},
-};
 #[derive(Default)]
 pub struct OrganizationMutation;
 
 #[derive(SimpleObject)]
+#[graphql(visible = "is_admin")]
 struct DeleteOrganizationResult {
     id: String,
 }
@@ -62,7 +63,7 @@ pub async fn handle_nested_issue_tags(
 
 #[Object]
 impl OrganizationMutation {
-    #[graphql(guard = "StaffOnly")]
+    #[graphql(guard = "StaffOnly", visible = "is_admin")]
     async fn create_organization(
         &self,
         ctx: &Context<'_>,
@@ -78,7 +79,7 @@ impl OrganizationMutation {
         Ok(OrganizationResult::from(new_record))
     }
 
-    #[graphql(guard = "StaffOnly")]
+    #[graphql(guard = "StaffOnly", visible = "is_admin")]
     async fn update_organization(
         &self,
         ctx: &Context<'_>,
@@ -97,7 +98,7 @@ impl OrganizationMutation {
         Ok(OrganizationResult::from(updated_record))
     }
 
-    #[graphql(guard = "StaffOnly")]
+    #[graphql(guard = "StaffOnly", visible = "is_admin")]
     async fn delete_organization(
         &self,
         ctx: &Context<'_>,

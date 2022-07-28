@@ -1,10 +1,7 @@
+use crate::{context::ApiContext, relay, types::PoliticianResult};
 use async_graphql::{Context, Enum, InputObject, Object, Result};
 use db::models::enums::PoliticalScope;
 use db::{Politician, PoliticianSearch};
-
-use crate::context::ApiContext;
-use crate::relay;
-use crate::types::PoliticianResult;
 
 #[derive(Default)]
 pub struct PoliticianQuery;

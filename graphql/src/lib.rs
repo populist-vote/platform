@@ -6,13 +6,8 @@ pub mod relay;
 pub mod subscription;
 pub mod types;
 
-use crate::mutation::Mutation;
-use crate::query::Query;
-
-// use crate::subscription::Subscription;
-use crate::types::Error;
+use crate::{mutation::Mutation, query::Query, types::Error};
 use async_graphql::{Context, EmptySubscription, Schema, SchemaBuilder, ID};
-
 use auth::Claims;
 use dotenv::dotenv;
 use http::header::HeaderName;

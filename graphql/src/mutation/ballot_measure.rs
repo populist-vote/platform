@@ -1,17 +1,18 @@
+use crate::{context::ApiContext, guard::StaffOnly, is_admin, types::BallotMeasureResult};
 use async_graphql::*;
 use db::{BallotMeasure, CreateBallotMeasureInput, UpdateBallotMeasureInput};
-
-use crate::{context::ApiContext, types::BallotMeasureResult};
 #[derive(Default)]
 pub struct BallotMeasureMutation;
 
 #[derive(SimpleObject)]
+#[graphql(visible = "is_admin")]
 struct DeleteBallotMeasureResult {
     id: String,
 }
 
 #[Object]
 impl BallotMeasureMutation {
+    #[graphql(guard = "StaffOnly", visible = "is_admin")]
     async fn create_ballot_measure(
         &self,
         ctx: &Context<'_>,
@@ -23,6 +24,7 @@ impl BallotMeasureMutation {
         Ok(BallotMeasureResult::from(new_record))
     }
 
+    #[graphql(guard = "StaffOnly", visible = "is_admin")]
     async fn update_ballot_measure(
         &self,
         ctx: &Context<'_>,
@@ -35,6 +37,7 @@ impl BallotMeasureMutation {
         Ok(BallotMeasureResult::from(updated_record))
     }
 
+    #[graphql(guard = "StaffOnly", visible = "is_admin")]
     async fn delete_ballot_measure(
         &self,
         ctx: &Context<'_>,

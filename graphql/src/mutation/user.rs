@@ -4,7 +4,6 @@ use crate::{
     types::{AddressResult, Error},
     upload_to_s3, File,
 };
-
 use async_graphql::{Context, Object, Result, SimpleObject, Upload, ID};
 use auth::{create_access_token_for_user, Claims};
 use db::{AddressInput, Role, User};
@@ -16,16 +15,19 @@ use std::io::Read;
 pub struct UserMutation;
 
 #[derive(SimpleObject)]
+#[graphql(visible = "is_admin")]
 struct UpdateUsernameResult {
     pub username: String,
 }
 
 #[derive(SimpleObject)]
+#[graphql(visible = "is_admin")]
 struct UpdateEmailResult {
     pub email: String,
 }
 
 #[derive(SimpleObject)]
+#[graphql(visible = "is_admin")]
 struct UpdateNameResult {
     pub first_name: Option<String>,
     pub last_name: Option<String>,

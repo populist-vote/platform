@@ -1,12 +1,12 @@
+use crate::{
+    context::ApiContext,
+    is_admin,
+    types::{AuthTokenResult, Error},
+};
 use async_graphql::{Context, Object, Result, SimpleObject};
 use auth::Claims;
 use jsonwebtoken::TokenData;
 use zxcvbn::zxcvbn;
-
-use crate::{
-    context::ApiContext,
-    types::{AuthTokenResult, Error},
-};
 
 #[derive(Default)]
 pub struct AuthQuery;
@@ -21,6 +21,7 @@ pub struct PasswordEntropyResult {
 #[Object]
 impl AuthQuery {
     /// Validate that a user does not already exist with this email
+    #[graphql(visible = "is_admin")]
     async fn validate_email_available(
         &self,
         ctx: &Context<'_>,
@@ -46,6 +47,7 @@ impl AuthQuery {
         }
     }
 
+    #[graphql(visible = "is_admin")]
     async fn validate_password_entropy(
         &self,
         password: String,
@@ -66,6 +68,7 @@ impl AuthQuery {
     }
 
     /// Provides current user based on JWT found in client's access_token cookie
+    #[graphql(visible = "is_admin")]
     async fn current_user(&self, ctx: &Context<'_>) -> Result<Option<AuthTokenResult>, Error> {
         let user = ctx.data::<Option<TokenData<Claims>>>().unwrap();
 

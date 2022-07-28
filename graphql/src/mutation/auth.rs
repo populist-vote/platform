@@ -15,12 +15,14 @@ use pwhash::bcrypt;
 use serde::{Deserialize, Serialize};
 
 #[derive(InputObject)]
+#[graphql(visible = "is_admin")]
 pub struct LoginInput {
     email_or_username: String,
     password: String,
 }
 
 #[derive(Serialize, Deserialize, InputObject)]
+#[graphql(visible = "is_admin")]
 pub struct BeginUserRegistrationInput {
     #[graphql(validator(email))]
     pub email: String,
@@ -30,12 +32,14 @@ pub struct BeginUserRegistrationInput {
 }
 
 #[derive(Serialize, Deserialize, InputObject)]
+#[graphql(visible = "is_admin")]
 pub struct ResetPasswordInput {
     new_password: String,
     reset_token: String,
 }
 
 #[derive(Serialize, Deserialize, InputObject)]
+#[graphql(visible = "is_admin")]
 pub struct UpdatePasswordInput {
     old_password: String,
     new_password: String,

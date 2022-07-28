@@ -1,3 +1,9 @@
+use crate::{
+    context::ApiContext,
+    guard::StaffOnly,
+    is_admin,
+    types::{Error, PoliticianResult},
+};
 use async_graphql::*;
 use db::{
     CreateOrConnectIssueTagInput, CreateOrConnectOrganizationInput, CreateOrConnectPoliticianInput,
@@ -6,17 +12,12 @@ use db::{
 };
 use sqlx::{Pool, Postgres};
 
-use crate::{
-    context::ApiContext,
-    guard::StaffOnly,
-    types::{Error, PoliticianResult},
-};
-
 use std::str::FromStr;
 #[derive(Default)]
 pub struct PoliticianMutation;
 
 #[derive(SimpleObject)]
+#[graphql(visible = "is_admin")]
 struct DeletePoliticianResult {
     id: String,
 }
@@ -133,7 +134,7 @@ async fn handle_nested_politician_endorsements(
 
 #[Object]
 impl PoliticianMutation {
-    #[graphql(guard = "StaffOnly")]
+    #[graphql(guard = "StaffOnly", visible = "is_admin")]
     async fn create_politician(
         &self,
         ctx: &Context<'_>,
@@ -167,7 +168,7 @@ impl PoliticianMutation {
         Ok(PoliticianResult::from(new_record))
     }
 
-    #[graphql(guard = "StaffOnly")]
+    #[graphql(guard = "StaffOnly", visible = "is_admin")]
     async fn update_politician(
         &self,
         ctx: &Context<'_>,
@@ -204,7 +205,7 @@ impl PoliticianMutation {
         Ok(PoliticianResult::from(updated_record))
     }
 
-    #[graphql(guard = "StaffOnly")]
+    #[graphql(guard = "StaffOnly", visible = "is_admin")]
     async fn delete_politician(
         &self,
         ctx: &Context<'_>,

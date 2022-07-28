@@ -1,14 +1,12 @@
+use crate::{context::ApiContext, guard::StaffOnly, is_admin, types::BillResult};
 use async_graphql::*;
 use db::{Bill, CreateArgumentInput, CreateBillInput, UpdateBillInput};
 use sqlx::{Pool, Postgres};
-
-use crate::context::ApiContext;
-use crate::guard::StaffOnly;
-use crate::types::BillResult;
 #[derive(Default)]
 pub struct BillMutation;
 
 #[derive(SimpleObject)]
+#[graphql(visible = "is_admin")]
 struct DeleteBillResult {
     id: String,
 }
@@ -34,7 +32,7 @@ async fn handle_nested_arguments(
 
 #[Object]
 impl BillMutation {
-    #[graphql(guard = "StaffOnly")]
+    #[graphql(guard = "StaffOnly", visible = "is_admin")]
     async fn create_bill(&self, ctx: &Context<'_>, input: CreateBillInput) -> Result<BillResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let new_record = Bill::create(&db_pool, &input).await?;
@@ -44,7 +42,7 @@ impl BillMutation {
         Ok(BillResult::from(new_record))
     }
 
-    #[graphql(guard = "StaffOnly")]
+    #[graphql(guard = "StaffOnly", visible = "is_admin")]
     async fn update_bill(
         &self,
         ctx: &Context<'_>,
@@ -64,7 +62,7 @@ impl BillMutation {
         Ok(BillResult::from(updated_record))
     }
 
-    #[graphql(guard = "StaffOnly")]
+    #[graphql(guard = "StaffOnly", visible = "is_admin")]
     async fn delete_bill(&self, ctx: &Context<'_>, id: String) -> Result<DeleteBillResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         Bill::delete(&db_pool, uuid::Uuid::parse_str(&id)?).await?;

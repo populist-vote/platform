@@ -1,14 +1,14 @@
+use crate::{context::ApiContext, is_admin, Error};
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use auth::Claims;
 use db::{Role, User, UserWithProfile};
 use jsonwebtoken::TokenData;
 
-use crate::{context::ApiContext, Error};
-
 use super::UserResult;
 
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
+#[graphql(visible = "is_admin")]
 pub struct AuthTokenResult {
     id: ID,
     username: String,
@@ -17,6 +17,7 @@ pub struct AuthTokenResult {
 }
 
 #[derive(SimpleObject)]
+#[graphql(visible = "is_admin")]
 pub struct CreateUserResult {
     id: ID,
 }
@@ -28,6 +29,7 @@ impl From<User> for CreateUserResult {
 }
 
 #[derive(SimpleObject)]
+#[graphql(visible = "is_admin")]
 pub struct LoginResult {
     pub user_id: ID,
 }

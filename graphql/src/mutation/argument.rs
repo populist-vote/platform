@@ -1,20 +1,22 @@
+use crate::{context::ApiContext, guard::StaffOnly, is_admin, types::ArgumentResult};
 use async_graphql::*;
 use db::{
     models::vote::{VotableType, Vote, VoteDirection},
     Argument, UpdateArgumentInput,
 };
 
-use crate::{context::ApiContext, types::ArgumentResult};
 #[derive(Default)]
 pub struct ArgumentMutation;
 
 #[derive(SimpleObject)]
+#[graphql(visible = "is_admin")]
 struct DeleteArgumentResult {
     id: String,
 }
 
 #[Object]
 impl ArgumentMutation {
+    #[graphql(guard = "StaffOnly", visible = "is_admin")]
     async fn update_argument(
         &self,
         ctx: &Context<'_>,
@@ -33,6 +35,7 @@ impl ArgumentMutation {
         Ok(DeleteArgumentResult { id })
     }
 
+    #[graphql(visible = "is_admin")]
     async fn upvote_argument(
         &self,
         ctx: &Context<'_>,
@@ -51,6 +54,7 @@ impl ArgumentMutation {
         Ok(true)
     }
 
+    #[graphql(visible = "is_admin")]
     async fn downvote_argument(
         &self,
         ctx: &Context<'_>,
