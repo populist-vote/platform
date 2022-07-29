@@ -6,7 +6,7 @@ use async_graphql::{ComplexObject, Context, Enum, Result, SimpleObject, ID};
 use db::{
     models::{
         bill::Bill,
-        enums::{LegislationStatus, PoliticalParty, State},
+        enums::{LegislationStatus, PoliticalParty, RaceType, State},
         politician::Politician,
     },
     Office, Race,
@@ -52,7 +52,6 @@ pub struct PoliticianResult {
     votesmart_candidate_id: Option<i32>,
     votesmart_candidate_bio: Option<GetCandidateBioResponse>,
     votesmart_candidate_ratings: Vec<VsRating>,
-    upcoming_race_id: Option<ID>,
     race_wins: Option<i32>,
     race_losses: Option<i32>,
 }
@@ -323,16 +322,49 @@ impl PoliticianResult {
     }
 
     async fn upcoming_race(&self, ctx: &Context<'_>) -> Result<Option<RaceResult>> {
-        let race_result = match &self.upcoming_race_id {
-            Some(id) => {
-                let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-                let race = Race::find_by_id(&db_pool, uuid::Uuid::parse_str(id).unwrap()).await?;
-                Some(RaceResult::from(race))
-            }
-            None => None,
-        };
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
 
-        Ok(race_result)
+        let race_result = sqlx::query_as!(
+            Race,
+            r#"
+            SELECT
+                id,
+                slug,
+                title,
+                office_id,
+                race_type AS "race_type:RaceType",
+                party AS "party:PoliticalParty",
+                state AS "state:State",
+                description,
+                ballotpedia_link,
+                early_voting_begins_date,
+                winner_id,
+                total_votes,
+                official_website,
+                election_id,
+                created_at,
+                updated_at
+            FROM (
+                SELECT
+                    race.*,
+                    election_date
+                FROM
+                    race
+                    JOIN election ON race.election_id = election.id
+                    JOIN race_candidates ON race.id = race_candidates.race_id
+                WHERE
+                    race_candidates.candidate_id = $1
+                    AND election_date > NOW()) AS r
+            ORDER BY
+                election_date ASC
+            LIMIT 1
+        "#,
+            uuid::Uuid::parse_str(&self.id).unwrap(),
+        )
+        .fetch_optional(&db_pool)
+        .await?;
+
+        Ok(race_result.map(|r| RaceResult::from(r)))
     }
 
     async fn votes(&self, ctx: &Context<'_>, race_id: uuid::Uuid) -> Result<Option<i32>> {
@@ -397,7 +429,6 @@ impl From<Politician> for PoliticianResult {
                 p.votesmart_candidate_ratings.to_owned(),
             )
             .unwrap_or_default(),
-            upcoming_race_id: p.upcoming_race_id.map(ID::from),
             race_wins: p.race_wins,
             race_losses: p.race_losses,
         }

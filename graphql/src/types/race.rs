@@ -107,7 +107,6 @@ impl RaceResult {
                     legiscan_people_id,
                     crp_candidate_id,
                     fec_candidate_id,
-                    upcoming_race_id,
                     race_wins,
                     race_losses,
                     p.created_at,

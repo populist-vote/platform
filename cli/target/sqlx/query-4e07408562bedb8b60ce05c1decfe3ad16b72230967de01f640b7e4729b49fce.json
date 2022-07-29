@@ -1,14 +1,25 @@
 {
-  "query": "\n            INSERT INTO race_candidates (race_id, candidate_id)\n            VALUES((SELECT id FROM race WHERE race.office_id = $1 AND race.race_type = 'general' LIMIT 1), $2)\n            ON CONFLICT DO NOTHING\n        ",
+  "query": "\n            SELECT id, votesmart_candidate_bio->'office' AS office FROM politician\n        ",
   "describe": {
-    "columns": [],
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "office",
+        "type_info": "Jsonb"
+      }
+    ],
     "parameters": {
-      "Left": [
-        "Uuid",
-        "Uuid"
-      ]
+      "Left": []
     },
-    "nullable": []
+    "nullable": [
+      false,
+      null
+    ]
   },
-  "hash": "ac45f74b1825a224b0c44ce018be0ab557d7801b6f1dcf3537a80bca8ea2006e"
+  "hash": "9fa6defc67a59298344558924f5fca791be5d40ded7b666de91794ad3b606845"
 }
