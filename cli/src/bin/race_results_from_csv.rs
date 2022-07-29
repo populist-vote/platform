@@ -65,6 +65,54 @@ async fn import_race_results_from_csv() -> Result<(), Box<dyn Error>> {
         .await;
     }
 
+    // Update race wins
+    let _query = sqlx::query!(
+        r#"
+            UPDATE
+                politician AS p
+            SET
+                race_wins = race_wins + 1
+            FROM
+                race AS r
+            WHERE
+                r.winner_id = p.id
+                AND((
+                    SELECT
+                        COUNT(*)
+                        FROM race_candidates rc
+                    WHERE
+                        rc.race_id = r.id) > 1);
+        "#
+    )
+    .fetch_optional(&pool.connection)
+    .await;
+
+    // Update race losses
+    let _query = sqlx::query!(
+        r#"
+            UPDATE
+                politician AS p
+            SET
+                race_losses = race_losses - 1
+            FROM
+                race_candidates AS rc
+            WHERE
+                rc.candidate_id = p.id
+                AND(
+                    SELECT
+                        winner_id FROM race
+                    WHERE
+                        race.id = rc.race_id) IS NOT NULL
+                AND(
+                    SELECT
+                        winner_id FROM race
+                    WHERE
+                        race.id = rc.race_id) != p.id;
+        "#
+    )
+    .fetch_optional(&pool.connection)
+    .await;
+
     sp.stop();
     eprintln!("\n✅ {}", "Success".bright_green().bold());
     Ok(())
