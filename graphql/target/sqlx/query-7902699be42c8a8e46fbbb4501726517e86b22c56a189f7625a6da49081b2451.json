@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT\n                id,\n                slug,\n                title,\n                office_id,\n                race_type AS \"race_type:RaceType\",\n                party AS \"party:PoliticalParty\",\n                state AS \"state:State\",\n                description,\n                ballotpedia_link,\n                early_voting_begins_date,\n                winner_id,\n                total_votes,\n                official_website,\n                election_id,\n                r.created_at,\n                r.updated_at\n            FROM\n                race r\n            JOIN race_candidates rc ON rc.race_id = r.id\n            JOIN voting_guide_candidates vgc ON vgc.candidate_id = rc.candidate_id\n            WHERE\n                r.election_id = $1 AND\n                vgc.voting_guide_id = $2\n            ORDER BY title DESC\n            ",
+  "query": "\n            SELECT\n                id,\n                slug,\n                title,\n                office_id,\n                race_type AS \"race_type:RaceType\",\n                party AS \"party:PoliticalParty\",\n                state AS \"state:State\",\n                description,\n                ballotpedia_link,\n                early_voting_begins_date,\n                winner_id,\n                total_votes,\n                official_website,\n                election_id,\n                created_at,\n                updated_at\n            FROM (\n                SELECT\n                    race.*,\n                    election_date\n                FROM\n                    race\n                    JOIN election ON race.election_id = election.id\n                    JOIN race_candidates ON race.id = race_candidates.race_id\n                WHERE\n                    race_candidates.candidate_id = $1\n                    AND election_date > NOW()) AS r\n            ORDER BY\n                election_date ASC\n            LIMIT 1\n        ",
   "describe": {
     "columns": [
       {
@@ -119,7 +119,15 @@
                 "WA",
                 "WV",
                 "WI",
-                "WY"
+                "WY",
+                "AS",
+                "FM",
+                "GU",
+                "MH",
+                "MP",
+                "PW",
+                "PR",
+                "VI"
               ]
             }
           }
@@ -173,7 +181,6 @@
     ],
     "parameters": {
       "Left": [
-        "Uuid",
         "Uuid"
       ]
     },
@@ -196,5 +203,5 @@
       false
     ]
   },
-  "hash": "2cc7d9f1758e50c5bf9e8d21ddeb127db7bca6d4ba90d95a717886659d69950e"
+  "hash": "927dfd90a297d6600cce123935afd258c93460861cf914d353758e4b202da6d0"
 }

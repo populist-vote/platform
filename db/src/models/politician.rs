@@ -41,7 +41,6 @@ pub struct Politician {
     pub legiscan_people_id: Option<i32>,
     pub crp_candidate_id: Option<String>,
     pub fec_candidate_id: Option<String>,
-    pub upcoming_race_id: Option<uuid::Uuid>,
     pub race_wins: Option<i32>,
     pub race_losses: Option<i32>,
     pub created_at: DateTime,
@@ -81,7 +80,6 @@ pub struct CreatePoliticianInput {
     pub legiscan_people_id: Option<i32>,
     pub crp_candidate_id: Option<String>,
     pub fec_candidate_id: Option<String>,
-    pub upcoming_race_id: Option<uuid::Uuid>,
     pub race_wins: Option<i32>,
     pub race_losses: Option<i32>,
 }
@@ -118,7 +116,6 @@ pub struct UpdatePoliticianInput {
     pub legiscan_people_id: Option<i32>,
     pub crp_candidate_id: Option<String>,
     pub fec_candidate_id: Option<String>,
-    pub upcoming_race_id: Option<uuid::Uuid>,
     pub race_wins: Option<i32>,
     pub race_losses: Option<i32>,
 }
@@ -209,7 +206,6 @@ impl Politician {
                         legiscan_people_id,
                         crp_candidate_id,
                         fec_candidate_id,
-                        upcoming_race_id,
                         race_wins,
                         race_losses)
                         VALUES(
@@ -242,8 +238,7 @@ impl Politician {
                             $26,
                             $27,
                             $28,
-                            $29,
-                            $30)
+                            $29)
                     RETURNING
                         id,
                         slug,
@@ -274,7 +269,6 @@ impl Politician {
                         legiscan_people_id,
                         crp_candidate_id,
                         fec_candidate_id,
-                        upcoming_race_id,
                         race_wins,
                         race_losses,
                         created_at,
@@ -312,7 +306,6 @@ impl Politician {
             input.legiscan_people_id,
             input.crp_candidate_id,
             input.fec_candidate_id,
-            input.upcoming_race_id,
             input.race_wins,
             input.race_losses,
         )
@@ -361,7 +354,6 @@ impl Politician {
                     votesmart_candidate_bio,
                     votesmart_candidate_ratings,
                     website_url,
-                    upcoming_race_id,
                     race_wins,
                     race_losses)
                     VALUES(
@@ -379,8 +371,7 @@ impl Politician {
                         $11,
                         $12,
                         $13,
-                        $14,
-                        $15)
+                        $14)
                 RETURNING
                     id,
                     slug,
@@ -411,7 +402,6 @@ impl Politician {
                     legiscan_people_id,
                     crp_candidate_id,
                     fec_candidate_id,
-                    upcoming_race_id,
                     race_wins,
                     race_losses,
                     created_at,
@@ -434,7 +424,6 @@ impl Politician {
             vs_candidate_bio,
             vs_candidate_ratings,
             input.website_url,
-            input.upcoming_race_id,
             input.race_wins,
             input.race_losses,
         )
@@ -481,9 +470,8 @@ impl Politician {
                     legiscan_people_id = COALESCE($26, legiscan_people_id),
                     crp_candidate_id = COALESCE($27, crp_candidate_id),
                     fec_candidate_id = COALESCE($28, fec_candidate_id),
-                    upcoming_race_id = COALESCE($29, upcoming_race_id),
-                    race_wins = COALESCE($30, race_wins),
-                    race_losses = COALESCE($31, race_losses)
+                    race_wins = COALESCE($29, race_wins),
+                    race_losses = COALESCE($30, race_losses)
                 WHERE id=$1
                 OR votesmart_candidate_id = $2
                 RETURNING
@@ -516,7 +504,6 @@ impl Politician {
                         legiscan_people_id,
                         crp_candidate_id,
                         fec_candidate_id,
-                        upcoming_race_id,
                         race_wins,
                         race_losses,
                         created_at,
@@ -550,7 +537,6 @@ impl Politician {
             input.legiscan_people_id,
             input.crp_candidate_id,
             input.fec_candidate_id,
-            input.upcoming_race_id,
             input.race_wins,
             input.race_losses,
         )
@@ -599,7 +585,6 @@ impl Politician {
                         legiscan_people_id,
                         crp_candidate_id,
                         fec_candidate_id,
-                        upcoming_race_id,
                         race_wins,
                         race_losses,
                         created_at,
@@ -643,7 +628,6 @@ impl Politician {
                         legiscan_people_id,
                         crp_candidate_id,
                         fec_candidate_id,
-                        upcoming_race_id,
                         race_wins,
                         race_losses,
                         created_at,
@@ -690,7 +674,6 @@ impl Politician {
                         legiscan_people_id,
                         crp_candidate_id,
                         fec_candidate_id,
-                        upcoming_race_id,
                         race_wins,
                         race_losses,
                         created_at,
@@ -744,7 +727,6 @@ impl Politician {
                         legiscan_people_id,
                         crp_candidate_id,
                         fec_candidate_id,
-                        upcoming_race_id,
                         race_wins,
                         race_losses,
                         created_at,
@@ -815,7 +797,6 @@ impl Politician {
                         legiscan_people_id,
                         crp_candidate_id,
                         fec_candidate_id,
-                        upcoming_race_id,
                         race_wins,
                         race_losses,
                         p.created_at,

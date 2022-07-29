@@ -39,7 +39,6 @@ struct PoliticianRow {
     pub fec_candidate_id: Option<String>,
     pub race_wins: Option<i32>,
     pub race_losses: Option<i32>,
-    pub upcoming_race_id: Option<uuid::Uuid>,
 }
 
 async fn upsert_politicians_from_csv() -> Result<(), Box<dyn Error>> {
@@ -54,7 +53,7 @@ async fn upsert_politicians_from_csv() -> Result<(), Box<dyn Error>> {
 
         let _record = sqlx::query!(
             r#"
-            INSERT INTO politician (slug, first_name, middle_name, last_name, suffix, preferred_name, biography, biography_source, home_state, date_of_birth, thumbnail_image_url, website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, party, votesmart_candidate_id, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses, upcoming_race_id, office_id)
+            INSERT INTO politician (slug, first_name, middle_name, last_name, suffix, preferred_name, biography, biography_source, home_state, date_of_birth, thumbnail_image_url, website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, party, votesmart_candidate_id, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses, office_id)
             VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
             ON CONFLICT (slug) DO UPDATE
             SET
@@ -77,8 +76,7 @@ async fn upsert_politicians_from_csv() -> Result<(), Box<dyn Error>> {
                 party = $21,
                 race_wins = $26,
                 race_losses = $27,
-                upcoming_race_id = $28,
-                office_id = $29
+                office_id = $28
             RETURNING id
             "#,
             new_record_input.slug,
@@ -108,7 +106,6 @@ async fn upsert_politicians_from_csv() -> Result<(), Box<dyn Error>> {
             new_record_input.fec_candidate_id,
             new_record_input.race_wins,
             new_record_input.race_losses,
-            new_record_input.upcoming_race_id,
             new_record_input.office_id,
         )
         .fetch_one(&pool.connection)
