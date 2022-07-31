@@ -364,7 +364,7 @@ impl PoliticianResult {
         .fetch_optional(&db_pool)
         .await?;
 
-        Ok(race_result.map(|r| RaceResult::from(r)))
+        Ok(race_result.map(RaceResult::from))
     }
 
     async fn votes(&self, ctx: &Context<'_>, race_id: uuid::Uuid) -> Result<Option<i32>> {

@@ -1,5 +1,5 @@
 {
-  "query": "\n            UPDATE populist_user SET email = $1\n            WHERE id = $2\n            RETURNING id, email, username, password, role AS \"role:Role\", created_at, confirmed_at, updated_at\n        ",
+  "query": "\n            SELECT\n                id,\n                slug,\n                title,\n                office_id,\n                race_type AS \"race_type:RaceType\",\n                party AS \"party:PoliticalParty\",\n                state AS \"state:State\",\n                description,\n                ballotpedia_link,\n                early_voting_begins_date,\n                winner_id,\n                total_votes,\n                official_website,\n                election_id,\n                created_at,\n                updated_at\n            FROM (\n                SELECT\n                    race.*,\n                    election_date\n                FROM\n                    race\n                    JOIN election ON race.election_id = election.id\n                    JOIN race_candidates ON race.id = race_candidates.race_id\n                WHERE\n                    race_candidates.candidate_id = $1\n                    AND election_date > NOW()) AS r\n            ORDER BY\n                election_date ASC\n            LIMIT 1\n        ",
   "describe": {
     "columns": [
       {
@@ -9,31 +9,29 @@
       },
       {
         "ordinal": 1,
-        "name": "email",
+        "name": "slug",
         "type_info": "Text"
       },
       {
         "ordinal": 2,
-        "name": "username",
+        "name": "title",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "password",
-        "type_info": "Text"
+        "name": "office_id",
+        "type_info": "Uuid"
       },
       {
         "ordinal": 4,
-        "name": "role:Role",
+        "name": "race_type:RaceType",
         "type_info": {
           "Custom": {
-            "name": "user_role",
+            "name": "race_type",
             "kind": {
               "Enum": [
-                "superuser",
-                "staff",
-                "premium",
-                "basic"
+                "primary",
+                "general"
               ]
             }
           }
@@ -41,23 +39,140 @@
       },
       {
         "ordinal": 5,
+        "name": "party:PoliticalParty",
+        "type_info": {
+          "Custom": {
+            "name": "political_party",
+            "kind": {
+              "Enum": [
+                "democratic",
+                "republican",
+                "libertarian",
+                "green",
+                "constitution",
+                "unknown",
+                "independent",
+                "freedom",
+                "unity",
+                "approval_voting",
+                "unaffiliated"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "state:State",
+        "type_info": {
+          "Custom": {
+            "name": "state",
+            "kind": {
+              "Enum": [
+                "AL",
+                "AK",
+                "AZ",
+                "AR",
+                "CA",
+                "CO",
+                "CT",
+                "DC",
+                "DE",
+                "FL",
+                "GA",
+                "HI",
+                "ID",
+                "IL",
+                "IN",
+                "IA",
+                "KS",
+                "KY",
+                "LA",
+                "ME",
+                "MD",
+                "MA",
+                "MI",
+                "MN",
+                "MS",
+                "MO",
+                "MT",
+                "NE",
+                "NV",
+                "NH",
+                "NJ",
+                "NM",
+                "NY",
+                "NC",
+                "ND",
+                "OH",
+                "OK",
+                "OR",
+                "PA",
+                "RI",
+                "SC",
+                "SD",
+                "TN",
+                "TX",
+                "UT",
+                "VT",
+                "VA",
+                "WA",
+                "WV",
+                "WI",
+                "WY"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "ballotpedia_link",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "early_voting_begins_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 10,
+        "name": "winner_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 11,
+        "name": "total_votes",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 12,
+        "name": "official_website",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "election_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 14,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 6,
-        "name": "confirmed_at",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 7,
+        "ordinal": 15,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
     ],
     "parameters": {
       "Left": [
-        "Text",
         "Uuid"
       ]
     },
@@ -67,10 +182,18 @@
       false,
       false,
       false,
-      false,
       true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
       false
     ]
   },
-  "hash": "9a729b061294493dec40a66d979fa4bdaa369823cf29c9c3aeda9981b59e7b5b"
+  "hash": "927dfd90a297d6600cce123935afd258c93460861cf914d353758e4b202da6d0"
 }
