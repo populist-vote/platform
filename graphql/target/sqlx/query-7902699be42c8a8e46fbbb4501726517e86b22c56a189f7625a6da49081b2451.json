@@ -1,33 +1,76 @@
 {
-  "query": "\n                SELECT\n                    id AS candidate_id,\n                    rc.votes,\n                    rc.race_id\n                FROM\n                    politician p\n                    JOIN race_candidates rc ON race_id = $1\n                WHERE\n                    p.id = rc.candidate_id AND \n                    rc.race_id = $1\n\n            ",
+  "query": "\n            UPDATE populist_user SET email = $1\n            WHERE id = $2\n            RETURNING id, email, username, password, role AS \"role:Role\", created_at, confirmed_at, updated_at\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "candidate_id",
+        "name": "id",
         "type_info": "Uuid"
       },
       {
         "ordinal": 1,
-        "name": "votes",
-        "type_info": "Int4"
+        "name": "email",
+        "type_info": "Text"
       },
       {
         "ordinal": 2,
-        "name": "race_id",
-        "type_info": "Uuid"
+        "name": "username",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "password",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "role:Role",
+        "type_info": {
+          "Custom": {
+            "name": "user_role",
+            "kind": {
+              "Enum": [
+                "superuser",
+                "staff",
+                "premium",
+                "basic"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "confirmed_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
       }
     ],
     "parameters": {
       "Left": [
+        "Text",
         "Uuid"
       ]
     },
     "nullable": [
       false,
+      false,
+      false,
+      false,
+      false,
+      false,
       true,
       false
     ]
   },
-  "hash": "a16cc418ecb64d3c9b6d0df577b60d7f250d158dc1e1c0c67b4928fe396eb0a4"
+  "hash": "9a729b061294493dec40a66d979fa4bdaa369823cf29c9c3aeda9981b59e7b5b"
 }

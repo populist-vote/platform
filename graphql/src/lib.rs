@@ -69,6 +69,26 @@ pub async fn upload_to_s3(file: File, directory: String) -> Result<Url, Error> {
     Ok(image_url)
 }
 
+pub async fn delete_from_s3(path: String) -> Result<(), Error> {
+    info!("Deleting file from s3");
+    dotenv().ok();
+    let accesss_key = std::env::var("AWS_ACCESS_KEY")?;
+    let secret_key = std::env::var("AWS_SECRET_KEY")?;
+
+    let bucket_name = "populist-platform";
+    let region = "us-east-2".parse()?;
+    let credentials = Credentials::new(
+        Some(&accesss_key.to_owned()),
+        Some(&secret_key.to_owned()),
+        None,
+        None,
+        None,
+    )?;
+    let bucket = Bucket::new(bucket_name, region, credentials)?;
+    bucket.delete_object(path).await?;
+    Ok(())
+}
+
 pub fn is_admin(ctx: &Context<'_>) -> bool {
     if let Some(token_data) = ctx.data_unchecked::<Option<TokenData<Claims>>>() {
         matches!(

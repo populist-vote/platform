@@ -1,22 +1,29 @@
 {
-  "query": "\n            SELECT\n                ROUND(CAST(CAST(rc.votes AS FLOAT) / CAST(r.total_votes AS FLOAT) * 100 AS NUMERIC), 1)::FLOAT AS \"percentage\"\n            FROM\n                race_candidates rc\n                JOIN race r ON rc.race_id = $2\n            WHERE\n                rc.candidate_id = $1\n                AND rc.race_id = $2\n                AND rc.votes IS NOT NULL\n                AND r.id = $2\n        ",
+  "query": "\n            UPDATE user_profile SET first_name = $1, last_name = $2\n            WHERE user_id = $3\n            RETURNING first_name, last_name\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "percentage",
-        "type_info": "Float8"
+        "name": "first_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "last_name",
+        "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid",
+        "Text",
+        "Text",
         "Uuid"
       ]
     },
     "nullable": [
-      null
+      true,
+      true
     ]
   },
-  "hash": "41b07e7fe70a2dc38e96ad3b21f69aaba31121635d3e1db29d621363c981390e"
+  "hash": "722cfb9974f5c78359106ea1754801fb454006b9c2919919b6fae75919f3afee"
 }

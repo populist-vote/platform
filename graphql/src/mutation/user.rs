@@ -1,6 +1,6 @@
 use crate::{
     context::ApiContext,
-    is_admin,
+    delete_from_s3, is_admin,
     types::{AddressResult, Error},
     upload_to_s3, File,
 };
@@ -36,7 +36,7 @@ struct UpdateNameResult {
 #[Object]
 impl UserMutation {
     #[graphql(visible = "is_admin")]
-    async fn upload_profile_picture(&self, ctx: &Context<'_>, file: Upload) -> Result<bool> {
+    async fn upload_profile_picture(&self, ctx: &Context<'_>, file: Upload) -> Result<String> {
         let user_id = ctx
             .data::<Option<TokenData<Claims>>>()
             .unwrap()
@@ -45,9 +45,10 @@ impl UserMutation {
             .claims
             .sub;
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+
         let upload = file.value(ctx).unwrap();
         let mut content = Vec::new();
-        let filename = upload.filename.clone();
+        let filename = user_id.to_string();
         let mimetype = upload.content_type.clone();
 
         upload.into_read().read_to_end(&mut content).unwrap();
@@ -57,20 +58,61 @@ impl UserMutation {
             content,
             mimetype,
         };
-        let url = upload_to_s3(file_info, "user-assets".to_string())
-            .await?
-            .to_string();
-        let _updated_record = sqlx::query!(
+        let url = upload_to_s3(file_info, "user-assets/profile-pictures".to_string()).await?;
+        // Append last modified date because s3 path will remain the same and we want browser to cache, but refresh the image
+        let url = format!("{}{}{}", url, "?lastmod=", chrono::Utc::now().timestamp());
+
+        let _query = sqlx::query!(
             r#"
             UPDATE user_profile SET profile_picture_url = $1
             WHERE user_id = $2
-            RETURNING profile_picture_url
         "#,
             url,
             user_id
         )
         .fetch_one(&db_pool)
-        .await;
+        .await?;
+
+        Ok(url)
+    }
+
+    async fn delete_profile_picture(&self, ctx: &Context<'_>) -> Result<bool> {
+        let user_id = ctx
+            .data::<Option<TokenData<Claims>>>()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .claims
+            .sub;
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+
+        let query = sqlx::query!(
+            r#"
+            WITH up AS (
+                SELECT
+                    profile_picture_url
+                FROM
+                    user_profile
+                WHERE
+                    user_id = $1
+            )
+            UPDATE user_profile SET profile_picture_url = NULL
+            WHERE user_id = $1
+            RETURNING (SELECT profile_picture_url FROM up)
+        "#,
+            user_id
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        if let Some(url) = query.profile_picture_url {
+            let url = url::Url::parse(&url).unwrap();
+            let s3_path = url.path().to_string();
+            if let Err(err) = delete_from_s3(s3_path).await {
+                tracing::error!("Error deleting profile picture: {}", err);
+            };
+        };
+
         Ok(true)
     }
 
