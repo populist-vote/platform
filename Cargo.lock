@@ -1491,6 +1491,7 @@ dependencies = [
  "jsonwebtoken",
  "legiscan",
  "mailers",
+ "open-secrets",
  "poem",
  "pwhash",
  "rust-s3",

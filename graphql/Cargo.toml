@@ -9,6 +9,7 @@ auth = { path = "../auth" }
 config = { path = "../config" }
 db = { path = "../db" }
 mailers = { path = "../mailers" }
+open-secrets = { path = "../open-secrets" }
 
 anyhow = "1.0.45"
 async-graphql = { version = "3.0.10", features = ["uuid", "chrono", "unblock", "dataloader", "apollo_persisted_queries"] }

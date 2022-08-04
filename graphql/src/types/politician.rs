@@ -11,6 +11,7 @@ use db::{
     },
     Office, Race,
 };
+use open_secrets::OpenSecretsProxy;
 use serde::{Deserialize, Serialize};
 
 use votesmart::GetCandidateBioResponse;
@@ -49,6 +50,7 @@ pub struct PoliticianResult {
     tiktok_url: Option<String>,
     email: Option<String>,
     party: Option<PoliticalParty>,
+    crp_candidate_id: Option<String>,
     votesmart_candidate_id: Option<i32>,
     votesmart_candidate_bio: Option<GetCandidateBioResponse>,
     votesmart_candidate_ratings: Vec<VsRating>,
@@ -84,6 +86,22 @@ enum VotesmartExperience {
     Object(Experience),
     Array(Vec<Experience>),
     None,
+}
+
+#[derive(SimpleObject, Debug, Clone)]
+pub struct DonationsByIndustry {
+    cycle: i32,
+    last_updated: chrono::NaiveDate,
+    sectors: Vec<Sector>,
+}
+
+#[derive(SimpleObject, Debug, Clone)]
+pub struct Sector {
+    name: String,
+    id: String,
+    individuals: i32,
+    pacs: i32,
+    total: i32,
 }
 
 #[derive(SimpleObject, Debug, Clone)]
@@ -321,6 +339,68 @@ impl PoliticianResult {
         Ok(office_result)
     }
 
+    pub async fn donations_by_industry(&self) -> Result<Option<DonationsByIndustry>> {
+        let proxy = OpenSecretsProxy::new().unwrap();
+        if let Some(crp_id) = &self.crp_candidate_id {
+            let response = proxy.cand_sector(crp_id, None).await.unwrap();
+            let json: serde_json::Value = response.json().await.unwrap();
+            let donations_by_industry = DonationsByIndustry {
+                cycle: json["response"]["sectors"]["@attributes"]["cycle"]
+                    .as_str()
+                    .unwrap()
+                    .parse::<i32>()
+                    .unwrap(),
+                last_updated: chrono::NaiveDate::parse_from_str(
+                    json["response"]["sectors"]["@attributes"]["last_updated"]
+                        .as_str()
+                        .unwrap(),
+                    "%m/%d/%Y",
+                )
+                .unwrap(),
+                sectors: json["response"]["sectors"]["sector"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|sector| {
+                        let name = sector["@attributes"]["sector_name"]
+                            .as_str()
+                            .unwrap()
+                            .to_string();
+                        let id = sector["@attributes"]["sectorid"]
+                            .as_str()
+                            .unwrap()
+                            .to_string();
+                        let individuals = sector["@attributes"]["indivs"]
+                            .as_str()
+                            .unwrap()
+                            .parse::<i32>()
+                            .unwrap();
+                        let pacs = sector["@attributes"]["pacs"]
+                            .as_str()
+                            .unwrap()
+                            .parse::<i32>()
+                            .unwrap();
+                        let total = sector["@attributes"]["total"]
+                            .as_str()
+                            .unwrap()
+                            .parse::<i32>()
+                            .unwrap();
+                        Sector {
+                            name,
+                            id,
+                            individuals,
+                            pacs,
+                            total,
+                        }
+                    })
+                    .collect(),
+            };
+            Ok(Some(donations_by_industry))
+        } else {
+            Ok(None)
+        }
+    }
+
     async fn upcoming_race(&self, ctx: &Context<'_>) -> Result<Option<RaceResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
 
@@ -422,6 +502,7 @@ impl From<Politician> for PoliticianResult {
             tiktok_url: p.tiktok_url,
             email: p.email,
             party: p.party,
+            crp_candidate_id: p.crp_candidate_id,
             votesmart_candidate_id: p.votesmart_candidate_id,
             votesmart_candidate_bio: serde_json::from_value(p.votesmart_candidate_bio.to_owned())
                 .unwrap_or_default(),
