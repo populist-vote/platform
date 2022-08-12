@@ -16,7 +16,7 @@ top = false
 
 ## Quick Start
 
-One page summary of how to start a new AdiDoks project. [Quick Start →](../quick-start/)
+Getting started with the Populist API is quick and painless. [Quick Start →](../quick-start/)
 
 ## Go further
 

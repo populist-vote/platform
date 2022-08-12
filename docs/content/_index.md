@@ -30,10 +30,15 @@ content = 'Pull data on politicians financials, voting records, and more.'
 
 [[extra.list]]
 title = "The Power of GraphQL"
-content = 'Create deeply nested queries across numerous actors in the civic data sphere to power your apps.'
+content = 'Create deeply nested queries across numerous actors in the civic data sphere to power your government websites and apps.'
 
 [[extra.list]]
 title = "Full Text Search"
 content = "We offer full text legislature search for thousands of bills and ballot measures."
+
+[[extra.list]]
+title = "Digital Ballots"
+content = "Create rich digital ballot experiences for your local elections."
+
 
 +++
