@@ -409,10 +409,18 @@ async fn seed_minnesota_sos_data() -> Result<(), Box<dyn Error>> {
             _ => PoliticalParty::Unaffiliated,
         };
 
+        let middle_name = match name.middle_name() {
+            Some(m) => Some(m.to_string()),
+            None => match name.middle_initials() {
+                Some(m) => Some(m.to_string()),
+                None => None,
+            },
+        };
+
         let new_politician_input = CreatePoliticianInput {
             slug: Some(slug),
             first_name: name.given_name().unwrap_or_default().to_string(),
-            middle_name: name.middle_name().map(|s| s.to_string()),
+            middle_name,
             last_name: name.surname().to_string(),
             suffix: name.suffix().map(|s| s.to_string()),
             campaign_website_url: filing.campaign_website,
