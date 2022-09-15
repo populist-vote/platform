@@ -5,6 +5,7 @@ use crate::{
 };
 use async_graphql::InputObject;
 use chrono::NaiveDate;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use slugify::slugify;
@@ -49,7 +50,7 @@ pub struct Politician {
 
 #[derive(InputObject, Default, Debug, Serialize, Deserialize)]
 pub struct CreatePoliticianInput {
-    pub slug: String,
+    pub slug: Option<String>,
     pub first_name: String,
     pub middle_name: Option<String>,
     pub last_name: String,
@@ -156,7 +157,28 @@ impl Politician {
         db_pool: &PgPool,
         input: &CreatePoliticianInput,
     ) -> Result<Self, sqlx::Error> {
-        let slug = slugify!(&CreatePoliticianInput::full_name(input));
+        let mut slug = match &input.slug {
+            Some(slug) => slug.to_owned(),
+            None => slugify!(&CreatePoliticianInput::full_name(input)),
+        };
+
+        // Check db if slug exists
+        let existing_slug = sqlx::query!(
+            r#"
+            SELECT slug
+            FROM politician
+            WHERE slug = $1
+            "#,
+            slug
+        )
+        .fetch_optional(db_pool)
+        .await?;
+
+        let rando: i32 = { rand::thread_rng().gen() };
+
+        if let Some(r) = existing_slug {
+            slug = format!("{}-{}", r.slug, rando);
+        }
 
         let vs_candidate_bio = match input.votesmart_candidate_bio.to_owned() {
             Some(bio) => bio,
@@ -171,14 +193,7 @@ impl Politician {
         let record = sqlx::query_as!(
             Politician,
             r#"
-                WITH ins_author AS (
-                INSERT INTO author (author_type)
-                        VALUES('politician') ON CONFLICT DO NOTHING
-                    RETURNING
-                        id AS author_id
-                ),
-                p AS (
-                INSERT INTO politician (id,
+                INSERT INTO politician (
                         slug,
                         first_name,
                         middle_name,
@@ -209,7 +224,6 @@ impl Politician {
                         race_wins,
                         race_losses)
                         VALUES(
-                            (SELECT author_id FROM ins_author),
                             $1,
                             $2,
                             $3,
@@ -273,11 +287,6 @@ impl Politician {
                         race_losses,
                         created_at,
                         updated_at
-                )
-                SELECT
-                    p.*
-                FROM
-                    p
             "#,
             slug,
             input.first_name,
