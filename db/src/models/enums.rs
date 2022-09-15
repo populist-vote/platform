@@ -6,7 +6,6 @@ use strum_macros::{Display, EnumIter, EnumString};
 #[derive(
     Enum,
     Debug,
-    Default,
     Copy,
     Clone,
     Eq,
@@ -22,7 +21,6 @@ use strum_macros::{Display, EnumIter, EnumString};
 pub enum PoliticalScope {
     Local,
     State,
-    #[default]
     Federal,
 }
 
@@ -187,12 +185,6 @@ impl FullState for State {
 // #[serde(rename_all = "snake_case")]
 pub enum PoliticalParty {
     Democratic,
-    #[serde(rename = "Democratic Farmer Labor")]
-    DemocraticFarmerLabor,
-    #[serde(rename = "Grassroots Legalize Cannabis")]
-    GrassrootsLegalizeCannabis,
-    #[serde(rename = "Legal Marijuana Now")]
-    LegalMarijuanaNow,
     Republican,
     Libertarian,
     Freedom,
