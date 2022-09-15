@@ -1,8 +1,9 @@
 use db::{
     models::enums::{PoliticalParty, PoliticalScope, RaceType, State},
-    CreatePoliticianInput, ElectionScope,
+    CreatePoliticianInput, District, ElectionScope,
 };
 use human_name::Name;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use slugify::slugify;
 use std::{
@@ -13,10 +14,13 @@ use std::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 struct CandidateFiling {
+    office_code: Option<i32>,
     office_id: i32,
     full_name: String,
     office_title: String,
     county_id: i32,
+    mcd_fips_code: Option<i32>,
+    school_district_number: Option<i32>,
     party: String,
     residence_street: Option<String>,
     residence_city: Option<String>,
@@ -39,21 +43,27 @@ struct FilingOffice {
     election_scope: Option<ElectionScope>,
 }
 
-fn parse_district_from_office_title(title: &str) -> Option<String> {
+struct ParsedTitle {
+    short_title: String,
+    district: Option<String>,
+    municipality: Option<String>,
+    seat: Option<String>,
+}
+
+fn parse_title_and_district(title: &str) -> ParsedTitle {
+    let re = regex::Regex::new(r#"(\d+)"#).unwrap();
     let district = if title.contains("District Court") {
-        title
+        let title = title
             .split("District Court")
             .nth(0)
             .unwrap_or_default()
             .split("-")
             .nth(1)
             .unwrap_or_default()
-            .trim()
-            .to_string()
-            .chars()
-            .find(|a| a.is_digit(10))
-            .unwrap()
-            .to_string()
+            .trim();
+        let caps = re.captures(title).unwrap();
+        let district = caps[1].to_string();
+        district
     } else {
         title
             .split("District")
@@ -62,11 +72,62 @@ fn parse_district_from_office_title(title: &str) -> Option<String> {
             .trim()
             .to_string()
     };
+
+    let ordinals_re = regex::Regex::new(r#"\- (\d+)(st|nd|rd|th)"#).unwrap();
+    let title = title
+        .split("District")
+        .nth(0)
+        .unwrap_or_default()
+        .trim()
+        .to_string();
+    let title = ordinals_re.replace_all(&title, "").to_string();
+
+    let title_clone = title.clone();
+
+    let seat = match title_clone {
+        t if t.contains("Court of Appeals") => {
+            let seat = title
+                .split("Court of Appeals")
+                .nth(1)
+                .unwrap_or_default()
+                .trim()
+                .to_string();
+            Some(seat)
+        }
+        t if t.contains("Supreme Court") => {
+            let seat = title
+                .split("Supreme Court")
+                .nth(1)
+                .unwrap_or_default()
+                .trim()
+                .to_string();
+            Some(seat)
+        }
+        t if t.contains("District Court") => {
+            let seat = title
+                .split("District Court")
+                .nth(1)
+                .unwrap_or_default()
+                .trim()
+                .to_string();
+            Some(seat)
+        }
+        _ => None,
+    };
     let district = match district {
         d if d.is_empty() => None,
         d => Some(d),
     };
-    district
+
+    let within_parens_re = regex::Regex::new(r"\(([^\)]+)\)").unwrap();
+    let municipality = within_parens_re.captures(&title).map(|c| c[1].to_string());
+
+    ParsedTitle {
+        short_title: title,
+        district,
+        municipality,
+        seat,
+    }
 }
 
 // Hashmap with Minnesota counties by code
@@ -168,7 +229,8 @@ fn minnesota_counties() -> HashMap<i32, &'static str> {
 }
 
 fn create_filing_office_from_csv_row(candidate_filing: &CandidateFiling) -> FilingOffice {
-    let district = parse_district_from_office_title(&candidate_filing.office_title);
+    let ParsedTitle { district, .. } = parse_title_and_district(&candidate_filing.office_title);
+
     let election_scope = match candidate_filing.county_id {
         88 => ElectionScope::State,
         _ => ElectionScope::County,
@@ -205,31 +267,100 @@ async fn seed_minnesota_sos_data() -> Result<(), Box<dyn Error>> {
     // Create a new office record and associated general race for each office in HashSet
     // Also create new HashMap to associate new races with candidate filings in memory
     let mut races = HashMap::new();
+
     for office in offices.clone() {
         let office_clone = office.clone();
+        let ParsedTitle {
+            short_title,
+            seat,
+            municipality,
+            ..
+        } = parse_title_and_district(&office.title);
+
+        let mut rng = rand::thread_rng();
+        let rnd_int: i32 = rng.gen();
+
+        // Slug format: [title]-[municipality]-[state]-[district]
         let slug = slugify!(&format!(
-            "{} {}",
-            &office.clone().county_name.unwrap_or("".to_string()),
-            &office.title
+            "{} {} {} {}",
+            "mn".to_string(),
+            office.clone().county_name.unwrap_or("".to_string()),
+            &office.title,
+            rnd_int
         ));
-        let title = format!(
-            "{} {}",
-            &office.clone().county_name.unwrap_or("".to_string()),
-            &office.title
-        );
-        let political_scope = match title.clone() {
-            t if t.contains("County") => PoliticalScope::Local,
-            t if t.contains("U.S. Representative") => PoliticalScope::Federal,
-            _ => PoliticalScope::State,
+
+        let district_type = match short_title.clone() {
+            t if t.contains("County Commissioner") => Some(District::County),
+            t if t.contains("County Park Commissioner") => Some(District::County),
+            t if t.contains("Soil and Water Supervisor") => Some(District::County),
+            t if t.contains("Hospital") => Some(District::City),
+            t if t.contains("Sanitary") => Some(District::City),
+            t if t.contains("School Board") => Some(District::School),
+            t if t.contains("State Senator") => Some(District::StateSenate),
+            t if t.contains("State Representative") => Some(District::StateHouse),
+            t if t.contains("U.S. House") => Some(District::UsCongressional),
+            _ => None,
         };
+
+        let (political_scope, election_scope) = match short_title.clone() {
+            t if t.contains("U.S. Representative") => {
+                (PoliticalScope::Federal, ElectionScope::National)
+            }
+            t if t.contains("State Senator") | t.contains("State Representative") => {
+                (PoliticalScope::State, ElectionScope::District)
+            }
+            t if t.contains("Supreme Court") => (PoliticalScope::State, ElectionScope::State),
+            t if t.contains("Court of Appeals") => (PoliticalScope::State, ElectionScope::State),
+            t if t.contains("County Attorney")
+                || t.contains("County Sheriff")
+                || t.contains("County Recorder") =>
+            {
+                (PoliticalScope::State, ElectionScope::State)
+            }
+            t if t.contains("County Commissioner")
+                || t.contains("Hospital District")
+                || t.contains("Sanitary District")
+                || t.contains("School Board") =>
+            {
+                (PoliticalScope::Local, ElectionScope::District)
+            }
+            t if t.contains("County Auditor")
+                || t.contains("County Treasurer")
+                || t.contains("County Auditor / Treasurer") =>
+            {
+                (PoliticalScope::Local, ElectionScope::County)
+            }
+            t if t.contains("Attorney General")
+                || t.contains("State Auditor")
+                || t.contains("Secretary of State")
+                || t.contains("Governor") =>
+            {
+                (PoliticalScope::State, ElectionScope::State)
+            }
+            t if t.contains("County Surveyor") || t.contains("County  Coroner") => {
+                (PoliticalScope::Local, ElectionScope::County)
+            }
+            t if t.contains("County Park Commissioner")
+                || t.contains("Soil and Water Supervisor") =>
+            {
+                (PoliticalScope::Local, ElectionScope::District)
+            }
+            _ => (PoliticalScope::Local, ElectionScope::City),
+        };
+
+        let municipality = municipality.map_or(None, |m| Some(m.to_string()));
+        println!("municipality = {:?}", municipality);
 
         let new_office_input = db::CreateOfficeInput {
             slug: Some(slug.clone()),
-            title: title.clone(),
+            title: short_title.clone(),
             district: office.district,
+            district_type,
             state: Some(State::MN),
-            municipality: office.county_name,
+            municipality,
+            seat,
             political_scope,
+            election_scope,
             ..Default::default()
         };
 
@@ -238,8 +369,8 @@ async fn seed_minnesota_sos_data() -> Result<(), Box<dyn Error>> {
             .expect(&format!("Failed creating office: {}", slug));
 
         let race_input = db::CreateRaceInput {
-            slug: Some(slugify!(&title)),
-            title,
+            slug: Some(slug),
+            title: short_title,
             office_id: created_office.id,
             race_type: RaceType::General,
             party: None,
@@ -271,7 +402,9 @@ async fn seed_minnesota_sos_data() -> Result<(), Box<dyn Error>> {
         let name = Name::parse(&filing.full_name)
             .expect(&format!("Failed to parse name: {}", &filing.full_name));
         let party = match filing.party.as_ref() {
-            "DFL" => PoliticalParty::Democratic,
+            "DFL" => PoliticalParty::DemocraticFarmerLabor,
+            "LMN" => PoliticalParty::LegalMarijuanaNow,
+            "GLC" => PoliticalParty::GrassrootsLegalizeCannabis,
             "R" => PoliticalParty::Republican,
             _ => PoliticalParty::Unaffiliated,
         };
