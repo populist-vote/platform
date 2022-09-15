@@ -1,347 +1,5 @@
 {
   "db": "PostgreSQL",
-  "0bb756ac9e3d41889fece036eb704bcbf272715a56c601a29bb2723bae451d84": {
-    "query": "\n                UPDATE office\n                SET slug = COALESCE($2, slug), \n                    title = COALESCE($3, title), \n                    political_scope = COALESCE($4, political_scope),\n                    state = COALESCE($5, state),\n                    municipality = COALESCE($6, municipality),\n                    district = COALESCE($7, district),\n                    district_type = COALESCE($8, district_type),\n                    chamber = COALESCE($9, chamber),\n                    election_scope = COALESCE($10, election_scope),\n                    incumbent_id = COALESCE($11, incumbent_id),\n                    office_type = COALESCE($12, office_type),\n                    term_length = COALESCE($13, term_length)\n                WHERE id = $1\n                RETURNING id, slug, title, office_type, district, district_type AS \"district_type:District\", chamber AS \"chamber:Chamber\", election_scope as \"election_scope:ElectionScope\", political_scope AS \"political_scope:PoliticalScope\", incumbent_id, state AS \"state:State\", municipality, term_length, created_at, updated_at\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "slug",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "title",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "office_type",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 4,
-          "name": "district",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 5,
-          "name": "district_type:District",
-          "type_info": {
-            "Custom": {
-              "name": "district_type",
-              "kind": {
-                "Enum": [
-                  "us_congressional",
-                  "state_senate",
-                  "state_house",
-                  "school"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 6,
-          "name": "chamber:Chamber",
-          "type_info": {
-            "Custom": {
-              "name": "chamber",
-              "kind": {
-                "Enum": [
-                  "house",
-                  "senate"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 7,
-          "name": "election_scope:ElectionScope",
-          "type_info": {
-            "Custom": {
-              "name": "election_scope",
-              "kind": {
-                "Enum": [
-                  "national",
-                  "state",
-                  "county",
-                  "city",
-                  "district"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 8,
-          "name": "political_scope:PoliticalScope",
-          "type_info": {
-            "Custom": {
-              "name": "political_scope",
-              "kind": {
-                "Enum": [
-                  "local",
-                  "state",
-                  "federal"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 9,
-          "name": "incumbent_id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 10,
-          "name": "state:State",
-          "type_info": {
-            "Custom": {
-              "name": "state",
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY",
-                  "AS",
-                  "FM",
-                  "GU",
-                  "MH",
-                  "MP",
-                  "PW",
-                  "PR",
-                  "VI"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 11,
-          "name": "municipality",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 12,
-          "name": "term_length",
-          "type_info": "Int4"
-        },
-        {
-          "ordinal": 13,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 14,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Text",
-          "Text",
-          {
-            "Custom": {
-              "name": "political_scope",
-              "kind": {
-                "Enum": [
-                  "local",
-                  "state",
-                  "federal"
-                ]
-              }
-            }
-          },
-          {
-            "Custom": {
-              "name": "state",
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY",
-                  "AS",
-                  "FM",
-                  "GU",
-                  "MH",
-                  "MP",
-                  "PW",
-                  "PR",
-                  "VI"
-                ]
-              }
-            }
-          },
-          "Text",
-          "Text",
-          {
-            "Custom": {
-              "name": "district_type",
-              "kind": {
-                "Enum": [
-                  "us_congressional",
-                  "state_senate",
-                  "state_house",
-                  "school"
-                ]
-              }
-            }
-          },
-          {
-            "Custom": {
-              "name": "chamber",
-              "kind": {
-                "Enum": [
-                  "house",
-                  "senate"
-                ]
-              }
-            }
-          },
-          {
-            "Custom": {
-              "name": "election_scope",
-              "kind": {
-                "Enum": [
-                  "national",
-                  "state",
-                  "county",
-                  "city",
-                  "district"
-                ]
-              }
-            }
-          },
-          "Uuid",
-          "Text",
-          "Int4"
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false
-      ]
-    }
-  },
   "0dbe3b666d7726e78e78245a888fc228a62dc61ef59874419091138d998c5659": {
     "query": "\n                SELECT it.id, slug, name, description, category, it.created_at, it.updated_at FROM issue_tag it\n                JOIN politician_issue_tags\n                ON politician_issue_tags.issue_tag_id = it.id\n                WHERE politician_issue_tags.politician_id = $1\n            ",
     "describe": {
@@ -714,7 +372,10 @@
                   "freedom",
                   "unity",
                   "approval_voting",
-                  "unaffiliated"
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
                 ]
               }
             }
@@ -1044,7 +705,10 @@
                   "freedom",
                   "unity",
                   "approval_voting",
-                  "unaffiliated"
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
                 ]
               }
             }
@@ -1753,7 +1417,10 @@
                   "freedom",
                   "unity",
                   "approval_voting",
-                  "unaffiliated"
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
                 ]
               }
             }
@@ -1934,7 +1601,10 @@
                   "freedom",
                   "unity",
                   "approval_voting",
-                  "unaffiliated"
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
                 ]
               }
             }
@@ -2199,418 +1869,6 @@
       ]
     }
   },
-  "39f43003e6ee6335f126f61d033439ba10622aefb29d5c4fcbce26ab668e22dc": {
-    "query": "\n                WITH ins_author AS (\n                INSERT INTO author (author_type)\n                        VALUES('politician') ON CONFLICT DO NOTHING\n                    RETURNING\n                        id AS author_id\n                ),\n                p AS (\n                INSERT INTO politician (id,\n                        slug,\n                        first_name,\n                        middle_name,\n                        last_name,\n                        suffix,\n                        preferred_name,\n                        biography,\n                        biography_source,\n                        home_state,\n                        date_of_birth,\n                        office_id,\n                        website_url,\n                        campaign_website_url,\n                        facebook_url,\n                        twitter_url,\n                        instagram_url,\n                        youtube_url,\n                        linkedin_url,\n                        tiktok_url,\n                        email,\n                        party,\n                        votesmart_candidate_id,\n                        votesmart_candidate_bio,\n                        votesmart_candidate_ratings,\n                        legiscan_people_id,\n                        crp_candidate_id,\n                        fec_candidate_id,\n                        race_wins,\n                        race_losses)\n                        VALUES(\n                            (SELECT author_id FROM ins_author),\n                            $1,\n                            $2,\n                            $3,\n                            $4,\n                            $5,\n                            $6,\n                            $7,\n                            $8,\n                            $9,\n                            $10,\n                            $11,\n                            $12,\n                            $13,\n                            $14,\n                            $15,\n                            $16,\n                            $17,\n                            $18,\n                            $19,\n                            $20,\n                            $21,\n                            $22,\n                            $23,\n                            $24, \n                            $25,\n                            $26,\n                            $27,\n                            $28,\n                            $29)\n                    RETURNING\n                        id,\n                        slug,\n                        first_name,\n                        middle_name,\n                        last_name,\n                        suffix,\n                        preferred_name,\n                        biography,\n                        biography_source,\n                        home_state AS \"home_state:State\",\n                        date_of_birth,\n                        office_id,\n                        thumbnail_image_url,\n                        website_url,\n                        campaign_website_url,\n                        facebook_url,\n                        twitter_url,\n                        instagram_url,\n                        youtube_url,\n                        linkedin_url,\n                        tiktok_url,\n                        email,\n                        party AS \"party:PoliticalParty\",\n                        votesmart_candidate_id,\n                        votesmart_candidate_bio,\n                        votesmart_candidate_ratings,\n                        legiscan_people_id,\n                        crp_candidate_id,\n                        fec_candidate_id,\n                        race_wins,\n                        race_losses,\n                        created_at,\n                        updated_at\n                )\n                SELECT\n                    p.*\n                FROM\n                    p\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "slug",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "first_name",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "middle_name",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 4,
-          "name": "last_name",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 5,
-          "name": "suffix",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 6,
-          "name": "preferred_name",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 7,
-          "name": "biography",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 8,
-          "name": "biography_source",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 9,
-          "name": "home_state:State",
-          "type_info": {
-            "Custom": {
-              "name": "state",
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY",
-                  "AS",
-                  "FM",
-                  "GU",
-                  "MH",
-                  "MP",
-                  "PW",
-                  "PR",
-                  "VI"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 10,
-          "name": "date_of_birth",
-          "type_info": "Date"
-        },
-        {
-          "ordinal": 11,
-          "name": "office_id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 12,
-          "name": "thumbnail_image_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 13,
-          "name": "website_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 14,
-          "name": "campaign_website_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 15,
-          "name": "facebook_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 16,
-          "name": "twitter_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 17,
-          "name": "instagram_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 18,
-          "name": "youtube_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 19,
-          "name": "linkedin_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 20,
-          "name": "tiktok_url",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 21,
-          "name": "email",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 22,
-          "name": "party:PoliticalParty",
-          "type_info": {
-            "Custom": {
-              "name": "political_party",
-              "kind": {
-                "Enum": [
-                  "democratic",
-                  "republican",
-                  "libertarian",
-                  "green",
-                  "constitution",
-                  "unknown",
-                  "independent",
-                  "freedom",
-                  "unity",
-                  "approval_voting",
-                  "unaffiliated"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 23,
-          "name": "votesmart_candidate_id",
-          "type_info": "Int4"
-        },
-        {
-          "ordinal": 24,
-          "name": "votesmart_candidate_bio",
-          "type_info": "Jsonb"
-        },
-        {
-          "ordinal": 25,
-          "name": "votesmart_candidate_ratings",
-          "type_info": "Jsonb"
-        },
-        {
-          "ordinal": 26,
-          "name": "legiscan_people_id",
-          "type_info": "Int4"
-        },
-        {
-          "ordinal": 27,
-          "name": "crp_candidate_id",
-          "type_info": "Varchar"
-        },
-        {
-          "ordinal": 28,
-          "name": "fec_candidate_id",
-          "type_info": "Varchar"
-        },
-        {
-          "ordinal": 29,
-          "name": "race_wins",
-          "type_info": "Int4"
-        },
-        {
-          "ordinal": 30,
-          "name": "race_losses",
-          "type_info": "Int4"
-        },
-        {
-          "ordinal": 31,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 32,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          {
-            "Custom": {
-              "name": "state",
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY",
-                  "AS",
-                  "FM",
-                  "GU",
-                  "MH",
-                  "MP",
-                  "PW",
-                  "PR",
-                  "VI"
-                ]
-              }
-            }
-          },
-          "Date",
-          "Uuid",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          {
-            "Custom": {
-              "name": "political_party",
-              "kind": {
-                "Enum": [
-                  "democratic",
-                  "republican",
-                  "libertarian",
-                  "green",
-                  "constitution",
-                  "unknown",
-                  "independent",
-                  "freedom",
-                  "unity",
-                  "approval_voting",
-                  "unaffiliated"
-                ]
-              }
-            }
-          },
-          "Int4",
-          "Jsonb",
-          "Jsonb",
-          "Int4",
-          "Varchar",
-          "Varchar",
-          "Int4",
-          "Int4"
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        true,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false
-      ]
-    }
-  },
   "3a6ab4c31866aea0938065cb20d53f14f639b62a779829ba6a64e694e139af1e": {
     "query": "\n                        INSERT INTO politician_politician_endorsements (politician_id, politician_endorsement_id)\n                        VALUES ($1, (SELECT id FROM politician WHERE slug = $2))\n                    ",
     "describe": {
@@ -2751,6 +2009,26 @@
       "nullable": []
     }
   },
+  "46ce5164255e58a4ca5e0afd5eeeb498322992f8354d8b940da6ecfffa8b36bc": {
+    "query": "\n            SELECT slug\n            FROM politician\n            WHERE slug = $1\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "slug",
+          "type_info": "Text"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      },
+      "nullable": [
+        false
+      ]
+    }
+  },
   "4b211e5363bd8c5396fe8116f4b04827cede5e5bdd09206373af5e2aa98e78d3": {
     "query": "\n                INSERT INTO vote (populist_user_id, votable_id, votable_type, direction)\n                VALUES ($1, $2, $3, $4) \n                ON CONFLICT ON CONSTRAINT unique_person_per_votable DO \n                UPDATE SET direction = $4\n            ",
     "describe": {
@@ -2776,223 +2054,6 @@
         ]
       },
       "nullable": []
-    }
-  },
-  "5270969036a7da9b44ee00970f5c659c391a6e881a676178e850238be8c916f7": {
-    "query": "\n                SELECT id, slug, title, office_type, district, district_type AS \"district_type:District\", chamber AS \"chamber:Chamber\", election_scope as \"election_scope:ElectionScope\", political_scope AS \"political_scope:PoliticalScope\", incumbent_id, state AS \"state:State\", municipality, term_length, created_at, updated_at FROM office\n                WHERE slug = $1\n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "slug",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "title",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "office_type",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 4,
-          "name": "district",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 5,
-          "name": "district_type:District",
-          "type_info": {
-            "Custom": {
-              "name": "district_type",
-              "kind": {
-                "Enum": [
-                  "us_congressional",
-                  "state_senate",
-                  "state_house",
-                  "school"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 6,
-          "name": "chamber:Chamber",
-          "type_info": {
-            "Custom": {
-              "name": "chamber",
-              "kind": {
-                "Enum": [
-                  "house",
-                  "senate"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 7,
-          "name": "election_scope:ElectionScope",
-          "type_info": {
-            "Custom": {
-              "name": "election_scope",
-              "kind": {
-                "Enum": [
-                  "national",
-                  "state",
-                  "county",
-                  "city",
-                  "district"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 8,
-          "name": "political_scope:PoliticalScope",
-          "type_info": {
-            "Custom": {
-              "name": "political_scope",
-              "kind": {
-                "Enum": [
-                  "local",
-                  "state",
-                  "federal"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 9,
-          "name": "incumbent_id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 10,
-          "name": "state:State",
-          "type_info": {
-            "Custom": {
-              "name": "state",
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY",
-                  "AS",
-                  "FM",
-                  "GU",
-                  "MH",
-                  "MP",
-                  "PW",
-                  "PR",
-                  "VI"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 11,
-          "name": "municipality",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 12,
-          "name": "term_length",
-          "type_info": "Int4"
-        },
-        {
-          "ordinal": 13,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 14,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false
-      ]
     }
   },
   "5285f8b9638a676da4f2b8a7d019c4969fdf7c4409a10e51c3e7c072a6188a66": {
@@ -3535,8 +2596,426 @@
       "nullable": []
     }
   },
-  "648712d8037c7f0d292538b7428eee237f6c56718568727ac58e14b84d379b35": {
-    "query": "\n                SELECT id, slug, title, office_type, district, district_type AS \"district_type:District\", chamber AS \"chamber:Chamber\", election_scope as \"election_scope:ElectionScope\", political_scope AS \"political_scope:PoliticalScope\", incumbent_id, state AS \"state:State\", municipality, term_length, created_at, updated_at FROM office\n                WHERE id = $1\n            ",
+  "67cacf28635a7e05726a481625caa6a4158a4313bef5373fdfa0466b84846440": {
+    "query": "\n                INSERT INTO politician (\n                        slug,\n                        first_name,\n                        middle_name,\n                        last_name,\n                        suffix,\n                        preferred_name,\n                        biography,\n                        biography_source,\n                        home_state,\n                        date_of_birth,\n                        office_id,\n                        website_url,\n                        campaign_website_url,\n                        facebook_url,\n                        twitter_url,\n                        instagram_url,\n                        youtube_url,\n                        linkedin_url,\n                        tiktok_url,\n                        email,\n                        party,\n                        votesmart_candidate_id,\n                        votesmart_candidate_bio,\n                        votesmart_candidate_ratings,\n                        legiscan_people_id,\n                        crp_candidate_id,\n                        fec_candidate_id,\n                        race_wins,\n                        race_losses)\n                        VALUES(\n                            $1,\n                            $2,\n                            $3,\n                            $4,\n                            $5,\n                            $6,\n                            $7,\n                            $8,\n                            $9,\n                            $10,\n                            $11,\n                            $12,\n                            $13,\n                            $14,\n                            $15,\n                            $16,\n                            $17,\n                            $18,\n                            $19,\n                            $20,\n                            $21,\n                            $22,\n                            $23,\n                            $24, \n                            $25,\n                            $26,\n                            $27,\n                            $28,\n                            $29)\n                    RETURNING\n                        id,\n                        slug,\n                        first_name,\n                        middle_name,\n                        last_name,\n                        suffix,\n                        preferred_name,\n                        biography,\n                        biography_source,\n                        home_state AS \"home_state:State\",\n                        date_of_birth,\n                        office_id,\n                        thumbnail_image_url,\n                        website_url,\n                        campaign_website_url,\n                        facebook_url,\n                        twitter_url,\n                        instagram_url,\n                        youtube_url,\n                        linkedin_url,\n                        tiktok_url,\n                        email,\n                        party AS \"party:PoliticalParty\",\n                        votesmart_candidate_id,\n                        votesmart_candidate_bio,\n                        votesmart_candidate_ratings,\n                        legiscan_people_id,\n                        crp_candidate_id,\n                        fec_candidate_id,\n                        race_wins,\n                        race_losses,\n                        created_at,\n                        updated_at\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "first_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "middle_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "last_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "suffix",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 6,
+          "name": "preferred_name",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 7,
+          "name": "biography",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 8,
+          "name": "biography_source",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 9,
+          "name": "home_state:State",
+          "type_info": {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 10,
+          "name": "date_of_birth",
+          "type_info": "Date"
+        },
+        {
+          "ordinal": 11,
+          "name": "office_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 12,
+          "name": "thumbnail_image_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 13,
+          "name": "website_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 14,
+          "name": "campaign_website_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 15,
+          "name": "facebook_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 16,
+          "name": "twitter_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 17,
+          "name": "instagram_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 18,
+          "name": "youtube_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 19,
+          "name": "linkedin_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 20,
+          "name": "tiktok_url",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 21,
+          "name": "email",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 22,
+          "name": "party:PoliticalParty",
+          "type_info": {
+            "Custom": {
+              "name": "political_party",
+              "kind": {
+                "Enum": [
+                  "democratic",
+                  "republican",
+                  "libertarian",
+                  "green",
+                  "constitution",
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 23,
+          "name": "votesmart_candidate_id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 24,
+          "name": "votesmart_candidate_bio",
+          "type_info": "Jsonb"
+        },
+        {
+          "ordinal": 25,
+          "name": "votesmart_candidate_ratings",
+          "type_info": "Jsonb"
+        },
+        {
+          "ordinal": 26,
+          "name": "legiscan_people_id",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 27,
+          "name": "crp_candidate_id",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 28,
+          "name": "fec_candidate_id",
+          "type_info": "Varchar"
+        },
+        {
+          "ordinal": 29,
+          "name": "race_wins",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 30,
+          "name": "race_losses",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 31,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 32,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
+                ]
+              }
+            }
+          },
+          "Date",
+          "Uuid",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "political_party",
+              "kind": {
+                "Enum": [
+                  "democratic",
+                  "republican",
+                  "libertarian",
+                  "green",
+                  "constitution",
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
+                ]
+              }
+            }
+          },
+          "Int4",
+          "Jsonb",
+          "Jsonb",
+          "Int4",
+          "Varchar",
+          "Varchar",
+          "Int4",
+          "Int4"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "71e674fb4d4ea15cb01f11c2956a0ad0ec28346777fdbe0e296663e8a6fac7d4": {
+    "query": "\n                SELECT id, slug, title, office_type, district, district_type AS \"district_type:District\", chamber AS \"chamber:Chamber\", election_scope as \"election_scope:ElectionScope\", political_scope AS \"political_scope:PoliticalScope\", incumbent_id, state AS \"state:State\", municipality, term_length, seat, created_at, updated_at FROM office\n                WHERE id = $1\n            ",
     "describe": {
       "columns": [
         {
@@ -3575,7 +3054,9 @@
                   "us_congressional",
                   "state_senate",
                   "state_house",
-                  "school"
+                  "school",
+                  "city",
+                  "county"
                 ]
               }
             }
@@ -3719,11 +3200,16 @@
         },
         {
           "ordinal": 13,
+          "name": "seat",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 14,
           "name": "created_at",
           "type_info": "Timestamptz"
         },
         {
-          "ordinal": 14,
+          "ordinal": 15,
           "name": "updated_at",
           "type_info": "Timestamptz"
         }
@@ -3743,6 +3229,7 @@
         true,
         false,
         false,
+        true,
         true,
         true,
         true,
@@ -3769,6 +3256,231 @@
       },
       "nullable": [
         null
+      ]
+    }
+  },
+  "797294a61acf0a67a96767210c2ff2dff9f93c0a55346971bdf8f5249523bf10": {
+    "query": "\n                SELECT id, slug, title, office_type, district, district_type AS \"district_type:District\", chamber AS \"chamber:Chamber\", election_scope as \"election_scope:ElectionScope\", political_scope AS \"political_scope:PoliticalScope\", incumbent_id, state AS \"state:State\", municipality, term_length, seat, created_at, updated_at FROM office\n                WHERE slug = $1\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "office_type",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "district",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "district_type:District",
+          "type_info": {
+            "Custom": {
+              "name": "district_type",
+              "kind": {
+                "Enum": [
+                  "us_congressional",
+                  "state_senate",
+                  "state_house",
+                  "school",
+                  "city",
+                  "county"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 6,
+          "name": "chamber:Chamber",
+          "type_info": {
+            "Custom": {
+              "name": "chamber",
+              "kind": {
+                "Enum": [
+                  "house",
+                  "senate"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 7,
+          "name": "election_scope:ElectionScope",
+          "type_info": {
+            "Custom": {
+              "name": "election_scope",
+              "kind": {
+                "Enum": [
+                  "national",
+                  "state",
+                  "county",
+                  "city",
+                  "district"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 8,
+          "name": "political_scope:PoliticalScope",
+          "type_info": {
+            "Custom": {
+              "name": "political_scope",
+              "kind": {
+                "Enum": [
+                  "local",
+                  "state",
+                  "federal"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 9,
+          "name": "incumbent_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 10,
+          "name": "state:State",
+          "type_info": {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 11,
+          "name": "municipality",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "term_length",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 13,
+          "name": "seat",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 14,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 15,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
       ]
     }
   },
@@ -4171,7 +3883,10 @@
                   "freedom",
                   "unity",
                   "approval_voting",
-                  "unaffiliated"
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
                 ]
               }
             }
@@ -4319,7 +4034,10 @@
                   "freedom",
                   "unity",
                   "approval_voting",
-                  "unaffiliated"
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
                 ]
               }
             }
@@ -4426,6 +4144,359 @@
         ]
       },
       "nullable": []
+    }
+  },
+  "86ae68934c6ba9a16490c697c5b8b09218b963eb37928b78aef9e431f2b5bb41": {
+    "query": "\n                UPDATE office\n                SET slug = COALESCE($2, slug), \n                    title = COALESCE($3, title), \n                    political_scope = COALESCE($4, political_scope),\n                    state = COALESCE($5, state),\n                    municipality = COALESCE($6, municipality),\n                    district = COALESCE($7, district),\n                    district_type = COALESCE($8, district_type),\n                    chamber = COALESCE($9, chamber),\n                    election_scope = COALESCE($10, election_scope),\n                    incumbent_id = COALESCE($11, incumbent_id),\n                    office_type = COALESCE($12, office_type),\n                    term_length = COALESCE($13, term_length),\n                    seat = COALESCE($14, seat)\n                WHERE id = $1\n                RETURNING id, slug, title, office_type, district, district_type AS \"district_type:District\", chamber AS \"chamber:Chamber\", election_scope as \"election_scope:ElectionScope\", political_scope AS \"political_scope:PoliticalScope\", incumbent_id, state AS \"state:State\", municipality, term_length, seat, created_at, updated_at\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "office_type",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "district",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "district_type:District",
+          "type_info": {
+            "Custom": {
+              "name": "district_type",
+              "kind": {
+                "Enum": [
+                  "us_congressional",
+                  "state_senate",
+                  "state_house",
+                  "school",
+                  "city",
+                  "county"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 6,
+          "name": "chamber:Chamber",
+          "type_info": {
+            "Custom": {
+              "name": "chamber",
+              "kind": {
+                "Enum": [
+                  "house",
+                  "senate"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 7,
+          "name": "election_scope:ElectionScope",
+          "type_info": {
+            "Custom": {
+              "name": "election_scope",
+              "kind": {
+                "Enum": [
+                  "national",
+                  "state",
+                  "county",
+                  "city",
+                  "district"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 8,
+          "name": "political_scope:PoliticalScope",
+          "type_info": {
+            "Custom": {
+              "name": "political_scope",
+              "kind": {
+                "Enum": [
+                  "local",
+                  "state",
+                  "federal"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 9,
+          "name": "incumbent_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 10,
+          "name": "state:State",
+          "type_info": {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 11,
+          "name": "municipality",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "term_length",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 13,
+          "name": "seat",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 14,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 15,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "political_scope",
+              "kind": {
+                "Enum": [
+                  "local",
+                  "state",
+                  "federal"
+                ]
+              }
+            }
+          },
+          {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
+                ]
+              }
+            }
+          },
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "district_type",
+              "kind": {
+                "Enum": [
+                  "us_congressional",
+                  "state_senate",
+                  "state_house",
+                  "school",
+                  "city",
+                  "county"
+                ]
+              }
+            }
+          },
+          {
+            "Custom": {
+              "name": "chamber",
+              "kind": {
+                "Enum": [
+                  "house",
+                  "senate"
+                ]
+              }
+            }
+          },
+          {
+            "Custom": {
+              "name": "election_scope",
+              "kind": {
+                "Enum": [
+                  "national",
+                  "state",
+                  "county",
+                  "city",
+                  "district"
+                ]
+              }
+            }
+          },
+          "Uuid",
+          "Text",
+          "Int4",
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
     }
   },
   "88bd45c3660f8b2762eae136f6f678b306cdc200da797c95d634a242dc7dd2af": {
@@ -4634,8 +4705,8 @@
       ]
     }
   },
-  "917463aea8693b295d9b5960f6642ae8c1cb5df796abc59b743418ade2746437": {
-    "query": "\n                INSERT INTO office (slug, title, political_scope, state, municipality, district, district_type, chamber, election_scope, incumbent_id, office_type, term_length)\n                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n                RETURNING id, slug, title, office_type, district, district_type AS \"district_type:District\", chamber AS \"chamber:Chamber\", election_scope as \"election_scope:ElectionScope\", political_scope AS \"political_scope:PoliticalScope\", incumbent_id, state AS \"state:State\", municipality, term_length, created_at, updated_at\n            ",
+  "8d47bc356027654b68fe66297c94793c61ae4caf1d69bdb5356f101ee2afd475": {
+    "query": "\n                SELECT id, slug, title, office_type, district, district_type AS \"district_type:District\", chamber AS \"chamber:Chamber\", election_scope as \"election_scope:ElectionScope\", political_scope AS \"political_scope:PoliticalScope\", incumbent_id, state AS \"state:State\", municipality, term_length, seat, created_at, updated_at FROM office\n                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector(concat_ws(' ', slug, title)) @@ to_tsquery($1))\n                AND ($2::state IS NULL OR state = $2)\n                AND ($3::political_scope IS NULL OR political_scope = $3)\n                \n            ",
     "describe": {
       "columns": [
         {
@@ -4674,7 +4745,9 @@
                   "us_congressional",
                   "state_senate",
                   "state_house",
-                  "school"
+                  "school",
+                  "city",
+                  "county"
                 ]
               }
             }
@@ -4818,11 +4891,16 @@
         },
         {
           "ordinal": 13,
+          "name": "seat",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 14,
           "name": "created_at",
           "type_info": "Timestamptz"
         },
         {
-          "ordinal": 14,
+          "ordinal": 15,
           "name": "updated_at",
           "type_info": "Timestamptz"
         }
@@ -4830,19 +4908,6 @@
       "parameters": {
         "Left": [
           "Text",
-          "Text",
-          {
-            "Custom": {
-              "name": "political_scope",
-              "kind": {
-                "Enum": [
-                  "local",
-                  "state",
-                  "federal"
-                ]
-              }
-            }
-          },
           {
             "Custom": {
               "name": "state",
@@ -4911,49 +4976,18 @@
               }
             }
           },
-          "Text",
-          "Text",
           {
             "Custom": {
-              "name": "district_type",
+              "name": "political_scope",
               "kind": {
                 "Enum": [
-                  "us_congressional",
-                  "state_senate",
-                  "state_house",
-                  "school"
-                ]
-              }
-            }
-          },
-          {
-            "Custom": {
-              "name": "chamber",
-              "kind": {
-                "Enum": [
-                  "house",
-                  "senate"
-                ]
-              }
-            }
-          },
-          {
-            "Custom": {
-              "name": "election_scope",
-              "kind": {
-                "Enum": [
-                  "national",
+                  "local",
                   "state",
-                  "county",
-                  "city",
-                  "district"
+                  "federal"
                 ]
               }
             }
-          },
-          "Uuid",
-          "Text",
-          "Int4"
+          }
         ]
       },
       "nullable": [
@@ -4966,6 +5000,7 @@
         true,
         false,
         false,
+        true,
         true,
         true,
         true,
@@ -5155,7 +5190,10 @@
                   "freedom",
                   "unity",
                   "approval_voting",
-                  "unaffiliated"
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
                 ]
               }
             }
@@ -5311,7 +5349,10 @@
                   "freedom",
                   "unity",
                   "approval_voting",
-                  "unaffiliated"
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
                 ]
               }
             }
@@ -5403,6 +5444,358 @@
         true,
         true,
         true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ]
+    }
+  },
+  "9c9f678c3cc68528ef1b335dfdc9b1f0e862cefc8a450dff179c937fdd4b01f3": {
+    "query": "\n                INSERT INTO office (slug, title, political_scope, state, municipality, district, district_type, chamber, election_scope, incumbent_id, office_type, term_length, seat)\n                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)\n                RETURNING id, slug, title, office_type, district, district_type AS \"district_type:District\", chamber AS \"chamber:Chamber\", election_scope as \"election_scope:ElectionScope\", political_scope AS \"political_scope:PoliticalScope\", incumbent_id, state AS \"state:State\", municipality, term_length, seat, created_at, updated_at\n            ",
+    "describe": {
+      "columns": [
+        {
+          "ordinal": 0,
+          "name": "id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 1,
+          "name": "slug",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 2,
+          "name": "title",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 3,
+          "name": "office_type",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 4,
+          "name": "district",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 5,
+          "name": "district_type:District",
+          "type_info": {
+            "Custom": {
+              "name": "district_type",
+              "kind": {
+                "Enum": [
+                  "us_congressional",
+                  "state_senate",
+                  "state_house",
+                  "school",
+                  "city",
+                  "county"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 6,
+          "name": "chamber:Chamber",
+          "type_info": {
+            "Custom": {
+              "name": "chamber",
+              "kind": {
+                "Enum": [
+                  "house",
+                  "senate"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 7,
+          "name": "election_scope:ElectionScope",
+          "type_info": {
+            "Custom": {
+              "name": "election_scope",
+              "kind": {
+                "Enum": [
+                  "national",
+                  "state",
+                  "county",
+                  "city",
+                  "district"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 8,
+          "name": "political_scope:PoliticalScope",
+          "type_info": {
+            "Custom": {
+              "name": "political_scope",
+              "kind": {
+                "Enum": [
+                  "local",
+                  "state",
+                  "federal"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 9,
+          "name": "incumbent_id",
+          "type_info": "Uuid"
+        },
+        {
+          "ordinal": 10,
+          "name": "state:State",
+          "type_info": {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "ordinal": 11,
+          "name": "municipality",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 12,
+          "name": "term_length",
+          "type_info": "Int4"
+        },
+        {
+          "ordinal": 13,
+          "name": "seat",
+          "type_info": "Text"
+        },
+        {
+          "ordinal": 14,
+          "name": "created_at",
+          "type_info": "Timestamptz"
+        },
+        {
+          "ordinal": 15,
+          "name": "updated_at",
+          "type_info": "Timestamptz"
+        }
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "political_scope",
+              "kind": {
+                "Enum": [
+                  "local",
+                  "state",
+                  "federal"
+                ]
+              }
+            }
+          },
+          {
+            "Custom": {
+              "name": "state",
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY",
+                  "AS",
+                  "FM",
+                  "GU",
+                  "MH",
+                  "MP",
+                  "PW",
+                  "PR",
+                  "VI"
+                ]
+              }
+            }
+          },
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "name": "district_type",
+              "kind": {
+                "Enum": [
+                  "us_congressional",
+                  "state_senate",
+                  "state_house",
+                  "school",
+                  "city",
+                  "county"
+                ]
+              }
+            }
+          },
+          {
+            "Custom": {
+              "name": "chamber",
+              "kind": {
+                "Enum": [
+                  "house",
+                  "senate"
+                ]
+              }
+            }
+          },
+          {
+            "Custom": {
+              "name": "election_scope",
+              "kind": {
+                "Enum": [
+                  "national",
+                  "state",
+                  "county",
+                  "city",
+                  "district"
+                ]
+              }
+            }
+          },
+          "Uuid",
+          "Text",
+          "Int4",
+          "Text"
+        ]
+      },
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
         true,
         true,
         true,
@@ -5866,7 +6259,10 @@
                   "freedom",
                   "unity",
                   "approval_voting",
-                  "unaffiliated"
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
                 ]
               }
             }
@@ -6164,7 +6560,10 @@
                   "freedom",
                   "unity",
                   "approval_voting",
-                  "unaffiliated"
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
                 ]
               }
             }
@@ -6460,7 +6859,10 @@
                   "freedom",
                   "unity",
                   "approval_voting",
-                  "unaffiliated"
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
                 ]
               }
             }
@@ -6623,7 +7025,10 @@
                   "freedom",
                   "unity",
                   "approval_voting",
-                  "unaffiliated"
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
                 ]
               }
             }
@@ -7564,7 +7969,10 @@
                   "freedom",
                   "unity",
                   "approval_voting",
-                  "unaffiliated"
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
                 ]
               }
             }
@@ -8722,7 +9130,10 @@
                   "freedom",
                   "unity",
                   "approval_voting",
-                  "unaffiliated"
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
                 ]
               }
             }
@@ -8865,7 +9276,10 @@
                   "freedom",
                   "unity",
                   "approval_voting",
-                  "unaffiliated"
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
                 ]
               }
             }
@@ -8966,7 +9380,10 @@
                   "freedom",
                   "unity",
                   "approval_voting",
-                  "unaffiliated"
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
                 ]
               }
             }
@@ -9121,7 +9538,10 @@
                   "freedom",
                   "unity",
                   "approval_voting",
-                  "unaffiliated"
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
                 ]
               }
             }
@@ -9495,7 +9915,10 @@
                   "freedom",
                   "unity",
                   "approval_voting",
-                  "unaffiliated"
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now"
                 ]
               }
             }
@@ -9982,303 +10405,6 @@
         ]
       },
       "nullable": []
-    }
-  },
-  "f7fe405a5c0d8a3707f501fb3a738a0652550659b64e69334c442a4f1974c312": {
-    "query": "\n                SELECT id, slug, title, office_type, district, district_type AS \"district_type:District\", chamber AS \"chamber:Chamber\", election_scope as \"election_scope:ElectionScope\", political_scope AS \"political_scope:PoliticalScope\", incumbent_id, state AS \"state:State\", municipality, term_length, created_at, updated_at FROM office\n                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector(concat_ws(' ', slug, title)) @@ to_tsquery($1))\n                AND ($2::state IS NULL OR state = $2)\n                AND ($3::political_scope IS NULL OR political_scope = $3)\n                \n            ",
-    "describe": {
-      "columns": [
-        {
-          "ordinal": 0,
-          "name": "id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 1,
-          "name": "slug",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 2,
-          "name": "title",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 3,
-          "name": "office_type",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 4,
-          "name": "district",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 5,
-          "name": "district_type:District",
-          "type_info": {
-            "Custom": {
-              "name": "district_type",
-              "kind": {
-                "Enum": [
-                  "us_congressional",
-                  "state_senate",
-                  "state_house",
-                  "school"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 6,
-          "name": "chamber:Chamber",
-          "type_info": {
-            "Custom": {
-              "name": "chamber",
-              "kind": {
-                "Enum": [
-                  "house",
-                  "senate"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 7,
-          "name": "election_scope:ElectionScope",
-          "type_info": {
-            "Custom": {
-              "name": "election_scope",
-              "kind": {
-                "Enum": [
-                  "national",
-                  "state",
-                  "county",
-                  "city",
-                  "district"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 8,
-          "name": "political_scope:PoliticalScope",
-          "type_info": {
-            "Custom": {
-              "name": "political_scope",
-              "kind": {
-                "Enum": [
-                  "local",
-                  "state",
-                  "federal"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 9,
-          "name": "incumbent_id",
-          "type_info": "Uuid"
-        },
-        {
-          "ordinal": 10,
-          "name": "state:State",
-          "type_info": {
-            "Custom": {
-              "name": "state",
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY",
-                  "AS",
-                  "FM",
-                  "GU",
-                  "MH",
-                  "MP",
-                  "PW",
-                  "PR",
-                  "VI"
-                ]
-              }
-            }
-          }
-        },
-        {
-          "ordinal": 11,
-          "name": "municipality",
-          "type_info": "Text"
-        },
-        {
-          "ordinal": 12,
-          "name": "term_length",
-          "type_info": "Int4"
-        },
-        {
-          "ordinal": 13,
-          "name": "created_at",
-          "type_info": "Timestamptz"
-        },
-        {
-          "ordinal": 14,
-          "name": "updated_at",
-          "type_info": "Timestamptz"
-        }
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          {
-            "Custom": {
-              "name": "state",
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY",
-                  "AS",
-                  "FM",
-                  "GU",
-                  "MH",
-                  "MP",
-                  "PW",
-                  "PR",
-                  "VI"
-                ]
-              }
-            }
-          },
-          {
-            "Custom": {
-              "name": "political_scope",
-              "kind": {
-                "Enum": [
-                  "local",
-                  "state",
-                  "federal"
-                ]
-              }
-            }
-          }
-        ]
-      },
-      "nullable": [
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false
-      ]
     }
   }
 }
