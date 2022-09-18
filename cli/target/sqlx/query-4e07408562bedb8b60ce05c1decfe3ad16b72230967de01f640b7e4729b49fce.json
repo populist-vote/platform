@@ -1,88 +1,21 @@
 {
-  "query": "\n                    INSERT INTO race_candidates (race_id, candidate_id) VALUES ($1, $2) RETURNING *\n                ",
+  "query": "SELECT id FROM politician WHERE votesmart_candidate_id = $1",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "race_id",
+        "name": "id",
         "type_info": "Uuid"
-      },
-      {
-        "ordinal": 1,
-        "name": "candidate_id",
-        "type_info": "Uuid"
-      },
-      {
-        "ordinal": 2,
-        "name": "is_running",
-        "type_info": "Bool"
-      },
-      {
-        "ordinal": 3,
-        "name": "date_announced",
-        "type_info": "Date"
-      },
-      {
-        "ordinal": 4,
-        "name": "date_qualified",
-        "type_info": "Date"
-      },
-      {
-        "ordinal": 5,
-        "name": "date_dropped",
-        "type_info": "Date"
-      },
-      {
-        "ordinal": 6,
-        "name": "reason_dropped",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 7,
-        "name": "qualification_method",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 8,
-        "name": "qualification_info",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 9,
-        "name": "created_at",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 10,
-        "name": "updated_at",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 11,
-        "name": "votes",
-        "type_info": "Int4"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid",
-        "Uuid"
+        "Int4"
       ]
     },
     "nullable": [
-      false,
-      false,
-      false,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      false,
-      false,
-      true
+      false
     ]
   },
-  "hash": "f88284b4138050b0974bcb523246d0d89cf4fc521d1725c5f3819c67d451bb66"
+  "hash": "fad3cc74ab2e17c68adcfc43c5f1904457cc5a5eab8c5e3a661d5c6648ca2060"
 }
