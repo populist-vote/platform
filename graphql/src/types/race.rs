@@ -100,6 +100,7 @@ impl RaceResult {
                     linkedin_url,
                     tiktok_url,
                     email,
+                    phone,
                     party AS "party:PoliticalParty",
                     votesmart_candidate_id,
                     votesmart_candidate_bio,
