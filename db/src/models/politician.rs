@@ -118,7 +118,7 @@ impl Politician {
                 input
                     .preferred_name
                     .clone()
-                    .unwrap_or(input.first_name.clone().unwrap_or_default()),
+                    .unwrap_or_else(|| input.first_name.clone().unwrap_or_default()),
                 input.last_name.clone().unwrap_or_default(),
                 input.suffix.clone().unwrap_or_default()
             )),
