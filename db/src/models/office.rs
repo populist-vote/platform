@@ -11,17 +11,17 @@ pub struct Office {
     pub id: uuid::Uuid,
     pub slug: String,
     pub title: String,
-    pub political_scope: PoliticalScope,
     pub office_type: Option<String>,
     pub district: Option<String>,
     pub district_type: Option<District>,
     pub chamber: Option<Chamber>,
+    pub political_scope: PoliticalScope,
     /// Helps to determine which races to display to a user
     pub election_scope: ElectionScope,
     pub state: Option<State>,
     pub municipality: Option<String>,
     /// If a new office is introduced for redistricting or other reasons,
-    /// there may not be an incumbent
+    /// there may not be an incumbent, hence optional
     pub incumbent_id: Option<uuid::Uuid>,
     pub term_length: Option<i32>,
     pub seat: Option<String>,
@@ -82,25 +82,8 @@ pub enum Chamber {
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, InputObject)]
-pub struct CreateOfficeInput {
-    pub slug: Option<String>,
-    pub title: String,
-    pub office_type: Option<String>,
-    pub district: Option<String>,
-    pub district_type: Option<District>,
-    pub chamber: Option<Chamber>,
-    pub election_scope: ElectionScope,
-    pub political_scope: PoliticalScope,
-    pub state: Option<State>,
-    pub municipality: Option<String>,
-    pub incumbent_id: Option<uuid::Uuid>,
-    pub term_length: Option<i32>,
-    pub seat: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize, InputObject)]
-pub struct UpdateOfficeInput {
-    pub name: Option<String>,
+pub struct UpsertOfficeInput {
+    pub id: Option<uuid::Uuid>,
     pub slug: Option<String>,
     pub title: Option<String>,
     pub office_type: Option<String>,
@@ -124,76 +107,46 @@ pub struct OfficeSearch {
 }
 
 impl Office {
-    pub async fn create(db_pool: &PgPool, input: &CreateOfficeInput) -> Result<Self, sqlx::Error> {
+    pub async fn upsert(db_pool: &PgPool, input: &UpsertOfficeInput) -> Result<Self, sqlx::Error> {
         let slug = match &input.slug {
             Some(slug) => slug.to_owned(),
-            None => slugify!(&input.title),
+            None => slugify!(&input.title.clone().unwrap_or_default()),
         };
 
         let record = sqlx::query_as!(
             Office,
             r#"
-                INSERT INTO office (slug, title, political_scope, state, municipality, district, district_type, chamber, election_scope, incumbent_id, office_type, term_length, seat)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-                RETURNING id, slug, title, office_type, district, district_type AS "district_type:District", chamber AS "chamber:Chamber", election_scope as "election_scope:ElectionScope", political_scope AS "political_scope:PoliticalScope", incumbent_id, state AS "state:State", municipality, term_length, seat, created_at, updated_at
+                INSERT INTO office (id, slug, title, office_type, district, district_type, chamber, political_scope, election_scope, state, municipality, incumbent_id, term_length, seat)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                ON CONFLICT (id) DO UPDATE
+                SET
+                    slug = COALESCE($2, office.slug),
+                    title = COALESCE($3, office.title),
+                    office_type = COALESCE($4, office.office_type),
+                    district = COALESCE($5, office.district),
+                    district_type = COALESCE($6, office.district_type),
+                    chamber = COALESCE($7, office.chamber),
+                    political_scope = COALESCE($8, office.political_scope),
+                    election_scope = COALESCE($9, office.election_scope),
+                    state = COALESCE($10, office.state),
+                    municipality = COALESCE($11, office.municipality),
+                    incumbent_id = COALESCE($12, office.incumbent_id),
+                    term_length = COALESCE($13, office.term_length),
+                    seat = COALESCE($14, office.seat)
+                RETURNING id, slug, title, office_type, district, district_type AS "district_type:District", chamber AS "chamber:Chamber", political_scope AS "political_scope:PoliticalScope", election_scope as "election_scope:ElectionScope", state AS "state:State", municipality, incumbent_id, term_length, seat, created_at, updated_at
             "#,
+            input.id,
             slug,
             input.title,
-            input.political_scope as PoliticalScope,
-            input.state as Option<State>,
-            input.municipality,
+            input.office_type,
             input.district,
             input.district_type as Option<District>,
             input.chamber as Option<Chamber>,
-            input.election_scope as ElectionScope,
-            input.incumbent_id,
-            input.office_type,
-            input.term_length,
-            input.seat,
-        )
-        .fetch_one(db_pool)
-        .await?;
-
-        Ok(record)
-    }
-
-    pub async fn update(
-        db_pool: &PgPool,
-        id: uuid::Uuid,
-        input: &UpdateOfficeInput,
-    ) -> Result<Self, sqlx::Error> {
-        let record = sqlx::query_as!(
-            Office,
-            r#"
-                UPDATE office
-                SET slug = COALESCE($2, slug), 
-                    title = COALESCE($3, title), 
-                    political_scope = COALESCE($4, political_scope),
-                    state = COALESCE($5, state),
-                    municipality = COALESCE($6, municipality),
-                    district = COALESCE($7, district),
-                    district_type = COALESCE($8, district_type),
-                    chamber = COALESCE($9, chamber),
-                    election_scope = COALESCE($10, election_scope),
-                    incumbent_id = COALESCE($11, incumbent_id),
-                    office_type = COALESCE($12, office_type),
-                    term_length = COALESCE($13, term_length),
-                    seat = COALESCE($14, seat)
-                WHERE id = $1
-                RETURNING id, slug, title, office_type, district, district_type AS "district_type:District", chamber AS "chamber:Chamber", election_scope as "election_scope:ElectionScope", political_scope AS "political_scope:PoliticalScope", incumbent_id, state AS "state:State", municipality, term_length, seat, created_at, updated_at
-            "#,
-            id,
-            input.slug,
-            input.title,
             input.political_scope as Option<PoliticalScope>,
+            input.election_scope as Option<ElectionScope>,
             input.state as Option<State>,
             input.municipality,
-            input.district,
-            input.district_type as Option<District>,
-            input.chamber as Option<Chamber>,
-            input.election_scope as Option<ElectionScope>,
             input.incumbent_id,
-            input.office_type,
             input.term_length,
             input.seat,
         )

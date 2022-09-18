@@ -8,6 +8,7 @@ use structopt::StructOpt;
 use db::{
     models::enums::{LegislationStatus, PoliticalParty, State},
     CreateBillInput, CreatePoliticianInput, UpdateBillInput, UpdatePoliticianInput,
+    UpsertPoliticianInput,
 };
 use legiscan::LegiscanProxy;
 use votesmart::{GetCandidateBioResponse, GetCandidateVotingRecordResponse, VotesmartProxy};
@@ -206,11 +207,11 @@ async fn main() -> Result<(), Error> {
                         .unwrap_or_default(),
                 );
 
-                let input = CreatePoliticianInput {
-                    first_name,
+                let input = UpsertPoliticianInput {
+                    first_name: Some(first_name),
                     middle_name,
-                    last_name,
-                    slug,
+                    last_name: Some(last_name),
+                    slug: Some(slug),
                     home_state,
                     party,
                     votesmart_candidate_id: Some(vs_id),
@@ -218,7 +219,7 @@ async fn main() -> Result<(), Error> {
                     ..Default::default()
                 };
 
-                let new_record = db::Politician::create(&pool.connection, &input).await?;
+                let new_record = db::Politician::upsert(&pool.connection, &input).await?;
                 println!(
                 "\n✅ Populist politician {} {} has been created and seeded with Votesmart data",
                 new_record.first_name, new_record.last_name
@@ -228,13 +229,19 @@ async fn main() -> Result<(), Error> {
             if args.update_record {
                 let pool = db::pool().await;
                 let vs_id = data.candidate.candidate_id.parse::<i32>().unwrap();
-
-                let input = UpdatePoliticianInput {
+                let id = sqlx::query!(
+                    r#"SELECT id FROM politician WHERE votesmart_candidate_id = $1"#,
+                    vs_id
+                )
+                .fetch_one(&pool.connection)
+                .await?
+                .id;
+                let input = UpsertPoliticianInput {
+                    id,
                     votesmart_candidate_bio: Some(serde_json::to_value(data.clone()).unwrap()),
                     ..Default::default()
                 };
-                let updated_record =
-                    db::Politician::update(&pool.connection, None, Some(vs_id), &input).await?;
+                let updated_record = db::Politician::upsert(&pool.connection, &input).await?;
                 println!(
                     "\n✅ Populist politician with id {} has been updated with Votesmart data",
                     updated_record.id

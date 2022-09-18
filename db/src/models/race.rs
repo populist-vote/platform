@@ -1,12 +1,9 @@
+use super::enums::{PoliticalParty, RaceType, State};
+use crate::DateTime;
 use async_graphql::InputObject;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
-use slugify::slugify;
 use sqlx::PgPool;
-
-use crate::DateTime;
-
-use super::enums::{PoliticalParty, RaceType, State};
 
 #[derive(sqlx::FromRow, Debug, Clone)]
 
@@ -30,23 +27,8 @@ pub struct Race {
 }
 
 #[derive(Debug, Serialize, Deserialize, InputObject)]
-pub struct CreateRaceInput {
-    pub slug: Option<String>,
-    pub title: String,
-    pub office_id: uuid::Uuid,
-    pub race_type: RaceType,
-    pub party: Option<PoliticalParty>,
-    pub state: Option<State>,
-    pub description: Option<String>,
-    pub ballotpedia_link: Option<String>,
-    pub early_voting_begins_date: Option<NaiveDate>,
-    pub official_website: Option<String>,
-    pub election_id: Option<uuid::Uuid>,
-    pub winner_id: Option<uuid::Uuid>,
-}
-
-#[derive(Debug, Serialize, Deserialize, InputObject)]
-pub struct UpdateRaceInput {
+pub struct UpsertRaceInput {
+    pub id: Option<uuid::Uuid>,
     pub slug: Option<String>,
     pub title: Option<String>,
     pub office_id: Option<uuid::Uuid>,
@@ -69,64 +51,29 @@ pub struct RaceSearch {
 }
 
 impl Race {
-    pub async fn create(db_pool: &PgPool, input: &CreateRaceInput) -> Result<Self, sqlx::Error> {
-        let slug = match &input.slug {
-            Some(slug) => slug.to_owned(),
-            None => slugify!(&input.title),
-        };
-
-        let record = sqlx::query_as!(
-            Race,
+    pub async fn upsert(db_pool: &PgPool, input: &UpsertRaceInput) -> Result<Self, sqlx::Error> {
+        let record = sqlx::query_as!(Race,
             r#"
-                INSERT INTO race (slug, title, office_id, race_type, party, state,  description, ballotpedia_link, early_voting_begins_date, winner_id, official_website, election_id)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                INSERT INTO race (id, slug, title, office_id, race_type, party, state,  description, ballotpedia_link, early_voting_begins_date, winner_id, official_website, election_id, total_votes)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                ON CONFLICT (id) DO UPDATE
+                SET
+                    slug = COALESCE($2, race.slug),
+                    title = COALESCE($3, race.title), 
+                    office_id = COALESCE($4, race.office_id),
+                    race_type = COALESCE($5, race.race_type),
+                    party = COALESCE($6, race.party),
+                    state = COALESCE($7, race.state),
+                    description = COALESCE($8, race.description),
+                    ballotpedia_link = COALESCE($9, race.ballotpedia_link),
+                    early_voting_begins_date = COALESCE($10, race.early_voting_begins_date),
+                    winner_id = COALESCE($11, race.winner_id),
+                    official_website = COALESCE($12, race.official_website),
+                    election_id = COALESCE($13, race.election_id),
+                    total_votes = COALESCE($14, race.total_votes)
                 RETURNING id, slug, title,  office_id, race_type AS "race_type:RaceType", party AS "party:PoliticalParty", state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_id, official_website, election_id, total_votes, created_at, updated_at
             "#,
-            slug,
-            input.title,
-            input.office_id,
-            input.race_type as RaceType,
-            input.party as Option<PoliticalParty>,
-            input.state as Option<State>,
-            input.description,
-            input.ballotpedia_link,
-            input.early_voting_begins_date,
-            input.winner_id,
-            input.official_website,
-            input.election_id
-        )
-        .fetch_one(db_pool)
-        .await?;
-
-        Ok(record)
-    }
-
-    pub async fn update(
-        db_pool: &PgPool,
-        id: uuid::Uuid,
-        input: &UpdateRaceInput,
-    ) -> Result<Self, sqlx::Error> {
-        let record = sqlx::query_as!(
-            Race,
-            r#"
-                UPDATE race
-                SET slug = COALESCE($2, slug), 
-                    title = COALESCE($3, title), 
-                    office_id = COALESCE($4, office_id),
-                    race_type = COALESCE($5, race_type),
-                    party = COALESCE($6, party),
-                    state = COALESCE($7, state),
-                    description = COALESCE($8, description),
-                    ballotpedia_link = COALESCE($9, ballotpedia_link),
-                    early_voting_begins_date = COALESCE($10, early_voting_begins_date),
-                    winner_id = COALESCE($11, winner_id),
-                    official_website = COALESCE($12, official_website),
-                    election_id = COALESCE($13, election_id),
-                    total_votes = COALESCE($14, total_votes)
-                WHERE id = $1
-                RETURNING id, slug, title, office_id, race_type AS "race_type:RaceType", party AS "party:PoliticalParty", state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_id, total_votes, official_website, election_id, created_at, updated_at
-            "#,
-            id,
+            input.id,
             input.slug,
             input.title,
             input.office_id,

@@ -1,8 +1,7 @@
 use db::{
     models::enums::{PoliticalParty, PoliticalScope, RaceType, State},
-    CreatePoliticianInput, District, ElectionScope,
+    District, ElectionScope, UpsertPoliticianInput,
 };
-use human_name::Name;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use slugify::slugify;
@@ -14,13 +13,13 @@ use std::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 struct CandidateFiling {
-    office_code: Option<i32>,
-    office_id: i32,
+    office_code: Option<i64>,
+    office_id: i64,
     full_name: String,
     office_title: String,
     county_id: i32,
-    mcd_fips_code: Option<i32>,
-    school_district_number: Option<i32>,
+    mcd_fips_code: Option<i64>,
+    school_district_number: Option<i64>,
     party: String,
     residence_street: Option<String>,
     residence_city: Option<String>,
@@ -34,9 +33,11 @@ struct CandidateFiling {
     campaign_email: Option<String>,
 }
 
+// Regex for capturing multiple words within parentheses
+
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Hash)]
 struct FilingOffice {
-    id: i32,
+    id: i64,
     title: String,
     district: Option<String>,
     county_name: Option<String>,
@@ -44,7 +45,7 @@ struct FilingOffice {
 }
 
 struct ParsedTitle {
-    short_title: String,
+    title: String,
     district: Option<String>,
     municipality: Option<String>,
     seat: Option<String>,
@@ -72,15 +73,6 @@ fn parse_title_and_district(title: &str) -> ParsedTitle {
             .trim()
             .to_string()
     };
-
-    let ordinals_re = regex::Regex::new(r#"\- (\d+)(st|nd|rd|th)"#).unwrap();
-    let title = title
-        .split("District")
-        .nth(0)
-        .unwrap_or_default()
-        .trim()
-        .to_string();
-    let title = ordinals_re.replace_all(&title, "").to_string();
 
     let title_clone = title.clone();
 
@@ -119,11 +111,12 @@ fn parse_title_and_district(title: &str) -> ParsedTitle {
         d => Some(d),
     };
 
-    let within_parens_re = regex::Regex::new(r"\(([^\)]+)\)").unwrap();
-    let municipality = within_parens_re.captures(&title).map(|c| c[1].to_string());
+    // First words within parens that don't include "ISD"
+    let muni_re = regex::Regex::new(r"\(([^ISD)]+)\)").unwrap();
+    let municipality = muni_re.captures(&title).map(|c| c[1].to_string());
 
     ParsedTitle {
-        short_title: title,
+        title: title.to_string(),
         district,
         municipality,
         seat,
@@ -248,6 +241,43 @@ fn create_filing_office_from_csv_row(candidate_filing: &CandidateFiling) -> Fili
     }
 }
 
+#[derive(Debug, Clone)]
+struct ParsedName {
+    first_name: String,
+    middle_name: Option<String>,
+    last_name: String,
+    suffix: Option<String>,
+    preferred_name: Option<String>,
+}
+
+fn parse_human_name(name: &str) -> ParsedName {
+    let parsed_name = human_name::Name::parse(&name.replace("St.", "St"))
+        .expect(&format!("Failed to parse name: {}", name));
+    let double_quotes_re = regex::Regex::new(r#""(.*?)""#).unwrap();
+    let mut preferred_name = double_quotes_re.captures(name).map(|c| c[1].to_string());
+
+    if preferred_name.is_none() {
+        let re = regex::Regex::new(r#"\((.*?)\)"#).unwrap();
+        preferred_name = re.captures(name).map(|c| c[1].to_string());
+    }
+
+    let middle_name = match parsed_name.middle_name() {
+        Some(m) => Some(m.to_string()),
+        None => match parsed_name.middle_initials() {
+            Some(m) => Some(m.to_string()),
+            None => None,
+        },
+    };
+
+    ParsedName {
+        first_name: parsed_name.given_name().map_or("", |a| a).to_string(),
+        middle_name,
+        last_name: parsed_name.surname().to_string(),
+        suffix: parsed_name.suffix().map(|a| a.to_string()),
+        preferred_name,
+    }
+}
+
 async fn seed_minnesota_sos_data() -> Result<(), Box<dyn Error>> {
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
@@ -262,16 +292,16 @@ async fn seed_minnesota_sos_data() -> Result<(), Box<dyn Error>> {
         // Insert each unique office into the HashSet
         offices.insert(create_filing_office_from_csv_row(&candidate_filing));
     }
-    tracing::info!("Total offices parsed = {:?}", offices.len());
 
     // Create a new office record and associated general race for each office in HashSet
     // Also create new HashMap to associate new races with candidate filings in memory
     let mut races = HashMap::new();
 
+    println!("Creating office records");
     for office in offices.clone() {
         let office_clone = office.clone();
         let ParsedTitle {
-            short_title,
+            title,
             seat,
             municipality,
             ..
@@ -289,7 +319,7 @@ async fn seed_minnesota_sos_data() -> Result<(), Box<dyn Error>> {
             rnd_int
         ));
 
-        let district_type = match short_title.clone() {
+        let district_type = match title.clone() {
             t if t.contains("County Commissioner") => Some(District::County),
             t if t.contains("County Park Commissioner") => Some(District::County),
             t if t.contains("Soil and Water Supervisor") => Some(District::County),
@@ -302,7 +332,7 @@ async fn seed_minnesota_sos_data() -> Result<(), Box<dyn Error>> {
             _ => None,
         };
 
-        let (political_scope, election_scope) = match short_title.clone() {
+        let (political_scope, election_scope) = match title.clone() {
             t if t.contains("U.S. Representative") => {
                 (PoliticalScope::Federal, ElectionScope::National)
             }
@@ -348,29 +378,34 @@ async fn seed_minnesota_sos_data() -> Result<(), Box<dyn Error>> {
             _ => (PoliticalScope::Local, ElectionScope::City),
         };
 
-        let municipality = municipality.map_or(None, |m| Some(m.to_string()));
-        println!("municipality = {:?}", municipality);
+        let municipality = if municipality.is_some() {
+            municipality
+        } else if office.county_name.is_some() {
+            office.county_name
+        } else {
+            None
+        };
 
-        let new_office_input = db::CreateOfficeInput {
+        let office_input = db::UpsertOfficeInput {
             slug: Some(slug.clone()),
-            title: short_title.clone(),
+            title: Some(title.clone()),
             district: office.district,
             district_type,
             state: Some(State::MN),
             municipality,
             seat,
-            political_scope,
-            election_scope,
+            political_scope: Some(political_scope),
+            election_scope: Some(election_scope),
             ..Default::default()
         };
 
-        let created_office = db::Office::create(&pool.connection, &new_office_input)
+        let created_office = db::Office::upsert(&pool.connection, &office_input)
             .await
             .expect(&format!("Failed creating office: {}", slug));
 
         let race_input = db::CreateRaceInput {
             slug: Some(slug),
-            title: short_title,
+            title,
             office_id: created_office.id,
             race_type: RaceType::General,
             party: None,
@@ -395,12 +430,11 @@ async fn seed_minnesota_sos_data() -> Result<(), Box<dyn Error>> {
         races.len()
     );
 
+    println!("Creating politician records");
     // Loop through candidate filings and create new politician records and new race_candidates records for each
     for filing in filings.clone() {
         let filing_clone = filing.clone();
         let slug = slugify!(&filing.full_name).to_string();
-        let name = Name::parse(&filing.full_name)
-            .expect(&format!("Failed to parse name: {}", &filing.full_name));
         let party = match filing.party.as_ref() {
             "DFL" => PoliticalParty::DemocraticFarmerLabor,
             "LMN" => PoliticalParty::LegalMarijuanaNow,
@@ -409,27 +443,30 @@ async fn seed_minnesota_sos_data() -> Result<(), Box<dyn Error>> {
             _ => PoliticalParty::Unaffiliated,
         };
 
-        let middle_name = match name.middle_name() {
-            Some(m) => Some(m.to_string()),
-            None => match name.middle_initials() {
-                Some(m) => Some(m.to_string()),
-                None => None,
-            },
-        };
-
-        let new_politician_input = CreatePoliticianInput {
-            slug: Some(slug),
-            first_name: name.given_name().unwrap_or_default().to_string(),
+        let ParsedName {
+            first_name,
             middle_name,
-            last_name: name.surname().to_string(),
-            suffix: name.suffix().map(|s| s.to_string()),
+            last_name,
+            suffix,
+            preferred_name,
+        } = parse_human_name(&filing.full_name);
+
+        // A regex that captures any string between parentheses or quotes
+        let new_politician_input = UpsertPoliticianInput {
+            slug: Some(slug),
+            first_name: Some(first_name),
+            middle_name,
+            last_name: Some(last_name),
+            suffix,
+            preferred_name,
             campaign_website_url: filing.campaign_website,
             email: filing.campaign_email,
+            phone: filing.campaign_phone,
             party: Some(party),
             home_state: Some(State::MN),
             ..Default::default()
         };
-        let created_politician = db::Politician::create(&pool.connection, &new_politician_input)
+        let created_politician = db::Politician::upsert(&pool.connection, &new_politician_input)
             .await
             .expect(
                 format!(

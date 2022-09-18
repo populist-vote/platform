@@ -7,8 +7,8 @@ use crate::{
 use async_graphql::*;
 use db::{
     CreateOrConnectIssueTagInput, CreateOrConnectOrganizationInput, CreateOrConnectPoliticianInput,
-    CreatePoliticianInput, IssueTag, Organization, OrganizationIdentifier, Politician,
-    PoliticianIdentifier, UpdatePoliticianInput,
+    IssueTag, Organization, OrganizationIdentifier, Politician, PoliticianIdentifier,
+    UpsertPoliticianInput,
 };
 use sqlx::{Pool, Postgres};
 
@@ -97,7 +97,7 @@ async fn handle_nested_politician_endorsements(
 ) -> Result<(), Error> {
     if politicians_input.create.is_some() {
         for input in politicians_input.create.unwrap() {
-            let new_politician = Politician::create(db_pool, &input).await?;
+            let new_politician = Politician::upsert(db_pool, &input).await?;
             Politician::connect_politician(
                 db_pool,
                 politician_id,
@@ -135,13 +135,13 @@ async fn handle_nested_politician_endorsements(
 #[Object]
 impl PoliticianMutation {
     #[graphql(guard = "StaffOnly", visible = "is_admin")]
-    async fn create_politician(
+    async fn upsert_politician(
         &self,
         ctx: &Context<'_>,
-        input: CreatePoliticianInput,
+        input: UpsertPoliticianInput,
     ) -> Result<PoliticianResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let new_record = Politician::create(&db_pool, &input).await?;
+        let new_record = Politician::upsert(&db_pool, &input).await?;
         // be sure to handle None inputs from GraphQL
         if input.issue_tags.is_some() {
             handle_nested_issue_tags(&db_pool, new_record.id, input.issue_tags.unwrap()).await?;
@@ -166,43 +166,6 @@ impl PoliticianMutation {
         }
 
         Ok(PoliticianResult::from(new_record))
-    }
-
-    #[graphql(guard = "StaffOnly", visible = "is_admin")]
-    async fn update_politician(
-        &self,
-        ctx: &Context<'_>,
-        id: String,
-        input: UpdatePoliticianInput,
-    ) -> Result<PoliticianResult> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let updated_record =
-            Politician::update(&db_pool, Some(uuid::Uuid::parse_str(&id)?), None, &input).await?;
-
-        if input.issue_tags.is_some() {
-            handle_nested_issue_tags(&db_pool, updated_record.id, input.issue_tags.unwrap())
-                .await?;
-        }
-
-        if input.organization_endorsements.is_some() {
-            handle_nested_organization_endorsements(
-                &db_pool,
-                updated_record.id,
-                input.organization_endorsements.unwrap(),
-            )
-            .await?;
-        }
-
-        if input.politician_endorsements.is_some() {
-            handle_nested_politician_endorsements(
-                &db_pool,
-                updated_record.id,
-                input.politician_endorsements.unwrap(),
-            )
-            .await?;
-        }
-
-        Ok(PoliticianResult::from(updated_record))
     }
 
     #[graphql(guard = "StaffOnly", visible = "is_admin")]

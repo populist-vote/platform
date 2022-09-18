@@ -35,6 +35,7 @@ pub struct Politician {
     pub linkedin_url: Option<String>,
     pub tiktok_url: Option<String>,
     pub email: Option<String>,
+    pub phone: Option<String>,
     pub party: Option<PoliticalParty>,
     pub votesmart_candidate_id: Option<i32>,
     pub votesmart_candidate_bio: Value,
@@ -48,45 +49,10 @@ pub struct Politician {
     pub updated_at: DateTime,
 }
 
-#[derive(InputObject, Default, Debug, Serialize, Deserialize)]
-pub struct CreatePoliticianInput {
+#[derive(InputObject, Debug, Default, Serialize, Deserialize)]
+pub struct UpsertPoliticianInput {
+    pub id: uuid::Uuid,
     pub slug: Option<String>,
-    pub first_name: String,
-    pub middle_name: Option<String>,
-    pub last_name: String,
-    pub suffix: Option<String>,
-    pub preferred_name: Option<String>,
-    pub biography: Option<String>,
-    pub biography_source: Option<String>,
-    pub home_state: Option<State>,
-    pub date_of_birth: Option<NaiveDate>,
-    pub office_id: Option<uuid::Uuid>,
-    pub thumbnail_image_url: Option<String>,
-    pub website_url: Option<String>,
-    pub campaign_website_url: Option<String>,
-    pub facebook_url: Option<String>,
-    pub twitter_url: Option<String>,
-    pub instagram_url: Option<String>,
-    pub youtube_url: Option<String>,
-    pub linkedin_url: Option<String>,
-    pub tiktok_url: Option<String>,
-    pub email: Option<String>,
-    pub party: Option<PoliticalParty>,
-    pub issue_tags: Option<CreateOrConnectIssueTagInput>,
-    pub organization_endorsements: Option<CreateOrConnectOrganizationInput>,
-    pub politician_endorsements: Option<CreateOrConnectPoliticianInput>,
-    pub votesmart_candidate_id: Option<i32>,
-    pub votesmart_candidate_bio: Option<Value>,
-    pub votesmart_candidate_ratings: Option<Value>,
-    pub legiscan_people_id: Option<i32>,
-    pub crp_candidate_id: Option<String>,
-    pub fec_candidate_id: Option<String>,
-    pub race_wins: Option<i32>,
-    pub race_losses: Option<i32>,
-}
-
-#[derive(InputObject, Default, Serialize, Deserialize)]
-pub struct UpdatePoliticianInput {
     pub first_name: Option<String>,
     pub middle_name: Option<String>,
     pub last_name: Option<String>,
@@ -107,6 +73,7 @@ pub struct UpdatePoliticianInput {
     pub linkedin_url: Option<String>,
     pub tiktok_url: Option<String>,
     pub email: Option<String>,
+    pub phone: Option<String>,
     pub party: Option<PoliticalParty>,
     pub issue_tags: Option<CreateOrConnectIssueTagInput>,
     pub organization_endorsements: Option<CreateOrConnectOrganizationInput>,
@@ -128,7 +95,7 @@ pub enum PoliticianIdentifier {
 
 #[derive(Debug, Serialize, Deserialize, InputObject)]
 pub struct CreateOrConnectPoliticianInput {
-    pub create: Option<Vec<CreatePoliticianInput>>,
+    pub create: Option<Vec<UpsertPoliticianInput>>,
     pub connect: Option<Vec<String>>, // Accept UUIDs or slugs
 }
 
@@ -139,27 +106,22 @@ pub struct PoliticianSearch {
     party: Option<PoliticalParty>,
 }
 
-impl CreatePoliticianInput {
-    fn full_name(&self) -> String {
-        format!(
-            "{first_name} {last_name} {suffix}",
-            first_name = &self.preferred_name.as_ref().unwrap_or(&self.first_name),
-            last_name = &self.last_name,
-            suffix = &self.suffix.as_ref().unwrap_or(&"".to_string())
-        )
-        .trim_end()
-        .to_string()
-    }
-}
-
 impl Politician {
-    pub async fn create(
+    pub async fn upsert(
         db_pool: &PgPool,
-        input: &CreatePoliticianInput,
+        input: &UpsertPoliticianInput,
     ) -> Result<Self, sqlx::Error> {
         let mut slug = match &input.slug {
             Some(slug) => slug.to_owned(),
-            None => slugify!(&CreatePoliticianInput::full_name(input)),
+            None => slugify!(&format!(
+                "{} {} {}",
+                input
+                    .preferred_name
+                    .clone()
+                    .unwrap_or(input.first_name.clone().unwrap_or_default()),
+                input.last_name.clone().unwrap_or_default(),
+                input.suffix.clone().unwrap_or_default()
+            )),
         };
 
         // Check db if slug exists
@@ -180,12 +142,12 @@ impl Politician {
             slug = format!("{}-{}", r.slug, rando);
         }
 
-        let vs_candidate_bio = match input.votesmart_candidate_bio.to_owned() {
+        let votesmart_candidate_bio = match input.votesmart_candidate_bio.to_owned() {
             Some(bio) => bio,
             None => json!({}),
         };
 
-        let vs_candidate_ratings = match input.votesmart_candidate_ratings.to_owned() {
+        let votesmart_candidate_ratings = match input.votesmart_candidate_ratings.to_owned() {
             Some(ratings) => ratings,
             None => json!([]),
         };
@@ -193,67 +155,42 @@ impl Politician {
         let record = sqlx::query_as!(
             Politician,
             r#"
-                INSERT INTO politician (
-                        slug,
-                        first_name,
-                        middle_name,
-                        last_name,
-                        suffix,
-                        preferred_name,
-                        biography,
-                        biography_source,
-                        home_state,
-                        date_of_birth,
-                        office_id,
-                        website_url,
-                        campaign_website_url,
-                        facebook_url,
-                        twitter_url,
-                        instagram_url,
-                        youtube_url,
-                        linkedin_url,
-                        tiktok_url,
-                        email,
-                        party,
-                        votesmart_candidate_id,
-                        votesmart_candidate_bio,
-                        votesmart_candidate_ratings,
-                        legiscan_people_id,
-                        crp_candidate_id,
-                        fec_candidate_id,
-                        race_wins,
-                        race_losses)
-                        VALUES(
-                            $1,
-                            $2,
-                            $3,
-                            $4,
-                            $5,
-                            $6,
-                            $7,
-                            $8,
-                            $9,
-                            $10,
-                            $11,
-                            $12,
-                            $13,
-                            $14,
-                            $15,
-                            $16,
-                            $17,
-                            $18,
-                            $19,
-                            $20,
-                            $21,
-                            $22,
-                            $23,
-                            $24, 
-                            $25,
-                            $26,
-                            $27,
-                            $28,
-                            $29)
-                    RETURNING
+            INSERT INTO politician (id, slug, first_name, middle_name, last_name, suffix, preferred_name, biography, biography_source, home_state, date_of_birth, office_id, thumbnail_image_url, website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, phone, party, votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses)
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32) 
+            ON CONFLICT (id) DO UPDATE
+            SET
+                slug = COALESCE($2, politician.slug),
+                first_name = COALESCE($3, politician.first_name),
+                middle_name = COALESCE($4, politician.middle_name),
+                last_name = COALESCE($5, politician.last_name),
+                suffix = COALESCE($6, politician.suffix),
+                preferred_name = COALESCE($7, politician.preferred_name),
+                biography = COALESCE($8, politician.biography),
+                biography_source = COALESCE($9, politician.biography_source),
+                home_state = COALESCE($10, politician.home_state),
+                date_of_birth = COALESCE($11, politician.date_of_birth),
+                office_id = COALESCE($12, politician.office_id),
+                thumbnail_image_url = COALESCE($13, politician.thumbnail_image_url),
+                website_url = COALESCE($14, politician.website_url),
+                campaign_website_url = COALESCE($15, politician.campaign_website_url),
+                facebook_url = COALESCE($16, politician.facebook_url),
+                twitter_url = COALESCE($17, politician.twitter_url),
+                instagram_url = COALESCE($18, politician.instagram_url),
+                youtube_url = COALESCE($19, politician.youtube_url),
+                linkedin_url = COALESCE($20, politician.linkedin_url),
+                tiktok_url = COALESCE($21, politician.tiktok_url),
+                email = COALESCE($22, politician.email),
+                phone = COALESCE($23, politician.phone),
+                party = COALESCE($24, politician.party),
+                votesmart_candidate_id = COALESCE($25, politician.votesmart_candidate_id),
+                votesmart_candidate_bio = COALESCE($26, politician.votesmart_candidate_bio),
+                votesmart_candidate_ratings = COALESCE($27, politician.votesmart_candidate_ratings),
+                legiscan_people_id = COALESCE($28, politician.legiscan_people_id),
+                crp_candidate_id = COALESCE($29, politician.crp_candidate_id),
+                fec_candidate_id = COALESCE($30, politician.fec_candidate_id),
+                race_wins = COALESCE($31, politician.race_wins),
+                race_losses = COALESCE($32, politician.race_losses)
+            RETURNING
                         id,
                         slug,
                         first_name,
@@ -276,6 +213,7 @@ impl Politician {
                         linkedin_url,
                         tiktok_url,
                         email,
+                        phone,
                         party AS "party:PoliticalParty",
                         votesmart_candidate_id,
                         votesmart_candidate_bio,
@@ -288,238 +226,8 @@ impl Politician {
                         created_at,
                         updated_at
             "#,
+            input.id,
             slug,
-            input.first_name,
-            input.middle_name,
-            input.last_name,
-            input.suffix,
-            input.preferred_name,
-            input.biography,
-            input.biography_source,
-            input.home_state as Option<State>,
-            input.date_of_birth as Option<NaiveDate>,
-            input.office_id,
-            input.website_url,
-            input.campaign_website_url,
-            input.facebook_url,
-            input.twitter_url,
-            input.instagram_url,
-            input.youtube_url,
-            input.linkedin_url,
-            input.tiktok_url,
-            input.email,
-            input.party as Option<PoliticalParty>,
-            input.votesmart_candidate_id,
-            vs_candidate_bio,
-            vs_candidate_ratings,
-            input.legiscan_people_id,
-            input.crp_candidate_id,
-            input.fec_candidate_id,
-            input.race_wins,
-            input.race_losses,
-        )
-        .fetch_one(db_pool)
-        .await?;
-
-        Ok(record)
-    }
-
-    pub async fn create_optional(
-        db_pool: &PgPool,
-        input: &CreatePoliticianInput,
-    ) -> Result<Option<Self>, sqlx::Error> {
-        let slug = slugify!(&CreatePoliticianInput::full_name(input));
-
-        let vs_candidate_bio = match input.votesmart_candidate_bio.to_owned() {
-            Some(bio) => bio,
-            None => json!({}),
-        };
-
-        let vs_candidate_ratings = match input.votesmart_candidate_ratings.to_owned() {
-            Some(ratings) => ratings,
-            None => json!([]),
-        };
-
-        let record = sqlx::query_as!(
-            Politician,
-            r#"
-            WITH ins_author AS (
-            INSERT INTO author (author_type)
-                    VALUES('politician') ON CONFLICT DO NOTHING
-                RETURNING
-                    id AS author_id
-            ),
-            p AS (
-            INSERT INTO politician (id,
-                    slug,
-                    first_name,
-                    middle_name,
-                    last_name,
-                    home_state,
-                    date_of_birth,
-                    office_id,
-                    party,
-                    votesmart_candidate_id,
-                    votesmart_candidate_bio,
-                    votesmart_candidate_ratings,
-                    website_url,
-                    race_wins,
-                    race_losses)
-                    VALUES(
-                        (SELECT author_id FROM ins_author),
-                        $1,
-                        $2,
-                        $3,
-                        $4,
-                        $5,
-                        $6,
-                        $7,
-                        $8,
-                        $9,
-                        $10,
-                        $11,
-                        $12,
-                        $13,
-                        $14)
-                RETURNING
-                    id,
-                    slug,
-                    first_name,
-                    middle_name,
-                    last_name,
-                    suffix,
-                    preferred_name,
-                    biography,
-                    biography_source,
-                    home_state AS "home_state:State",
-                    date_of_birth,
-                    office_id,
-                    thumbnail_image_url,
-                    website_url,
-                    campaign_website_url,
-                    facebook_url,
-                    twitter_url,
-                    instagram_url,
-                    youtube_url,
-                    linkedin_url,
-                    tiktok_url,
-                    email,
-                    party AS "party:PoliticalParty",
-                    votesmart_candidate_id,
-                    votesmart_candidate_bio,
-                    votesmart_candidate_ratings,
-                    legiscan_people_id,
-                    crp_candidate_id,
-                    fec_candidate_id,
-                    race_wins,
-                    race_losses,
-                    created_at,
-                    updated_at
-            )
-            SELECT
-                p.*
-            FROM
-                p
-            "#,
-            slug,
-            input.first_name,
-            input.middle_name,
-            input.last_name,
-            input.home_state as Option<State>,
-            input.date_of_birth as Option<NaiveDate>,
-            input.office_id,
-            input.party as Option<PoliticalParty>,
-            input.votesmart_candidate_id,
-            vs_candidate_bio,
-            vs_candidate_ratings,
-            input.website_url,
-            input.race_wins,
-            input.race_losses,
-        )
-        .fetch_optional(db_pool)
-        .await?;
-
-        Ok(record)
-    }
-
-    pub async fn update(
-        db_pool: &PgPool,
-        id: Option<uuid::Uuid>,
-        votesmart_candidate_id: Option<i32>,
-        input: &UpdatePoliticianInput,
-    ) -> Result<Self, sqlx::Error> {
-        let record = sqlx::query_as!(
-            Politician,
-            r#"
-                UPDATE politician 
-                SET first_name = COALESCE($3, first_name),
-                    middle_name = COALESCE($4, middle_name),
-                    last_name = COALESCE($5, last_name),
-                    suffix = COALESCE($6, suffix),
-                    preferred_name = COALESCE($7, preferred_name),
-                    biography = COALESCE($8, biography),
-                    biography_source = COALESCE($9, biography_source),
-                    home_state= COALESCE($10, home_state),
-                    date_of_birth = COALESCE($11, date_of_birth),
-                    office_id = COALESCE($12, office_id),
-                    thumbnail_image_url = COALESCE($13, thumbnail_image_url),
-                    website_url = COALESCE($14, website_url),
-                    campaign_website_url = COALESCE($15, campaign_website_url),
-                    facebook_url = COALESCE($16, facebook_url),
-                    twitter_url = COALESCE($17, twitter_url),
-                    instagram_url = COALESCE($18, instagram_url),
-                    youtube_url = COALESCE($19, youtube_url),
-                    linkedin_url = COALESCE($20, linkedin_url),
-                    tiktok_url = COALESCE($21, tiktok_url),
-                    email = COALESCE($22, email),
-                    party = COALESCE($23, party),
-                    votesmart_candidate_id = COALESCE($2, votesmart_candidate_id),
-                    votesmart_candidate_bio = COALESCE($24, votesmart_candidate_bio),
-                    votesmart_candidate_ratings = COALESCE($25, votesmart_candidate_ratings),
-                    legiscan_people_id = COALESCE($26, legiscan_people_id),
-                    crp_candidate_id = COALESCE($27, crp_candidate_id),
-                    fec_candidate_id = COALESCE($28, fec_candidate_id),
-                    race_wins = COALESCE($29, race_wins),
-                    race_losses = COALESCE($30, race_losses)
-                WHERE id=$1
-                OR votesmart_candidate_id = $2
-                RETURNING
-                        id,
-                        slug,
-                        first_name,
-                        middle_name,
-                        last_name,
-                        suffix,
-                        preferred_name,
-                        biography,
-                        biography_source,
-                        home_state AS "home_state:State",
-                        date_of_birth,
-                        office_id,
-                        thumbnail_image_url,
-                        website_url,
-                        campaign_website_url,
-                        facebook_url,
-                        twitter_url,
-                        instagram_url,
-                        youtube_url,
-                        linkedin_url,
-                        tiktok_url,
-                        email,
-                        party AS "party:PoliticalParty",
-                        votesmart_candidate_id,
-                        votesmart_candidate_bio,
-                        votesmart_candidate_ratings,
-                        legiscan_people_id,
-                        crp_candidate_id,
-                        fec_candidate_id,
-                        race_wins,
-                        race_losses,
-                        created_at,
-                        updated_at
-            "#,
-            id,
-            votesmart_candidate_id,
             input.first_name,
             input.middle_name,
             input.last_name,
@@ -540,9 +248,11 @@ impl Politician {
             input.linkedin_url,
             input.tiktok_url,
             input.email,
+            input.phone,
             input.party as Option<PoliticalParty>,
-            input.votesmart_candidate_bio,
-            input.votesmart_candidate_ratings,
+            input.votesmart_candidate_id,
+            votesmart_candidate_bio,
+            votesmart_candidate_ratings,
             input.legiscan_people_id,
             input.crp_candidate_id,
             input.fec_candidate_id,
@@ -587,6 +297,7 @@ impl Politician {
                         linkedin_url,
                         tiktok_url,
                         email,
+                        phone,
                         party AS "party:PoliticalParty",
                         votesmart_candidate_id,
                         votesmart_candidate_bio,
@@ -630,6 +341,7 @@ impl Politician {
                         linkedin_url,
                         tiktok_url,
                         email,
+                        phone,
                         party AS "party:PoliticalParty",
                         votesmart_candidate_id,
                         votesmart_candidate_bio,
@@ -676,6 +388,7 @@ impl Politician {
                         linkedin_url,
                         tiktok_url,
                         email,
+                        phone,
                         party AS "party:PoliticalParty",
                         votesmart_candidate_id,
                         votesmart_candidate_bio,
@@ -729,6 +442,7 @@ impl Politician {
                         linkedin_url,
                         tiktok_url,
                         email,
+                        phone,
                         party AS "party:PoliticalParty",
                         votesmart_candidate_id,
                         votesmart_candidate_bio,
@@ -799,6 +513,7 @@ impl Politician {
                         linkedin_url,
                         tiktok_url,
                         email,
+                        phone,
                         party AS "party:PoliticalParty",
                         votesmart_candidate_id,
                         votesmart_candidate_bio,
