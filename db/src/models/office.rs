@@ -72,6 +72,7 @@ pub enum District {
     School,
     City,
     County,
+    Judicial,
     Hospital,
 }
 
