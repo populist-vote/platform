@@ -109,7 +109,7 @@ impl Default for State {
     }
 }
 
-trait FullState {
+pub trait FullState {
     fn full_state(&self) -> &str;
 }
 

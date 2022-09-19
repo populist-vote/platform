@@ -1,8 +1,8 @@
 use crate::{context::ApiContext, types::PoliticianResult};
-use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
+use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use db::{
     models::{
-        enums::{PoliticalParty, PoliticalScope, State},
+        enums::{FullState, PoliticalParty, PoliticalScope, State},
         office::Office,
         politician::Politician,
     },
@@ -26,7 +26,87 @@ pub struct OfficeResult {
 
 #[ComplexObject]
 impl OfficeResult {
-    async fn incumbent(&self, ctx: &Context<'_>) -> FieldResult<Option<PoliticianResult>> {
+    async fn subtitle(&self) -> Result<Option<String>> {
+        let subtitle = match self.election_scope {
+            ElectionScope::National => None,
+            ElectionScope::State => self
+                .state
+                .as_ref()
+                .map(|state| state.full_state().to_string()),
+            ElectionScope::District => {
+                if let Some(district_type) = self.district_type {
+                    match district_type {
+                        District::UsCongressional => {
+                            if let (Some(state), Some(district)) = (&self.state, &self.district) {
+                                Some(format!("{} District {}", state.full_state(), district))
+                            } else {
+                                None
+                            }
+                        }
+                        District::StateSenate => {
+                            if let (Some(state), Some(district)) = (&self.state, &self.district) {
+                                Some(format!(
+                                    "{} Senate District {}",
+                                    state.full_state(),
+                                    district
+                                ))
+                            } else {
+                                None
+                            }
+                        }
+                        District::StateHouse => {
+                            if let (Some(state), Some(district)) = (&self.state, &self.district) {
+                                Some(format!(
+                                    "{} House District {}",
+                                    state.full_state(),
+                                    district
+                                ))
+                            } else {
+                                None
+                            }
+                        }
+                        District::County => {
+                            if let (Some(muni), Some(district)) =
+                                (&self.municipality, &self.district)
+                            {
+                                Some(format!("{} County District {}", muni, district))
+                            } else {
+                                None
+                            }
+                        }
+                        District::City => {
+                            if let (Some(muni), Some(district)) =
+                                (&self.municipality, &self.district)
+                            {
+                                Some(format!("{} District {}", muni, district))
+                            } else {
+                                None
+                            }
+                        }
+                        District::School => {
+                            if let (Some(muni), Some(district)) =
+                                (&self.municipality, &self.district)
+                            {
+                                Some(format!("{} School District {}", muni, district))
+                            } else {
+                                None
+                            }
+                        }
+                    }
+                } else {
+                    None
+                }
+            }
+            ElectionScope::County => self
+                .municipality
+                .as_ref()
+                .map(|muni| format!("{} County", muni)),
+            ElectionScope::City => self.municipality.as_ref().map(|muni| muni.to_string()),
+        };
+        Ok(subtitle)
+    }
+
+    async fn incumbent(&self, ctx: &Context<'_>) -> Result<Option<PoliticianResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query_as!(
             Politician,
