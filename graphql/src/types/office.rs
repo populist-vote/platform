@@ -92,6 +92,15 @@ impl OfficeResult {
                                 None
                             }
                         }
+                        District::Hospital => {
+                            if let (Some(muni), Some(district)) =
+                                (&self.municipality, &self.district)
+                            {
+                                Some(format!("{} Hospital District {}", muni, district))
+                            } else {
+                                None
+                            }
+                        }
                     }
                 } else {
                     None

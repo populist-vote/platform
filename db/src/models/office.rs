@@ -1,6 +1,7 @@
 use super::enums::{PoliticalScope, State};
 use crate::DateTime;
 use async_graphql::{Enum, InputObject};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use slugify::slugify;
 use sqlx::PgPool;
@@ -71,6 +72,7 @@ pub enum District {
     School,
     City,
     County,
+    Hospital,
 }
 
 #[derive(
@@ -114,10 +116,28 @@ pub struct OfficeSearch {
 
 impl Office {
     pub async fn upsert(db_pool: &PgPool, input: &UpsertOfficeInput) -> Result<Self, sqlx::Error> {
-        let slug = match &input.slug {
+        let mut slug = match &input.slug {
             Some(slug) => slug.to_owned(),
             None => slugify!(&input.title.clone().unwrap_or_default()),
         };
+
+        let existing_slug = sqlx::query!(
+            r#"
+            SELECT slug
+            FROM office
+            WHERE slug = $1 AND id != $2
+            "#,
+            slug,
+            input.id
+        )
+        .fetch_optional(db_pool)
+        .await?;
+
+        let rando: i32 = { rand::thread_rng().gen() };
+
+        if let Some(r) = existing_slug {
+            slug = format!("{}-{}", r.slug, rando);
+        }
 
         let record = sqlx::query_as!(
             Office,
