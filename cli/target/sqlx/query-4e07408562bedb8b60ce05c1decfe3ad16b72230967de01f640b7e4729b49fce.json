@@ -1,11 +1,13 @@
 {
-  "query": "\n            UPDATE\n                politician AS p\n            SET\n                race_losses = race_losses - 1\n            FROM\n                race_candidates AS rc\n            WHERE\n                rc.candidate_id = p.id\n                AND(\n                    SELECT\n                        winner_id FROM race\n                    WHERE\n                        race.id = rc.race_id) IS NOT NULL\n                AND(\n                    SELECT\n                        winner_id FROM race\n                    WHERE\n                        race.id = rc.race_id) != p.id;\n        ",
+  "query": "\n                                    UPDATE bill\n                                    SET history = history || '[\"newString\"]'::jsonb\n                                    WHERE id = $1\n                                ",
   "describe": {
     "columns": [],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Uuid"
+      ]
     },
     "nullable": []
   },
-  "hash": "c638052e67afb83cac82b6d5b7269cb11cfd765825e6a8514670ffaf6d573db5"
+  "hash": "bcc85127cecb7b5f12f986189406c08955610c9f2aae9d3530b6843655a1b430"
 }
