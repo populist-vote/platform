@@ -129,9 +129,10 @@ impl Politician {
             r#"
             SELECT slug
             FROM politician
-            WHERE slug = $1
+            WHERE slug = $1 AND id != $2
             "#,
-            slug
+            slug,
+            input.id
         )
         .fetch_optional(db_pool)
         .await?;
