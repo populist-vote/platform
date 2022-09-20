@@ -1,8 +1,12 @@
+use colored::*;
+use db::{Office, UpsertOfficeInput};
+use spinners::{Spinner, Spinners};
+use std::time::Instant;
 use std::{error::Error, io, process};
 
-use db::{Office, UpsertOfficeInput};
-
 async fn create_offices() -> Result<(), Box<dyn Error>> {
+    let start = Instant::now();
+    let mut sp = Spinner::new(Spinners::Dots5, "Upserting office records from CSV".into());
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
 
@@ -13,8 +17,12 @@ async fn create_offices() -> Result<(), Box<dyn Error>> {
         let office = Office::upsert(&pool.connection, &input)
             .await
             .expect(format!("Failed to upsert office: {:?}", input.slug).as_str());
-        println!("Created new office record: {:?}", office.title);
     }
+
+    sp.stop();
+    let duration = start.elapsed();
+    eprintln!("\n✅ {}\n", "Success".bright_green().bold());
+    eprintln!("🕑 {:?}", duration);
 
     Ok(())
 }
