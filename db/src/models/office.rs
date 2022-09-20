@@ -117,6 +117,8 @@ pub struct OfficeSearch {
 
 impl Office {
     pub async fn upsert(db_pool: &PgPool, input: &UpsertOfficeInput) -> Result<Self, sqlx::Error> {
+        let id = input.id.unwrap_or_else(|| uuid::Uuid::new_v4());
+
         let mut slug = match &input.slug {
             Some(slug) => slug.to_owned(),
             None => slugify!(&input.title.clone().unwrap_or_default()),
@@ -165,7 +167,7 @@ impl Office {
                     seat = COALESCE($17, office.seat)
                 RETURNING id, slug, title, office_type, district, district_type AS "district_type:District", hospital_district, school_district, chamber AS "chamber:Chamber", political_scope AS "political_scope:PoliticalScope", election_scope as "election_scope:ElectionScope", state AS "state:State", county, municipality, incumbent_id, term_length, seat, created_at, updated_at
             "#,
-            input.id,
+            id,
             slug,
             input.title,
             input.office_type,

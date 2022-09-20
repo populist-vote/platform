@@ -51,7 +51,7 @@ pub struct Politician {
 
 #[derive(InputObject, Debug, Default, Serialize, Deserialize)]
 pub struct UpsertPoliticianInput {
-    pub id: uuid::Uuid,
+    pub id: Option<uuid::Uuid>,
     pub slug: Option<String>,
     pub first_name: Option<String>,
     pub middle_name: Option<String>,
@@ -111,6 +111,7 @@ impl Politician {
         db_pool: &PgPool,
         input: &UpsertPoliticianInput,
     ) -> Result<Self, sqlx::Error> {
+        let id = input.id.unwrap_or_else(|| uuid::Uuid::new_v4());
         let mut slug = match &input.slug {
             Some(slug) => slug.to_owned(),
             None => slugify!(&format!(
@@ -124,7 +125,6 @@ impl Politician {
             )),
         };
 
-        // Check db if slug exists
         let existing_slug = sqlx::query!(
             r#"
             SELECT slug
