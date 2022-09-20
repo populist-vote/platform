@@ -5,6 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
+auth = { path = "../auth" }
 db = { path = "../db" }
 graphql = { path = "../graphql" }
 legiscan = { path = "../legiscan" }

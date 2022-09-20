@@ -14,7 +14,7 @@ async fn create_offices() -> Result<(), Box<dyn Error>> {
     let mut rdr = csv::Reader::from_reader(io::stdin());
     for result in rdr.deserialize() {
         let input: UpsertOfficeInput = result?;
-        let office = Office::upsert(&pool.connection, &input)
+        let _office = Office::upsert(&pool.connection, &input)
             .await
             .expect(format!("Failed to upsert office: {:?}", input.slug).as_str());
     }

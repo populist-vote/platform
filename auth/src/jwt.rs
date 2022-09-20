@@ -14,6 +14,33 @@ pub struct Claims {
     pub exp: usize,
 }
 
+pub fn create_power_token() -> Result<String, Error> {
+    let key = std::env::var("JWT_SECRET")?;
+    let expiration = chrono::Utc::now()
+        .checked_add_signed(chrono::Duration::days(120))
+        .expect("valid timestamp")
+        .timestamp();
+
+    let claims = Claims {
+        sub: uuid::Uuid::new_v4(),
+        username: "superadmin".to_string(),
+        email: "info@populist.us".to_string(),
+        role: Role::SUPERUSER,
+        exp: expiration as usize,
+    };
+
+    let token = match encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(key.as_bytes()),
+    ) {
+        Ok(t) => t,
+        Err(e) => panic!("Something went wrong encoding a JWT: {}", e),
+    };
+
+    Ok(token)
+}
+
 pub fn create_access_token_for_user(user_record: User) -> Result<String, Error> {
     let key = std::env::var("JWT_SECRET")?;
 

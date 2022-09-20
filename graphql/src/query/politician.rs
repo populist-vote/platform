@@ -22,11 +22,6 @@ pub struct PoliticianFilter {
 #[allow(clippy::too_many_arguments)]
 #[Object]
 impl PoliticianQuery {
-    async fn politician_by_id(&self, _ctx: &Context<'_>, _id: String) -> Result<PoliticianResult> {
-        // Look up politician by id in the database
-        todo!()
-    }
-
     async fn politician_by_slug(
         &self,
         ctx: &Context<'_>,

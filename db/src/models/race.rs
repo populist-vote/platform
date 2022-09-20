@@ -105,7 +105,7 @@ impl Race {
                     num_elect = COALESCE($16, race.num_elect)
                 RETURNING id, slug, title,  office_id, race_type AS "race_type:RaceType", party AS "party:PoliticalParty", state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_id, official_website, election_id, total_votes, is_special_election, num_elect, created_at, updated_at
             "#,
-            input.id,
+            id,
             slug,
             input.title,
             input.office_id,

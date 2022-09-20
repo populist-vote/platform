@@ -227,7 +227,7 @@ impl Politician {
                         created_at,
                         updated_at
             "#,
-            input.id,
+            id,
             slug,
             input.first_name,
             input.middle_name,

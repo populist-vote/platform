@@ -110,6 +110,15 @@ impl OfficeResult {
                                 None
                             }
                         }
+                        District::SoilAndWater => {
+                            if let (Some(muni), Some(district)) =
+                                (&self.municipality, &self.district)
+                            {
+                                Some(format!("{} Soil and Water District {}", muni, district))
+                            } else {
+                                None
+                            }
+                        }
                     }
                 } else {
                     None
