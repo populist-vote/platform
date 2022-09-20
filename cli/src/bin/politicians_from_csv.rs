@@ -1,10 +1,17 @@
+use colored::*;
 use db::UpsertPoliticianInput;
+use spinners::{Spinner, Spinners};
 use std::error::Error;
 use std::io;
 use std::process;
+use std::time::Instant;
 
 async fn upsert_politicians_from_csv() -> Result<(), Box<dyn Error>> {
-    // Init database connection singleton
+    let start = Instant::now();
+    let mut sp = Spinner::new(
+        Spinners::Dots5,
+        "Upserting politician records from CSV".into(),
+    );
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
 
@@ -13,7 +20,7 @@ async fn upsert_politicians_from_csv() -> Result<(), Box<dyn Error>> {
     for result in rdr.deserialize() {
         let input: UpsertPoliticianInput = result?;
 
-        let upserted_record = db::Politician::upsert(&pool.connection, &input)
+        let _politician = db::Politician::upsert(&pool.connection, &input)
             .await
             .expect(
                 format!(
@@ -22,10 +29,11 @@ async fn upsert_politicians_from_csv() -> Result<(), Box<dyn Error>> {
                 )
                 .as_str(),
             );
-        println!(
-            "Upserted politician: {:?} {:?}",
-            upserted_record.first_name, upserted_record.last_name
-        );
+
+        sp.stop();
+        let duration = start.elapsed();
+        eprintln!("\n✅ {}\n", "Success".bright_green().bold());
+        eprintln!("🕑 {:?}", duration);
     }
 
     Ok(())

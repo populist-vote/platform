@@ -111,7 +111,7 @@ impl Politician {
         db_pool: &PgPool,
         input: &UpsertPoliticianInput,
     ) -> Result<Self, sqlx::Error> {
-        let id = input.id.unwrap_or_else(|| uuid::Uuid::new_v4());
+        let id = input.id.unwrap_or_else(uuid::Uuid::new_v4);
         let mut slug = match &input.slug {
             Some(slug) => slug.to_owned(),
             None => slugify!(&format!(

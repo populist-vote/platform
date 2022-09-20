@@ -58,7 +58,7 @@ pub struct RaceSearch {
 
 impl Race {
     pub async fn upsert(db_pool: &PgPool, input: &UpsertRaceInput) -> Result<Self, sqlx::Error> {
-        let id = input.id.unwrap_or_else(|| uuid::Uuid::new_v4());
+        let id = input.id.unwrap_or_else(uuid::Uuid::new_v4);
         let mut slug = match &input.slug {
             Some(slug) => slug.to_owned(),
             None => slugify!(&input.title.clone().unwrap_or_default()),

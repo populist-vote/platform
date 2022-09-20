@@ -4,7 +4,7 @@ use spinners::{Spinner, Spinners};
 use std::time::Instant;
 use std::{error::Error, io, process};
 
-async fn create_offices() -> Result<(), Box<dyn Error>> {
+async fn upsert_offices() -> Result<(), Box<dyn Error>> {
     let start = Instant::now();
     let mut sp = Spinner::new(Spinners::Dots5, "Upserting office records from CSV".into());
     db::init_pool().await.unwrap();
@@ -29,8 +29,8 @@ async fn create_offices() -> Result<(), Box<dyn Error>> {
 
 #[tokio::main]
 async fn main() {
-    if let Err(err) = create_offices().await {
-        println!("error running example: {}", err);
+    if let Err(err) = upsert_offices().await {
+        println!("error running upsert_offices: {}", err);
         process::exit(1);
     }
 }
