@@ -12,11 +12,11 @@ mailers = { path = "../mailers" }
 open-secrets = { path = "../open-secrets" }
 
 anyhow = "1.0.45"
-async-graphql = { version = "3.0.10", features = ["uuid", "chrono", "unblock", "dataloader", "apollo_persisted_queries"] }
-async-graphql-poem = "3.0.18"
+async-graphql = { version = "4.0.13", features = ["uuid", "chrono", "unblock", "dataloader", "apollo_persisted_queries"] }
+async-graphql-poem = "4.0.13"
 bytes = "1.1.0"
 chrono = "0.4.19"
-tokio = { version = "1.8", features = ["full"] }
+tokio = { version = "1.21.1", features = ["full"] }
 legiscan = { path = "../legiscan", features = ["async-graphql"] }
 votesmart = { path = "../votesmart", features = ["async-graphql"] }
 geocodio = { path = "../geocodio" }
@@ -25,9 +25,9 @@ pwhash = "1.0.0"
 rust-s3 = "0.28.0"
 serde = "1.0.130"
 serde_json = "1.0.71"
-sqlx = { version = "0.5.9", features = ["postgres", "bigdecimal"] }
+sqlx = { version = "0.6.2", features = ["postgres", "bigdecimal", "uuid"] }
 thiserror = "1.0.30"
-uuid = "0.8.2"
+uuid = "1.1.2"
 http = "0.2.5"
 base64 = "0.13.0"
 async-trait = "0.1.52"

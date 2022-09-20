@@ -1,3 +1,4 @@
+// Credit: https://github.com/vectordotdev/vector/blob/master/src/api/schema/relay.rs
 use std::convert::Infallible;
 
 use async_graphql::{
@@ -120,12 +121,12 @@ impl Params {
 
 /// Creates a new Relay-compliant connection. Iterator must implement `ExactSizeIterator` to
 /// determine page position in the total result set.
-pub async fn query<T, I: ExactSizeIterator<Item = T>>(
+pub async fn query<T: async_graphql::OutputType, I: ExactSizeIterator<Item = T>>(
     iter: I,
     p: Params,
     default_page_size: usize,
 ) -> ConnectionResult<T> {
-    connection::query::<Base64Cursor, T, ConnectionFields, _, _, _, Infallible>(
+    connection::query::<_, _, Base64Cursor, T, ConnectionFields, _, _, _, Infallible>(
         p.after,
         p.before,
         p.first,
@@ -157,7 +158,7 @@ pub async fn query<T, I: ExactSizeIterator<Item = T>>(
                     total_count: iter_len,
                 },
             );
-            connection.append(
+            connection.edges.extend(
                 (start..end)
                     .into_iter()
                     .zip(iter.skip(start))

@@ -1,12 +1,10 @@
+use super::enums::State;
+use crate::{DateTime, Error};
 use async_graphql::{Enum, InputObject};
 use geocodio::GeocodioProxy;
 use pwhash::bcrypt;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool, Type};
-
-use crate::{DateTime, Error};
-
-use super::enums::State;
 
 #[derive(FromRow, Debug, Clone)]
 pub struct User {
