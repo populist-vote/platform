@@ -422,6 +422,8 @@ impl PoliticianResult {
                 total_votes,
                 official_website,
                 election_id,
+                is_special_election,
+                num_elect,
                 created_at,
                 updated_at
             FROM (

@@ -40,6 +40,8 @@ impl ElectionResult {
                 total_votes,
                 official_website,
                 election_id,
+                is_special_election,
+                num_elect,
                 created_at,
                 updated_at
             FROM
@@ -103,6 +105,8 @@ impl ElectionResult {
                 r.total_votes,
                 r.official_website,
                 r.election_id,
+                r.is_special_election,
+                r.num_elect,
                 r.created_at,
                 r.updated_at
             FROM
@@ -177,6 +181,8 @@ impl ElectionResult {
                 total_votes,
                 official_website,
                 election_id,
+                is_special_election,
+                num_elect,
                 r.created_at,
                 r.updated_at
             FROM

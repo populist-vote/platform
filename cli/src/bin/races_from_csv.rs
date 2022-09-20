@@ -1,25 +1,35 @@
+use colored::*;
+use db::{Race, UpsertRaceInput};
+use spinners::{Spinner, Spinners};
+use std::time::Instant;
 use std::{error::Error, io, process};
 
-use db::{CreateRaceInput, Race};
-
-async fn create_races() -> Result<(), Box<dyn Error>> {
+async fn upsert_races() -> Result<(), Box<dyn Error>> {
+    let start = Instant::now();
+    let mut sp = Spinner::new(Spinners::Dots5, "Upserting race records from CSV".into());
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
 
     // Build the CSV reader and iterate over each record.
     let mut rdr = csv::Reader::from_reader(io::stdin());
     for result in rdr.deserialize() {
-        let new_record_input: CreateRaceInput = result?;
-        let new_race = Race::create(&pool.connection, &new_record_input).await?;
-        println!("New race created: = {:?}", new_race.title);
+        let input: UpsertRaceInput = result?;
+        let _race = Race::upsert(&pool.connection, &input)
+            .await
+            .expect(format!("Failed to upsert race: {:?}", input.slug).as_str());
     }
+
+    sp.stop();
+    let duration = start.elapsed();
+    eprintln!("\n✅ {}\n", "Success".bright_green().bold());
+    eprintln!("🕑 {:?}", duration);
 
     Ok(())
 }
 
 #[tokio::main]
 async fn main() {
-    if let Err(err) = create_races().await {
+    if let Err(err) = upsert_races().await {
         println!("error running example: {}", err);
         process::exit(1);
     }
