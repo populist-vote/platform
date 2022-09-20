@@ -1,0 +1,28 @@
+{
+  "query": "\n            INSERT INTO race_candidates (race_id, candidate_id) VALUES ($1, $2) \n            RETURNING race_id, candidate_id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "race_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "candidate_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "9e1e502deb30ac5388a80341ade5c8a039b96f6a9c405e29bb6001da2267f65c"
+}

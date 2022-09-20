@@ -6,5 +6,5 @@ edition = "2021"
 [dependencies]
 sendgrid = { version = "0.17.4", features = ["async"] }
 dotenv = "*"
-tokio = { version = "1.8", features = ["full"] }
+tokio = { version = "1.21.1", features = ["full"] }
 serde_json = "1.0.71"
