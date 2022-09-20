@@ -1,14 +1,28 @@
 {
-  "query": "INSERT INTO bill_sponsors (bill_id, politician_id) VALUES ($1, $2)",
+  "query": "\n            INSERT INTO race_candidates (race_id, candidate_id) VALUES ($1, $2) \n            RETURNING race_id, candidate_id\n        ",
   "describe": {
-    "columns": [],
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "race_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "candidate_id",
+        "type_info": "Uuid"
+      }
+    ],
     "parameters": {
       "Left": [
         "Uuid",
         "Uuid"
       ]
     },
-    "nullable": []
+    "nullable": [
+      false,
+      false
+    ]
   },
-  "hash": "1d777125f4f6f57d34d98a7dfeac015013724e54b233b546b0d9680699405060"
+  "hash": "9e1e502deb30ac5388a80341ade5c8a039b96f6a9c405e29bb6001da2267f65c"
 }

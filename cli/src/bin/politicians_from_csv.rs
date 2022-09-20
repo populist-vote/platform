@@ -29,12 +29,12 @@ async fn upsert_politicians_from_csv() -> Result<(), Box<dyn Error>> {
                 )
                 .as_str(),
             );
-
-        sp.stop();
-        let duration = start.elapsed();
-        eprintln!("\n✅ {}\n", "Success".bright_green().bold());
-        eprintln!("🕑 {:?}", duration);
     }
+
+    sp.stop();
+    let duration = start.elapsed();
+    eprintln!("\n✅ {}\n", "Success".bright_green().bold());
+    eprintln!("🕑 {:?}", duration);
 
     Ok(())
 }
