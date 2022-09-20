@@ -74,6 +74,7 @@ pub enum District {
     County,
     Judicial,
     Hospital,
+    SoilAndWater,
 }
 
 #[derive(
