@@ -6,7 +6,7 @@ use db::{
         office::Office,
         politician::Politician,
     },
-    District, ElectionScope,
+    Chamber, District, ElectionScope,
 };
 
 #[derive(SimpleObject, Debug, Clone)]
@@ -18,10 +18,16 @@ pub struct OfficeResult {
     office_type: Option<String>,
     district: Option<String>,
     district_type: Option<District>,
+    hospital_district: Option<String>,
+    school_district: Option<String>,
     political_scope: PoliticalScope,
     election_scope: ElectionScope,
+    chamber: Option<Chamber>,
     state: Option<State>,
+    county: Option<String>,
     municipality: Option<String>,
+    term_length: Option<i32>,
+    seat: Option<String>,
 }
 
 #[ComplexObject]
@@ -197,10 +203,16 @@ impl From<Office> for OfficeResult {
             office_type: o.office_type,
             district: o.district,
             district_type: o.district_type,
+            hospital_district: o.hospital_district,
+            school_district: o.school_district,
+            chamber: o.chamber,
             political_scope: o.political_scope,
             election_scope: o.election_scope,
             state: o.state,
+            county: o.county,
             municipality: o.municipality,
+            term_length: o.term_length,
+            seat: o.seat,
         }
     }
 }
