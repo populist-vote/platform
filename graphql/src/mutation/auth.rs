@@ -115,7 +115,7 @@ impl AuthMutation {
                 let county = geocodio_data.results[0].address_components.county.clone();
                 let primary_result = geocodio_data.results[0].fields.as_ref().unwrap();
                 let congressional_district =
-                    primary_result.congressional_districts.as_ref().unwrap()[0].district_number;
+                    &primary_result.congressional_districts.as_ref().unwrap()[0].district_number;
                 let state_legislative_districts =
                     primary_result.state_legislative_districts.as_ref().unwrap();
                 let state_house_district = &state_legislative_districts.house[0].district_number;
@@ -131,9 +131,9 @@ impl AuthMutation {
                             longitude: coordinates.longitude,
                         }),
                         county,
-                        congressional_district: Some(congressional_district.into()),
-                        state_house_district: Some(state_house_district.parse::<i32>().unwrap()),
-                        state_senate_district: Some(state_senate_district.parse::<i32>().unwrap()),
+                        congressional_district: Some(congressional_district.to_string()),
+                        state_house_district: Some(state_house_district.to_string()),
+                        state_senate_district: Some(state_senate_district.to_string()),
                         ..input.address
                     },
                     confirmation_token: confirmation_token.clone(),

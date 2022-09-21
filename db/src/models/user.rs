@@ -47,9 +47,9 @@ pub struct Address {
     pub county: Option<String>,
     pub country: String,
     pub postal_code: String,
-    pub congressional_district: Option<i32>,
-    pub state_senate_district: Option<i32>,
-    pub state_house_district: Option<i32>,
+    pub congressional_district: Option<String>,
+    pub state_senate_district: Option<String>,
+    pub state_house_district: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, InputObject)]
@@ -62,9 +62,9 @@ pub struct AddressInput {
     pub country: String,
     pub postal_code: String,
     pub coordinates: Option<Coordinates>,
-    pub congressional_district: Option<i32>,
-    pub state_senate_district: Option<i32>,
-    pub state_house_district: Option<i32>,
+    pub congressional_district: Option<String>,
+    pub state_senate_district: Option<String>,
+    pub state_house_district: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, InputObject)]
@@ -327,28 +327,14 @@ impl User {
                 let coordinates = geocodio_data.results[0].location.clone();
                 let county = geocodio_data.results[0].address_components.county.clone();
                 let primary_result = geocodio_data.results[0].fields.as_ref().unwrap();
-                let congressional_district: i32 =
+                let congressional_district =
                     primary_result.congressional_districts.as_ref().unwrap()[0]
                         .district_number
-                        .into();
+                        .to_string();
                 let state_legislative_districts =
                     primary_result.state_legislative_districts.as_ref().unwrap();
-
-                let state_house_district = &state_legislative_districts.house[0]
-                    .district_number
-                    .parse::<i32>();
-                let state_house_district = match state_house_district {
-                    Ok(district) => Some(district),
-                    Err(_) => None,
-                };
-
-                let state_senate_district = &state_legislative_districts.senate[0]
-                    .district_number
-                    .parse::<i32>();
-                let state_senate_district = match state_senate_district {
-                    Ok(district) => Some(district),
-                    Err(_) => None,
-                };
+                let state_house_district = &state_legislative_districts.house[0].district_number;
+                let state_senate_district = &state_legislative_districts.senate[0].district_number;
 
                 let coordinates: geo_types::Geometry<f64> = Some(coordinates)
                     .as_ref()
