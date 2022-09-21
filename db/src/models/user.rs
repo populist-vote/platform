@@ -345,22 +345,37 @@ impl User {
                 let updated_record_result = sqlx::query_as!(
                     Address,
                     r#"
-                    UPDATE address a
-                    SET line_1 = $2,
-                    line_2 = $3,
-                    city = $4,
-                    state = $5,
-                    county = $6,
-                    postal_code = $7,
-                    country = $8,
-                    geog = $9::geography,
-                    congressional_district = $10,
-                    state_house_district = $11,
-                    state_senate_district = $12
-                    FROM user_profile up
-                    WHERE up.address_id = a.id
-                    AND up.user_id = $1
-                    RETURNING a.id, line_1, line_2, city, state AS "state:State", postal_code, country, county, congressional_district, state_senate_district, state_house_district
+                   UPDATE
+                        address a
+                    SET
+                        line_1 = $2,
+                        line_2 = $3,
+                        city = $4,
+                        state = $5,
+                        county = $6,
+                        postal_code = $7,
+                        country = $8,
+                        geog = $9::geography,
+                        congressional_district = $10,
+                        state_house_district = $11,
+                        state_senate_district = $12
+                    FROM
+                        user_profile up
+                    WHERE
+                        up.address_id = a.id
+                        AND up.user_id = $1
+                    RETURNING
+                        a.id,
+                        line_1,
+                        line_2,
+                        city,
+                        state AS "state:State",
+                        postal_code,
+                        country,
+                        county,
+                        congressional_district,
+                        state_senate_district,
+                        state_house_district
                 "#,
                     user_id,
                     address.line_1,
