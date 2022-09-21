@@ -15,6 +15,7 @@ pub struct OfficeResult {
     id: ID,
     slug: String,
     title: String,
+    name: Option<String>,
     office_type: Option<String>,
     district: Option<String>,
     district_type: Option<District>,
@@ -139,6 +140,12 @@ impl OfficeResult {
         Ok(subtitle)
     }
 
+    async fn subtitle_short(&self) -> Result<Option<String>> {
+        todo!(
+            "Implement subtitle_short, reuse above logic but truncate state names and HD, SD, etc"
+        );
+    }
+
     async fn incumbent(&self, ctx: &Context<'_>) -> Result<Option<PoliticianResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query_as!(
@@ -157,7 +164,7 @@ impl OfficeResult {
                         date_of_birth,
                         office_id,
                         thumbnail_image_url,
-                        website_url,
+                        official_website_url,
                         campaign_website_url,
                         facebook_url,
                         twitter_url,
@@ -200,6 +207,7 @@ impl From<Office> for OfficeResult {
             id: ID::from(o.id),
             slug: o.slug,
             title: o.title,
+            name: o.name,
             office_type: o.office_type,
             district: o.district,
             district_type: o.district_type,
