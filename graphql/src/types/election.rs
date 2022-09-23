@@ -125,7 +125,7 @@ impl ElectionResult {
                         (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR
                         (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7)
                     )))
-            ORDER BY title DESC
+            ORDER BY o.priority ASC, title DESC
                 "#,
                 uuid::Uuid::parse_str(&self.id).unwrap(),
                 user_address_data.state as State,
