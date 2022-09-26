@@ -15,6 +15,7 @@ pub struct ElectionResult {
     slug: String,
     title: String,
     description: Option<String>,
+    state: Option<State>,
     election_date: chrono::NaiveDate,
 }
 
@@ -202,6 +203,7 @@ impl From<Election> for ElectionResult {
             slug: e.slug,
             title: e.title,
             description: e.description,
+            state: e.state,
             election_date: e.election_date,
         }
     }
