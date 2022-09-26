@@ -4,6 +4,7 @@ Populist Database Interface, GraphQL API Server, and Command Line Utility
 
 ## Getting Started
 
+To clone this repository, run `git clone --recurse-submodules -j8 
 Make sure you have [Rust installed] on your machine. Next, you'll need the [sqlx-cli] installed to manage the database connection and run migrations. To do so, run `cargo install sqlx-cli --features postgres`
 
 First copy the `.env.example` file to `.env` which is .gitignored.  

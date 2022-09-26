@@ -15,6 +15,8 @@ pub struct OfficeResult {
     id: ID,
     slug: String,
     title: String,
+    subtitle: Option<String>,
+    subtitle_short: Option<String>,
     name: Option<String>,
     office_type: Option<String>,
     district: Option<String>,
@@ -31,7 +33,7 @@ pub struct OfficeResult {
     seat: Option<String>,
 }
 
-fn compute_office_subtitle(office: &OfficeResult, use_short: bool) -> Option<String> {
+fn compute_office_subtitle(office: &Office, use_short: bool) -> Option<String> {
     match office.election_scope {
         ElectionScope::National => None,
         ElectionScope::State => office
@@ -141,44 +143,6 @@ fn compute_office_subtitle(office: &OfficeResult, use_short: bool) -> Option<Str
 
 #[ComplexObject]
 impl OfficeResult {
-    async fn subtitle(&self, ctx: &Context<'_>) -> Result<Option<String>> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        if let Some(subtitle) = sqlx::query!(
-            r#"
-            SELECT subtitle FROM office WHERE id=$1
-        "#,
-            uuid::Uuid::parse_str(&self.id.as_str()).unwrap()
-        )
-        .fetch_one(&db_pool)
-        .await?
-        .subtitle
-        {
-            return Ok(Some(subtitle));
-        } else {
-            let subtitle = compute_office_subtitle(self, false);
-            Ok(subtitle)
-        }
-    }
-
-    async fn subtitle_short(&self, ctx: &Context<'_>) -> Result<Option<String>> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        if let Some(subtitle_short) = sqlx::query!(
-            r#"
-            SELECT subtitle_short FROM office WHERE id=$1
-        "#,
-            uuid::Uuid::parse_str(&self.id.as_str()).unwrap()
-        )
-        .fetch_one(&db_pool)
-        .await?
-        .subtitle_short
-        {
-            return Ok(Some(subtitle_short));
-        } else {
-            let subtitle_short = compute_office_subtitle(self, true);
-            Ok(subtitle_short)
-        }
-    }
-
     async fn incumbent(&self, ctx: &Context<'_>) -> Result<Option<PoliticianResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query_as!(
@@ -236,10 +200,24 @@ impl OfficeResult {
 
 impl From<Office> for OfficeResult {
     fn from(o: Office) -> Self {
+        let subtitle = if o.subtitle.is_none() {
+            compute_office_subtitle(&o.clone(), false)
+        } else {
+            o.clone().subtitle
+        };
+
+        let subtitle_short = if o.subtitle_short.is_none() {
+            compute_office_subtitle(&o.clone(), true)
+        } else {
+            o.subtitle_short
+        };
+
         Self {
             id: ID::from(o.id),
             slug: o.slug,
             title: o.title,
+            subtitle,
+            subtitle_short,
             name: o.name,
             office_type: o.office_type,
             district: o.district,
@@ -260,10 +238,12 @@ impl From<Office> for OfficeResult {
 
 #[tokio::test]
 async fn test_compute_office_title() {
-    let office = OfficeResult {
-        id: uuid::Uuid::new_v4().into(),
+    let office = Office {
+        id: uuid::Uuid::new_v4(),
         slug: "test-state-senator".to_string(),
         title: "State Senator".to_string(),
+        subtitle: None,
+        subtitle_short: None,
         name: None,
         office_type: None,
         district: Some("1".to_string()),
@@ -278,6 +258,7 @@ async fn test_compute_office_title() {
         municipality: None,
         term_length: None,
         seat: None,
+        ..Default::default()
     };
 
     assert_eq!(
