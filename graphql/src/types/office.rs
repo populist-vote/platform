@@ -201,13 +201,13 @@ impl OfficeResult {
 impl From<Office> for OfficeResult {
     fn from(o: Office) -> Self {
         let subtitle = if o.subtitle.is_none() {
-            compute_office_subtitle(&o.clone(), false)
+            compute_office_subtitle(&o, false)
         } else {
             o.clone().subtitle
         };
 
         let subtitle_short = if o.subtitle_short.is_none() {
-            compute_office_subtitle(&o.clone(), true)
+            compute_office_subtitle(&o, true)
         } else {
             o.subtitle_short
         };
