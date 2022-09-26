@@ -1,6 +1,6 @@
 use crate::{context::ApiContext, guard::StaffOnly, is_admin, types::ElectionResult};
 use async_graphql::*;
-use db::{CreateElectionInput, Election, UpdateElectionInput};
+use db::{Election, UpsertElectionInput};
 
 #[derive(Default)]
 pub struct ElectionMutation;
@@ -13,27 +13,14 @@ struct DeleteElectionResult {
 #[Object]
 impl ElectionMutation {
     #[graphql(guard = "StaffOnly", visible = "is_admin")]
-    async fn create_election(
+    async fn upsert_election(
         &self,
         ctx: &Context<'_>,
-        input: CreateElectionInput,
+        input: UpsertElectionInput,
     ) -> Result<ElectionResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let new_record = Election::create(&db_pool, &input).await?;
+        let new_record = Election::upsert(&db_pool, &input).await?;
         Ok(ElectionResult::from(new_record))
-    }
-
-    #[graphql(guard = "StaffOnly", visible = "is_admin")]
-    async fn update_election(
-        &self,
-        ctx: &Context<'_>,
-        id: String,
-        input: UpdateElectionInput,
-    ) -> Result<ElectionResult> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let updated_record =
-            Election::update(&db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
-        Ok(ElectionResult::from(updated_record))
     }
 
     #[graphql(guard = "StaffOnly", visible = "is_admin")]
