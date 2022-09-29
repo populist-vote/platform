@@ -157,7 +157,7 @@ impl ElectionResult {
             Race,
             r#"
             SELECT
-                id,
+                DISTINCT id,
                 slug,
                 title,
                 office_id,

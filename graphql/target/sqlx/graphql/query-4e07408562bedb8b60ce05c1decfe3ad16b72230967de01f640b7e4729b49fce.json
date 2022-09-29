@@ -1,10 +1,35 @@
 {
-  "query": "\n                SELECT\n                    a.state AS \"state:State\"\n                FROM\n                    address a\n                    JOIN user_profile up ON user_id = $1\n                WHERE\n                    up.user_id = $1 AND \n                    up.address_id = a.id\n                ",
+  "query": "\n                SELECT\n                    a.congressional_district,\n                    a.state_senate_district,\n                    a.state_house_district,\n                    a.state AS \"state:State\",\n                    a.county,\n                    a.city\n                FROM\n                    address AS a\n                    JOIN user_profile up ON user_id = $1\n                WHERE\n                    up.user_id = $1 AND \n                    up.address_id = a.id\n                ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
+        "name": "congressional_district",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "state_senate_district",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "state_house_district",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
         "name": "state:State",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "county",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "city",
         "type_info": "Text"
       }
     ],
@@ -14,8 +39,13 @@
       ]
     },
     "nullable": [
+      true,
+      true,
+      true,
+      false,
+      true,
       false
     ]
   },
-  "hash": "b5cc088e40d5bbf140044ee2d61f1383a2a23123e4c826370db66626eec404df"
+  "hash": "15e92e08e433cfb688e6d825fb533bdc7da0a92bc752265e415be73f8212cabe"
 }
