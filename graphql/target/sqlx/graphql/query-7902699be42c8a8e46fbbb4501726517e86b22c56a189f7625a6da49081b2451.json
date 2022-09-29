@@ -1,5 +1,5 @@
 {
-  "query": "\n                SELECT id,\n                        slug,\n                        first_name,\n                        middle_name,\n                        last_name,\n                        suffix,\n                        preferred_name,\n                        biography,\n                        biography_source,\n                        home_state AS \"home_state:State\",\n                        date_of_birth,\n                        office_id,\n                        thumbnail_image_url,\n                        official_website_url,\n                        campaign_website_url,\n                        facebook_url,\n                        twitter_url,\n                        instagram_url,\n                        youtube_url,\n                        linkedin_url,\n                        tiktok_url,\n                        email,\n                        phone,\n                        party AS \"party:PoliticalParty\",\n                        votesmart_candidate_id,\n                        votesmart_candidate_bio,\n                        votesmart_candidate_ratings,\n                        legiscan_people_id,\n                        crp_candidate_id,\n                        fec_candidate_id,\n                        race_wins,\n                        race_losses,\n                        created_at,\n                        updated_at FROM politician\n                WHERE office_id = $1\n            ",
+  "query": "\n                SELECT\n                    id,\n                    slug,\n                    title,\n                    description,\n                    state AS \"state:State\",\n                    election_date\n                FROM\n                    election\n                WHERE\n                    state = $1\n                    OR state IS NULL\n                ORDER BY\n                    election_date ASC\n                ",
   "describe": {
     "columns": [
       {
@@ -14,42 +14,17 @@
       },
       {
         "ordinal": 2,
-        "name": "first_name",
+        "name": "title",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "middle_name",
+        "name": "description",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "last_name",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 5,
-        "name": "suffix",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 6,
-        "name": "preferred_name",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 7,
-        "name": "biography",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 8,
-        "name": "biography_source",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 9,
-        "name": "home_state:State",
+        "name": "state:State",
         "type_info": {
           "Custom": {
             "name": "state",
@@ -112,151 +87,73 @@
         }
       },
       {
-        "ordinal": 10,
-        "name": "date_of_birth",
+        "ordinal": 5,
+        "name": "election_date",
         "type_info": "Date"
-      },
-      {
-        "ordinal": 11,
-        "name": "office_id",
-        "type_info": "Uuid"
-      },
-      {
-        "ordinal": 12,
-        "name": "thumbnail_image_url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 13,
-        "name": "official_website_url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 14,
-        "name": "campaign_website_url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 15,
-        "name": "facebook_url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 16,
-        "name": "twitter_url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 17,
-        "name": "instagram_url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 18,
-        "name": "youtube_url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 19,
-        "name": "linkedin_url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 20,
-        "name": "tiktok_url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 21,
-        "name": "email",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 22,
-        "name": "phone",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 23,
-        "name": "party:PoliticalParty",
-        "type_info": {
-          "Custom": {
-            "name": "political_party",
-            "kind": {
-              "Enum": [
-                "democratic",
-                "republican",
-                "libertarian",
-                "freedom",
-                "unity",
-                "green",
-                "constitution",
-                "independent",
-                "approval_voting",
-                "unaffiliated",
-                "unknown",
-                "democratic_farmer_labor",
-                "grassroots_legalize_cannabis",
-                "legal_marijuana_now"
-              ]
-            }
-          }
-        }
-      },
-      {
-        "ordinal": 24,
-        "name": "votesmart_candidate_id",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 25,
-        "name": "votesmart_candidate_bio",
-        "type_info": "Jsonb"
-      },
-      {
-        "ordinal": 26,
-        "name": "votesmart_candidate_ratings",
-        "type_info": "Jsonb"
-      },
-      {
-        "ordinal": 27,
-        "name": "legiscan_people_id",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 28,
-        "name": "crp_candidate_id",
-        "type_info": "Varchar"
-      },
-      {
-        "ordinal": 29,
-        "name": "fec_candidate_id",
-        "type_info": "Varchar"
-      },
-      {
-        "ordinal": 30,
-        "name": "race_wins",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 31,
-        "name": "race_losses",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 32,
-        "name": "created_at",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 33,
-        "name": "updated_at",
-        "type_info": "Timestamptz"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        {
+          "Custom": {
+            "name": "state",
+            "kind": {
+              "Enum": [
+                "AL",
+                "AK",
+                "AZ",
+                "AR",
+                "CA",
+                "CO",
+                "CT",
+                "DC",
+                "DE",
+                "FL",
+                "GA",
+                "HI",
+                "ID",
+                "IL",
+                "IN",
+                "IA",
+                "KS",
+                "KY",
+                "LA",
+                "ME",
+                "MD",
+                "MA",
+                "MI",
+                "MN",
+                "MS",
+                "MO",
+                "MT",
+                "NE",
+                "NV",
+                "NH",
+                "NJ",
+                "NM",
+                "NY",
+                "NC",
+                "ND",
+                "OH",
+                "OK",
+                "OR",
+                "PA",
+                "RI",
+                "SC",
+                "SD",
+                "TN",
+                "TX",
+                "UT",
+                "VT",
+                "VA",
+                "WA",
+                "WV",
+                "WI",
+                "WY"
+              ]
+            }
+          }
+        }
       ]
     },
     "nullable": [
@@ -264,37 +161,9 @@
       false,
       false,
       true,
-      false,
       true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      false,
-      false,
-      true,
-      true,
-      true,
-      true,
-      true,
-      false,
       false
     ]
   },
-  "hash": "c2b32da1736947e04009f51a86f9002da67fd87a339441efa7b98d1cd678733a"
+  "hash": "9752c632838d60c60cf2615399e4e4ad32e59ea347b2553b383cfe049d5623ea"
 }

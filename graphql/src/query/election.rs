@@ -45,19 +45,22 @@ impl ElectionQuery {
 
             let records = sqlx::query_as!(
                 Election,
-                r#"SELECT
-                id,
-                slug,
-                title,
-                description,
-                state AS "state:State",
-                election_date
-            FROM
-                election
-            WHERE state = $1 OR state IS NULL
-            ORDER BY
-                election_date ASC
-            LIMIT 1"#,
+                r#"
+                SELECT
+                    id,
+                    slug,
+                    title,
+                    description,
+                    state AS "state:State",
+                    election_date
+                FROM
+                    election
+                WHERE
+                    state = $1
+                    OR state IS NULL
+                ORDER BY
+                    election_date ASC
+                "#,
                 users_state as State
             )
             .fetch_all(&db_pool)
