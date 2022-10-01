@@ -185,7 +185,6 @@ impl FullState for State {
 )]
 #[strum(ascii_case_insensitive)]
 #[sqlx(type_name = "political_party", rename_all = "snake_case")]
-// #[serde(rename_all = "snake_case")]
 pub enum PoliticalParty {
     Democratic,
     #[serde(rename = "Democratic Farmer Labor")]
@@ -203,6 +202,8 @@ pub enum PoliticalParty {
     Independent,
     #[serde(rename = "Approval Voting")]
     ApprovalVoting,
+    #[serde(rename = "Socialist Workers")]
+    SocialistWorkers,
     Unaffiliated,
     Unknown,
 }
