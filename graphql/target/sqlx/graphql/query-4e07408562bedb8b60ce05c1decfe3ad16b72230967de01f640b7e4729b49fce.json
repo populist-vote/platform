@@ -1,5 +1,5 @@
 {
-  "query": "\n                SELECT\n                    candidate_id,\n                    is_endorsement,\n                    note\n                FROM\n                    voting_guide_candidates\n                WHERE\n                    voting_guide_id = $1\n                    AND is_endorsement = true OR note IS NOT NULL\n            ",
+  "query": "\n                SELECT\n                    candidate_id,\n                    is_endorsement,\n                    note\n                FROM\n                    voting_guide_candidates\n                WHERE\n                    voting_guide_id = $1\n                    AND (is_endorsement = true OR note IS NOT NULL)\n            ",
   "describe": {
     "columns": [
       {
@@ -29,5 +29,5 @@
       true
     ]
   },
-  "hash": "9a08887ec67d06e04c26b392d0c2321b477677be977227462c4553645f1be443"
+  "hash": "822ee3352cf0ade11df3adc9a2cc34597badffb68f8b75396c5b95a53e9bf24d"
 }

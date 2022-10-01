@@ -102,7 +102,7 @@ impl VotingGuideResult {
                     voting_guide_candidates
                 WHERE
                     voting_guide_id = $1
-                    AND is_endorsement = true OR note IS NOT NULL
+                    AND (is_endorsement = true OR note IS NOT NULL)
             "#,
             uuid::Uuid::parse_str(self.id.clone().as_str()).unwrap()
         )
