@@ -153,6 +153,9 @@ impl ElectionResult {
     ) -> Result<Vec<RaceResult>> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
 
+        // TODO: sql trigger that auto deletes voting guide candidate records
+        // when is_endorsement = false and note is null
+
         let records = sqlx::query_as!(
             Race,
             r#"
@@ -181,7 +184,8 @@ impl ElectionResult {
             JOIN voting_guide_candidates vgc ON vgc.candidate_id = rc.candidate_id
             WHERE
                 r.election_id = $1 AND
-                vgc.voting_guide_id = $2
+                vgc.voting_guide_id = $2 AND 
+                (vgc.is_endorsement = true OR vgc.note IS NOT NULL)
             ORDER BY title DESC
             "#,
             uuid::Uuid::parse_str(&self.id).unwrap(),
