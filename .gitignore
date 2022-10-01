@@ -2,5 +2,7 @@
 */target
 
 .env
+.env.staging
+.env.production
 
 .DS_Store

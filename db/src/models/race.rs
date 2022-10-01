@@ -174,8 +174,6 @@ impl Race {
             None => "NULL".to_string(),
         };
 
-        tracing::warn!("office_titles: {:?}", office_titles);
-
         let query = &*format!(
             r#"
                 SELECT
@@ -213,15 +211,15 @@ impl Race {
             state = input
                 .state
                 .map(|s| format!("'{}'", s))
-                .unwrap_or("NULL".to_string()),
+                .unwrap_or_else(|| "NULL".to_string()),
             political_scope = input
                 .political_scope
                 .map(|s| format!("'{}'", s))
-                .unwrap_or("NULL".to_string()),
+                .unwrap_or_else(|| "NULL".to_string()),
             election_scope = input
                 .election_scope
                 .map(|s| format!("'{}'", s))
-                .unwrap_or("NULL".to_string()),
+                .unwrap_or_else(|| "NULL".to_string()),
             office_titles = office_titles
         );
 

@@ -1,35 +1,20 @@
 {
-  "query": "\n                SELECT\n                    a.congressional_district,\n                    a.state_senate_district,\n                    a.state_house_district,\n                    a.state AS \"state:State\",\n                    a.county,\n                    a.city\n                FROM\n                    address AS a\n                    JOIN user_profile up ON user_id = $1\n                WHERE\n                    up.user_id = $1 AND \n                    up.address_id = a.id\n                ",
+  "query": "\n                SELECT\n                    candidate_id,\n                    is_endorsement,\n                    note\n                FROM\n                    voting_guide_candidates\n                WHERE\n                    voting_guide_id = $1\n                    AND is_endorsement = true OR note IS NOT NULL\n            ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "congressional_district",
-        "type_info": "Text"
+        "name": "candidate_id",
+        "type_info": "Uuid"
       },
       {
         "ordinal": 1,
-        "name": "state_senate_district",
-        "type_info": "Text"
+        "name": "is_endorsement",
+        "type_info": "Bool"
       },
       {
         "ordinal": 2,
-        "name": "state_house_district",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 3,
-        "name": "state:State",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 4,
-        "name": "county",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 5,
-        "name": "city",
+        "name": "note",
         "type_info": "Text"
       }
     ],
@@ -39,13 +24,10 @@
       ]
     },
     "nullable": [
-      true,
-      true,
-      true,
       false,
-      true,
-      false
+      false,
+      true
     ]
   },
-  "hash": "15e92e08e433cfb688e6d825fb533bdc7da0a92bc752265e415be73f8212cabe"
+  "hash": "9a08887ec67d06e04c26b392d0c2321b477677be977227462c4553645f1be443"
 }
