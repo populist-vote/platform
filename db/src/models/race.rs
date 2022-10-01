@@ -1,7 +1,8 @@
-use super::enums::{PoliticalParty, RaceType, State};
-use crate::DateTime;
+use super::enums::{PoliticalParty, PoliticalScope, RaceType, State};
+use crate::{DateTime, ElectionScope};
 use async_graphql::InputObject;
 use chrono::NaiveDate;
+use itertools::Itertools;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use slugify::slugify;
@@ -51,9 +52,11 @@ pub struct UpsertRaceInput {
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, InputObject)]
-pub struct RaceSearch {
-    query: Option<String>,
+pub struct RaceFilter {
     state: Option<State>,
+    political_scope: Option<PoliticalScope>,
+    election_scope: Option<ElectionScope>,
+    office_titles: Option<Vec<String>>,
 }
 
 impl Race {
@@ -165,20 +168,64 @@ impl Race {
         Ok(record)
     }
 
-    pub async fn search(db_pool: &PgPool, input: &RaceSearch) -> Result<Vec<Self>, sqlx::Error> {
-        let records = sqlx::query_as!(
-            Race,
+    pub async fn filter(db_pool: &PgPool, input: RaceFilter) -> Result<Vec<Self>, sqlx::Error> {
+        let office_titles = match input.office_titles {
+            Some(office_titles) => office_titles.iter().map(|t| format!("'{}'", t)).join(","),
+            None => "NULL".to_string(),
+        };
+
+        tracing::warn!("office_titles: {:?}", office_titles);
+
+        let query = &*format!(
             r#"
-                SELECT id, slug, title, office_id, race_type AS "race_type:RaceType", party AS "party:PoliticalParty", state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_id, total_votes, official_website, election_id, is_special_election, num_elect, created_at, updated_at FROM race
-                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector(concat_ws(' ', slug, title)) @@ to_tsquery($1))
-                AND ($2::state IS NULL OR state = $2)
-                
-            "#,
-            input.query,
-            input.state as Option<State>,
-        )
-        .fetch_all(db_pool)
-        .await?;
+                SELECT
+                    race.id,
+                    race.slug,
+                    race.title,
+                    office_id,
+                    race_type,
+                    party,
+                    race.state,
+                    race.description,
+                    ballotpedia_link,
+                    early_voting_begins_date,
+                    winner_id,
+                    total_votes,
+                    official_website,
+                    election_id,
+                    is_special_election,
+                    num_elect,
+                    race.created_at,
+                    race.updated_at
+                FROM
+                    race
+                    JOIN office ON race.office_id = office.id
+                WHERE ({state} IS NULL
+                    OR race.state = {state})
+                AND({political_scope} IS NULL
+                    OR office.political_scope = {political_scope})
+                AND({election_scope} IS NULL
+                    OR office.election_scope = {election_scope})
+                AND(({office_titles}) IS NULL
+                    OR office.title IN ({office_titles}))
+                ORDER BY office.priority ASC, office.district ASC, office.title DESC
+                "#,
+            state = input
+                .state
+                .map(|s| format!("'{}'", s))
+                .unwrap_or("NULL".to_string()),
+            political_scope = input
+                .political_scope
+                .map(|s| format!("'{}'", s))
+                .unwrap_or("NULL".to_string()),
+            election_scope = input
+                .election_scope
+                .map(|s| format!("'{}'", s))
+                .unwrap_or("NULL".to_string()),
+            office_titles = office_titles
+        );
+
+        let records = sqlx::query_as(query).fetch_all(db_pool).await?;
 
         Ok(records)
     }
