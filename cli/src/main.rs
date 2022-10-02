@@ -7,8 +7,7 @@ use structopt::StructOpt;
 
 use db::{
     models::enums::{LegislationStatus, PoliticalParty, State},
-    CreateBillInput, CreatePoliticianInput, UpdateBillInput, UpdatePoliticianInput,
-    UpsertPoliticianInput,
+    CreateBillInput, UpdateBillInput, UpsertPoliticianInput,
 };
 use legiscan::LegiscanProxy;
 use votesmart::{GetCandidateBioResponse, GetCandidateVotingRecordResponse, VotesmartProxy};
@@ -237,7 +236,7 @@ async fn main() -> Result<(), Error> {
                 .await?
                 .id;
                 let input = UpsertPoliticianInput {
-                    id,
+                    id: Some(id),
                     votesmart_candidate_bio: Some(serde_json::to_value(data.clone()).unwrap()),
                     ..Default::default()
                 };

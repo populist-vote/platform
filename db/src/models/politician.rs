@@ -11,6 +11,8 @@ use serde_json::{json, Value};
 use slugify::slugify;
 use sqlx::{postgres::PgPool, FromRow};
 
+use super::enums::{Chambers, PoliticalScope};
+
 #[derive(FromRow, Debug, Clone)]
 pub struct Politician {
     pub id: uuid::Uuid,
@@ -100,10 +102,12 @@ pub struct CreateOrConnectPoliticianInput {
 }
 
 #[derive(InputObject, Default, Debug)]
-pub struct PoliticianSearch {
-    home_state: Option<State>,
-    name: Option<String>,
-    party: Option<PoliticalParty>,
+pub struct PoliticianFilter {
+    pub query: Option<String>,
+    pub home_state: Option<State>,
+    pub party: Option<PoliticalParty>,
+    pub political_scope: Option<PoliticalScope>,
+    pub chambers: Option<Chambers>,
 }
 
 impl Politician {
@@ -411,18 +415,18 @@ impl Politician {
         Ok(record)
     }
 
-    pub async fn search(
+    pub async fn filter(
         db_pool: &PgPool,
-        search: &PoliticianSearch,
+        filter: &PoliticianFilter,
     ) -> Result<Vec<Self>, sqlx::Error> {
         let search_query =
-            crate::process_search_query(search.name.to_owned().unwrap_or_else(|| "".to_string()));
+            crate::process_search_query(filter.query.to_owned().unwrap_or_else(|| "".to_string()));
 
         let records = sqlx::query_as!(
             Politician,
             r#"
-                SELECT id,
-                        slug,
+                SELECT  p.id,
+                        p.slug,
                         first_name,
                         middle_name,
                         last_name,
@@ -453,16 +457,24 @@ impl Politician {
                         fec_candidate_id,
                         race_wins,
                         race_losses,
-                        created_at,
-                        updated_at FROM politician
+                        p.created_at,
+                        p.updated_at FROM politician p
+                LEFT JOIN office o ON office_id = o.id
                 WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', first_name, middle_name, last_name, preferred_name)) @@ to_tsquery('simple', $1))
                 AND ($2::state IS NULL OR home_state = $2)
                 AND ($3::political_party IS NULL OR party = $3)
+                AND ($4::political_scope IS NULL OR political_scope = $4)
+                AND ($5::text IS NULL OR $5 = 'All' OR (
+                    ($5 = 'Senate' AND o.title ILIKE '%Senator') OR
+                    ($5 = 'House' AND o.title ILIKE '%Representative')
+                ))
                 ORDER BY last_name ASC
             "#,
             search_query,
-            search.home_state as Option<State>,
-            search.party as Option<PoliticalParty>,
+            filter.home_state as Option<State>,
+            filter.party as Option<PoliticalParty>,
+            filter.political_scope as Option<PoliticalScope>,
+            filter.chambers.map(|c| c.to_string()) as Option<String>
         )
         .fetch_all(db_pool)
         .await?;

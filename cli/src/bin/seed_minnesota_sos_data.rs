@@ -273,7 +273,7 @@ fn parse_human_name(name: &str) -> ParsedName {
         first_name: parsed_name.given_name().map_or("", |a| a).to_string(),
         middle_name,
         last_name: parsed_name.surname().to_string(),
-        suffix: parsed_name.suffix().map(|a| a.to_string()),
+        suffix: parsed_name.generational_suffix().map(|a| a.to_string()),
         preferred_name,
     }
 }

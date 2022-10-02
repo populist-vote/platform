@@ -197,7 +197,8 @@
                   "unaffiliated",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
-                  "legal_marijuana_now"
+                  "legal_marijuana_now",
+                  "socialist_workers_party"
                 ]
               },
               "name": "political_party"
@@ -2163,388 +2164,6 @@
     },
     "query": "\n                        INSERT INTO politician_politician_endorsements (politician_id, politician_endorsement_id)\n                        VALUES ($1, (SELECT id FROM politician WHERE slug = $2))\n                    "
   },
-  "3bbb3b7bbe952af554dd965d25749cc27d558c6f39d77f9d0a17bae5d7f9b363": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "slug",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "first_name",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "middle_name",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "last_name",
-          "ordinal": 4,
-          "type_info": "Text"
-        },
-        {
-          "name": "suffix",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "preferred_name",
-          "ordinal": 6,
-          "type_info": "Text"
-        },
-        {
-          "name": "biography",
-          "ordinal": 7,
-          "type_info": "Text"
-        },
-        {
-          "name": "biography_source",
-          "ordinal": 8,
-          "type_info": "Text"
-        },
-        {
-          "name": "home_state:State",
-          "ordinal": 9,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              },
-              "name": "state"
-            }
-          }
-        },
-        {
-          "name": "date_of_birth",
-          "ordinal": 10,
-          "type_info": "Date"
-        },
-        {
-          "name": "office_id",
-          "ordinal": 11,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "thumbnail_image_url",
-          "ordinal": 12,
-          "type_info": "Text"
-        },
-        {
-          "name": "official_website_url",
-          "ordinal": 13,
-          "type_info": "Text"
-        },
-        {
-          "name": "campaign_website_url",
-          "ordinal": 14,
-          "type_info": "Text"
-        },
-        {
-          "name": "facebook_url",
-          "ordinal": 15,
-          "type_info": "Text"
-        },
-        {
-          "name": "twitter_url",
-          "ordinal": 16,
-          "type_info": "Text"
-        },
-        {
-          "name": "instagram_url",
-          "ordinal": 17,
-          "type_info": "Text"
-        },
-        {
-          "name": "youtube_url",
-          "ordinal": 18,
-          "type_info": "Text"
-        },
-        {
-          "name": "linkedin_url",
-          "ordinal": 19,
-          "type_info": "Text"
-        },
-        {
-          "name": "tiktok_url",
-          "ordinal": 20,
-          "type_info": "Text"
-        },
-        {
-          "name": "email",
-          "ordinal": 21,
-          "type_info": "Text"
-        },
-        {
-          "name": "phone",
-          "ordinal": 22,
-          "type_info": "Text"
-        },
-        {
-          "name": "party:PoliticalParty",
-          "ordinal": 23,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "democratic",
-                  "republican",
-                  "libertarian",
-                  "green",
-                  "constitution",
-                  "unknown",
-                  "independent",
-                  "freedom",
-                  "unity",
-                  "approval_voting",
-                  "unaffiliated",
-                  "democratic_farmer_labor",
-                  "grassroots_legalize_cannabis",
-                  "legal_marijuana_now"
-                ]
-              },
-              "name": "political_party"
-            }
-          }
-        },
-        {
-          "name": "votesmart_candidate_id",
-          "ordinal": 24,
-          "type_info": "Int4"
-        },
-        {
-          "name": "votesmart_candidate_bio",
-          "ordinal": 25,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "votesmart_candidate_ratings",
-          "ordinal": 26,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "legiscan_people_id",
-          "ordinal": 27,
-          "type_info": "Int4"
-        },
-        {
-          "name": "crp_candidate_id",
-          "ordinal": 28,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "fec_candidate_id",
-          "ordinal": 29,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "race_wins",
-          "ordinal": 30,
-          "type_info": "Int4"
-        },
-        {
-          "name": "race_losses",
-          "ordinal": 31,
-          "type_info": "Int4"
-        },
-        {
-          "name": "created_at",
-          "ordinal": 32,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "updated_at",
-          "ordinal": 33,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        true,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              },
-              "name": "state"
-            }
-          },
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "democratic",
-                  "republican",
-                  "libertarian",
-                  "green",
-                  "constitution",
-                  "unknown",
-                  "independent",
-                  "freedom",
-                  "unity",
-                  "approval_voting",
-                  "unaffiliated",
-                  "democratic_farmer_labor",
-                  "grassroots_legalize_cannabis",
-                  "legal_marijuana_now"
-                ]
-              },
-              "name": "political_party"
-            }
-          }
-        ]
-      }
-    },
-    "query": "\n                SELECT id,\n                        slug,\n                        first_name,\n                        middle_name,\n                        last_name,\n                        suffix,\n                        preferred_name,\n                        biography,\n                        biography_source,\n                        home_state AS \"home_state:State\",\n                        date_of_birth,\n                        office_id,\n                        thumbnail_image_url,\n                       official_website_url,\n                        campaign_website_url,\n                        facebook_url,\n                        twitter_url,\n                        instagram_url,\n                        youtube_url,\n                        linkedin_url,\n                        tiktok_url,\n                        email,\n                        phone,\n                        party AS \"party:PoliticalParty\",\n                        votesmart_candidate_id,\n                        votesmart_candidate_bio,\n                        votesmart_candidate_ratings,\n                        legiscan_people_id,\n                        crp_candidate_id,\n                        fec_candidate_id,\n                        race_wins,\n                        race_losses,\n                        created_at,\n                        updated_at FROM politician\n                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', first_name, middle_name, last_name, preferred_name)) @@ to_tsquery('simple', $1))\n                AND ($2::state IS NULL OR home_state = $2)\n                AND ($3::political_party IS NULL OR party = $3)\n                ORDER BY last_name ASC\n            "
-  },
   "3d8b9f2bc27e8246ac245cef7d1edf0ff5870a6c5cd17e891e2c647b3e0f8136": {
     "describe": {
       "columns": [
@@ -2952,7 +2571,8 @@
                   "unaffiliated",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
-                  "legal_marijuana_now"
+                  "legal_marijuana_now",
+                  "socialist_workers_party"
                 ]
               },
               "name": "political_party"
@@ -3147,7 +2767,8 @@
                   "unaffiliated",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
-                  "legal_marijuana_now"
+                  "legal_marijuana_now",
+                  "socialist_workers_party"
                 ]
               },
               "name": "political_party"
@@ -3571,7 +3192,8 @@
                   "unaffiliated",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
-                  "legal_marijuana_now"
+                  "legal_marijuana_now",
+                  "socialist_workers_party"
                 ]
               },
               "name": "political_party"
@@ -4341,7 +3963,8 @@
                   "unaffiliated",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
-                  "legal_marijuana_now"
+                  "legal_marijuana_now",
+                  "socialist_workers_party"
                 ]
               },
               "name": "political_party"
@@ -4713,7 +4336,8 @@
                   "unaffiliated",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
-                  "legal_marijuana_now"
+                  "legal_marijuana_now",
+                  "socialist_workers_party"
                 ]
               },
               "name": "political_party"
@@ -5484,7 +5108,8 @@
                   "unaffiliated",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
-                  "legal_marijuana_now"
+                  "legal_marijuana_now",
+                  "socialist_workers_party"
                 ]
               },
               "name": "political_party"
@@ -6377,7 +6002,8 @@
                   "unaffiliated",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
-                  "legal_marijuana_now"
+                  "legal_marijuana_now",
+                  "socialist_workers_party"
                 ]
               },
               "name": "political_party"
@@ -7054,7 +6680,8 @@
                   "unaffiliated",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
-                  "legal_marijuana_now"
+                  "legal_marijuana_now",
+                  "socialist_workers_party"
                 ]
               },
               "name": "political_party"
@@ -7238,7 +6865,8 @@
                   "unaffiliated",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
-                  "legal_marijuana_now"
+                  "legal_marijuana_now",
+                  "socialist_workers_party"
                 ]
               },
               "name": "political_party"
@@ -7419,7 +7047,8 @@
                   "unaffiliated",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
-                  "legal_marijuana_now"
+                  "legal_marijuana_now",
+                  "socialist_workers_party"
                 ]
               },
               "name": "political_party"
@@ -7771,6 +7400,403 @@
       }
     },
     "query": "\n                SELECT id, election_id, slug, title, legislation_status AS \"legislation_status:LegislationStatus\", ballot_state AS \"ballot_state:State\", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure\n                WHERE ($1::text IS NULL OR slug = $1)\n                AND ($2::text IS NULL OR levenshtein($2, title) <=5)\n                AND ($3::state IS NULL OR ballot_state = $3)\n                AND ($4::legislation_status IS NULL OR legislation_status = $4)\n            "
+  },
+  "d01fd5f0da9a3ffcd087bf915dc5960a82be496982031b1f84e4aff2d4360b68": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "slug",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "first_name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "middle_name",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "last_name",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "suffix",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "preferred_name",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "biography",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "biography_source",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "home_state:State",
+          "ordinal": 9,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              },
+              "name": "state"
+            }
+          }
+        },
+        {
+          "name": "date_of_birth",
+          "ordinal": 10,
+          "type_info": "Date"
+        },
+        {
+          "name": "office_id",
+          "ordinal": 11,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "thumbnail_image_url",
+          "ordinal": 12,
+          "type_info": "Text"
+        },
+        {
+          "name": "official_website_url",
+          "ordinal": 13,
+          "type_info": "Text"
+        },
+        {
+          "name": "campaign_website_url",
+          "ordinal": 14,
+          "type_info": "Text"
+        },
+        {
+          "name": "facebook_url",
+          "ordinal": 15,
+          "type_info": "Text"
+        },
+        {
+          "name": "twitter_url",
+          "ordinal": 16,
+          "type_info": "Text"
+        },
+        {
+          "name": "instagram_url",
+          "ordinal": 17,
+          "type_info": "Text"
+        },
+        {
+          "name": "youtube_url",
+          "ordinal": 18,
+          "type_info": "Text"
+        },
+        {
+          "name": "linkedin_url",
+          "ordinal": 19,
+          "type_info": "Text"
+        },
+        {
+          "name": "tiktok_url",
+          "ordinal": 20,
+          "type_info": "Text"
+        },
+        {
+          "name": "email",
+          "ordinal": 21,
+          "type_info": "Text"
+        },
+        {
+          "name": "phone",
+          "ordinal": 22,
+          "type_info": "Text"
+        },
+        {
+          "name": "party:PoliticalParty",
+          "ordinal": 23,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "democratic",
+                  "republican",
+                  "libertarian",
+                  "green",
+                  "constitution",
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now",
+                  "socialist_workers_party"
+                ]
+              },
+              "name": "political_party"
+            }
+          }
+        },
+        {
+          "name": "votesmart_candidate_id",
+          "ordinal": 24,
+          "type_info": "Int4"
+        },
+        {
+          "name": "votesmart_candidate_bio",
+          "ordinal": 25,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "votesmart_candidate_ratings",
+          "ordinal": 26,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "legiscan_people_id",
+          "ordinal": 27,
+          "type_info": "Int4"
+        },
+        {
+          "name": "crp_candidate_id",
+          "ordinal": 28,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "fec_candidate_id",
+          "ordinal": 29,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "race_wins",
+          "ordinal": 30,
+          "type_info": "Int4"
+        },
+        {
+          "name": "race_losses",
+          "ordinal": 31,
+          "type_info": "Int4"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 32,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 33,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              },
+              "name": "state"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "democratic",
+                  "republican",
+                  "libertarian",
+                  "green",
+                  "constitution",
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now",
+                  "socialist_workers_party"
+                ]
+              },
+              "name": "political_party"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "local",
+                  "state",
+                  "federal"
+                ]
+              },
+              "name": "political_scope"
+            }
+          },
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                SELECT  p.id,\n                        p.slug,\n                        first_name,\n                        middle_name,\n                        last_name,\n                        suffix,\n                        preferred_name,\n                        biography,\n                        biography_source,\n                        home_state AS \"home_state:State\",\n                        date_of_birth,\n                        office_id,\n                        thumbnail_image_url,\n                        official_website_url,\n                        campaign_website_url,\n                        facebook_url,\n                        twitter_url,\n                        instagram_url,\n                        youtube_url,\n                        linkedin_url,\n                        tiktok_url,\n                        email,\n                        phone,\n                        party AS \"party:PoliticalParty\",\n                        votesmart_candidate_id,\n                        votesmart_candidate_bio,\n                        votesmart_candidate_ratings,\n                        legiscan_people_id,\n                        crp_candidate_id,\n                        fec_candidate_id,\n                        race_wins,\n                        race_losses,\n                        p.created_at,\n                        p.updated_at FROM politician p\n                LEFT JOIN office o ON office_id = o.id\n                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', first_name, middle_name, last_name, preferred_name)) @@ to_tsquery('simple', $1))\n                AND ($2::state IS NULL OR home_state = $2)\n                AND ($3::political_party IS NULL OR party = $3)\n                AND ($4::political_scope IS NULL OR political_scope = $4)\n                AND ($5::text IS NULL OR $5 = 'All' OR (\n                    ($5 = 'Senate' AND o.title ILIKE '%Senator') OR\n                    ($5 = 'House' AND o.title ILIKE '%Representative')\n                ))\n                ORDER BY last_name ASC\n            "
   },
   "d3d38b98835559e8d976f9fca925e228143f359a3055923873bcb711ec1c518e": {
     "describe": {
@@ -8815,279 +8841,6 @@
       }
     },
     "query": "DELETE FROM office WHERE id=$1"
-  },
-  "fb2b86e7c902e1a573c892c6b7f7afb04d3933f5d922a63b7e6473b66d7bf66c": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "slug",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "title",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "office_id",
-          "ordinal": 3,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "race_type:RaceType",
-          "ordinal": 4,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "primary",
-                  "general"
-                ]
-              },
-              "name": "race_type"
-            }
-          }
-        },
-        {
-          "name": "party:PoliticalParty",
-          "ordinal": 5,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "democratic",
-                  "republican",
-                  "libertarian",
-                  "green",
-                  "constitution",
-                  "unknown",
-                  "independent",
-                  "freedom",
-                  "unity",
-                  "approval_voting",
-                  "unaffiliated",
-                  "democratic_farmer_labor",
-                  "grassroots_legalize_cannabis",
-                  "legal_marijuana_now"
-                ]
-              },
-              "name": "political_party"
-            }
-          }
-        },
-        {
-          "name": "state:State",
-          "ordinal": 6,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              },
-              "name": "state"
-            }
-          }
-        },
-        {
-          "name": "description",
-          "ordinal": 7,
-          "type_info": "Text"
-        },
-        {
-          "name": "ballotpedia_link",
-          "ordinal": 8,
-          "type_info": "Text"
-        },
-        {
-          "name": "early_voting_begins_date",
-          "ordinal": 9,
-          "type_info": "Date"
-        },
-        {
-          "name": "winner_id",
-          "ordinal": 10,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "total_votes",
-          "ordinal": 11,
-          "type_info": "Int4"
-        },
-        {
-          "name": "official_website",
-          "ordinal": 12,
-          "type_info": "Text"
-        },
-        {
-          "name": "election_id",
-          "ordinal": 13,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "is_special_election",
-          "ordinal": 14,
-          "type_info": "Bool"
-        },
-        {
-          "name": "num_elect",
-          "ordinal": 15,
-          "type_info": "Int4"
-        },
-        {
-          "name": "created_at",
-          "ordinal": 16,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "updated_at",
-          "ordinal": 17,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        true,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              },
-              "name": "state"
-            }
-          }
-        ]
-      }
-    },
-    "query": "\n                SELECT id, slug, title, office_id, race_type AS \"race_type:RaceType\", party AS \"party:PoliticalParty\", state AS \"state:State\", description, ballotpedia_link, early_voting_begins_date, winner_id, total_votes, official_website, election_id, is_special_election, num_elect, created_at, updated_at FROM race\n                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector(concat_ws(' ', slug, title)) @@ to_tsquery($1))\n                AND ($2::state IS NULL OR state = $2)\n                \n            "
   },
   "fbf4cd363aeaf857570d5f70492909fd25d1304ebe928d447b81cf3f7d85b20d": {
     "describe": {

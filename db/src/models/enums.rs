@@ -324,3 +324,10 @@ pub enum VoteActionType {
     /// A vote on the final version of legislation that has been agreed upon by both chambers
     ConferenceReportVote,
 }
+
+#[derive(Enum, Display, Debug, Copy, Clone, Eq, PartialEq)]
+pub enum Chambers {
+    All,
+    House,
+    Senate,
+}
