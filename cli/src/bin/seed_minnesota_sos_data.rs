@@ -403,11 +403,11 @@ async fn seed_minnesota_sos_data() -> Result<(), Box<dyn Error>> {
             .await
             .expect(&format!("Failed creating office: {}", slug));
 
-        let race_input = db::CreateRaceInput {
+        let race_input = db::UpsertRaceInput {
             slug: Some(slug),
-            title,
-            office_id: created_office.id,
-            race_type: RaceType::General,
+            title: Some(title),
+            office_id: Some(created_office.id),
+            race_type: Some(RaceType::General),
             party: None,
             state: Some(State::MN),
             description: None,
@@ -416,9 +416,10 @@ async fn seed_minnesota_sos_data() -> Result<(), Box<dyn Error>> {
             official_website: None,
             election_id: None,
             winner_id: None,
+            ..Default::default()
         };
 
-        let created_race = db::Race::create(&pool.connection, &race_input)
+        let created_race = db::Race::upsert(&pool.connection, &race_input)
             .await
             .expect("Failed created race");
 

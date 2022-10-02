@@ -31,7 +31,7 @@ pub struct Race {
     pub updated_at: DateTime,
 }
 
-#[derive(Debug, Serialize, Deserialize, InputObject)]
+#[derive(Debug, Default, Serialize, Deserialize, InputObject)]
 pub struct UpsertRaceInput {
     pub id: Option<uuid::Uuid>,
     pub slug: Option<String>,
