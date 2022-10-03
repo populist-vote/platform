@@ -7,7 +7,7 @@ use async_graphql::InputObject;
 use chrono::NaiveDate;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{json, Value as JSON};
 use slugify::slugify;
 use sqlx::{postgres::PgPool, FromRow};
 
@@ -28,6 +28,7 @@ pub struct Politician {
     pub date_of_birth: Option<NaiveDate>,
     pub office_id: Option<uuid::Uuid>,
     pub thumbnail_image_url: Option<String>,
+    pub assets: JSON,
     pub official_website_url: Option<String>,
     pub campaign_website_url: Option<String>,
     pub facebook_url: Option<String>,
@@ -40,8 +41,8 @@ pub struct Politician {
     pub phone: Option<String>,
     pub party: Option<PoliticalParty>,
     pub votesmart_candidate_id: Option<i32>,
-    pub votesmart_candidate_bio: Value,
-    pub votesmart_candidate_ratings: Value,
+    pub votesmart_candidate_bio: JSON,
+    pub votesmart_candidate_ratings: JSON,
     pub legiscan_people_id: Option<i32>,
     pub crp_candidate_id: Option<String>,
     pub fec_candidate_id: Option<String>,
@@ -66,6 +67,7 @@ pub struct UpsertPoliticianInput {
     pub date_of_birth: Option<NaiveDate>,
     pub office_id: Option<uuid::Uuid>,
     pub thumbnail_image_url: Option<String>,
+    pub assets: Option<JSON>,
     pub official_website_url: Option<String>,
     pub campaign_website_url: Option<String>,
     pub facebook_url: Option<String>,
@@ -81,8 +83,8 @@ pub struct UpsertPoliticianInput {
     pub organization_endorsements: Option<CreateOrConnectOrganizationInput>,
     pub politician_endorsements: Option<CreateOrConnectPoliticianInput>,
     pub votesmart_candidate_id: Option<i32>,
-    pub votesmart_candidate_bio: Option<Value>,
-    pub votesmart_candidate_ratings: Option<Value>,
+    pub votesmart_candidate_bio: Option<JSON>,
+    pub votesmart_candidate_ratings: Option<JSON>,
     pub legiscan_people_id: Option<i32>,
     pub crp_candidate_id: Option<String>,
     pub fec_candidate_id: Option<String>,
@@ -160,8 +162,8 @@ impl Politician {
         let record = sqlx::query_as!(
             Politician,
             r#"
-            INSERT INTO politician (id, slug, first_name, middle_name, last_name, suffix, preferred_name, biography, biography_source, home_state, date_of_birth, office_id, thumbnail_image_url, official_website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, phone, party, votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses)
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32) 
+            INSERT INTO politician (id, slug, first_name, middle_name, last_name, suffix, preferred_name, biography, biography_source, home_state, date_of_birth, office_id, thumbnail_image_url, assets, official_website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, phone, party, votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses)
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33) 
             ON CONFLICT (id) DO UPDATE
             SET
                 slug = COALESCE($2, politician.slug),
@@ -176,25 +178,26 @@ impl Politician {
                 date_of_birth = COALESCE($11, politician.date_of_birth),
                 office_id = COALESCE($12, politician.office_id),
                 thumbnail_image_url = COALESCE($13, politician.thumbnail_image_url),
-                official_website_url = COALESCE($14, politician.official_website_url),
-                campaign_website_url = COALESCE($15, politician.campaign_website_url),
-                facebook_url = COALESCE($16, politician.facebook_url),
-                twitter_url = COALESCE($17, politician.twitter_url),
-                instagram_url = COALESCE($18, politician.instagram_url),
-                youtube_url = COALESCE($19, politician.youtube_url),
-                linkedin_url = COALESCE($20, politician.linkedin_url),
-                tiktok_url = COALESCE($21, politician.tiktok_url),
-                email = COALESCE($22, politician.email),
-                phone = COALESCE($23, politician.phone),
-                party = COALESCE($24, politician.party),
-                votesmart_candidate_id = COALESCE($25, politician.votesmart_candidate_id),
-                votesmart_candidate_bio = COALESCE($26, politician.votesmart_candidate_bio),
-                votesmart_candidate_ratings = COALESCE($27, politician.votesmart_candidate_ratings),
-                legiscan_people_id = COALESCE($28, politician.legiscan_people_id),
-                crp_candidate_id = COALESCE($29, politician.crp_candidate_id),
-                fec_candidate_id = COALESCE($30, politician.fec_candidate_id),
-                race_wins = COALESCE($31, politician.race_wins),
-                race_losses = COALESCE($32, politician.race_losses)
+                assets = COALESCE($14, politician.assets),
+                official_website_url = COALESCE($15, politician.official_website_url),
+                campaign_website_url = COALESCE($16, politician.campaign_website_url),
+                facebook_url = COALESCE($17, politician.facebook_url),
+                twitter_url = COALESCE($18, politician.twitter_url),
+                instagram_url = COALESCE($19, politician.instagram_url),
+                youtube_url = COALESCE($20, politician.youtube_url),
+                linkedin_url = COALESCE($21, politician.linkedin_url),
+                tiktok_url = COALESCE($22, politician.tiktok_url),
+                email = COALESCE($23, politician.email),
+                phone = COALESCE($24, politician.phone),
+                party = COALESCE($25, politician.party),
+                votesmart_candidate_id = COALESCE($26, politician.votesmart_candidate_id),
+                votesmart_candidate_bio = COALESCE($27, politician.votesmart_candidate_bio),
+                votesmart_candidate_ratings = COALESCE($28, politician.votesmart_candidate_ratings),
+                legiscan_people_id = COALESCE($29, politician.legiscan_people_id),
+                crp_candidate_id = COALESCE($30, politician.crp_candidate_id),
+                fec_candidate_id = COALESCE($31, politician.fec_candidate_id),
+                race_wins = COALESCE($32, politician.race_wins),
+                race_losses = COALESCE($33, politician.race_losses)
             RETURNING
                         id,
                         slug,
@@ -209,7 +212,8 @@ impl Politician {
                         date_of_birth,
                         office_id,
                         thumbnail_image_url,
-                       official_website_url,
+                        assets,
+                        official_website_url,
                         campaign_website_url,
                         facebook_url,
                         twitter_url,
@@ -244,6 +248,7 @@ impl Politician {
             input.date_of_birth as Option<NaiveDate>,
             input.office_id,
             input.thumbnail_image_url,
+            input.assets,
             input.official_website_url,
             input.campaign_website_url,
             input.facebook_url,
@@ -293,6 +298,7 @@ impl Politician {
                         date_of_birth,
                         office_id,
                         thumbnail_image_url,
+                        assets,
                         official_website_url,
                         campaign_website_url,
                         facebook_url,
@@ -337,7 +343,8 @@ impl Politician {
                         date_of_birth,
                         office_id,
                         thumbnail_image_url,
-                       official_website_url,
+                        assets,
+                        official_website_url,
                         campaign_website_url,
                         facebook_url,
                         twitter_url,
@@ -384,7 +391,8 @@ impl Politician {
                         date_of_birth,
                         office_id,
                         thumbnail_image_url,
-                       official_website_url,
+                        assets,
+                        official_website_url,
                         campaign_website_url,
                         facebook_url,
                         twitter_url,
@@ -438,6 +446,7 @@ impl Politician {
                         date_of_birth,
                         office_id,
                         thumbnail_image_url,
+                        assets,
                         official_website_url,
                         campaign_website_url,
                         facebook_url,
@@ -517,7 +526,8 @@ impl Politician {
                         date_of_birth,
                         office_id,
                         thumbnail_image_url,
-                       official_website_url,
+                        assets,
+                        official_website_url,
                         campaign_website_url,
                         facebook_url,
                         twitter_url,
