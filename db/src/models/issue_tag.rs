@@ -181,6 +181,7 @@ impl IssueTag {
                         date_of_birth,
                         office_id,
                         thumbnail_image_url,
+                        assets,
                         official_website_url,
                         campaign_website_url,
                         facebook_url,

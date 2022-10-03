@@ -13,7 +13,6 @@ use db::{
 };
 use open_secrets::OpenSecretsProxy;
 use serde::{Deserialize, Serialize};
-
 use votesmart::GetCandidateBioResponse;
 
 use chrono::{Datelike, Local, NaiveDate};
@@ -40,6 +39,7 @@ pub struct PoliticianResult {
     date_of_birth: Option<NaiveDate>,
     office_id: Option<ID>,
     thumbnail_image_url: Option<String>,
+    assets: Assets,
     official_website_url: Option<String>,
     campaign_website_url: Option<String>,
     facebook_url: Option<String>,
@@ -57,6 +57,13 @@ pub struct PoliticianResult {
     votesmart_candidate_ratings: Vec<VsRating>,
     race_wins: Option<i32>,
     race_losses: Option<i32>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, SimpleObject)]
+#[serde(rename_all = "camelCase")]
+pub struct Assets {
+    thumbnail_image_160: Option<String>,
+    thumbnail_image_400: Option<String>,
 }
 
 #[derive(SimpleObject, Debug, Clone)]
@@ -495,6 +502,7 @@ impl From<Politician> for PoliticianResult {
             date_of_birth: p.date_of_birth,
             office_id: p.office_id.map(ID::from),
             thumbnail_image_url: p.thumbnail_image_url,
+            assets: serde_json::from_value(p.assets.to_owned()).unwrap_or_default(),
             official_website_url: p.official_website_url,
             campaign_website_url: p.campaign_website_url,
             facebook_url: p.facebook_url,
