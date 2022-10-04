@@ -1,21 +1,22 @@
 {
-  "query": "\n            SELECT id FROM populist_user WHERE email = $1\n        ",
+  "query": "\n            SELECT\n                votes\n            FROM\n                race_candidates\n            WHERE\n                race_candidates.candidate_id = $1 AND\n                race_candidates.race_id = $2\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id",
-        "type_info": "Uuid"
+        "name": "votes",
+        "type_info": "Int4"
       }
     ],
     "parameters": {
       "Left": [
-        "Text"
+        "Uuid",
+        "Uuid"
       ]
     },
     "nullable": [
-      false
+      true
     ]
   },
-  "hash": "7c3de9dc9a7a66c521d2884819f21bde79f41cbb86055b2e8012733795d0f72b"
+  "hash": "ad8167f39652a8fef007d2d756366f7a1c7f28b5dd29a920e88a857c2b5928e2"
 }

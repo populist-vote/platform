@@ -145,6 +145,108 @@ fn test_calculate_age() {
     assert_eq!(calculate_age(dob), Ok(30));
 }
 
+async fn fetch_donations_summary(crp_id: String) -> Result<DonationsSummary> {
+    let proxy = OpenSecretsProxy::new()?;
+    let response = proxy.cand_summary(&crp_id, None).await?;
+    let json: serde_json::Value = response.json().await?;
+    let donations = DonationsSummary {
+        total_raised: json["response"]["summary"]["@attributes"]["total"]
+            .as_str()
+            .unwrap_or_default()
+            .parse::<f64>()
+            .unwrap_or_default(),
+        spent: json["response"]["summary"]["@attributes"]["spent"]
+            .as_str()
+            .unwrap_or_default()
+            .parse::<f64>()
+            .unwrap_or_default(),
+        cash_on_hand: json["response"]["summary"]["@attributes"]["cash_on_hand"]
+            .as_str()
+            .unwrap_or_default()
+            .parse::<f64>()
+            .unwrap_or_default(),
+        debt: json["response"]["summary"]["@attributes"]["debt"]
+            .as_str()
+            .unwrap_or_default()
+            .parse::<f64>()
+            .unwrap_or_default(),
+        source: json["response"]["summary"]["@attributes"]["source"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string(),
+        last_updated: chrono::NaiveDate::parse_from_str(
+            json["response"]["summary"]["@attributes"]["last_updated"]
+                .as_str()
+                .unwrap_or_default(),
+            "%m/%d/%Y",
+        )
+        .unwrap(),
+    };
+    Ok(donations)
+}
+
+async fn fetch_donations_by_industry(crp_id: String) -> Result<DonationsByIndustry> {
+    let proxy = OpenSecretsProxy::new()?;
+    let response = proxy.cand_sector(&crp_id, None).await?;
+    let json: serde_json::Value = response.json().await?;
+    let donations_by_industry = DonationsByIndustry {
+        cycle: json["response"]["sectors"]["@attributes"]["cycle"]
+            .as_str()
+            .unwrap()
+            .parse::<i32>()
+            .unwrap(),
+        last_updated: chrono::NaiveDate::parse_from_str(
+            json["response"]["sectors"]["@attributes"]["last_updated"]
+                .as_str()
+                .unwrap(),
+            "%m/%d/%Y",
+        )
+        .unwrap(),
+        sectors: json["response"]["sectors"]["sector"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|sector| {
+                let name = sector["@attributes"]["sector_name"]
+                    .as_str()
+                    .unwrap()
+                    .to_string();
+                let id = sector["@attributes"]["sectorid"]
+                    .as_str()
+                    .unwrap()
+                    .to_string();
+                let individuals = sector["@attributes"]["indivs"]
+                    .as_str()
+                    .unwrap()
+                    .parse::<i32>()
+                    .unwrap();
+                let pacs = sector["@attributes"]["pacs"]
+                    .as_str()
+                    .unwrap()
+                    .parse::<i32>()
+                    .unwrap();
+                let total = sector["@attributes"]["total"]
+                    .as_str()
+                    .unwrap()
+                    .parse::<i32>()
+                    .unwrap();
+                Sector {
+                    name,
+                    id,
+                    individuals,
+                    pacs,
+                    total,
+                }
+            })
+            .collect(),
+        source: json["response"]["@attributes"]["source"]
+            .as_str()
+            .unwrap_or_default()
+            .to_string(),
+    };
+    Ok(donations_by_industry)
+}
+
 #[ComplexObject]
 impl PoliticianResult {
     async fn full_name(&self) -> String {
@@ -360,44 +462,11 @@ impl PoliticianResult {
 
     pub async fn donations_summary(&self) -> Result<Option<DonationsSummary>> {
         if let Some(crp_id) = &self.crp_candidate_id {
-            let proxy = OpenSecretsProxy::new().unwrap();
-            let response = proxy.cand_summary(crp_id, None).await.unwrap();
-            let json: serde_json::Value = response.json().await.unwrap();
-            println!("{}", serde_json::to_string_pretty(&json).unwrap());
-            let donations = DonationsSummary {
-                total_raised: json["response"]["summary"]["@attributes"]["total"]
-                    .as_str()
-                    .unwrap_or_default()
-                    .parse::<f64>()
-                    .unwrap_or_default(),
-                spent: json["response"]["summary"]["@attributes"]["spent"]
-                    .as_str()
-                    .unwrap_or_default()
-                    .parse::<f64>()
-                    .unwrap_or_default(),
-                cash_on_hand: json["response"]["summary"]["@attributes"]["cash_on_hand"]
-                    .as_str()
-                    .unwrap_or_default()
-                    .parse::<f64>()
-                    .unwrap_or_default(),
-                debt: json["response"]["summary"]["@attributes"]["debt"]
-                    .as_str()
-                    .unwrap_or_default()
-                    .parse::<f64>()
-                    .unwrap_or_default(),
-                source: json["response"]["summary"]["@attributes"]["source"]
-                    .as_str()
-                    .unwrap_or_default()
-                    .to_string(),
-                last_updated: chrono::NaiveDate::parse_from_str(
-                    json["response"]["summary"]["@attributes"]["last_updated"]
-                        .as_str()
-                        .unwrap_or_default(),
-                    "%m/%d/%Y",
-                )
-                .unwrap(),
+            let donations_summary = match fetch_donations_summary(crp_id.into()).await {
+                Ok(summary) => Some(summary),
+                Err(_) => None,
             };
-            Ok(Some(donations))
+            Ok(donations_summary)
         } else {
             Ok(None)
         }
@@ -405,65 +474,11 @@ impl PoliticianResult {
 
     pub async fn donations_by_industry(&self) -> Result<Option<DonationsByIndustry>> {
         if let Some(crp_id) = &self.crp_candidate_id {
-            let proxy = OpenSecretsProxy::new().unwrap();
-            let response = proxy.cand_sector(crp_id, None).await.unwrap();
-            let json: serde_json::Value = response.json().await.unwrap();
-            let donations_by_industry = DonationsByIndustry {
-                cycle: json["response"]["sectors"]["@attributes"]["cycle"]
-                    .as_str()
-                    .unwrap()
-                    .parse::<i32>()
-                    .unwrap(),
-                last_updated: chrono::NaiveDate::parse_from_str(
-                    json["response"]["sectors"]["@attributes"]["last_updated"]
-                        .as_str()
-                        .unwrap(),
-                    "%m/%d/%Y",
-                )
-                .unwrap(),
-                sectors: json["response"]["sectors"]["sector"]
-                    .as_array()
-                    .unwrap()
-                    .iter()
-                    .map(|sector| {
-                        let name = sector["@attributes"]["sector_name"]
-                            .as_str()
-                            .unwrap()
-                            .to_string();
-                        let id = sector["@attributes"]["sectorid"]
-                            .as_str()
-                            .unwrap()
-                            .to_string();
-                        let individuals = sector["@attributes"]["indivs"]
-                            .as_str()
-                            .unwrap()
-                            .parse::<i32>()
-                            .unwrap();
-                        let pacs = sector["@attributes"]["pacs"]
-                            .as_str()
-                            .unwrap()
-                            .parse::<i32>()
-                            .unwrap();
-                        let total = sector["@attributes"]["total"]
-                            .as_str()
-                            .unwrap()
-                            .parse::<i32>()
-                            .unwrap();
-                        Sector {
-                            name,
-                            id,
-                            individuals,
-                            pacs,
-                            total,
-                        }
-                    })
-                    .collect(),
-                source: json["response"]["@attributes"]["source"]
-                    .as_str()
-                    .unwrap_or_default()
-                    .to_string(),
+            let donations_by_industry = match fetch_donations_by_industry(crp_id.into()).await {
+                Ok(donations) => Some(donations),
+                Err(_) => None,
             };
-            Ok(Some(donations_by_industry))
+            Ok(donations_by_industry)
         } else {
             Ok(None)
         }
