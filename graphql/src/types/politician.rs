@@ -97,10 +97,21 @@ enum VotesmartExperience {
 }
 
 #[derive(SimpleObject, Debug, Clone)]
+pub struct DonationsSummary {
+    total_raised: f64,
+    spent: f64,
+    cash_on_hand: f64,
+    debt: f64,
+    source: String,
+    last_updated: NaiveDate,
+}
+
+#[derive(SimpleObject, Debug, Clone)]
 pub struct DonationsByIndustry {
     cycle: i32,
     last_updated: chrono::NaiveDate,
     sectors: Vec<Sector>,
+    source: String,
 }
 
 #[derive(SimpleObject, Debug, Clone)]
@@ -347,9 +358,54 @@ impl PoliticianResult {
         Ok(office_result)
     }
 
-    pub async fn donations_by_industry(&self) -> Result<Option<DonationsByIndustry>> {
-        let proxy = OpenSecretsProxy::new().unwrap();
+    pub async fn donations_summary(&self) -> Result<Option<DonationsSummary>> {
         if let Some(crp_id) = &self.crp_candidate_id {
+            let proxy = OpenSecretsProxy::new().unwrap();
+            let response = proxy.cand_summary(crp_id, None).await.unwrap();
+            let json: serde_json::Value = response.json().await.unwrap();
+            println!("{}", serde_json::to_string_pretty(&json).unwrap());
+            let donations = DonationsSummary {
+                total_raised: json["response"]["summary"]["@attributes"]["total"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .parse::<f64>()
+                    .unwrap_or_default(),
+                spent: json["response"]["summary"]["@attributes"]["spent"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .parse::<f64>()
+                    .unwrap_or_default(),
+                cash_on_hand: json["response"]["summary"]["@attributes"]["cash_on_hand"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .parse::<f64>()
+                    .unwrap_or_default(),
+                debt: json["response"]["summary"]["@attributes"]["debt"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .parse::<f64>()
+                    .unwrap_or_default(),
+                source: json["response"]["summary"]["@attributes"]["source"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_string(),
+                last_updated: chrono::NaiveDate::parse_from_str(
+                    json["response"]["summary"]["@attributes"]["last_updated"]
+                        .as_str()
+                        .unwrap_or_default(),
+                    "%m/%d/%Y",
+                )
+                .unwrap(),
+            };
+            Ok(Some(donations))
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub async fn donations_by_industry(&self) -> Result<Option<DonationsByIndustry>> {
+        if let Some(crp_id) = &self.crp_candidate_id {
+            let proxy = OpenSecretsProxy::new().unwrap();
             let response = proxy.cand_sector(crp_id, None).await.unwrap();
             let json: serde_json::Value = response.json().await.unwrap();
             let donations_by_industry = DonationsByIndustry {
@@ -402,6 +458,10 @@ impl PoliticianResult {
                         }
                     })
                     .collect(),
+                source: json["response"]["@attributes"]["source"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_string(),
             };
             Ok(Some(donations_by_industry))
         } else {
