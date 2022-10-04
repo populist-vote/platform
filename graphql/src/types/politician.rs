@@ -189,6 +189,7 @@ async fn fetch_donations_by_industry(crp_id: String) -> Result<DonationsByIndust
     let proxy = OpenSecretsProxy::new()?;
     let response = proxy.cand_sector(&crp_id, None).await?;
     let json: serde_json::Value = response.json().await?;
+    tracing::info!("{}", serde_json::to_string_pretty(&json).unwrap());
     let donations_by_industry = DonationsByIndustry {
         cycle: json["response"]["sectors"]["@attributes"]["cycle"]
             .as_str()
@@ -239,7 +240,7 @@ async fn fetch_donations_by_industry(crp_id: String) -> Result<DonationsByIndust
                 }
             })
             .collect(),
-        source: json["response"]["@attributes"]["source"]
+        source: json["response"]["sectors"]["@attributes"]["source"]
             .as_str()
             .unwrap_or_default()
             .to_string(),

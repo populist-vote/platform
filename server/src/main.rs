@@ -112,10 +112,7 @@ async fn main() -> Result<(), std::io::Error> {
 
     // Embed migrations into binary
     let migrator = pool.connection.clone();
-    sqlx::migrate!("../db/migrations")
-        .run(&migrator)
-        .await
-        .unwrap();
+    sqlx::migrate!("../db/migrations").run(&migrator).await;
 
     let context = ApiContext::new(pool.connection.clone());
 
