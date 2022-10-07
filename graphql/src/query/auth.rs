@@ -53,7 +53,7 @@ impl AuthQuery {
         password: String,
     ) -> Result<PasswordEntropyResult, Error> {
         let estimate = zxcvbn(&password, &[]).unwrap();
-        if estimate.score() < 3 {
+        if estimate.score() < 2 {
             return Ok(PasswordEntropyResult {
                 valid: false,
                 score: estimate.score(),
