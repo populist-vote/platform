@@ -4,7 +4,7 @@ Populist Database Interface, GraphQL API Server, and Command Line Utility
 
 ## Getting Started
 
-To clone this repository, run `git clone --recurse-submodules -j8 
+To clone this repository, run `git clone --recurse-submodules -j8`
 Make sure you have [Rust installed] on your machine. Next, you'll need the [sqlx-cli] installed to manage the database connection and run migrations. To do so, run `cargo install sqlx-cli --features postgres`
 
 First copy the `.env.example` file to `.env` which is .gitignored.  
@@ -15,6 +15,14 @@ Next, you'll need to run the migrations with `sqlx migrate run`
 ## Database
 
 [sqlx] is used for managing asynchronous database operations. This project relies heavily on compile-time query verification using `sqlx` macros, namely `query_as!` If you do not have a DATABASE_URL specified in your .env file, you will not be able to compile the binary for this crate. You can run sqlx in offline mode by setting SQLX_OFFLINE=true. You can enable "offline mode" to cache the results of the SQL query analysis using the sqlx-cli. If you make schema alterations, run the command `cargo sqlx prepare` which will write your query data to `sqlx-data.json` at the `/db` root.
+
+There is a shell script that runs on Ubuntu to download a Heroku database and restore it locally in a database called populist-platform-dev.
+
+```bash
+$ ./scripts/refresh_local_db.sh appname
+```
+
+where appname is populist-api-staging or populist-api-production.
 
 ## API Server
 
