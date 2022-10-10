@@ -5,7 +5,10 @@ use crate::{
     types::{CreateUserResult, Error, LoginResult},
 };
 use async_graphql::*;
-use auth::{create_access_token_for_user, create_random_token, create_temporary_username, Claims};
+use auth::{
+    create_access_token_for_user, create_random_token, create_temporary_username,
+    format_auth_cookie, Claims,
+};
 use db::{AddressInput, Coordinates, CreateUserInput, CreateUserWithProfileInput, User};
 use geocodio::GeocodioProxy;
 use jsonwebtoken::TokenData;
@@ -159,13 +162,7 @@ impl AuthMutation {
                             println!("Error sending welcome email: {}", err)
                         }
 
-                        ctx.insert_http_header(
-                            SET_COOKIE,
-                            format!(
-                                "access_token={}; HttpOnly; SameSite=None; Secure",
-                                access_token
-                            ),
-                        );
+                        ctx.insert_http_header(SET_COOKIE, format_auth_cookie(&access_token));
 
                         Ok(LoginResult {
                             user_id: new_user.id.into(),
@@ -223,13 +220,7 @@ impl AuthMutation {
             if password_is_valid {
                 let access_token = create_access_token_for_user(user.clone())?;
 
-                ctx.insert_http_header(
-                    SET_COOKIE,
-                    format!(
-                        "access_token={}; HttpOnly; SameSite=None; Secure",
-                        access_token
-                    ),
-                );
+                ctx.insert_http_header(SET_COOKIE, format_auth_cookie(&access_token));
 
                 Ok(LoginResult {
                     user_id: user.id.into(),

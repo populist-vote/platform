@@ -355,6 +355,7 @@ name = "auth"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "config",
  "db",
  "dotenv",
  "jsonwebtoken",

@@ -5,6 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
+config = { path = "../config" }
 db = { path = "../db" }
 chrono = "0.4.19"
 dotenv = "0.15.0"
