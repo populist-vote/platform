@@ -5,6 +5,8 @@ pg_dump -Fc --no-acl --no-owner --format plain --clean -h localhost -p 5433 -U c
 # Database mngis1 is on the public schema. Instead, put our custom tables on schema p6t_state_mn.
 sed -i.orig -E \
     -e '/(geom |spatial_ref_sys)/! s/ public\./ p6t_state_mn\./g' \
+    -e "s/nextval\('public./nextval('p6t_state_mn./g" \
+    -e "s/setval\('public./setval('p6t_state_mn./g" \
     -e 's/DROP EXTENSION postgis;/-- DROP EXTENSION postgis;/g' \
     mngis1-all-20221009.sql
 # Then copy in:
