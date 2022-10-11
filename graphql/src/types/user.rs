@@ -47,7 +47,6 @@ impl UserResult {
     #[graphql(guard = "UserGuard::new(&self.id)", visible = "is_admin")]
     async fn address_extended_mn(&self, ctx: &Context<'_>) -> Result<Option<AddressExtendedMNResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        // TODO: remove hardcoded Point for 115 Main St N, Clara City, MN 56222
         let record = sqlx::query_as!(AddressExtendedMN,
             r#"
             SELECT gid, vtdid as voting_tabulation_district_id,
@@ -57,7 +56,7 @@ impl UserResult {
             FROM p6t_state_mn.bdry_votingdistricts as vt
             JOIN user_profile up ON up.user_id = $1
             JOIN address a ON up.address_id = a.id
-            WHERE ST_Contains(ST_SetSRID(vt.geom, 26915), ST_Transform(ST_GeomFromText('POINT(-95.367838 44.956271)', 4326), 26915))
+            WHERE ST_Contains(ST_SetSRID(vt.geom, 26915), ST_Transform(a.geom, 26915))
         "#,
             uuid::Uuid::parse_str(&self.id)?,
         )

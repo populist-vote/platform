@@ -346,10 +346,8 @@ impl User {
                     primary_result.state_legislative_districts.as_ref().unwrap();
                 let state_house_district = &state_legislative_districts.house[0].district_number;
                 let state_senate_district = &state_legislative_districts.senate[0].district_number;
-
-                // TODO: remove this after testing
-                tracing::info!("geocodio lat={} lon={}", coordinates.latitude, coordinates.longitude);
-
+                let lat = coordinates.latitude;
+                let lon = coordinates.longitude;
                 let coordinates: geo_types::Geometry<f64> = Some(coordinates)
                     .as_ref()
                     .map(|c| geo::Point::new(c.latitude, c.longitude))
@@ -372,7 +370,10 @@ impl User {
                         geog = $9::geography,
                         congressional_district = $10,
                         state_house_district = $11,
-                        state_senate_district = $12
+                        state_senate_district = $12,
+                        geom = ST_GeomFromText($13, 4326),
+                        lat = $14,
+                        lon = $15
                     FROM
                         user_profile up
                     WHERE
@@ -403,6 +404,9 @@ impl User {
                     Some(congressional_district),
                     state_house_district,
                     state_senate_district,
+                    format!("POINT({} {})", lon, lat),  // A string we pass into ST_GeomFromText function
+                    lat,
+                    lon,
                 )
                 .fetch_one(db_pool)
                 .await;
