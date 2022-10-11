@@ -75,7 +75,12 @@ pub struct AddressExtendedMN {
     pub county_name: Option<String>,
     pub precinct_code: Option<String>,
     pub precinct_name: Option<String>,
-    pub county_commissioner_district: Option<String>
+    pub county_commissioner_district: Option<String>,
+    pub judicial_district: Option<String>,
+    pub school_district_number: Option<String>,
+    pub school_district_name: Option<String>,
+    pub school_subdistrict_code: Option<String>,
+    pub school_subdistrict_name: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, InputObject)]
