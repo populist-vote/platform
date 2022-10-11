@@ -108,7 +108,7 @@ impl AuthMutation {
                     country: address_clone.country,
                     postal_code: address_clone.postal_code,
                 }),
-                Some(&["cd", "stateleg"]),
+                Some(&["cd118", "stateleg-next"]),
             )
             .await;
 
