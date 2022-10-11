@@ -1,0 +1,5 @@
+-- Add up migration script here
+ALTER TABLE address
+ADD COLUMN geom GEOMETRY(Point, 4326),
+ADD COLUMN lat DOUBLE PRECISION,
+ADD COLUMN long DOUBLE PRECISION;
