@@ -646,6 +646,7 @@ dependencies = [
  "csv",
  "db",
  "dotenv",
+ "geocodio",
  "graphql",
  "human_name",
  "legiscan",

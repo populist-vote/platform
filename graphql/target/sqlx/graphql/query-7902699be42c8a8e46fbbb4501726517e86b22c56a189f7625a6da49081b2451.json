@@ -1,5 +1,5 @@
 {
-  "query": "\n            UPDATE populist_user SET email = $1\n            WHERE id = $2\n            RETURNING id, email, username, password, role AS \"role:Role\", created_at, confirmed_at, updated_at\n        ",
+  "query": "\n            SELECT a.id, a.line_1, a.line_2, a.city, a.county, a.state AS \"state:State\", a.postal_code, a.country, a.congressional_district, a.state_senate_district, a.state_house_district FROM address AS a\n            JOIN user_profile up ON user_id = $1\n            JOIN address ON up.address_id = a.id\n        ",
   "describe": {
     "columns": [
       {
@@ -9,68 +9,73 @@
       },
       {
         "ordinal": 1,
-        "name": "email",
+        "name": "line_1",
         "type_info": "Text"
       },
       {
         "ordinal": 2,
-        "name": "username",
+        "name": "line_2",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "password",
+        "name": "city",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "role:Role",
-        "type_info": {
-          "Custom": {
-            "name": "user_role",
-            "kind": {
-              "Enum": [
-                "superuser",
-                "staff",
-                "premium",
-                "basic"
-              ]
-            }
-          }
-        }
+        "name": "county",
+        "type_info": "Text"
       },
       {
         "ordinal": 5,
-        "name": "created_at",
-        "type_info": "Timestamptz"
+        "name": "state:State",
+        "type_info": "Text"
       },
       {
         "ordinal": 6,
-        "name": "confirmed_at",
-        "type_info": "Timestamptz"
+        "name": "postal_code",
+        "type_info": "Text"
       },
       {
         "ordinal": 7,
-        "name": "updated_at",
-        "type_info": "Timestamptz"
+        "name": "country",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "congressional_district",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "state_senate_district",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "state_house_district",
+        "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
-        "Text",
         "Uuid"
       ]
     },
     "nullable": [
       false,
       false,
+      true,
       false,
+      true,
       false,
       false,
       false,
       true,
-      false
+      true,
+      true
     ]
   },
-  "hash": "9a729b061294493dec40a66d979fa4bdaa369823cf29c9c3aeda9981b59e7b5b"
+  "hash": "3f0cfdfe223e1df0cfb1d4e45ebff9a93bdea21423d94b2331b71f62d1fdc7ca"
 }
