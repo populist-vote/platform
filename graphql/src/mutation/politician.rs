@@ -55,7 +55,7 @@ async fn handle_nested_organization_endorsements(
 ) -> Result<(), Error> {
     if organizations_input.create.is_some() {
         for input in organizations_input.create.unwrap() {
-            let new_organization = Organization::create(db_pool, &input).await?;
+            let new_organization = Organization::upsert(db_pool, &input).await?;
             Politician::connect_organization(
                 db_pool,
                 politician_id,

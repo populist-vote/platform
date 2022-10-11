@@ -37,6 +37,14 @@ fn truncate(s: &str, max_chars: usize) -> &str {
     }
 }
 
+pub fn format_auth_cookie(token: &str) -> String {
+    format!(
+        "access_token={}; HttpOnly; SameSite=None; Secure; Domain={}",
+        token,
+        config::Config::default().root_domain
+    )
+}
+
 #[test]
 fn test_create_temporary_username() {
     let input = "lai.henry+69@gmail.com";

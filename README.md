@@ -24,6 +24,9 @@ $ ./scripts/refresh_local_db.sh appname
 
 where appname is populist-api-staging or populist-api-production.
 
+### Running Migrations
+We can easily create SQL migration files using the sqlx-cli.  From the /db directory, you can run `sqlx migrate add -r DescriptiveMigrationName` to create up and down migration files in the /migrations folder.  You can write SQL in these files and use `sqlx migrate run` and `sqlx migrate revert` respectively.
+
 ## API Server
 
 To start the api server, run `cargo watch -x run` which will type check, compile, and run your code. The GraphQL playground will then be live at http://localhost:1234 for you to execute queries and mutations against the specified database.
@@ -56,7 +59,10 @@ If you want to explore the command line api proxy utility further, you can run:
 
 ## Deploying
 
-Deploys to the staging environment happen automatically when changes are pushed or merged to the `main` branch. Be sure to run `cargo sqlx prepare` from the `/db` root and commit the changes to the `sqlx-data.json` file if you change the schema. This file is used during build time to validate the SQL queries.
+When committing code that manipulates any sqlx query macros such as `query_as!`,
+be sure to run `cargo sqlx prepare` from root of each crate affected (likely `/db` or `/graphql`) and commit the changes to the `sqlx-data.json` files.  These files are used during build time to validate the SQL queries against the live database.
+
+To deploy the main branch to the staging environment, run `git push heroku`
 
 To run the migrations, **make sure you're on branch `main`** and set the `DATABASE_URL` to the URI found on our [Heroku datastore dashboard], under "View Credentials." Then run `sqlx migrate run` from your local machine. This is a temporary solution until we figure out how to automatically run the migrations on each deploy.
 

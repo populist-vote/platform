@@ -6,8 +6,8 @@ use crate::{
 };
 use async_graphql::*;
 use db::{
-    CreateOrConnectIssueTagInput, CreateOrganizationInput, IssueTag, IssueTagIdentifier,
-    Organization, UpdateOrganizationInput,
+    CreateOrConnectIssueTagInput, IssueTag, IssueTagIdentifier, Organization,
+    UpsertOrganizationInput,
 };
 use sqlx::{Pool, Postgres};
 use std::str::FromStr;
@@ -64,38 +64,19 @@ pub async fn handle_nested_issue_tags(
 #[Object]
 impl OrganizationMutation {
     #[graphql(guard = "StaffOnly", visible = "is_admin")]
-    async fn create_organization(
+    async fn upsert_organization(
         &self,
         ctx: &Context<'_>,
-        input: CreateOrganizationInput,
+        input: UpsertOrganizationInput,
     ) -> Result<OrganizationResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let new_record = Organization::create(&db_pool, &input).await?;
+        let new_record = Organization::upsert(&db_pool, &input).await?;
 
         if input.issue_tags.is_some() {
             handle_nested_issue_tags(&db_pool, new_record.id, input.issue_tags.unwrap()).await?;
         }
 
         Ok(OrganizationResult::from(new_record))
-    }
-
-    #[graphql(guard = "StaffOnly", visible = "is_admin")]
-    async fn update_organization(
-        &self,
-        ctx: &Context<'_>,
-        id: String,
-        input: UpdateOrganizationInput,
-    ) -> Result<OrganizationResult> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let updated_record =
-            Organization::update(&db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
-
-        if input.issue_tags.is_some() {
-            handle_nested_issue_tags(&db_pool, updated_record.id, input.issue_tags.unwrap())
-                .await?;
-        }
-
-        Ok(OrganizationResult::from(updated_record))
     }
 
     #[graphql(guard = "StaffOnly", visible = "is_admin")]

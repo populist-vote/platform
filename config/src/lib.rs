@@ -7,6 +7,7 @@ use url::Url;
 pub struct Config {
     pub environment: Environment,
     pub web_app_url: Url,
+    pub root_domain: String,
 }
 
 impl Default for Config {
@@ -18,9 +19,15 @@ impl Default for Config {
             Environment::Staging => Url::parse("https://staging.populist.us").unwrap(),
             _ => Url::parse("http://localhost:3030").unwrap(),
         };
+        let root_domain = match environment {
+            Environment::Production => "populist.us".to_string(),
+            Environment::Staging => "populist.us".to_string(),
+            _ => "localhost".to_string(),
+        };
         Config {
             environment,
             web_app_url,
+            root_domain,
         }
     }
 }

@@ -2006,6 +2006,129 @@
     },
     "query": "\n                INSERT INTO vote (populist_user_id, votable_id, votable_type, direction)\n                VALUES ($1, $2, $3, $4) \n                ON CONFLICT ON CONSTRAINT unique_person_per_votable DO \n                UPDATE SET direction = $4\n            "
   },
+  "4cc1381b62e4501a30a179c241433ac3e4c30eb37383219a2ccb399d1d461ce0": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "slug",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "thumbnail_image_url",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "website_url",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "facebook_url",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "twitter_url",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "instagram_url",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "email",
+          "ordinal": 9,
+          "type_info": "Text"
+        },
+        {
+          "name": "votesmart_sig_id",
+          "ordinal": 10,
+          "type_info": "Int4"
+        },
+        {
+          "name": "headquarters_address_id",
+          "ordinal": 11,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "headquarters_phone",
+          "ordinal": 12,
+          "type_info": "Text"
+        },
+        {
+          "name": "tax_classification",
+          "ordinal": 13,
+          "type_info": "Text"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 14,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 15,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Int4",
+          "Uuid",
+          "Text",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                INSERT INTO organization (id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification)\n                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) \n                ON CONFLICT (id)\n                DO UPDATE\n                SET\n                    slug = COALESCE($2, organization.slug),\n                    name = COALESCE($3, organization.name),\n                    description = COALESCE($4, organization.description),\n                    thumbnail_image_url = COALESCE($5, organization.thumbnail_image_url),\n                    website_url = COALESCE($6, organization.website_url),\n                    facebook_url = COALESCE($7, organization.facebook_url),\n                    twitter_url = COALESCE($8, organization.twitter_url),\n                    instagram_url = COALESCE($9, organization.instagram_url),\n                    email = COALESCE($10, organization.email),\n                    votesmart_sig_id = COALESCE($11, organization.votesmart_sig_id),\n                    headquarters_address_id = COALESCE($12, organization.headquarters_address_id),\n                    headquarters_phone = COALESCE($13, organization.headquarters_phone),\n                    tax_classification = COALESCE($14, organization.tax_classification)\n                RETURNING\n                    id,\n                    slug,\n                    name,\n                    description,\n                    thumbnail_image_url,\n                    website_url,\n                    facebook_url,\n                    twitter_url,\n                    instagram_url,\n                    email,\n                    votesmart_sig_id,\n                    headquarters_address_id,\n                    headquarters_phone,\n                    tax_classification,\n                    created_at,\n                    updated_at\n            "
+  },
   "4cf9c05523dcba97c33717f0d670eed63be9814dbf3c9acc2ff778dd4fc059a5": {
     "describe": {
       "columns": [],
@@ -2474,18 +2597,17 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
-                  "socialist_workers_party",
                   "socialist_workers"
                 ]
               },
@@ -2673,18 +2795,17 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
-                  "socialist_workers_party",
                   "socialist_workers"
                 ]
               },
@@ -3362,18 +3483,17 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
-                  "socialist_workers_party",
                   "socialist_workers"
                 ]
               },
@@ -4040,18 +4160,17 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
-                  "socialist_workers_party",
                   "socialist_workers"
                 ]
               },
@@ -4217,18 +4336,17 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
-                  "socialist_workers_party",
                   "socialist_workers"
                 ]
               },
@@ -4618,18 +4736,17 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
-                  "socialist_workers_party",
                   "socialist_workers"
                 ]
               },
@@ -4925,18 +5042,17 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
-                  "socialist_workers_party",
                   "socialist_workers"
                 ]
               },
@@ -5039,129 +5155,6 @@
       }
     },
     "query": "\n                SELECT id,\n                        slug,\n                        first_name,\n                        middle_name,\n                        last_name,\n                        suffix,\n                        preferred_name,\n                        biography,\n                        biography_source,\n                        home_state AS \"home_state:State\",\n                        date_of_birth,\n                        office_id,\n                        thumbnail_image_url,\n                        assets,\n                        official_website_url,\n                        campaign_website_url,\n                        facebook_url,\n                        twitter_url,\n                        instagram_url,\n                        youtube_url,\n                        linkedin_url,\n                        tiktok_url,\n                        email,\n                        phone,\n                        party AS \"party:PoliticalParty\",\n                        votesmart_candidate_id,\n                        votesmart_candidate_bio,\n                        votesmart_candidate_ratings,\n                        legiscan_people_id,\n                        crp_candidate_id,\n                        fec_candidate_id,\n                        race_wins,\n                        race_losses,\n                        created_at,\n                        updated_at FROM politician\n                WHERE id = $1\n            "
-  },
-  "93a392ffc027e9c17d5a524c93ae211f8574845d97984115d38ae5e0c67531a5": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "slug",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "name",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "description",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "thumbnail_image_url",
-          "ordinal": 4,
-          "type_info": "Text"
-        },
-        {
-          "name": "website_url",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "facebook_url",
-          "ordinal": 6,
-          "type_info": "Text"
-        },
-        {
-          "name": "twitter_url",
-          "ordinal": 7,
-          "type_info": "Text"
-        },
-        {
-          "name": "instagram_url",
-          "ordinal": 8,
-          "type_info": "Text"
-        },
-        {
-          "name": "email",
-          "ordinal": 9,
-          "type_info": "Text"
-        },
-        {
-          "name": "headquarters_phone",
-          "ordinal": 10,
-          "type_info": "Text"
-        },
-        {
-          "name": "tax_classification",
-          "ordinal": 11,
-          "type_info": "Text"
-        },
-        {
-          "name": "created_at",
-          "ordinal": 12,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "updated_at",
-          "ordinal": 13,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "votesmart_sig_id",
-          "ordinal": 14,
-          "type_info": "Int4"
-        },
-        {
-          "name": "headquarters_address_id",
-          "ordinal": 15,
-          "type_info": "Uuid"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        true,
-        true
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Int4",
-          "Uuid",
-          "Text",
-          "Text"
-        ]
-      }
-    },
-    "query": "UPDATE organization\n            SET slug = COALESCE($2, slug),\n                name = COALESCE($3, name),\n                description = COALESCE($4, description),\n                thumbnail_image_url = COALESCE($5, thumbnail_image_url),\n                website_url = COALESCE($6, website_url),\n                facebook_url = COALESCE($7, facebook_url),\n                twitter_url = COALESCE($8, twitter_url),\n                instagram_url = COALESCE($9, instagram_url),\n                email = COALESCE($10, email),\n                votesmart_sig_id = COALESCE($11, votesmart_sig_id),\n                headquarters_address_id = COALESCE($12, headquarters_address_id),\n                headquarters_phone = COALESCE($13, headquarters_phone),\n                tax_classification = COALESCE($14, tax_classification)\n            WHERE id=$1\n            RETURNING *"
   },
   "9e0a0aa6bb6ec880ac7f163f70725a8dd27a346e7ae5052d8f6c74ed2ac0d498": {
     "describe": {
@@ -5821,18 +5814,17 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
-                  "socialist_workers_party",
                   "socialist_workers"
                 ]
               },
@@ -6387,18 +6379,17 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
-                  "socialist_workers_party",
                   "socialist_workers"
                 ]
               },
@@ -6570,18 +6561,17 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
-                  "socialist_workers_party",
                   "socialist_workers"
                 ]
               },
@@ -7127,18 +7117,17 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
-                  "socialist_workers_party",
                   "socialist_workers"
                 ]
               },
@@ -7703,18 +7692,17 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
-                  "socialist_workers_party",
                   "socialist_workers"
                 ]
               },
@@ -7925,128 +7913,6 @@
       }
     },
     "query": "SELECT * FROM organization"
-  },
-  "e30e08fd4f33cec4bc1e5f6f4630229d07fb27e8d927cafab97765da9d6fb0c0": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "slug",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "name",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "description",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "thumbnail_image_url",
-          "ordinal": 4,
-          "type_info": "Text"
-        },
-        {
-          "name": "website_url",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "facebook_url",
-          "ordinal": 6,
-          "type_info": "Text"
-        },
-        {
-          "name": "twitter_url",
-          "ordinal": 7,
-          "type_info": "Text"
-        },
-        {
-          "name": "instagram_url",
-          "ordinal": 8,
-          "type_info": "Text"
-        },
-        {
-          "name": "email",
-          "ordinal": 9,
-          "type_info": "Text"
-        },
-        {
-          "name": "votesmart_sig_id",
-          "ordinal": 10,
-          "type_info": "Int4"
-        },
-        {
-          "name": "headquarters_address_id",
-          "ordinal": 11,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "headquarters_phone",
-          "ordinal": 12,
-          "type_info": "Text"
-        },
-        {
-          "name": "tax_classification",
-          "ordinal": 13,
-          "type_info": "Text"
-        },
-        {
-          "name": "created_at",
-          "ordinal": 14,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "updated_at",
-          "ordinal": 15,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Int4",
-          "Uuid",
-          "Text",
-          "Text"
-        ]
-      }
-    },
-    "query": "\n                WITH ins_author AS (\n                    INSERT INTO author (author_type) VALUES ('organization')\n                    ON CONFLICT DO NOTHING\n                    RETURNING id AS author_id\n                ),\n                o AS (\n                    INSERT INTO organization (id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification) \n                    VALUES ((SELECT author_id FROM ins_author), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)\n                    RETURNING id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, created_at, updated_at\n                )\n                SELECT o.* FROM o\n            "
   },
   "e42a255e6916317a184adbd8530ffa79a10f0955ffa290471893e1b6a7c226af": {
     "describe": {
@@ -8553,18 +8419,17 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
-                  "socialist_workers_party",
                   "socialist_workers"
                 ]
               },

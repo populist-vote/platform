@@ -5,7 +5,7 @@ use crate::{
     upload_to_s3, File,
 };
 use async_graphql::{Context, Object, Result, SimpleObject, Upload, ID};
-use auth::{create_access_token_for_user, Claims};
+use auth::{create_access_token_for_user, format_auth_cookie, Claims};
 use db::{AddressInput, Role, User};
 use http::header::SET_COOKIE;
 use jsonwebtoken::TokenData;
@@ -146,13 +146,7 @@ impl UserMutation {
         match updated_record {
             Ok(user) => {
                 let access_token = create_access_token_for_user(user.clone())?;
-                ctx.insert_http_header(
-                    SET_COOKIE,
-                    format!(
-                        "access_token={}; HttpOnly; SameSite=None; Secure",
-                        access_token
-                    ),
-                );
+                ctx.insert_http_header(SET_COOKIE, format_auth_cookie(&access_token));
                 Ok(UpdateUsernameResult {
                     username: user.username,
                 })
@@ -199,13 +193,7 @@ impl UserMutation {
         match updated_record {
             Ok(user) => {
                 let access_token = create_access_token_for_user(user.clone())?;
-                ctx.insert_http_header(
-                    SET_COOKIE,
-                    format!(
-                        "access_token={}; HttpOnly; SameSite=None; Secure",
-                        access_token
-                    ),
-                );
+                ctx.insert_http_header(SET_COOKIE, format_auth_cookie(&access_token));
                 Ok(UpdateEmailResult { email: user.email })
             }
             Err(err) => match err {
