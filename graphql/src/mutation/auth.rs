@@ -352,8 +352,9 @@ impl AuthMutation {
         ctx.insert_http_header(
             SET_COOKIE,
             format!(
-                "access_token=null; expires={}; Max-Age=0; HttpOnly; SameSite=None; Secure",
-                (chrono::Utc::now() - chrono::Duration::hours(1)).format("%a, %d %b %Y %T GMT")
+                "access_token=null; expires={}; Max-Age=0; HttpOnly; SameSite=None; Secure; Domain={}; Path=/",
+                (chrono::Utc::now() - chrono::Duration::hours(1)).format("%a, %d %b %Y %T GMT"),
+                config::Config::default().root_domain
             ),
         );
 
