@@ -67,6 +67,17 @@ pub struct AddressInput {
     pub state_house_district: Option<String>,
 }
 
+#[derive(FromRow, Debug, Clone)]
+pub struct AddressExtendedMN {
+    pub gid: i32,
+    pub voting_tabulation_district_id: Option<String>,
+    pub county_code: Option<String>,
+    pub county_name: Option<String>,
+    pub precinct_code: Option<String>,
+    pub precinct_name: Option<String>,
+    pub county_commissioner_district: Option<String>
+}
+
 #[derive(Serialize, Deserialize, Clone, InputObject)]
 pub struct Coordinates {
     pub latitude: f64,
@@ -335,6 +346,9 @@ impl User {
                     primary_result.state_legislative_districts.as_ref().unwrap();
                 let state_house_district = &state_legislative_districts.house[0].district_number;
                 let state_senate_district = &state_legislative_districts.senate[0].district_number;
+
+                // TODO: remove this after testing
+                tracing::info!("geocodio lat={} lon={}", coordinates.latitude, coordinates.longitude);
 
                 let coordinates: geo_types::Geometry<f64> = Some(coordinates)
                     .as_ref()
