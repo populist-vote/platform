@@ -62,7 +62,7 @@ then
     heroku pg:backups:url --app=$APP | xargs curl | pg_restore --no-owner --no-acl -f - | sed 's/"gen_random_uuid"()/"public"."gen_random_uuid"()/g' | psql $DATABASE
 
     # No longer need superuser privileges
-    sudo -E -u postgres psql -c "alter role $OWNER nosuperuser;"
+    # sudo -E -u postgres psql -c "alter role $OWNER nosuperuser;"
 
     echo "Data from '$APP' has been dumped and restored to '$DATABASE'"
     echo "Done!"
