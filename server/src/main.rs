@@ -99,9 +99,6 @@ pub fn cors(environment: Environment) -> Cors {
 async fn main() -> Result<(), std::io::Error> {
     dotenv().ok();
 
-    env_logger::init();
-    std::env::set_var("RUST_LOG", "sqlx=info");
-
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::INFO)
         .finish();

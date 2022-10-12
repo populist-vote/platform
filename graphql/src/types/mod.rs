@@ -1,5 +1,4 @@
 mod address;
-mod address_extended_mn;
 mod argument;
 mod auth;
 mod ballot_measure;
@@ -17,8 +16,7 @@ mod votesmart;
 mod voting_guide;
 
 pub use self::auth::{AuthTokenResult, CreateUserResult, LoginResult};
-pub use address::AddressResult;
-pub use address_extended_mn::AddressExtendedMNResult;
+pub use address::{AddressExtendedMNResult, AddressResult};
 pub use argument::ArgumentResult;
 pub use ballot_measure::BallotMeasureResult;
 pub use bill::BillResult;

@@ -4,7 +4,7 @@ use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use auth::Claims;
 use db::{
     models::enums::{PoliticalParty, RaceType, State},
-    Election, Race,
+    Address, Election, Race,
 };
 use jsonwebtoken::TokenData;
 
@@ -88,6 +88,12 @@ impl ElectionResult {
             .fetch_one(&db_pool)
             .await?;
 
+            let user_address_extended_mn_data = if user_address_data.state == State::MN {
+                Address::extended_mn_by_user_id(&db_pool, &token_data.claims.sub).await?
+            } else {
+                None
+            };
+
             let records = sqlx::query_as!(
                 Race,
                 r#"
@@ -124,17 +130,19 @@ impl ElectionResult {
                         (o.election_scope = 'city' AND o.municipality = $4) OR
                         (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR
                         (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR
-                        (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7)
+                        (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
+                        (o.election_scope = 'district' AND o.district_type = 'county' AND o.district = $8) 
                     )))
             ORDER BY o.priority ASC, title DESC
                 "#,
                 uuid::Uuid::parse_str(&self.id).unwrap(),
                 user_address_data.state as State,
-                user_address_data.county.map(|c| c.to_string().replace(" County", "")),
+            user_address_data.county.map(|c| c.to_string().replace(" County", "")),
                 user_address_data.city,
                 user_address_data.congressional_district,
                 user_address_data.state_senate_district,
                 user_address_data.state_house_district,
+                user_address_extended_mn_data.map(|a| a.county_commissioner_district).unwrap_or(None),
             )
             .fetch_all(&db_pool)
             .await?;

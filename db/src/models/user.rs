@@ -1,4 +1,7 @@
-use super::enums::State;
+use super::{
+    address::{Address, AddressInput},
+    enums::State,
+};
 use crate::{DateTime, Error};
 use async_graphql::{Enum, InputObject};
 use geocodio::GeocodioProxy;
@@ -35,58 +38,6 @@ pub struct UserWithProfile {
     pub first_name: Option<String>,
     pub last_name: Option<String>,
     pub profile_picture_url: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, InputObject)]
-pub struct Address {
-    pub id: uuid::Uuid,
-    pub line_1: String,
-    pub line_2: Option<String>,
-    pub city: String,
-    pub state: State,
-    pub county: Option<String>,
-    pub country: String,
-    pub postal_code: String,
-    pub congressional_district: Option<String>,
-    pub state_senate_district: Option<String>,
-    pub state_house_district: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, InputObject)]
-pub struct AddressInput {
-    pub line_1: String,
-    pub line_2: Option<String>,
-    pub city: String,
-    pub county: Option<String>,
-    pub state: State,
-    pub country: String,
-    pub postal_code: String,
-    pub coordinates: Option<Coordinates>,
-    pub congressional_district: Option<String>,
-    pub state_senate_district: Option<String>,
-    pub state_house_district: Option<String>,
-}
-
-#[derive(FromRow, Debug, Clone)]
-pub struct AddressExtendedMN {
-    pub gid: i32,
-    pub voting_tabulation_district_id: Option<String>,
-    pub county_code: Option<String>,
-    pub county_name: Option<String>,
-    pub precinct_code: Option<String>,
-    pub precinct_name: Option<String>,
-    pub county_commissioner_district: Option<String>,
-    pub judicial_district: Option<String>,
-    pub school_district_number: Option<String>,
-    pub school_district_name: Option<String>,
-    pub school_subdistrict_code: Option<String>,
-    pub school_subdistrict_name: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, InputObject)]
-pub struct Coordinates {
-    pub latitude: f64,
-    pub longitude: f64,
 }
 
 #[derive(Serialize, Deserialize, InputObject)]
@@ -409,7 +360,7 @@ impl User {
                     Some(congressional_district),
                     state_house_district,
                     state_senate_district,
-                    format!("POINT({} {})", lon, lat),  // A string we pass into ST_GeomFromText function
+                    format!("POINT({} {})", lon, lat), // A string we pass into ST_GeomFromText function
                     lat,
                     lon,
                 )
