@@ -93,8 +93,6 @@ impl Address {
         pool: &PgPool,
         user_id: &uuid::Uuid,
     ) -> Result<Option<AddressExtendedMN>, sqlx::Error> {
-        let record: Option<AddressExtendedMN>;
-
         let users_school_district = sqlx::query!(
             r#"
             SELECT gid, sdnumber
@@ -108,25 +106,18 @@ impl Address {
         .fetch_optional(pool)
         .await?;
 
-        match users_school_district {
+        let record = match users_school_district {
             Some(rec) => {
                 // User lives in a Minnesota school district. They should also live in a voting district too.
-                // tracing::info!("sdnumber: {:?}",
-                //     rec.sdnumber
-                // );
-                let found_sdnumber: String;
-                match rec.sdnumber {
-                    Some(sdnumber) => {
-                        found_sdnumber = sdnumber;
-                    }
-                    None => {
-                        found_sdnumber = "".to_string();
-                    }
-                }
+
+                let found_sdnumber = match rec.sdnumber {
+                    Some(sdnumber) => sdnumber,
+                    None => "".to_string(),
+                };
 
                 if found_sdnumber == "2180" {
                     // Special case for ISD 2180 (MACCRAY). Consult the shapefile and not the crosswalk table.
-                    record = sqlx::query_as!(AddressExtendedMN,
+                    sqlx::query_as!(AddressExtendedMN,
                         r#"
                         SELECT vd.gid,
                             vd.vtdid AS voting_tabulation_district_id,
@@ -156,10 +147,10 @@ impl Address {
                         rec.gid,
                     )
                     .fetch_optional(pool)
-                    .await.unwrap();
+                    .await?
                 } else if found_sdnumber == "2853" {
                     // Special case for ISD 2853 (Lac Qui Parle Valley). Consult the shapefile and not the crosswalk table.
-                    record = sqlx::query_as!(AddressExtendedMN,
+                    sqlx::query_as!(AddressExtendedMN,
                         r#"
                          SELECT vd.gid,
                             vd.vtdid AS voting_tabulation_district_id,
@@ -189,11 +180,11 @@ impl Address {
                         rec.gid,
                     )
                     .fetch_optional(pool)
-                    .await.unwrap();
+                    .await?
                 } else {
                     // General case to use the cross walk table for subdistricts. Note that the cross walk table is only
                     // for school districts that have subdistricts.
-                    record = sqlx::query_as!(AddressExtendedMN,
+                    sqlx::query_as!(AddressExtendedMN,
                         r#"
                         SELECT vd.gid,
                             vd.vtdid AS voting_tabulation_district_id,
@@ -218,14 +209,15 @@ impl Address {
                         rec.gid,
                     )
                     .fetch_optional(pool)
-                    .await.unwrap();
+                    .await?
                 }
             }
             None => {
+                tracing::info!("No school district found for user {}", user_id);
                 // User does not live in a school district. This could happen if address is
                 // outside Minnesota, or (highly unlikely) the school boundary shapefile doesn't match
                 // the boundaries of the Minnesota voting districts.
-                record = sqlx::query_as!(AddressExtendedMN,
+                sqlx::query_as!(AddressExtendedMN,
                     r#"
                     SELECT vd.gid,
                     vtdid AS voting_tabulation_district_id,
@@ -246,13 +238,10 @@ impl Address {
                     user_id,
                 )
                 .fetch_optional(pool)
-                .await.unwrap();
+                .await?
             }
         };
 
-        match record {
-            Some(address_extended_mn) => Ok(Some(address_extended_mn.into())),
-            None => Ok(None),
-        }
+        Ok(record)
     }
 }

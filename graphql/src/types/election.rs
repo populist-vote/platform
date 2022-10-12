@@ -89,7 +89,9 @@ impl ElectionResult {
             .await?;
 
             let user_address_extended_mn_data = if user_address_data.state == State::MN {
-                Address::extended_mn_by_user_id(&db_pool, &token_data.claims.sub).await?
+                let ext = Address::extended_mn_by_user_id(&db_pool, &token_data.claims.sub).await?;
+                tracing::info!("extended address MN: {:?}", ext);
+                ext
             } else {
                 None
             };
