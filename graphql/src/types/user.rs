@@ -67,9 +67,9 @@ impl UserResult {
         match users_school_district {
             Some(rec) => {
                 // User lives in a Minnesota school district. They should also live in a voting district too.
-                tracing::info!("sdnumber: {:?}",
-                    rec.sdnumber
-                );
+                // tracing::info!("sdnumber: {:?}",
+                //     rec.sdnumber
+                // );
                 let found_sdnumber: String;
                 match rec.sdnumber {
                     Some(sdnumber) => {
@@ -81,7 +81,6 @@ impl UserResult {
                 }
 
                 if found_sdnumber == "2180" {
-                    tracing::info!("Special case for ISD 2180");
                     // Special case for ISD 2180 (MACCRAY). Consult the shapefile and not the crosswalk table.
                     record = sqlx::query_as!(AddressExtendedMN,
                         r#"
@@ -115,7 +114,6 @@ impl UserResult {
                     .fetch_optional(&db_pool)
                     .await.unwrap();
                 } else if found_sdnumber == "2853" {
-                    tracing::debug!("Special case for ISD 2853");
                     // Special case for ISD 2853 (Lac Qui Parle Valley). Consult the shapefile and not the crosswalk table.
                     record = sqlx::query_as!(AddressExtendedMN,
                         r#"
