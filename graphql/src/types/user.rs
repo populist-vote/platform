@@ -67,30 +67,117 @@ impl UserResult {
         match users_school_district {
             Some(rec) => {
                 // User lives in a Minnesota school district. They should also live in a voting district too.
-                record = sqlx::query_as!(AddressExtendedMN,
-                    r#"
-                    SELECT vd.gid,
-                    vtdid AS voting_tabulation_district_id,
-                    countycode AS county_code, countyname AS county_name,
-                    pctcode AS precinct_code, pctname AS precinct_name,
-                    ctycomdist AS county_commissioner_district,
-                    juddist AS judicial_district,
-                    sd.sdnumber AS school_district_number,
-                    sd.shortname AS school_district_name,
-                    cw.school_subdistrict_code,
-                    cw.school_subdistrict_name
-                    FROM p6t_state_mn.bdry_votingdistricts AS vd
-                    JOIN user_profile up ON up.user_id = $1
-                    JOIN address a ON up.address_id = a.id
-                    JOIN p6t_state_mn.school_district_boundaries sd on sd.gid = $2
-                    LEFT JOIN p6t_state_mn.precinct_school_subdistrict_crosswalk AS cw ON cw.county_id = vd.countycode AND cw.precinct_code = vd.pctcode
-                    WHERE ST_Contains(ST_SetSRID(vd.geom, 26915), ST_Transform(a.geom, 26915))
-                "#,
-                    uuid::Uuid::parse_str(&self.id)?,
-                    rec.gid,
-                )
-                .fetch_optional(&db_pool)
-                .await.unwrap();
+                tracing::info!("sdnumber: {:?}",
+                    rec.sdnumber
+                );
+                let found_sdnumber: String;
+                match rec.sdnumber {
+                    Some(sdnumber) => {
+                        found_sdnumber = sdnumber;
+                    },
+                    None => {
+                        found_sdnumber = "".to_string();
+                    },
+                }
+
+                if found_sdnumber == "2180" {
+                    tracing::info!("Special case for ISD 2180");
+                    // Special case for ISD 2180 (MACCRAY). Consult the shapefile and not the crosswalk table.
+                    record = sqlx::query_as!(AddressExtendedMN,
+                        r#"
+                        SELECT vd.gid,
+                            vd.vtdid AS voting_tabulation_district_id,
+                            vd.countycode AS county_code,
+                            vd.countyname AS county_name,
+                            vd.pctcode AS precinct_code,
+                            vd.pctname AS precinct_name,
+                            vd.ctycomdist AS county_commissioner_district,
+                            vd.juddist AS judicial_district,
+                            sd.sdnumber AS school_district_number,
+                            sd.shortname AS school_district_name,
+                            isd.id::varchar(4) AS school_subdistrict_code,
+                            isd.schsubdist AS school_subdistrict_name
+                        FROM p6t_state_mn.bdry_votingdistricts AS vd
+                        JOIN user_profile up ON up.user_id = $1
+                        JOIN address a ON up.address_id = a.id
+                        JOIN p6t_state_mn.school_district_boundaries sd ON sd.gid = $2
+                        LEFT JOIN (
+                            SELECT isd2.id as id, schsubdist, sdnumber FROM p6t_state_mn.isd2180 as isd2
+                            JOIN user_profile up2 ON up2.user_id = $1
+                            JOIN address a2 ON up2.address_id = a2.id
+                            WHERE ST_Contains(ST_SetSRID(isd2.geom, 26915), ST_Transform(a2.geom, 26915))
+                            ) AS isd ON isd.sdnumber = sd.sdnumber
+                        WHERE ST_Contains(ST_SetSRID(vd.geom, 26915), ST_Transform(a.geom, 26915))
+                    "#,
+                        uuid::Uuid::parse_str(&self.id)?,
+                        rec.gid,
+                    )
+                    .fetch_optional(&db_pool)
+                    .await.unwrap();
+                } else if found_sdnumber == "2853" {
+                    tracing::debug!("Special case for ISD 2853");
+                    // Special case for ISD 2853 (Lac Qui Parle Valley). Consult the shapefile and not the crosswalk table.
+                    record = sqlx::query_as!(AddressExtendedMN,
+                        r#"
+                         SELECT vd.gid,
+                            vd.vtdid AS voting_tabulation_district_id,
+                            vd.countycode AS county_code,
+                            vd.countyname AS county_name,
+                            vd.pctcode AS precinct_code,
+                            vd.pctname AS precinct_name,
+                            vd.ctycomdist AS county_commissioner_district,
+                            vd.juddist AS judicial_district,
+                            sd.sdnumber AS school_district_number,
+                            sd.shortname AS school_district_name,
+                            SUBSTRING(isd.schsubdist, 10) AS school_subdistrict_code,
+                            isd.schsubdist AS school_subdistrict_name
+                        FROM p6t_state_mn.bdry_votingdistricts AS vd
+                        JOIN user_profile up ON up.user_id = $1
+                        JOIN address a ON up.address_id = a.id
+                        JOIN p6t_state_mn.school_district_boundaries sd ON sd.gid = $2
+                        LEFT JOIN (
+                            SELECT * FROM p6t_state_mn.isd2853 as isd2
+                            JOIN user_profile up2 ON up2.user_id = $1
+                            JOIN address a2 ON up2.address_id = a2.id
+                            WHERE ST_Contains(ST_SetSRID(isd2.geom, 26915), ST_Transform(a2.geom, 26915))
+                            ) AS isd ON isd.countycode = vd.countycode AND isd.pctcode = vd.pctcode
+                        WHERE ST_Contains(ST_SetSRID(vd.geom, 26915), ST_Transform(a.geom, 26915))
+                    "#,
+                        uuid::Uuid::parse_str(&self.id)?,
+                        rec.gid,
+                    )
+                    .fetch_optional(&db_pool)
+                    .await.unwrap();
+                } else {
+                    // General case to use the cross walk table for subdistricts. Note that the cross walk table is only
+                    // for school districts that have subdistricts.
+                    record = sqlx::query_as!(AddressExtendedMN,
+                        r#"
+                        SELECT vd.gid,
+                            vd.vtdid AS voting_tabulation_district_id,
+                            vd.countycode AS county_code,
+                            vd.countyname AS county_name,
+                            vd.pctcode AS precinct_code,
+                            vd.pctname AS precinct_name,
+                            vd.ctycomdist AS county_commissioner_district,
+                            vd.juddist AS judicial_district,
+                            sd.sdnumber AS school_district_number,
+                            sd.shortname AS school_district_name,
+                            cw.school_subdistrict_code,
+                            INITCAP(cw.school_subdistrict_name) as school_subdistrict_name
+                        FROM p6t_state_mn.bdry_votingdistricts AS vd
+                        JOIN user_profile up ON up.user_id = $1
+                        JOIN address a ON up.address_id = a.id
+                        JOIN p6t_state_mn.school_district_boundaries sd ON sd.gid = $2
+                        LEFT JOIN p6t_state_mn.precinct_school_subdistrict_crosswalk AS cw ON cw.county_id = vd.countycode AND cw.precinct_code = vd.pctcode
+                        WHERE ST_Contains(ST_SetSRID(vd.geom, 26915), ST_Transform(a.geom, 26915))
+                    "#,
+                        uuid::Uuid::parse_str(&self.id)?,
+                        rec.gid,
+                    )
+                    .fetch_optional(&db_pool)
+                    .await.unwrap();
+                }
             },
             None => {
                 // User does not live in a school district. This could happen if address is
