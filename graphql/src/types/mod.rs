@@ -16,7 +16,7 @@ mod votesmart;
 mod voting_guide;
 
 pub use self::auth::{AuthTokenResult, CreateUserResult, LoginResult};
-pub use address::AddressResult;
+pub use address::{AddressExtendedMNResult, AddressResult};
 pub use argument::ArgumentResult;
 pub use ballot_measure::BallotMeasureResult;
 pub use bill::BillResult;

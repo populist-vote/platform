@@ -4,7 +4,7 @@ use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use auth::Claims;
 use db::{
     models::enums::{PoliticalParty, RaceType, State},
-    Election, Race,
+    Address, Election, Race,
 };
 use jsonwebtoken::TokenData;
 
@@ -88,6 +88,16 @@ impl ElectionResult {
             .fetch_one(&db_pool)
             .await?;
 
+            let user_address_extended_mn_data = if user_address_data.state == State::MN {
+                Address::extended_mn_by_user_id(&db_pool, &token_data.claims.sub).await?
+            } else {
+                None
+            };
+
+            let county_commissioner_district = user_address_extended_mn_data
+                .map(|a| a.county_commissioner_district.map(|d| d.replace("0", "")))
+                .unwrap_or(None);
+
             let records = sqlx::query_as!(
                 Race,
                 r#"
@@ -124,7 +134,8 @@ impl ElectionResult {
                         (o.election_scope = 'city' AND o.municipality = $4) OR
                         (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR
                         (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR
-                        (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7)
+                        (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
+                        (o.election_scope = 'district' AND o.district_type = 'county' AND county = $3 AND o.district = $8) 
                     )))
             ORDER BY o.priority ASC, title DESC
                 "#,
@@ -135,6 +146,7 @@ impl ElectionResult {
                 user_address_data.congressional_district,
                 user_address_data.state_senate_district,
                 user_address_data.state_house_district,
+                county_commissioner_district,
             )
             .fetch_all(&db_pool)
             .await?;

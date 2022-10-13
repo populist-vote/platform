@@ -1,4 +1,7 @@
-use super::enums::State;
+use super::{
+    address::{Address, AddressInput},
+    enums::State,
+};
 use crate::{DateTime, Error};
 use async_graphql::{Enum, InputObject};
 use geocodio::GeocodioProxy;
@@ -35,42 +38,6 @@ pub struct UserWithProfile {
     pub first_name: Option<String>,
     pub last_name: Option<String>,
     pub profile_picture_url: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, InputObject)]
-pub struct Address {
-    pub id: uuid::Uuid,
-    pub line_1: String,
-    pub line_2: Option<String>,
-    pub city: String,
-    pub state: State,
-    pub county: Option<String>,
-    pub country: String,
-    pub postal_code: String,
-    pub congressional_district: Option<String>,
-    pub state_senate_district: Option<String>,
-    pub state_house_district: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, InputObject)]
-pub struct AddressInput {
-    pub line_1: String,
-    pub line_2: Option<String>,
-    pub city: String,
-    pub county: Option<String>,
-    pub state: State,
-    pub country: String,
-    pub postal_code: String,
-    pub coordinates: Option<Coordinates>,
-    pub congressional_district: Option<String>,
-    pub state_senate_district: Option<String>,
-    pub state_house_district: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, InputObject)]
-pub struct Coordinates {
-    pub latitude: f64,
-    pub longitude: f64,
 }
 
 #[derive(Serialize, Deserialize, InputObject)]
@@ -335,7 +302,8 @@ impl User {
                     primary_result.state_legislative_districts.as_ref().unwrap();
                 let state_house_district = &state_legislative_districts.house[0].district_number;
                 let state_senate_district = &state_legislative_districts.senate[0].district_number;
-
+                let lat = coordinates.latitude;
+                let lon = coordinates.longitude;
                 let coordinates: geo_types::Geometry<f64> = Some(coordinates)
                     .as_ref()
                     .map(|c| geo::Point::new(c.latitude, c.longitude))
@@ -358,7 +326,10 @@ impl User {
                         geog = $9::geography,
                         congressional_district = $10,
                         state_house_district = $11,
-                        state_senate_district = $12
+                        state_senate_district = $12,
+                        geom = ST_GeomFromText($13, 4326),
+                        lat = $14,
+                        lon = $15
                     FROM
                         user_profile up
                     WHERE
@@ -389,6 +360,9 @@ impl User {
                     Some(congressional_district),
                     state_house_district,
                     state_senate_district,
+                    format!("POINT({} {})", lon, lat), // A string we pass into ST_GeomFromText function
+                    lat,
+                    lon,
                 )
                 .fetch_one(db_pool)
                 .await;

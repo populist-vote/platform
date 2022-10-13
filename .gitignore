@@ -6,3 +6,7 @@
 .env.production
 
 .DS_Store
+
+# IDE
+*.sublime-project
+*.sublime-workspace

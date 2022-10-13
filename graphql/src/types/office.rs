@@ -75,10 +75,8 @@ fn compute_office_subtitle(office: &Office, use_short: bool) -> Option<String> {
                         }
                     }
                     District::County => {
-                        if let (Some(muni), Some(district)) =
-                            (&office.municipality, &office.district)
-                        {
-                            Some(format!("{} County District {}", muni, district))
+                        if let (Some(county), Some(district)) = (&office.county, &office.district) {
+                            Some(format!("{} County District {}", county, district))
                         } else {
                             None
                         }
@@ -201,7 +199,7 @@ impl OfficeResult {
 
 impl From<Office> for OfficeResult {
     fn from(o: Office) -> Self {
-        let subtitle = if o.subtitle.is_none() {
+        let subtitle = if o.subtitle.is_none() || o.subtitle.clone().unwrap().is_empty() {
             compute_office_subtitle(&o, false)
         } else {
             o.clone().subtitle
