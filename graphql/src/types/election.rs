@@ -96,6 +96,10 @@ impl ElectionResult {
                 None
             };
 
+            let county_commissioner_district = user_address_extended_mn_data
+                .map(|a| a.county_commissioner_district.map(|d| d.replace("0", "")))
+                .unwrap_or(None);
+
             let records = sqlx::query_as!(
                 Race,
                 r#"
@@ -133,18 +137,18 @@ impl ElectionResult {
                         (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR
                         (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR
                         (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
-                        (o.election_scope = 'district' AND o.district_type = 'county' AND o.district = $8) 
+                        (o.election_scope = 'district' AND o.district_type = 'county' AND county = $3 AND o.district = $8) 
                     )))
             ORDER BY o.priority ASC, title DESC
                 "#,
                 uuid::Uuid::parse_str(&self.id).unwrap(),
                 user_address_data.state as State,
-            user_address_data.county.map(|c| c.to_string().replace(" County", "")),
+                user_address_data.county.map(|c| c.to_string().replace(" County", "")),
                 user_address_data.city,
                 user_address_data.congressional_district,
                 user_address_data.state_senate_district,
                 user_address_data.state_house_district,
-                user_address_extended_mn_data.map(|a| a.county_commissioner_district).unwrap_or(None),
+                county_commissioner_district,
             )
             .fetch_all(&db_pool)
             .await?;
