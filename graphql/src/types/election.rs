@@ -95,7 +95,17 @@ impl ElectionResult {
             };
 
             let county_commissioner_district = user_address_extended_mn_data
-                .map(|a| a.county_commissioner_district.map(|d| d.replace("0", "")))
+                .clone()
+                .map(|a| a.county_commissioner_district.map(|d| d.replace('0', "")))
+                .unwrap_or(None);
+
+            let school_district = user_address_extended_mn_data
+                .clone()
+                .map(|a| a.school_district_number.map(|d| d.replace('0', "")))
+                .unwrap_or(None);
+
+            let school_subdistrict = user_address_extended_mn_data
+                .map(|a| a.school_subdistrict_code.map(|d| d.replace('0', "")))
                 .unwrap_or(None);
 
             let records = sqlx::query_as!(
@@ -128,25 +138,27 @@ impl ElectionResult {
                     o.election_scope = 'national'
                     OR (o.state = $2 AND o.election_scope = 'state')
                     OR (o.state = $2 AND (  
-                        -- Delete this line when we populate colorado counties from municipalities
-                        (o.election_scope = 'county' AND o.municipality = $3) OR
-                        (o.election_scope = 'county' AND o.county = $3) OR
-                        (o.election_scope = 'city' AND o.municipality = $4) OR
+                        (o.election_scope = 'city' AND o.municipality = $3) OR
+                        (o.election_scope = 'county' AND o.county = $4) OR
                         (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR
                         (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR
                         (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
-                        (o.election_scope = 'district' AND o.district_type = 'county' AND county = $3 AND o.district = $8) 
+                        (o.election_scope = 'district' AND o.district_type = 'county' AND county = $3 AND o.district = $8) OR
+                        (o.election_scope = 'district' AND o.district_type = 'school' AND o.school_district = $9) OR 
+                        (o.election_scope = 'district' AND o.district_type = 'school' AND o.district = $10)
                     )))
             ORDER BY o.priority ASC, title DESC
                 "#,
                 uuid::Uuid::parse_str(&self.id).unwrap(),
                 user_address_data.state as State,
-                user_address_data.county.map(|c| c.to_string().replace(" County", "")),
                 user_address_data.city,
+                user_address_data.county.map(|c| c.to_string().replace(" County", "")),
                 user_address_data.congressional_district,
                 user_address_data.state_senate_district,
                 user_address_data.state_house_district,
                 county_commissioner_district,
+                school_district,
+                school_subdistrict
             )
             .fetch_all(&db_pool)
             .await?;
