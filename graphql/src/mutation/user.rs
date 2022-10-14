@@ -299,4 +299,21 @@ impl UserMutation {
 
         Ok(result.id.into())
     }
+
+    #[graphql(visible = "is_admin")]
+    async fn delete_account_by_email(&self, ctx: &Context<'_>, email: String) -> Result<ID> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+
+        let result = sqlx::query!(
+            r#"
+            DELETE FROM populist_user WHERE email = $1
+            RETURNING id
+        "#,
+            email
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(result.id.into())
+    }
 }
