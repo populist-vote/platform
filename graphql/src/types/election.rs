@@ -138,14 +138,14 @@ impl ElectionResult {
                     o.election_scope = 'national'
                     OR (o.state = $2 AND o.election_scope = 'state')
                     OR (o.state = $2 AND (  
-                        (o.election_scope = 'city' AND o.municipality = $3) OR
-                        (o.election_scope = 'county' AND o.county = $4) OR
-                        (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR
-                        (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR
-                        (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
-                        (o.election_scope = 'district' AND o.district_type = 'county' AND county = $3 AND o.district = $8) OR
-                        (o.election_scope = 'district' AND o.district_type = 'school' AND o.school_district = $9) OR 
-                        (o.election_scope = 'district' AND o.district_type = 'school' AND o.district = $10)
+                       (o.election_scope = 'city' AND o.municipality = $3) OR
+                       (o.election_scope = 'county' AND o.county = $4) OR
+                       (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR
+                       (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR
+                       (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
+                       (o.election_scope = 'district' AND o.district_type = 'county' AND county = $3 AND o.district = $8) OR
+                       ((o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'ISD #', '') = $9) AND
+                       (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $10))
                     )))
             ORDER BY o.priority ASC, title DESC
                 "#,
