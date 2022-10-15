@@ -45,4 +45,9 @@ fn test_process_search_query() {
         process_search_query("foo bar baz".to_string()),
         "%foo%bar%baz:*"
     );
+
+    assert_eq!(
+        process_search_query("jen mcewen".to_string()),
+        "%jen%mcewen:*"
+    )
 }

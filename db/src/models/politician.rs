@@ -469,7 +469,7 @@ impl Politician {
                         p.created_at,
                         p.updated_at FROM politician p
                 LEFT JOIN office o ON office_id = o.id
-                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', first_name, middle_name, last_name, preferred_name)) @@ to_tsquery('simple', $1))
+                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', first_name, last_name, preferred_name)) @@ to_tsquery('simple', $1))
                 AND ($2::state IS NULL OR home_state = $2)
                 AND ($3::political_party IS NULL OR party = $3)
                 AND ($4::political_scope IS NULL OR political_scope = $4)
