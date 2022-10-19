@@ -180,18 +180,17 @@ impl ElectionResult {
         // TODO: sql trigger that auto deletes voting guide candidate records
         // when is_endorsement = false and note is null
 
-        let records = sqlx::query_as!(
-            Race,
+        let records = sqlx::query!(
             r#"
-            SELECT
-                DISTINCT id,
-                slug,
-                title,
+            SELECT DISTINCT
+                r.id,
+                r.slug,
+                r.title,
                 office_id,
                 race_type AS "race_type:RaceType",
                 party AS "party:PoliticalParty",
-                state AS "state:State",
-                description,
+                r.state AS "state:State",
+                r.description,
                 ballotpedia_link,
                 early_voting_begins_date,
                 winner_id,
@@ -201,16 +200,18 @@ impl ElectionResult {
                 is_special_election,
                 num_elect,
                 r.created_at,
-                r.updated_at
+                r.updated_at,
+                o.priority 
             FROM
                 race r
+            JOIN office o ON o.id = r.office_id
             JOIN race_candidates rc ON rc.race_id = r.id
             JOIN voting_guide_candidates vgc ON vgc.candidate_id = rc.candidate_id
             WHERE
                 r.election_id = $1 AND
                 vgc.voting_guide_id = $2 AND 
                 (vgc.is_endorsement = true OR vgc.note IS NOT NULL)
-            ORDER BY title DESC
+            ORDER BY o.priority ASC, r.title DESC
             "#,
             uuid::Uuid::parse_str(&self.id).unwrap(),
             uuid::Uuid::parse_str(&voting_guide_id).unwrap()
@@ -219,7 +220,31 @@ impl ElectionResult {
         .await
         .unwrap();
 
-        let results = records.into_iter().map(RaceResult::from).collect();
+        let races: Vec<Race> = records
+            .into_iter()
+            .map(|r| Race {
+                id: r.id,
+                slug: r.slug,
+                title: r.title,
+                office_id: r.office_id,
+                race_type: r.race_type,
+                party: r.party,
+                state: r.state,
+                description: r.description,
+                ballotpedia_link: r.ballotpedia_link,
+                early_voting_begins_date: r.early_voting_begins_date,
+                winner_id: r.winner_id,
+                total_votes: r.total_votes,
+                official_website: r.official_website,
+                election_id: r.election_id,
+                is_special_election: r.is_special_election,
+                num_elect: r.num_elect,
+                created_at: r.created_at,
+                updated_at: r.updated_at,
+            })
+            .collect();
+        let results = races.into_iter().map(RaceResult::from).collect();
+
         Ok(results)
     }
 }
