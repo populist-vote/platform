@@ -59,7 +59,7 @@ pub async fn upload_to_s3(file: File, directory: String) -> Result<Url, Error> {
         .put_object_with_content_type(
             format!("{}/{}", directory, &file.filename),
             &file.content,
-            &file.mimetype.unwrap_or_else(|| "".to_string()),
+            &file.mimetype.unwrap_or_default(),
         )
         .await?;
 
