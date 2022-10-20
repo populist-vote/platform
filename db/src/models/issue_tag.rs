@@ -4,7 +4,6 @@ use crate::{
 };
 use async_graphql::InputObject;
 use serde::{Deserialize, Serialize};
-use slugify::slugify;
 use sqlx::PgPool;
 
 #[derive(sqlx::FromRow, Debug, Clone)]
@@ -20,15 +19,8 @@ pub struct IssueTag {
 }
 
 #[derive(InputObject, Debug, Serialize, Deserialize)]
-pub struct CreateIssueTagInput {
-    pub name: String,
-    pub slug: Option<String>,
-    pub description: Option<String>,
-    pub category: Option<String>,
-}
-
-#[derive(InputObject)]
-pub struct UpdateIssueTagInput {
+pub struct UpsertIssueTagInput {
+    pub id: Option<uuid::Uuid>,
     pub name: Option<String>,
     pub slug: Option<String>,
     pub description: Option<String>,
@@ -37,7 +29,7 @@ pub struct UpdateIssueTagInput {
 
 #[derive(InputObject, Debug, Serialize, Deserialize)]
 pub struct CreateOrConnectIssueTagInput {
-    pub create: Option<Vec<CreateIssueTagInput>>,
+    pub create: Option<Vec<UpsertIssueTagInput>>,
     pub connect: Option<Vec<String>>, //accepts UUIDs or slugs
 }
 
@@ -52,48 +44,22 @@ pub enum IssueTagIdentifier {
 }
 
 impl IssueTag {
-    pub async fn create(
+    pub async fn upsert(
         db_pool: &PgPool,
-        input: &CreateIssueTagInput,
+        input: &UpsertIssueTagInput,
     ) -> Result<Self, sqlx::Error> {
-        let id = uuid::Uuid::new_v4();
-        let slug = match &input.slug {
-            Some(slug) => slug.to_owned(),
-            None => slugify!(&input.name),
-        };
+        let id = input.id.unwrap_or_else(uuid::Uuid::new_v4);
+
         let record = sqlx::query_as!(
             IssueTag,
             r#"
                 INSERT INTO issue_tag (id, slug, name, description, category) VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT (id) DO UPDATE SET
+                    slug = COALESCE($2, issue_tag.slug),   
+                    name = COALESCE($3, issue_tag.name),
+                    description = COALESCE($4, issue_tag.description),
+                    category = COALESCE($5, issue_tag.category)
                 RETURNING id, slug, name, description, category, created_at, updated_at
-            "#,
-            id,
-            slug,
-            input.name,
-            input.description,
-            input.category
-        )
-        .fetch_one(db_pool)
-        .await?;
-
-        Ok(record)
-    }
-
-    pub async fn update(
-        db_pool: &PgPool,
-        id: uuid::Uuid,
-        input: &UpdateIssueTagInput,
-    ) -> Result<Self, sqlx::Error> {
-        let record = sqlx::query_as!(
-            IssueTag,
-            r#"
-                UPDATE issue_tag
-                SET slug = COALESCE($2, slug),
-                    name = COALESCE($3, name),
-                    description = COALESCE($4, description),
-                    category = COALESCE($5, category)
-                WHERE id = $1
-                RETURNING id, slug, name, description, category, created_at, updated_at           
             "#,
             id,
             input.slug,

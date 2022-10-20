@@ -27,7 +27,7 @@ pub async fn handle_nested_issue_tags(
 ) -> Result<(), Error> {
     if issue_tags_input.create.is_some() {
         for input in issue_tags_input.create.unwrap() {
-            let new_issue_tag = IssueTag::create(db_pool, &input).await?;
+            let new_issue_tag = IssueTag::upsert(db_pool, &input).await?;
             Organization::connect_issue_tag(
                 db_pool,
                 associated_record_id,

@@ -1,11 +1,11 @@
 {
-  "query": "\n            DELETE FROM populist_user WHERE email = $1\n            RETURNING id\n        ",
+  "query": "\n            SELECT COUNT(*) FROM populist_user\n            JOIN user_profile ON populist_user.id = user_profile.user_id\n            JOIN address a ON user_profile.address_id = a.id\n            WHERE ($1::text IS NULL OR a.state = $1)\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id",
-        "type_info": "Uuid"
+        "name": "count",
+        "type_info": "Int8"
       }
     ],
     "parameters": {
@@ -14,8 +14,8 @@
       ]
     },
     "nullable": [
-      false
+      null
     ]
   },
-  "hash": "6574a1f62eced11151acc740651c859932667e1298ace73b04dd1fe5caf78dcb"
+  "hash": "b6a100808e5bb33bba3bd43585e7712b965d9588138f9775779319ef2fce7320"
 }

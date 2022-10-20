@@ -1,6 +1,6 @@
 use crate::{context::ApiContext, guard::StaffOnly, is_admin, types::IssueTagResult};
 use async_graphql::*;
-use db::{CreateIssueTagInput, IssueTag, UpdateIssueTagInput};
+use db::{IssueTag, UpsertIssueTagInput};
 
 #[derive(Default)]
 pub struct IssueTagMutation;
@@ -14,26 +14,13 @@ struct DeleteIssueTagResult {
 #[Object]
 impl IssueTagMutation {
     #[graphql(guard = "StaffOnly", visible = "is_admin")]
-    async fn create_issue_tag(
+    async fn upsert_issue_tag(
         &self,
         ctx: &Context<'_>,
-        input: CreateIssueTagInput,
+        input: UpsertIssueTagInput,
     ) -> Result<IssueTagResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let new_record = IssueTag::create(&db_pool, &input).await?;
-        Ok(IssueTagResult::from(new_record))
-    }
-
-    #[graphql(guard = "StaffOnly", visible = "is_admin")]
-    async fn update_issue_tag(
-        &self,
-        ctx: &Context<'_>,
-        id: String,
-        input: UpdateIssueTagInput,
-    ) -> Result<IssueTagResult> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let updated_record =
-            IssueTag::update(&db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
+        let updated_record = IssueTag::upsert(&db_pool, &input).await?;
         Ok(IssueTagResult::from(updated_record))
     }
 

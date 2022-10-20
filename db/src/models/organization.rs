@@ -77,9 +77,7 @@ impl Organization {
             r#"
                 INSERT INTO organization (id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification)
                 VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
-                ON CONFLICT (id)
-                DO UPDATE
-                SET
+                ON CONFLICT (id) DO UPDATE SET
                     slug = COALESCE($2, organization.slug),
                     name = COALESCE($3, organization.name),
                     description = COALESCE($4, organization.description),
