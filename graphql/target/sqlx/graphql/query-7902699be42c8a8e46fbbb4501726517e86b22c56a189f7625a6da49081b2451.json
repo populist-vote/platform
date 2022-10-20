@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT\n                r.id,\n                r.slug,\n                r.title,\n                r.office_id,\n                r.race_type AS \"race_type:RaceType\",\n                r.party AS \"party:PoliticalParty\",\n                r.state AS \"state:State\",\n                r.description,\n                r.ballotpedia_link,\n                r.early_voting_begins_date,\n                r.winner_id,\n                r.total_votes,\n                r.official_website,\n                r.election_id,\n                r.is_special_election,\n                r.num_elect,\n                r.created_at,\n                r.updated_at\n            FROM\n                race r\n                JOIN office o ON office_id = o.id\n            WHERE\n                r.election_id = $1 AND (\n                    o.election_scope = 'national'\n                    OR (o.state = $2 AND o.election_scope = 'state')\n                    OR (o.state = $2 AND (  \n                       (o.election_scope = 'city' AND o.municipality = $3) OR\n                       (o.election_scope = 'county' AND o.county = $4) OR\n                       (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR\n                       (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR\n                       (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR\n                       (o.election_scope = 'district' AND o.district_type = 'county' AND county = $3 AND o.district = $8) OR\n                       ((o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'ISD #', '') = $9) AND\n                       (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $10))\n                    )))\n            ORDER BY o.priority ASC, title DESC\n                ",
+  "query": "\n            SELECT\n                id,\n                slug,\n                title,\n                office_id,\n                race_type AS \"race_type:RaceType\",\n                party AS \"party:PoliticalParty\",\n                state AS \"state:State\",\n                description,\n                ballotpedia_link,\n                early_voting_begins_date,\n                winner_id,\n                total_votes,\n                official_website,\n                election_id,\n                is_special_election,\n                num_elect,\n                created_at,\n                updated_at\n            FROM\n                race\n            WHERE\n                election_id = $1\n            ORDER BY title DESC\n            ",
   "describe": {
     "columns": [
       {
@@ -188,75 +188,7 @@
     ],
     "parameters": {
       "Left": [
-        "Uuid",
-        {
-          "Custom": {
-            "name": "state",
-            "kind": {
-              "Enum": [
-                "AL",
-                "AK",
-                "AZ",
-                "AR",
-                "CA",
-                "CO",
-                "CT",
-                "DC",
-                "DE",
-                "FL",
-                "GA",
-                "HI",
-                "ID",
-                "IL",
-                "IN",
-                "IA",
-                "KS",
-                "KY",
-                "LA",
-                "ME",
-                "MD",
-                "MA",
-                "MI",
-                "MN",
-                "MS",
-                "MO",
-                "MT",
-                "NE",
-                "NV",
-                "NH",
-                "NJ",
-                "NM",
-                "NY",
-                "NC",
-                "ND",
-                "OH",
-                "OK",
-                "OR",
-                "PA",
-                "RI",
-                "SC",
-                "SD",
-                "TN",
-                "TX",
-                "UT",
-                "VT",
-                "VA",
-                "WA",
-                "WV",
-                "WI",
-                "WY"
-              ]
-            }
-          }
-        },
-        "Text",
-        "Text",
-        "Text",
-        "Text",
-        "Text",
-        "Text",
-        "Text",
-        "Text"
+        "Uuid"
       ]
     },
     "nullable": [
@@ -280,5 +212,5 @@
       false
     ]
   },
-  "hash": "14bc91b7daa125b64154b56752d8613b87725849e98a3e018dbf4863ef7d4f23"
+  "hash": "880258eef8bb826d29163b39bf7216987c2fa84832004a887906103e485d5639"
 }

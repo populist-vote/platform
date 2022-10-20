@@ -427,9 +427,7 @@ impl Politician {
         db_pool: &PgPool,
         filter: &PoliticianFilter,
     ) -> Result<Vec<Self>, sqlx::Error> {
-        let search_query =
-            crate::process_search_query(filter.query.to_owned().unwrap_or_else(|| "".to_string()));
-
+        let search_query = crate::process_search_query(filter.query.to_owned().unwrap_or_default());
         let records = sqlx::query_as!(
             Politician,
             r#"

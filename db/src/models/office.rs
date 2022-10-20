@@ -247,8 +247,7 @@ impl Office {
     }
 
     pub async fn search(db_pool: &PgPool, input: &OfficeSearch) -> Result<Vec<Self>, sqlx::Error> {
-        let search_query =
-            crate::process_search_query(input.query.to_owned().unwrap_or_else(|| "".to_string()));
+        let search_query = crate::process_search_query(input.query.to_owned().unwrap_or_default());
 
         let records = sqlx::query_as!(
             Office,

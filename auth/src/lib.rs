@@ -39,9 +39,10 @@ fn truncate(s: &str, max_chars: usize) -> &str {
 
 pub fn format_auth_cookie(token: &str) -> String {
     format!(
-        "access_token={}; HttpOnly; SameSite=None; Secure; Domain={}",
+        "access_token={}; HttpOnly; SameSite=Lax; Secure; Domain={}; Expires={};",
         token,
-        config::Config::default().root_domain
+        config::Config::default().root_domain,
+        (chrono::Utc::now() + chrono::Duration::days(30)).format("%a, %d %b %Y %T GMT")
     )
 }
 
@@ -52,4 +53,17 @@ fn test_create_temporary_username() {
     assert!(regex::Regex::new(r"^{3,20}[a-zA-Z0-9._]")
         .unwrap()
         .is_match(&result));
+}
+
+#[test]
+fn test_format_auth_cookie() {
+    let token = "test";
+    let result = format_auth_cookie(token);
+    assert_eq!(
+        result,
+        format!(
+            "access_token=test; HttpOnly; SameSite=Lax; Secure; Domain=localhost; Expires={};",
+            (chrono::Utc::now() + chrono::Duration::days(30)).format("%a, %d %b %Y %T GMT")
+        )
+    );
 }

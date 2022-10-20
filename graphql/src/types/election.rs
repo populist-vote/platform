@@ -220,7 +220,7 @@ impl ElectionResult {
         .await
         .unwrap();
 
-        let races: Vec<Race> = records
+        let results = records
             .into_iter()
             .map(|r| Race {
                 id: r.id,
@@ -242,8 +242,8 @@ impl ElectionResult {
                 created_at: r.created_at,
                 updated_at: r.updated_at,
             })
+            .map(RaceResult::from)
             .collect();
-        let results = races.into_iter().map(RaceResult::from).collect();
 
         Ok(results)
     }
