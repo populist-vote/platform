@@ -18,6 +18,33 @@
     },
     "query": "\n            SELECT votesmart_candidate_ratings FROM politician\n        "
   },
+  "0d1bc0e3ef55ff7902d788bf856c869c45d64bfbaa40ade8c6d1d0353e826c5c": {
+    "describe": {
+      "columns": [
+        {
+          "name": "politician_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "politician_endorsement_id",
+          "ordinal": 1,
+          "type_info": "Uuid"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "UuidArray"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO politician_politician_endorsements (politician_id, politician_endorsement_id) VALUES ($1, UNNEST($2::uuid[]))\n            ON CONFLICT (politician_id, politician_endorsement_id) DO NOTHING\n            RETURNING politician_id, politician_endorsement_id\n        "
+  },
   "0f110602a378c44b7b98371cd77f70574ff1b5a521bf8f1486abfffa97b62614": {
     "describe": {
       "columns": [
@@ -54,6 +81,33 @@
       }
     },
     "query": "INSERT INTO bill_sponsors (bill_id, politician_id) VALUES ($1, $2)"
+  },
+  "290250f19cb5c460c43ee708822b8290a133d099ef624933d4c44bbfc4fe1cc0": {
+    "describe": {
+      "columns": [
+        {
+          "name": "organization_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "issue_tag_id",
+          "ordinal": 1,
+          "type_info": "Uuid"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO organization_issue_tags (organization_id, issue_tag_id) VALUES ($1, $2) \n            ON CONFLICT DO NOTHING\n            RETURNING organization_id, issue_tag_id\n        "
   },
   "4621a8fd6e65f74942b76bb14f8c47e8c9e91dcdcd68547c5aec26a224d9b0c7": {
     "describe": {
@@ -201,6 +255,33 @@
       }
     },
     "query": "\n            UPDATE\n                politician AS p\n            SET\n                race_losses = race_losses - 1\n            FROM\n                race_candidates AS rc\n            WHERE\n                rc.candidate_id = p.id\n                AND(\n                    SELECT\n                        winner_id FROM race\n                    WHERE\n                        race.id = rc.race_id) IS NOT NULL\n                AND(\n                    SELECT\n                        winner_id FROM race\n                    WHERE\n                        race.id = rc.race_id) != p.id;\n        "
+  },
+  "c832e3a3e1e6dc6e4d9766df1d9cebcc0d3e9320b4fd925bcd91cc52f40f69b0": {
+    "describe": {
+      "columns": [
+        {
+          "name": "politician_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "organization_id",
+          "ordinal": 1,
+          "type_info": "Uuid"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "UuidArray"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO politician_organization_endorsements (politician_id, organization_id) VALUES ($1, UNNEST($2::uuid[]))\n            ON CONFLICT (politician_id, organization_id) DO NOTHING\n            RETURNING politician_id, organization_id\n        "
   },
   "ce379a5aee970014002fb4181f0d319619f9ffd79e33b5069baebabf03838d8a": {
     "describe": {
