@@ -29,6 +29,7 @@ impl ArgumentMutation {
         Ok(ArgumentResult::from(updated_record))
     }
 
+    #[graphql(guard = "StaffOnly", visible = "is_admin")]
     async fn delete_argument(&self, ctx: &Context<'_>, id: String) -> Result<DeleteArgumentResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         Argument::delete(&db_pool, uuid::Uuid::parse_str(&id)?).await?;
