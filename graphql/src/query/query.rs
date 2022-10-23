@@ -8,10 +8,11 @@ use super::{
 };
 
 #[derive(Default)]
-pub struct MainQuery;
+pub struct HealthQuery;
 
 #[Object]
-impl MainQuery {
+impl HealthQuery {
+    /// Returns `true` to indicate the GraphQL server is reachable
     async fn health(&self) -> bool {
         true
     }
@@ -24,7 +25,7 @@ pub struct Query(
     BillQuery,
     ElectionQuery,
     IssueTagQuery,
-    MainQuery,
+    HealthQuery,
     OfficeQuery,
     OrganizationQuery,
     PoliticianQuery,

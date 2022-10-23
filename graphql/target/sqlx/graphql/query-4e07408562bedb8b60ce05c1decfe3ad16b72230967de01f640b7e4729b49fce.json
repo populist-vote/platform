@@ -1,21 +1,21 @@
 {
-  "query": "\n            SELECT COUNT(*) FROM populist_user\n            JOIN user_profile ON populist_user.id = user_profile.user_id\n            JOIN address a ON user_profile.address_id = a.id\n            WHERE ($1::text IS NULL OR a.state = $1)\n        ",
+  "query": "\n                SELECT\n                    a.state AS \"state:State\"\n                FROM\n                    address a\n                    JOIN user_profile up ON user_id = $1\n                WHERE\n                    up.user_id = $1 AND \n                    up.address_id = a.id\n                ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "count",
-        "type_info": "Int8"
+        "name": "state:State",
+        "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
-        "Text"
+        "Uuid"
       ]
     },
     "nullable": [
-      null
+      false
     ]
   },
-  "hash": "b6a100808e5bb33bba3bd43585e7712b965d9588138f9775779319ef2fce7320"
+  "hash": "b5cc088e40d5bbf140044ee2d61f1383a2a23123e4c826370db66626eec404df"
 }

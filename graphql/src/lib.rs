@@ -7,7 +7,7 @@ pub mod subscription;
 pub mod types;
 
 use crate::{mutation::Mutation, query::Query, types::Error};
-use async_graphql::{Context, EmptySubscription, Schema, SchemaBuilder, ID};
+use async_graphql::{Context, Schema, SchemaBuilder, ID};
 use auth::Claims;
 use dotenv::dotenv;
 use http::header::HeaderName;
@@ -15,13 +15,18 @@ use http::HeaderMap;
 use jsonwebtoken::TokenData;
 use s3::bucket::Bucket;
 use s3::creds::Credentials;
+use subscription::Subscription;
 use tracing::info;
 use url::Url;
 
-pub type PopulistSchema = Schema<Query, Mutation, EmptySubscription>;
+pub type PopulistSchema = Schema<Query, Mutation, Subscription>;
 
-pub fn new_schema() -> SchemaBuilder<Query, Mutation, EmptySubscription> {
-    Schema::build(Query::default(), Mutation::default(), EmptySubscription)
+pub fn new_schema() -> SchemaBuilder<Query, Mutation, Subscription> {
+    Schema::build(
+        Query::default(),
+        Mutation::default(),
+        Subscription::default(),
+    )
 }
 
 pub struct File {

@@ -5,7 +5,7 @@ use async_graphql::{
     },
     http::{playground_source, GraphQLPlaygroundConfig},
 };
-use async_graphql_poem::{GraphQLRequest, GraphQLResponse};
+use async_graphql_poem::{GraphQLRequest, GraphQLResponse, GraphQLSubscription};
 use auth::jwt;
 use config::Environment;
 use dotenv::dotenv;
@@ -61,7 +61,9 @@ async fn graphql_handler(
 
 #[handler]
 fn graphql_playground() -> impl IntoResponse {
-    Html(playground_source(GraphQLPlaygroundConfig::new("/")))
+    Html(playground_source(
+        GraphQLPlaygroundConfig::new("/").subscription_endpoint("/ws"),
+    ))
 }
 
 pub fn cors(environment: Environment) -> Cors {
@@ -126,6 +128,7 @@ async fn main() -> Result<(), std::io::Error> {
     let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
     let app = Route::new()
         .at("/", get(graphql_playground).post(graphql_handler))
+        .at("/ws", get(GraphQLSubscription::new(schema.clone())))
         .data(schema)
         .with(cors(environment))
         // Will need to implement a custom X-Forwarded-Proto header for Heroku to
