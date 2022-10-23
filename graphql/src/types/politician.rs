@@ -145,43 +145,50 @@ fn test_calculate_age() {
     assert_eq!(calculate_age(dob), Ok(30));
 }
 
-async fn fetch_donations_summary(crp_id: String) -> Result<DonationsSummary> {
+async fn fetch_donations_summary(crp_id: String) -> Result<Option<DonationsSummary>> {
     let proxy = OpenSecretsProxy::new()?;
     let response = proxy.cand_summary(&crp_id, None).await?;
-    let json: serde_json::Value = response.json().await?;
-    let donations = DonationsSummary {
-        total_raised: json["response"]["summary"]["@attributes"]["total"]
-            .as_str()
-            .unwrap_or_default()
-            .parse::<f64>()
-            .unwrap_or_default(),
-        spent: json["response"]["summary"]["@attributes"]["spent"]
-            .as_str()
-            .unwrap_or_default()
-            .parse::<f64>()
-            .unwrap_or_default(),
-        cash_on_hand: json["response"]["summary"]["@attributes"]["cash_on_hand"]
-            .as_str()
-            .unwrap_or_default()
-            .parse::<f64>()
-            .unwrap_or_default(),
-        debt: json["response"]["summary"]["@attributes"]["debt"]
-            .as_str()
-            .unwrap_or_default()
-            .parse::<f64>()
-            .unwrap_or_default(),
-        source: json["response"]["summary"]["@attributes"]["source"]
-            .as_str()
-            .unwrap_or_default()
-            .to_string(),
-        last_updated: chrono::NaiveDate::parse_from_str(
-            json["response"]["summary"]["@attributes"]["last_updated"]
+    let donations = if response.status().is_success() {
+        let json: serde_json::Value = response.json().await?;
+        let summary = DonationsSummary {
+            total_raised: json["response"]["summary"]["@attributes"]["total"]
                 .as_str()
+                .unwrap_or_default()
+                .parse::<f64>()
                 .unwrap_or_default(),
-            "%m/%d/%Y",
-        )
-        .unwrap_or_default(),
+            spent: json["response"]["summary"]["@attributes"]["spent"]
+                .as_str()
+                .unwrap_or_default()
+                .parse::<f64>()
+                .unwrap_or_default(),
+            cash_on_hand: json["response"]["summary"]["@attributes"]["cash_on_hand"]
+                .as_str()
+                .unwrap_or_default()
+                .parse::<f64>()
+                .unwrap_or_default(),
+            debt: json["response"]["summary"]["@attributes"]["debt"]
+                .as_str()
+                .unwrap_or_default()
+                .parse::<f64>()
+                .unwrap_or_default(),
+            source: json["response"]["summary"]["@attributes"]["source"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string(),
+            last_updated: chrono::NaiveDate::parse_from_str(
+                json["response"]["summary"]["@attributes"]["last_updated"]
+                    .as_str()
+                    .unwrap_or_default(),
+                "%m/%d/%Y",
+            )
+            .unwrap_or_default(),
+        };
+
+        Some(summary)
+    } else {
+        None
     };
+
     Ok(donations)
 }
 
@@ -462,11 +469,14 @@ impl PoliticianResult {
 
     pub async fn donations_summary(&self) -> Result<Option<DonationsSummary>> {
         if let Some(crp_id) = &self.crp_candidate_id {
-            let donations_summary = match fetch_donations_summary(crp_id.into()).await {
-                Ok(summary) => Some(summary),
-                Err(_) => None,
-            };
-            Ok(donations_summary)
+            let open_secrets_response = fetch_donations_summary(crp_id.into()).await;
+            match open_secrets_response {
+                Ok(response) => Ok(response),
+                Err(e) => {
+                    tracing::debug!("Error fetching donations summary: {}", e.message);
+                    Ok(None)
+                }
+            }
         } else {
             Ok(None)
         }
