@@ -10,8 +10,10 @@ impl Heartbeat {
     fn new() -> Self {
         Heartbeat { utc: Utc::now() }
     }
+}
 
-    pub fn default() -> Self {
+impl Default for Heartbeat {
+    fn default() -> Self {
         Self::new()
     }
 }
