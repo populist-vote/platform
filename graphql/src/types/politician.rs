@@ -150,35 +150,38 @@ async fn fetch_donations_summary(crp_id: String) -> Result<Option<DonationsSumma
     let response = proxy.cand_summary(&crp_id, None).await?;
     let donations = if response.status().is_success() {
         let json: serde_json::Value = response.json().await?;
+        let summary = json["response"]["summary"].clone();
+        // Open secrets botched the API shape for 2022 cycle and returns an array with duplicate records
+        let summary = match summary {
+            serde_json::Value::Object(ref summary) => &summary["@attributes"],
+            serde_json::Value::Array(ref summaries) => &summaries[0]["@attributes"],
+            _ => return Ok(None),
+        };
+
         let summary = DonationsSummary {
-            total_raised: json["response"]["summary"]["@attributes"]["total"]
+            total_raised: summary["total"]
                 .as_str()
                 .unwrap_or_default()
                 .parse::<f64>()
                 .unwrap_or_default(),
-            spent: json["response"]["summary"]["@attributes"]["spent"]
+            spent: summary["spent"]
                 .as_str()
                 .unwrap_or_default()
                 .parse::<f64>()
                 .unwrap_or_default(),
-            cash_on_hand: json["response"]["summary"]["@attributes"]["cash_on_hand"]
+            cash_on_hand: summary["cash_on_hand"]
                 .as_str()
                 .unwrap_or_default()
                 .parse::<f64>()
                 .unwrap_or_default(),
-            debt: json["response"]["summary"]["@attributes"]["debt"]
+            debt: summary["debt"]
                 .as_str()
                 .unwrap_or_default()
                 .parse::<f64>()
                 .unwrap_or_default(),
-            source: json["response"]["summary"]["@attributes"]["source"]
-                .as_str()
-                .unwrap_or_default()
-                .to_string(),
+            source: summary["source"].as_str().unwrap_or_default().to_string(),
             last_updated: chrono::NaiveDate::parse_from_str(
-                json["response"]["summary"]["@attributes"]["last_updated"]
-                    .as_str()
-                    .unwrap_or_default(),
+                summary["last_updated"].as_str().unwrap_or_default(),
                 "%m/%d/%Y",
             )
             .unwrap_or_default(),
