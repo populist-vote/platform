@@ -7,7 +7,11 @@ pub struct Heartbeat {
 }
 
 impl Heartbeat {
-    pub fn new() -> Self {
+    fn new() -> Self {
         Heartbeat { utc: Utc::now() }
+    }
+
+    pub fn default() -> Self {
+        Self::new()
     }
 }

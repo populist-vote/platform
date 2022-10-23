@@ -17,7 +17,7 @@ pub struct BallotMeasure {
     pub ballot_state: State,
     pub ballot_measure_code: String,
     pub measure_type: String, //perhaps make enum later
-    pub definitions: String,  // makrdown list of bulleted items
+    pub definitions: String,  // markdown list of bulleted items
 
     //optional fields
     pub description: Option<String>,
@@ -182,18 +182,3 @@ impl BallotMeasure {
         Ok(records)
     }
 }
-
-// impl Default for BallotMeasure {
-//     fn default() -> BallotMeasure {
-//         BallotMeasure {
-//             id: uuid::Uuid::new_v4(),
-//             slug: "some-piece-of-legislation".to_string(),
-//             title: "Some Piece of Legislation".to_string(),
-//             legislation_status: LegislationStatus::UNDECIDED,
-//             description: None,
-//             official_summary: None,
-//             populist_summary: None,
-//             full_text_url: None,
-//         }
-//     }
-// }

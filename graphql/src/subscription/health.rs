@@ -21,6 +21,6 @@ impl HealthSubscription {
         IntervalStream::new(tokio::time::interval(Duration::from_millis(
             interval as u64,
         )))
-        .map(|_| Heartbeat::new())
+        .map(|_| Heartbeat::default())
     }
 }
