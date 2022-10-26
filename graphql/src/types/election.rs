@@ -104,6 +104,11 @@ impl ElectionResult {
                 .map(|a| a.school_district_number.map(|d| d.replace('0', "")))
                 .unwrap_or(None);
 
+            let school_district_type = user_address_extended_mn_data
+                .clone()
+                .map(|a| a.school_district_type)
+                .unwrap_or(None);
+
             let school_subdistrict = user_address_extended_mn_data
                 .map(|a| a.school_subdistrict_code.map(|d| d.replace('0', "")))
                 .unwrap_or(None);
@@ -144,8 +149,14 @@ impl ElectionResult {
                        (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR
                        (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
                        (o.election_scope = 'district' AND o.district_type = 'county' AND county = $3 AND o.district = $8) OR
-                       ((o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'ISD #', '') = $9) AND
-                       (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $10))
+                       (CASE 
+                         WHEN $10 = '1' THEN
+                          (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'ISD #', '') = $9) AND
+                          (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)
+                         WHEN $10 = '3' THEN
+                           (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'SSD #', '') = $9) AND
+                           (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)
+                        END)
                     )))
             ORDER BY o.priority ASC, title DESC
                 "#,
@@ -158,6 +169,7 @@ impl ElectionResult {
                 user_address_data.state_house_district,
                 county_commissioner_district,
                 school_district,
+                school_district_type,
                 school_subdistrict
             )
             .fetch_all(&db_pool)
