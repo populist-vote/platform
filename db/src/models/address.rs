@@ -54,16 +54,6 @@ pub struct AddressExtendedMN {
     pub school_district_name: Option<String>,
     pub school_subdistrict_code: Option<String>,
     pub school_subdistrict_name: Option<String>,
-    pub school_district_type: Option<String>,
-}
-
-pub enum SchoolDistrictTypeMN {
-    /// Independent Districts and Schools
-    ISD = 1,
-    /// Includes only 2 Common Districts, Franconia-0323 and Prinsburg-0815
-    Common = 2,
-    /// Includes only 2 Special Districts, Minneapolis-0001 and South St. Paul-0006
-    SSD = 3,
 }
 
 impl Address {
@@ -105,7 +95,7 @@ impl Address {
     ) -> Result<Option<AddressExtendedMN>, sqlx::Error> {
         let users_school_district = sqlx::query!(
             r#"
-            SELECT gid, sdnumber, sdtype
+            SELECT gid, sdnumber
             FROM p6t_state_mn.school_district_boundaries AS sd
             JOIN user_profile up ON up.user_id = $1
             JOIN address a ON up.address_id = a.id
@@ -139,7 +129,6 @@ impl Address {
                             vd.juddist AS judicial_district,
                             sd.sdnumber AS school_district_number,
                             sd.shortname AS school_district_name,
-                            sd.sdtype AS school_district_type,
                             isd.id::varchar(4) AS school_subdistrict_code,
                             isd.schsubdist AS school_subdistrict_name
                         FROM p6t_state_mn.bdry_votingdistricts AS vd
@@ -173,7 +162,6 @@ impl Address {
                             vd.juddist AS judicial_district,
                             sd.sdnumber AS school_district_number,
                             sd.shortname AS school_district_name,
-                            sd.sdtype AS school_district_type,
                             SUBSTRING(isd.schsubdist, 10) AS school_subdistrict_code,
                             isd.schsubdist AS school_subdistrict_name
                         FROM p6t_state_mn.bdry_votingdistricts AS vd
@@ -208,7 +196,6 @@ impl Address {
                             vd.juddist AS judicial_district,
                             sd.sdnumber AS school_district_number,
                             sd.shortname AS school_district_name,
-                            sd.sdtype AS school_district_type,
                             cw.school_subdistrict_code,
                             INITCAP(cw.school_subdistrict_name) as school_subdistrict_name
                         FROM p6t_state_mn.bdry_votingdistricts AS vd
@@ -240,7 +227,6 @@ impl Address {
                     juddist AS judicial_district,
                     cw.school_district_number,
                     cw.school_district_name,
-                    NULL as school_district_type,
                     cw.school_subdistrict_code,
                     cw.school_subdistrict_name
                     FROM p6t_state_mn.bdry_votingdistricts AS vd
