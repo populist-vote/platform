@@ -96,12 +96,18 @@ impl ElectionResult {
 
             let county_commissioner_district = user_address_extended_mn_data
                 .clone()
-                .map(|a| a.county_commissioner_district.map(|d| d.replace('0', "")))
+                .map(|a| {
+                    a.county_commissioner_district
+                        .map(|d| d.as_str().trim_start_matches('0').to_string())
+                })
                 .unwrap_or(None);
 
             let school_district = user_address_extended_mn_data
                 .clone()
-                .map(|a| a.school_district_number.map(|d| d.replace('0', "")))
+                .map(|a| {
+                    a.school_district_number
+                        .map(|d| d.as_str().trim_start_matches('0').to_string())
+                })
                 .unwrap_or(None);
 
             let school_district_type = user_address_extended_mn_data
@@ -110,7 +116,10 @@ impl ElectionResult {
                 .unwrap_or(None);
 
             let school_subdistrict = user_address_extended_mn_data
-                .map(|a| a.school_subdistrict_code.map(|d| d.replace('0', "")))
+                .map(|a| {
+                    a.school_subdistrict_code
+                        .map(|d| d.as_str().trim_start_matches('0').to_string())
+                })
                 .unwrap_or(None);
 
             let records = sqlx::query_as!(
