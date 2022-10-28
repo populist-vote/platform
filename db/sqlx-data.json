@@ -323,14 +323,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
@@ -500,14 +500,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
@@ -639,6 +639,11 @@
           "name": "headquarters_address_id",
           "ordinal": 15,
           "type_info": "Uuid"
+        },
+        {
+          "name": "assets",
+          "ordinal": 16,
+          "type_info": "Jsonb"
         }
       ],
       "nullable": [
@@ -657,7 +662,8 @@
         false,
         false,
         true,
-        true
+        true,
+        false
       ],
       "parameters": {
         "Left": [
@@ -879,6 +885,11 @@
           "name": "headquarters_address_id",
           "ordinal": 15,
           "type_info": "Uuid"
+        },
+        {
+          "name": "assets",
+          "ordinal": 16,
+          "type_info": "Jsonb"
         }
       ],
       "nullable": [
@@ -897,7 +908,8 @@
         false,
         false,
         true,
-        true
+        true,
+        false
       ],
       "parameters": {
         "Left": [
@@ -2058,6 +2070,38 @@
     },
     "query": "\n                SELECT id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS \"district_type:District\", hospital_district, school_district, chamber AS \"chamber:Chamber\", election_scope as \"election_scope:ElectionScope\", political_scope AS \"political_scope:PoliticalScope\", incumbent_id, state AS \"state:State\", county, municipality, term_length, seat, priority, created_at, updated_at FROM office\n                WHERE slug = $1\n            "
   },
+  "372a33de6459e768fa5c4da1b8d7ce8600ff9fbaf1e451532cc97e9a1b959215": {
+    "describe": {
+      "columns": [
+        {
+          "name": "gid",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "sdnumber",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "sdtype",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        true,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n            SELECT gid, sdnumber, sdtype\n            FROM p6t_state_mn.school_district_boundaries AS sd\n            JOIN user_profile up ON up.user_id = $1\n            JOIN address a ON up.address_id = a.id\n            WHERE ST_Contains(ST_SetSRID(sd.geom, 26915), ST_Transform(a.geom, 26915))\n            "
+  },
   "377dcfea6a1791ad106ed5b70ed6174dcce79a67d33fc9036e6fd5a87bac3ef2": {
     "describe": {
       "columns": [],
@@ -2756,7 +2800,7 @@
     },
     "query": "\n                INSERT INTO issue_tag (id, slug, name, description, category) VALUES ($1, $2, $3, $4, $5)\n                ON CONFLICT (id) DO UPDATE SET\n                    slug = COALESCE($2, issue_tag.slug),   \n                    name = COALESCE($3, issue_tag.name),\n                    description = COALESCE($4, issue_tag.description),\n                    category = COALESCE($5, issue_tag.category)\n                RETURNING id, slug, name, description, category, created_at, updated_at\n            "
   },
-  "552ea8b22bf90065ce7a50a4b2e41a8d2380ac8f527fe2af8228803cedb9c934": {
+  "56c150b8ac7d3f065c22a058536ed964369503d1cbfa2470d522de2399950179": {
     "describe": {
       "columns": [
         {
@@ -2810,19 +2854,19 @@
           "type_info": "Text"
         },
         {
-          "name": "headquarters_phone",
-          "ordinal": 10,
-          "type_info": "Text"
-        },
-        {
           "name": "votesmart_sig_id",
-          "ordinal": 11,
+          "ordinal": 10,
           "type_info": "Int4"
         },
         {
           "name": "headquarters_address_id",
-          "ordinal": 12,
+          "ordinal": 11,
           "type_info": "Uuid"
+        },
+        {
+          "name": "headquarters_phone",
+          "ordinal": 12,
+          "type_info": "Text"
         },
         {
           "name": "tax_classification",
@@ -2830,13 +2874,18 @@
           "type_info": "Text"
         },
         {
-          "name": "created_at",
+          "name": "assets",
           "ordinal": 14,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 15,
           "type_info": "Timestamptz"
         },
         {
           "name": "updated_at",
-          "ordinal": 15,
+          "ordinal": 16,
           "type_info": "Timestamptz"
         }
       ],
@@ -2856,6 +2905,7 @@
         true,
         true,
         false,
+        false,
         false
       ],
       "parameters": {
@@ -2864,7 +2914,7 @@
         ]
       }
     },
-    "query": "\n                SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, votesmart_sig_id, headquarters_address_id, tax_classification, o.created_at, o.updated_at  FROM organization o\n                JOIN organization_issue_tags\n                ON organization_issue_tags.organization_id = o.id\n                WHERE organization_issue_tags.issue_tag_id = $1\n            "
+    "query": "\n                SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, o.assets, o.created_at, o.updated_at  FROM organization o\n                JOIN politician_organization_endorsements\n                ON politician_organization_endorsements.organization_id = o.id\n                WHERE politician_organization_endorsements.politician_id = $1\n            "
   },
   "5868220f65edacfcb1388d2a2b824e24c27d53bd4bd30f8707cfe09ad3546fa4": {
     "describe": {
@@ -3058,14 +3108,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
@@ -3257,14 +3307,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
@@ -3946,14 +3996,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
@@ -4132,6 +4182,229 @@
       }
     },
     "query": "\n                SELECT SUM (direction) AS total\n                FROM vote\n                WHERE votable_id = $1\n            "
+  },
+  "74eeb34569c9ec6669652ed683a0dc7b2897614b400486cd2d9d8ea048d614d8": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "slug",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "thumbnail_image_url",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "website_url",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "facebook_url",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "twitter_url",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "instagram_url",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "email",
+          "ordinal": 9,
+          "type_info": "Text"
+        },
+        {
+          "name": "votesmart_sig_id",
+          "ordinal": 10,
+          "type_info": "Int4"
+        },
+        {
+          "name": "headquarters_address_id",
+          "ordinal": 11,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "headquarters_phone",
+          "ordinal": 12,
+          "type_info": "Text"
+        },
+        {
+          "name": "tax_classification",
+          "ordinal": 13,
+          "type_info": "Text"
+        },
+        {
+          "name": "assets",
+          "ordinal": 14,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 15,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 16,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Text",
+          "Int4",
+          "Uuid",
+          "Text",
+          "Text",
+          "Jsonb"
+        ]
+      }
+    },
+    "query": "\n                INSERT INTO organization (id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, assets)\n                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) \n                ON CONFLICT (id) DO UPDATE SET\n                    slug = COALESCE($2, organization.slug),\n                    name = COALESCE($3, organization.name),\n                    description = COALESCE($4, organization.description),\n                    thumbnail_image_url = COALESCE($5, organization.thumbnail_image_url),\n                    website_url = COALESCE($6, organization.website_url),\n                    facebook_url = COALESCE($7, organization.facebook_url),\n                    twitter_url = COALESCE($8, organization.twitter_url),\n                    instagram_url = COALESCE($9, organization.instagram_url),\n                    email = COALESCE($10, organization.email),\n                    votesmart_sig_id = COALESCE($11, organization.votesmart_sig_id),\n                    headquarters_address_id = COALESCE($12, organization.headquarters_address_id),\n                    headquarters_phone = COALESCE($13, organization.headquarters_phone),\n                    tax_classification = COALESCE($14, organization.tax_classification),\n                    assets = COALESCE($15, organization.assets)\n                RETURNING\n                    id,\n                    slug,\n                    name,\n                    description,\n                    thumbnail_image_url,\n                    website_url,\n                    facebook_url,\n                    twitter_url,\n                    instagram_url,\n                    email,\n                    votesmart_sig_id,\n                    headquarters_address_id,\n                    headquarters_phone,\n                    tax_classification,\n                    assets,\n                    created_at,\n                    updated_at\n            "
+  },
+  "75bbc5005a2ae4c0acab10fde3c107f7cb1f47c5d4b3b8465db36d5d4987e8c8": {
+    "describe": {
+      "columns": [
+        {
+          "name": "gid",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "voting_tabulation_district_id",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "county_code",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "county_name",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "precinct_code",
+          "ordinal": 4,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "precinct_name",
+          "ordinal": 5,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "county_commissioner_district",
+          "ordinal": 6,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "judicial_district",
+          "ordinal": 7,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "school_district_number",
+          "ordinal": 8,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "school_district_name",
+          "ordinal": 9,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "school_district_type",
+          "ordinal": 10,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "school_subdistrict_code",
+          "ordinal": 11,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "school_subdistrict_name",
+          "ordinal": 12,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n                        SELECT vd.gid,\n                            vd.vtdid AS voting_tabulation_district_id,\n                            vd.countycode AS county_code,\n                            vd.countyname AS county_name,\n                            vd.pctcode AS precinct_code,\n                            vd.pctname AS precinct_name,\n                            vd.ctycomdist AS county_commissioner_district,\n                            vd.juddist AS judicial_district,\n                            sd.sdnumber AS school_district_number,\n                            sd.shortname AS school_district_name,\n                            sd.sdtype AS school_district_type,\n                            cw.school_subdistrict_code,\n                            INITCAP(cw.school_subdistrict_name) as school_subdistrict_name\n                        FROM p6t_state_mn.bdry_votingdistricts AS vd\n                        JOIN user_profile up ON up.user_id = $1\n                        JOIN address a ON up.address_id = a.id\n                        JOIN p6t_state_mn.school_district_boundaries sd ON sd.gid = $2\n                        LEFT JOIN p6t_state_mn.precinct_school_subdistrict_crosswalk AS cw ON cw.county_id = vd.countycode AND cw.precinct_code = vd.pctcode\n                        WHERE ST_Contains(ST_SetSRID(vd.geom, 26915), ST_Transform(a.geom, 26915))\n                    "
   },
   "790d1fe66718089f657b972869487f7787cdb0feac5adc303e1531877d8599c5": {
     "describe": {
@@ -4737,14 +5010,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
@@ -5044,14 +5317,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
@@ -5158,6 +5431,122 @@
       }
     },
     "query": "\n                SELECT id,\n                        slug,\n                        first_name,\n                        middle_name,\n                        last_name,\n                        suffix,\n                        preferred_name,\n                        biography,\n                        biography_source,\n                        home_state AS \"home_state:State\",\n                        date_of_birth,\n                        office_id,\n                        thumbnail_image_url,\n                        assets,\n                        official_website_url,\n                        campaign_website_url,\n                        facebook_url,\n                        twitter_url,\n                        instagram_url,\n                        youtube_url,\n                        linkedin_url,\n                        tiktok_url,\n                        email,\n                        phone,\n                        party AS \"party:PoliticalParty\",\n                        votesmart_candidate_id,\n                        votesmart_candidate_bio,\n                        votesmart_candidate_ratings,\n                        legiscan_people_id,\n                        crp_candidate_id,\n                        fec_candidate_id,\n                        race_wins,\n                        race_losses,\n                        created_at,\n                        updated_at FROM politician\n                WHERE id = $1\n            "
+  },
+  "9b0775491dcf28e1efaf912ff6ce9d8953c17982a207b5aba5266f8f15220a6b": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "slug",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "thumbnail_image_url",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "website_url",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "facebook_url",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "twitter_url",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "instagram_url",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "email",
+          "ordinal": 9,
+          "type_info": "Text"
+        },
+        {
+          "name": "headquarters_phone",
+          "ordinal": 10,
+          "type_info": "Text"
+        },
+        {
+          "name": "votesmart_sig_id",
+          "ordinal": 11,
+          "type_info": "Int4"
+        },
+        {
+          "name": "headquarters_address_id",
+          "ordinal": 12,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "tax_classification",
+          "ordinal": 13,
+          "type_info": "Text"
+        },
+        {
+          "name": "assets",
+          "ordinal": 14,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 15,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 16,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n                SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, headquarters_phone, votesmart_sig_id, headquarters_address_id, tax_classification, o.assets, o.created_at, o.updated_at  FROM organization o\n                JOIN organization_issue_tags\n                ON organization_issue_tags.organization_id = o.id\n                WHERE organization_issue_tags.issue_tag_id = $1\n            "
   },
   "9e0a0aa6bb6ec880ac7f163f70725a8dd27a346e7ae5052d8f6c74ed2ac0d498": {
     "describe": {
@@ -5329,94 +5718,77 @@
     },
     "query": "\n                SELECT id, slug, title, description, state AS \"state:State\", election_date FROM election\n                WHERE ($1::text IS NULL OR slug = $1)\n                AND ($2::text IS NULL OR title = $2)\n                AND ($3::state IS NULL OR state = $3)\n                ORDER BY election_date ASC\n            "
   },
-  "a3bc77f01c39f1e0016250a2ebe63df26bab4ef6eda6fe3dcf8887139b2ce9c0": {
+  "a1d5b3a6da91df402db9dcb84d076213de0d4317d539c5b00b56b5ab6c377106": {
     "describe": {
       "columns": [
         {
-          "name": "id",
+          "name": "gid",
           "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "slug",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "name",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "description",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "thumbnail_image_url",
-          "ordinal": 4,
-          "type_info": "Text"
-        },
-        {
-          "name": "website_url",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "facebook_url",
-          "ordinal": 6,
-          "type_info": "Text"
-        },
-        {
-          "name": "twitter_url",
-          "ordinal": 7,
-          "type_info": "Text"
-        },
-        {
-          "name": "instagram_url",
-          "ordinal": 8,
-          "type_info": "Text"
-        },
-        {
-          "name": "email",
-          "ordinal": 9,
-          "type_info": "Text"
-        },
-        {
-          "name": "votesmart_sig_id",
-          "ordinal": 10,
           "type_info": "Int4"
         },
         {
-          "name": "headquarters_address_id",
+          "name": "voting_tabulation_district_id",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "county_code",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "county_name",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "precinct_code",
+          "ordinal": 4,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "precinct_name",
+          "ordinal": 5,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "county_commissioner_district",
+          "ordinal": 6,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "judicial_district",
+          "ordinal": 7,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "school_district_number",
+          "ordinal": 8,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "school_district_name",
+          "ordinal": 9,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "school_district_type",
+          "ordinal": 10,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "school_subdistrict_code",
           "ordinal": 11,
-          "type_info": "Uuid"
+          "type_info": "Text"
         },
         {
-          "name": "headquarters_phone",
+          "name": "school_subdistrict_name",
           "ordinal": 12,
-          "type_info": "Text"
-        },
-        {
-          "name": "tax_classification",
-          "ordinal": 13,
-          "type_info": "Text"
-        },
-        {
-          "name": "created_at",
-          "ordinal": 14,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "updated_at",
-          "ordinal": 15,
-          "type_info": "Timestamptz"
+          "type_info": "Varchar"
         }
       ],
       "nullable": [
         false,
-        false,
-        false,
         true,
         true,
         true,
@@ -5427,17 +5799,17 @@
         true,
         true,
         true,
-        true,
-        false,
-        false
+        null,
+        true
       ],
       "parameters": {
         "Left": [
-          "Uuid"
+          "Uuid",
+          "Int4"
         ]
       }
     },
-    "query": "\n                SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, o.created_at, o.updated_at  FROM organization o\n                JOIN politician_organization_endorsements\n                ON politician_organization_endorsements.organization_id = o.id\n                WHERE politician_organization_endorsements.politician_id = $1\n            "
+    "query": "\n                         SELECT vd.gid,\n                            vd.vtdid AS voting_tabulation_district_id,\n                            vd.countycode AS county_code,\n                            vd.countyname AS county_name,\n                            vd.pctcode AS precinct_code,\n                            vd.pctname AS precinct_name,\n                            vd.ctycomdist AS county_commissioner_district,\n                            vd.juddist AS judicial_district,\n                            sd.sdnumber AS school_district_number,\n                            sd.shortname AS school_district_name,\n                            sd.sdtype AS school_district_type,\n                            SUBSTRING(isd.schsubdist, 10) AS school_subdistrict_code,\n                            isd.schsubdist AS school_subdistrict_name\n                        FROM p6t_state_mn.bdry_votingdistricts AS vd\n                        JOIN user_profile up ON up.user_id = $1\n                        JOIN address a ON up.address_id = a.id\n                        JOIN p6t_state_mn.school_district_boundaries sd ON sd.gid = $2\n                        LEFT JOIN (\n                            SELECT * FROM p6t_state_mn.isd2853 as isd2\n                            JOIN user_profile up2 ON up2.user_id = $1\n                            JOIN address a2 ON up2.address_id = a2.id\n                            WHERE ST_Contains(ST_SetSRID(isd2.geom, 26915), ST_Transform(a2.geom, 26915))\n                            ) AS isd ON isd.countycode = vd.countycode AND isd.pctcode = vd.pctcode\n                        WHERE ST_Contains(ST_SetSRID(vd.geom, 26915), ST_Transform(a.geom, 26915))\n                    "
   },
   "a4024d99e28445ccac751a5fb72dec8024901d738f0a47c65f74b6690be28a45": {
     "describe": {
@@ -5583,7 +5955,7 @@
     },
     "query": "\n                INSERT INTO bill (slug, title, bill_number, legislation_status, description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_data, votesmart_bill_id) \n                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n                ON CONFLICT (slug) DO UPDATE\n                SET title = $2\n                RETURNING id, slug, title, bill_number, legislation_status AS \"legislation_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, history, votesmart_bill_id, created_at, updated_at\n            "
   },
-  "a54237156fb7a4db5a26c3a7a1db7f841bff415361867ad1468a4041c5599bfd": {
+  "a504d9f6320431bdb8d89513383ff9cf87d8db2000ba5543ad7e72b8f1091301": {
     "describe": {
       "columns": [
         {
@@ -5637,18 +6009,24 @@
           "type_info": "Varchar"
         },
         {
-          "name": "school_subdistrict_code",
+          "name": "school_district_type",
           "ordinal": 10,
-          "type_info": "Text"
+          "type_info": "Varchar"
+        },
+        {
+          "name": "school_subdistrict_code",
+          "ordinal": 11,
+          "type_info": "Varchar"
         },
         {
           "name": "school_subdistrict_name",
-          "ordinal": 11,
+          "ordinal": 12,
           "type_info": "Varchar"
         }
       ],
       "nullable": [
         false,
+        true,
         true,
         true,
         true,
@@ -5668,7 +6046,7 @@
         ]
       }
     },
-    "query": "\n                         SELECT vd.gid,\n                            vd.vtdid AS voting_tabulation_district_id,\n                            vd.countycode AS county_code,\n                            vd.countyname AS county_name,\n                            vd.pctcode AS precinct_code,\n                            vd.pctname AS precinct_name,\n                            vd.ctycomdist AS county_commissioner_district,\n                            vd.juddist AS judicial_district,\n                            sd.sdnumber AS school_district_number,\n                            sd.shortname AS school_district_name,\n                            SUBSTRING(isd.schsubdist, 10) AS school_subdistrict_code,\n                            isd.schsubdist AS school_subdistrict_name\n                        FROM p6t_state_mn.bdry_votingdistricts AS vd\n                        JOIN user_profile up ON up.user_id = $1\n                        JOIN address a ON up.address_id = a.id\n                        JOIN p6t_state_mn.school_district_boundaries sd ON sd.gid = $2\n                        LEFT JOIN (\n                            SELECT * FROM p6t_state_mn.isd2853 as isd2\n                            JOIN user_profile up2 ON up2.user_id = $1\n                            JOIN address a2 ON up2.address_id = a2.id\n                            WHERE ST_Contains(ST_SetSRID(isd2.geom, 26915), ST_Transform(a2.geom, 26915))\n                            ) AS isd ON isd.countycode = vd.countycode AND isd.pctcode = vd.pctcode\n                        WHERE ST_Contains(ST_SetSRID(vd.geom, 26915), ST_Transform(a.geom, 26915))\n                    "
+    "query": "\n                        SELECT vd.gid,\n                            vd.vtdid AS voting_tabulation_district_id,\n                            vd.countycode AS county_code,\n                            vd.countyname AS county_name,\n                            vd.pctcode AS precinct_code,\n                            vd.pctname AS precinct_name,\n                            vd.ctycomdist AS county_commissioner_district,\n                            vd.juddist AS judicial_district,\n                            sd.sdnumber AS school_district_number,\n                            sd.shortname AS school_district_name,\n                            sd.sdtype AS school_district_type,\n                            isd.id::varchar(4) AS school_subdistrict_code,\n                            isd.schsubdist AS school_subdistrict_name\n                        FROM p6t_state_mn.bdry_votingdistricts AS vd\n                        JOIN user_profile up ON up.user_id = $1\n                        JOIN address a ON up.address_id = a.id\n                        JOIN p6t_state_mn.school_district_boundaries sd ON sd.gid = $2\n                        LEFT JOIN (\n                            SELECT isd2.id as id, schsubdist, sdnumber FROM p6t_state_mn.isd2180 as isd2\n                            JOIN user_profile up2 ON up2.user_id = $1\n                            JOIN address a2 ON up2.address_id = a2.id\n                            WHERE ST_Contains(ST_SetSRID(isd2.geom, 26915), ST_Transform(a2.geom, 26915))\n                            ) AS isd ON isd.sdnumber = sd.sdnumber\n                        WHERE ST_Contains(ST_SetSRID(vd.geom, 26915), ST_Transform(a.geom, 26915))\n                    "
   },
   "a73af3cb0fae38b252aa357e76cf37a8d28eadcc62a7298454a7882d8aa81e0d": {
     "describe": {
@@ -5904,14 +6282,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
@@ -6470,14 +6848,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
@@ -6653,14 +7031,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
@@ -7210,14 +7588,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
@@ -7324,93 +7702,6 @@
       }
     },
     "query": "\n                SELECT id,\n                        slug,\n                        first_name,\n                        middle_name,\n                        last_name,\n                        suffix,\n                        preferred_name,\n                        biography,\n                        biography_source,\n                        home_state AS \"home_state:State\",\n                        date_of_birth,\n                        office_id,\n                        thumbnail_image_url,\n                        assets,\n                        official_website_url,\n                        campaign_website_url,\n                        facebook_url,\n                        twitter_url,\n                        instagram_url,\n                        youtube_url,\n                        linkedin_url,\n                        tiktok_url,\n                        email,\n                        phone,\n                        party AS \"party:PoliticalParty\",\n                        votesmart_candidate_id,\n                        votesmart_candidate_bio,\n                        votesmart_candidate_ratings,\n                        legiscan_people_id,\n                        crp_candidate_id,\n                        fec_candidate_id,\n                        race_wins,\n                        race_losses,\n                        created_at,\n                        updated_at FROM politician\n                WHERE slug = $1\n            "
-  },
-  "cfa235e13a4043edf7a18fc6205e469e143eb1b4bcfd749ed372b077700c3842": {
-    "describe": {
-      "columns": [
-        {
-          "name": "gid",
-          "ordinal": 0,
-          "type_info": "Int4"
-        },
-        {
-          "name": "voting_tabulation_district_id",
-          "ordinal": 1,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "county_code",
-          "ordinal": 2,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "county_name",
-          "ordinal": 3,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "precinct_code",
-          "ordinal": 4,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "precinct_name",
-          "ordinal": 5,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "county_commissioner_district",
-          "ordinal": 6,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "judicial_district",
-          "ordinal": 7,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "school_district_number",
-          "ordinal": 8,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "school_district_name",
-          "ordinal": 9,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "school_subdistrict_code",
-          "ordinal": 10,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "school_subdistrict_name",
-          "ordinal": 11,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        null,
-        true
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Int4"
-        ]
-      }
-    },
-    "query": "\n                        SELECT vd.gid,\n                            vd.vtdid AS voting_tabulation_district_id,\n                            vd.countycode AS county_code,\n                            vd.countyname AS county_name,\n                            vd.pctcode AS precinct_code,\n                            vd.pctname AS precinct_name,\n                            vd.ctycomdist AS county_commissioner_district,\n                            vd.juddist AS judicial_district,\n                            sd.sdnumber AS school_district_number,\n                            sd.shortname AS school_district_name,\n                            isd.id::varchar(4) AS school_subdistrict_code,\n                            isd.schsubdist AS school_subdistrict_name\n                        FROM p6t_state_mn.bdry_votingdistricts AS vd\n                        JOIN user_profile up ON up.user_id = $1\n                        JOIN address a ON up.address_id = a.id\n                        JOIN p6t_state_mn.school_district_boundaries sd ON sd.gid = $2\n                        LEFT JOIN (\n                            SELECT isd2.id as id, schsubdist, sdnumber FROM p6t_state_mn.isd2180 as isd2\n                            JOIN user_profile up2 ON up2.user_id = $1\n                            JOIN address a2 ON up2.address_id = a2.id\n                            WHERE ST_Contains(ST_SetSRID(isd2.geom, 26915), ST_Transform(a2.geom, 26915))\n                            ) AS isd ON isd.sdnumber = sd.sdnumber\n                        WHERE ST_Contains(ST_SetSRID(vd.geom, 26915), ST_Transform(a.geom, 26915))\n                    "
   },
   "d3d38b98835559e8d976f9fca925e228143f359a3055923873bcb711ec1c518e": {
     "describe": {
@@ -7873,14 +8164,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
@@ -8070,6 +8361,11 @@
           "name": "headquarters_address_id",
           "ordinal": 15,
           "type_info": "Uuid"
+        },
+        {
+          "name": "assets",
+          "ordinal": 16,
+          "type_info": "Jsonb"
         }
       ],
       "nullable": [
@@ -8088,125 +8384,14 @@
         false,
         false,
         true,
-        true
+        true,
+        false
       ],
       "parameters": {
         "Left": []
       }
     },
     "query": "SELECT * FROM organization"
-  },
-  "df8c6ab81bed9f550688fa3197de7353ca4227d1ac2caa8bf702a3a411de7e0c": {
-    "describe": {
-      "columns": [
-        {
-          "name": "gid",
-          "ordinal": 0,
-          "type_info": "Int4"
-        },
-        {
-          "name": "sdnumber",
-          "ordinal": 1,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        false,
-        true
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      }
-    },
-    "query": "\n            SELECT gid, sdnumber\n            FROM p6t_state_mn.school_district_boundaries AS sd\n            JOIN user_profile up ON up.user_id = $1\n            JOIN address a ON up.address_id = a.id\n            WHERE ST_Contains(ST_SetSRID(sd.geom, 26915), ST_Transform(a.geom, 26915))\n            "
-  },
-  "e35e2fcec687e7b87bd294a17187c8cae1142a516de63698eb4d29ead21ea284": {
-    "describe": {
-      "columns": [
-        {
-          "name": "gid",
-          "ordinal": 0,
-          "type_info": "Int4"
-        },
-        {
-          "name": "voting_tabulation_district_id",
-          "ordinal": 1,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "county_code",
-          "ordinal": 2,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "county_name",
-          "ordinal": 3,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "precinct_code",
-          "ordinal": 4,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "precinct_name",
-          "ordinal": 5,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "county_commissioner_district",
-          "ordinal": 6,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "judicial_district",
-          "ordinal": 7,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "school_district_number",
-          "ordinal": 8,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "school_district_name",
-          "ordinal": 9,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "school_subdistrict_code",
-          "ordinal": 10,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "school_subdistrict_name",
-          "ordinal": 11,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      }
-    },
-    "query": "\n                    SELECT vd.gid,\n                    vtdid AS voting_tabulation_district_id,\n                    countycode AS county_code, countyname AS county_name,\n                    pctcode AS precinct_code, pctname AS precinct_name,\n                    ctycomdist AS county_commissioner_district,\n                    juddist AS judicial_district,\n                    cw.school_district_number,\n                    cw.school_district_name,\n                    cw.school_subdistrict_code,\n                    cw.school_subdistrict_name\n                    FROM p6t_state_mn.bdry_votingdistricts AS vd\n                    JOIN user_profile up ON up.user_id = $1\n                    JOIN address a ON up.address_id = a.id\n                    LEFT JOIN p6t_state_mn.precinct_school_subdistrict_crosswalk AS cw ON cw.county_id = vd.countycode AND cw.precinct_code = vd.pctcode\n                    WHERE ST_Contains(ST_SetSRID(vd.geom, 26915), ST_Transform(a.geom, 26915))\n                "
   },
   "e42a255e6916317a184adbd8530ffa79a10f0955ffa290471893e1b6a7c226af": {
     "describe": {
@@ -8293,93 +8478,6 @@
       }
     },
     "query": "\n                SELECT \n                    id, \n                    email, \n                    username, \n                    password, \n                    role AS \"role:Role\", \n                    created_at, \n                    confirmed_at, \n                    updated_at \n                FROM populist_user \n                WHERE LOWER($1) IN(email, username);\n            "
-  },
-  "edabe73263877269d110cefea9c3ebacd8ac529e7bac7f6a3d78dc38b4877c29": {
-    "describe": {
-      "columns": [
-        {
-          "name": "gid",
-          "ordinal": 0,
-          "type_info": "Int4"
-        },
-        {
-          "name": "voting_tabulation_district_id",
-          "ordinal": 1,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "county_code",
-          "ordinal": 2,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "county_name",
-          "ordinal": 3,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "precinct_code",
-          "ordinal": 4,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "precinct_name",
-          "ordinal": 5,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "county_commissioner_district",
-          "ordinal": 6,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "judicial_district",
-          "ordinal": 7,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "school_district_number",
-          "ordinal": 8,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "school_district_name",
-          "ordinal": 9,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "school_subdistrict_code",
-          "ordinal": 10,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "school_subdistrict_name",
-          "ordinal": 11,
-          "type_info": "Text"
-        }
-      ],
-      "nullable": [
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        null
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Int4"
-        ]
-      }
-    },
-    "query": "\n                        SELECT vd.gid,\n                            vd.vtdid AS voting_tabulation_district_id,\n                            vd.countycode AS county_code,\n                            vd.countyname AS county_name,\n                            vd.pctcode AS precinct_code,\n                            vd.pctname AS precinct_name,\n                            vd.ctycomdist AS county_commissioner_district,\n                            vd.juddist AS judicial_district,\n                            sd.sdnumber AS school_district_number,\n                            sd.shortname AS school_district_name,\n                            cw.school_subdistrict_code,\n                            INITCAP(cw.school_subdistrict_name) as school_subdistrict_name\n                        FROM p6t_state_mn.bdry_votingdistricts AS vd\n                        JOIN user_profile up ON up.user_id = $1\n                        JOIN address a ON up.address_id = a.id\n                        JOIN p6t_state_mn.school_district_boundaries sd ON sd.gid = $2\n                        LEFT JOIN p6t_state_mn.precinct_school_subdistrict_crosswalk AS cw ON cw.county_id = vd.countycode AND cw.precinct_code = vd.pctcode\n                        WHERE ST_Contains(ST_SetSRID(vd.geom, 26915), ST_Transform(a.geom, 26915))\n                    "
   },
   "edd9cc51af61776fbfed0d2d0cf2d6052e78d531d609cce7aaa938e75768f601": {
     "describe": {
@@ -8484,6 +8582,11 @@
           "name": "headquarters_address_id",
           "ordinal": 15,
           "type_info": "Uuid"
+        },
+        {
+          "name": "assets",
+          "ordinal": 16,
+          "type_info": "Jsonb"
         }
       ],
       "nullable": [
@@ -8502,7 +8605,8 @@
         false,
         false,
         true,
-        true
+        true,
+        false
       ],
       "parameters": {
         "Left": [
@@ -8704,14 +8808,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
@@ -9037,129 +9141,6 @@
     },
     "query": "\n                SELECT id, slug, title, bill_number, legislation_status AS \"legislation_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, history, votesmart_bill_id, created_at, updated_at FROM bill\n                WHERE ($1::text IS NULL OR slug = $1)\n                AND ($2::text IS NULL OR title ILIKE $2)\n                AND ($3::legislation_status IS NULL OR legislation_status = $3)\n                AND ($4::text IS NULL OR bill_number ILIKE $4)\n            "
   },
-  "f4839ca7a18529cb87ef2c32c6c7ab9bc13af951f8d0ce0b88f6a370aab0edc1": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "slug",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "name",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "description",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "thumbnail_image_url",
-          "ordinal": 4,
-          "type_info": "Text"
-        },
-        {
-          "name": "website_url",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "facebook_url",
-          "ordinal": 6,
-          "type_info": "Text"
-        },
-        {
-          "name": "twitter_url",
-          "ordinal": 7,
-          "type_info": "Text"
-        },
-        {
-          "name": "instagram_url",
-          "ordinal": 8,
-          "type_info": "Text"
-        },
-        {
-          "name": "email",
-          "ordinal": 9,
-          "type_info": "Text"
-        },
-        {
-          "name": "votesmart_sig_id",
-          "ordinal": 10,
-          "type_info": "Int4"
-        },
-        {
-          "name": "headquarters_address_id",
-          "ordinal": 11,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "headquarters_phone",
-          "ordinal": 12,
-          "type_info": "Text"
-        },
-        {
-          "name": "tax_classification",
-          "ordinal": 13,
-          "type_info": "Text"
-        },
-        {
-          "name": "created_at",
-          "ordinal": 14,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "updated_at",
-          "ordinal": 15,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Int4",
-          "Uuid",
-          "Text",
-          "Text"
-        ]
-      }
-    },
-    "query": "\n                INSERT INTO organization (id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification)\n                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) \n                ON CONFLICT (id) DO UPDATE SET\n                    slug = COALESCE($2, organization.slug),\n                    name = COALESCE($3, organization.name),\n                    description = COALESCE($4, organization.description),\n                    thumbnail_image_url = COALESCE($5, organization.thumbnail_image_url),\n                    website_url = COALESCE($6, organization.website_url),\n                    facebook_url = COALESCE($7, organization.facebook_url),\n                    twitter_url = COALESCE($8, organization.twitter_url),\n                    instagram_url = COALESCE($9, organization.instagram_url),\n                    email = COALESCE($10, organization.email),\n                    votesmart_sig_id = COALESCE($11, organization.votesmart_sig_id),\n                    headquarters_address_id = COALESCE($12, organization.headquarters_address_id),\n                    headquarters_phone = COALESCE($13, organization.headquarters_phone),\n                    tax_classification = COALESCE($14, organization.tax_classification)\n                RETURNING\n                    id,\n                    slug,\n                    name,\n                    description,\n                    thumbnail_image_url,\n                    website_url,\n                    facebook_url,\n                    twitter_url,\n                    instagram_url,\n                    email,\n                    votesmart_sig_id,\n                    headquarters_address_id,\n                    headquarters_phone,\n                    tax_classification,\n                    created_at,\n                    updated_at\n            "
-  },
   "f59343bff6df1d5678cecede9ea40a4509361e4c657d39d17d27ae4dd77fa8ca": {
     "describe": {
       "columns": [],
@@ -9171,6 +9152,98 @@
       }
     },
     "query": "DELETE FROM office WHERE id=$1"
+  },
+  "f6d5b3a53032f2e0ee4fd6dc3e569f522d7211676b172fe9b38a7c70515161aa": {
+    "describe": {
+      "columns": [
+        {
+          "name": "gid",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "voting_tabulation_district_id",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "county_code",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "county_name",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "precinct_code",
+          "ordinal": 4,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "precinct_name",
+          "ordinal": 5,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "county_commissioner_district",
+          "ordinal": 6,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "judicial_district",
+          "ordinal": 7,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "school_district_number",
+          "ordinal": 8,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "school_district_name",
+          "ordinal": 9,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "school_district_type",
+          "ordinal": 10,
+          "type_info": "Text"
+        },
+        {
+          "name": "school_subdistrict_code",
+          "ordinal": 11,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "school_subdistrict_name",
+          "ordinal": 12,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        null,
+        true,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n                    SELECT vd.gid,\n                    vtdid AS voting_tabulation_district_id,\n                    countycode AS county_code, countyname AS county_name,\n                    pctcode AS precinct_code, pctname AS precinct_name,\n                    ctycomdist AS county_commissioner_district,\n                    juddist AS judicial_district,\n                    cw.school_district_number,\n                    cw.school_district_name,\n                    NULL as school_district_type,\n                    cw.school_subdistrict_code,\n                    cw.school_subdistrict_name\n                    FROM p6t_state_mn.bdry_votingdistricts AS vd\n                    JOIN user_profile up ON up.user_id = $1\n                    JOIN address a ON up.address_id = a.id\n                    LEFT JOIN p6t_state_mn.precinct_school_subdistrict_crosswalk AS cw ON cw.county_id = vd.countycode AND cw.precinct_code = vd.pctcode\n                    WHERE ST_Contains(ST_SetSRID(vd.geom, 26915), ST_Transform(a.geom, 26915))\n                "
   },
   "fbf4cd363aeaf857570d5f70492909fd25d1304ebe928d447b81cf3f7d85b20d": {
     "describe": {

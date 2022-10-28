@@ -4,10 +4,11 @@ use crate::IssueTag;
 use crate::IssueTagIdentifier;
 use async_graphql::InputObject;
 use serde::{Deserialize, Serialize};
+use serde_json::Value as JSON;
 use slugify::slugify;
 use sqlx::PgPool;
 
-#[derive(sqlx::FromRow, Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(sqlx::FromRow, Debug, Clone, Eq, PartialEq)]
 pub struct Organization {
     pub id: uuid::Uuid,
     pub slug: String,
@@ -23,6 +24,7 @@ pub struct Organization {
     pub headquarters_address_id: Option<uuid::Uuid>,
     pub headquarters_phone: Option<String>,
     pub tax_classification: Option<String>,
+    pub assets: JSON,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
@@ -44,6 +46,7 @@ pub struct UpsertOrganizationInput {
     pub headquarters_phone: Option<String>,
     pub tax_classification: Option<String>,
     pub issue_tags: Option<CreateOrConnectIssueTagInput>,
+    pub assets: Option<JSON>,
 }
 
 #[derive(Default, InputObject)]
@@ -75,8 +78,8 @@ impl Organization {
         let record = sqlx::query_as!(
             Organization,
             r#"
-                INSERT INTO organization (id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification)
-                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
+                INSERT INTO organization (id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, assets)
+                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) 
                 ON CONFLICT (id) DO UPDATE SET
                     slug = COALESCE($2, organization.slug),
                     name = COALESCE($3, organization.name),
@@ -90,7 +93,8 @@ impl Organization {
                     votesmart_sig_id = COALESCE($11, organization.votesmart_sig_id),
                     headquarters_address_id = COALESCE($12, organization.headquarters_address_id),
                     headquarters_phone = COALESCE($13, organization.headquarters_phone),
-                    tax_classification = COALESCE($14, organization.tax_classification)
+                    tax_classification = COALESCE($14, organization.tax_classification),
+                    assets = COALESCE($15, organization.assets)
                 RETURNING
                     id,
                     slug,
@@ -106,6 +110,7 @@ impl Organization {
                     headquarters_address_id,
                     headquarters_phone,
                     tax_classification,
+                    assets,
                     created_at,
                     updated_at
             "#,
@@ -122,7 +127,8 @@ impl Organization {
             input.votesmart_sig_id,
             input.headquarters_address_id,
             input.headquarters_phone,
-            input.tax_classification
+            input.tax_classification,
+            input.assets
         )
         .fetch_one(db_pool)
         .await?;

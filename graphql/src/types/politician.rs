@@ -39,7 +39,7 @@ pub struct PoliticianResult {
     date_of_birth: Option<NaiveDate>,
     office_id: Option<ID>,
     thumbnail_image_url: Option<String>,
-    assets: Assets,
+    assets: PoliticianAssets,
     official_website_url: Option<String>,
     campaign_website_url: Option<String>,
     facebook_url: Option<String>,
@@ -61,7 +61,7 @@ pub struct PoliticianResult {
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, SimpleObject)]
 #[serde(rename_all = "camelCase")]
-pub struct Assets {
+pub struct PoliticianAssets {
     thumbnail_image_160: Option<String>,
     thumbnail_image_400: Option<String>,
 }

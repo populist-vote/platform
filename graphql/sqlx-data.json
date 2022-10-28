@@ -76,7 +76,57 @@
     },
     "query": "\n            SELECT\n                id,\n                user_id,\n                election_id,\n                title,\n                description,\n                created_at,\n                updated_at\n            FROM\n                voting_guide\n            WHERE\n                id = ANY ($1)\n            "
   },
-  "14bc91b7daa125b64154b56752d8613b87725849e98a3e018dbf4863ef7d4f23": {
+  "15e92e08e433cfb688e6d825fb533bdc7da0a92bc752265e415be73f8212cabe": {
+    "describe": {
+      "columns": [
+        {
+          "name": "congressional_district",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "state_senate_district",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "state_house_district",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "state:State",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "county",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "city",
+          "ordinal": 5,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        true,
+        true,
+        true,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n                SELECT\n                    a.congressional_district,\n                    a.state_senate_district,\n                    a.state_house_district,\n                    a.state AS \"state:State\",\n                    a.county,\n                    a.city\n                FROM\n                    address AS a\n                    JOIN user_profile up ON user_id = $1\n                WHERE\n                    up.user_id = $1 AND \n                    up.address_id = a.id\n                "
+  },
+  "19850d8b56916d3831cf220a25c1be754079154757917d309836693b55a55e60": {
     "describe": {
       "columns": [
         {
@@ -124,14 +174,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
@@ -353,61 +403,12 @@
           "Text",
           "Text",
           "Text",
+          "Text",
           "Text"
         ]
       }
     },
-    "query": "\n            SELECT\n                r.id,\n                r.slug,\n                r.title,\n                r.office_id,\n                r.race_type AS \"race_type:RaceType\",\n                r.party AS \"party:PoliticalParty\",\n                r.state AS \"state:State\",\n                r.description,\n                r.ballotpedia_link,\n                r.early_voting_begins_date,\n                r.winner_id,\n                r.total_votes,\n                r.official_website,\n                r.election_id,\n                r.is_special_election,\n                r.num_elect,\n                r.created_at,\n                r.updated_at\n            FROM\n                race r\n                JOIN office o ON office_id = o.id\n            WHERE\n                r.election_id = $1 AND (\n                    o.election_scope = 'national'\n                    OR (o.state = $2 AND o.election_scope = 'state')\n                    OR (o.state = $2 AND (  \n                       (o.election_scope = 'city' AND o.municipality = $3) OR\n                       (o.election_scope = 'county' AND o.county = $4) OR\n                       (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR\n                       (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR\n                       (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR\n                       (o.election_scope = 'district' AND o.district_type = 'county' AND county = $3 AND o.district = $8) OR\n                       ((o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'ISD #', '') = $9) AND\n                       (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $10))\n                    )))\n            ORDER BY o.priority ASC, title DESC\n                "
-  },
-  "15e92e08e433cfb688e6d825fb533bdc7da0a92bc752265e415be73f8212cabe": {
-    "describe": {
-      "columns": [
-        {
-          "name": "congressional_district",
-          "ordinal": 0,
-          "type_info": "Text"
-        },
-        {
-          "name": "state_senate_district",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "state_house_district",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "state:State",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "county",
-          "ordinal": 4,
-          "type_info": "Text"
-        },
-        {
-          "name": "city",
-          "ordinal": 5,
-          "type_info": "Text"
-        }
-      ],
-      "nullable": [
-        true,
-        true,
-        true,
-        false,
-        true,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      }
-    },
-    "query": "\n                SELECT\n                    a.congressional_district,\n                    a.state_senate_district,\n                    a.state_house_district,\n                    a.state AS \"state:State\",\n                    a.county,\n                    a.city\n                FROM\n                    address AS a\n                    JOIN user_profile up ON user_id = $1\n                WHERE\n                    up.user_id = $1 AND \n                    up.address_id = a.id\n                "
+    "query": "\n            SELECT\n                r.id,\n                r.slug,\n                r.title,\n                r.office_id,\n                r.race_type AS \"race_type:RaceType\",\n                r.party AS \"party:PoliticalParty\",\n                r.state AS \"state:State\",\n                r.description,\n                r.ballotpedia_link,\n                r.early_voting_begins_date,\n                r.winner_id,\n                r.total_votes,\n                r.official_website,\n                r.election_id,\n                r.is_special_election,\n                r.num_elect,\n                r.created_at,\n                r.updated_at\n            FROM\n                race r\n                JOIN office o ON office_id = o.id\n            WHERE\n                r.election_id = $1 AND (\n                    o.election_scope = 'national'\n                    OR (o.state = $2 AND o.election_scope = 'state')\n                    OR (o.state = $2 AND (  \n                       (o.election_scope = 'city' AND o.municipality = $3) OR\n                       (o.election_scope = 'county' AND o.county = $4) OR\n                       (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR\n                       (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR\n                       (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR\n                       (o.election_scope = 'district' AND o.district_type = 'county' AND county = $3 AND o.district = $8) OR\n                       (CASE \n                         WHEN $10 = '01' THEN\n                          (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'ISD #', '') = $9) AND\n                          (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)\n                         WHEN $10 = '03' THEN\n                           (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'SSD #', '') = $9) AND\n                           (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)\n                        END)\n                    )))\n            ORDER BY o.priority ASC, title DESC\n                "
   },
   "1a938ccb48645cca01c53e9075d3508c6d90506d2a09bd60d78e66cabba69fc9": {
     "describe": {
@@ -457,14 +458,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
@@ -1176,14 +1177,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
@@ -1457,14 +1458,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
@@ -1820,14 +1821,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
@@ -2879,14 +2880,14 @@
                   "democratic",
                   "republican",
                   "libertarian",
-                  "freedom",
-                  "unity",
                   "green",
                   "constitution",
+                  "unknown",
                   "independent",
+                  "freedom",
+                  "unity",
                   "approval_voting",
                   "unaffiliated",
-                  "unknown",
                   "democratic_farmer_labor",
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
