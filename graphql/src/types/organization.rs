@@ -60,7 +60,7 @@ impl From<Organization> for OrganizationResult {
             headquarters_address_id: o.headquarters_address_id.map(ID::from),
             headquarters_phone: o.headquarters_phone,
             tax_classification: o.tax_classification,
-            assets: serde_json::from_value(o.assets.to_owned()).unwrap_or_default(),
+            assets: serde_json::from_value(o.assets).unwrap_or_default(),
         }
     }
 }
