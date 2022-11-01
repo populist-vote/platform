@@ -15,6 +15,7 @@ pub use models::election::*;
 pub use models::issue_tag::*;
 pub use models::office::*;
 pub use models::organization::*;
+pub use models::organization_politician_note::*;
 pub use models::politician::*;
 pub use models::race::*;
 pub use models::user::*;

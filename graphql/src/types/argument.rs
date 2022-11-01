@@ -11,7 +11,7 @@ use super::{OrganizationResult, PoliticianResult};
 #[derive(Debug, Clone, Union)]
 enum AuthorResult {
     PoliticianResult(Box<PoliticianResult>),
-    OrganizationResult(OrganizationResult),
+    OrganizationResult(Box<OrganizationResult>),
 }
 
 #[derive(SimpleObject)]
@@ -39,10 +39,15 @@ impl ArgumentResult {
                     .await?,
                 )))
             }
-            AuthorType::Organization => AuthorResult::OrganizationResult(OrganizationResult::from(
-                Organization::find_by_id(&db_pool, uuid::Uuid::parse_str(self.author_id.as_str())?)
+            AuthorType::Organization => {
+                AuthorResult::OrganizationResult(Box::new(OrganizationResult::from(
+                    Organization::find_by_id(
+                        &db_pool,
+                        uuid::Uuid::parse_str(self.author_id.as_str())?,
+                    )
                     .await?,
-            )),
+                )))
+            }
         };
 
         Ok(result)

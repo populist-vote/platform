@@ -109,6 +109,24 @@ impl IssueTag {
         Ok(record)
     }
 
+    pub async fn find_by_ids(
+        db_pool: &PgPool,
+        ids: Vec<uuid::Uuid>,
+    ) -> Result<Vec<Self>, sqlx::Error> {
+        let records = sqlx::query_as!(
+            IssueTag,
+            r#"
+                SELECT id, slug, name, description, category, created_at, updated_at FROM issue_tag
+                WHERE id = ANY($1)
+            "#,
+            &ids
+        )
+        .fetch_all(db_pool)
+        .await?;
+
+        Ok(records)
+    }
+
     pub async fn search(
         db_pool: &PgPool,
         search: &IssueTagSearch,

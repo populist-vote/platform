@@ -1,22 +1,21 @@
 {
-  "query": "\n            SELECT\n                votes\n            FROM\n                race_candidates\n            WHERE\n                race_candidates.candidate_id = $1 AND\n                race_candidates.race_id = $2\n        ",
+  "query": "\n                SELECT\n                    a.state AS \"state:State\"\n                FROM\n                    address a\n                    JOIN user_profile up ON user_id = $1\n                WHERE\n                    up.user_id = $1 AND \n                    up.address_id = a.id\n                ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "votes",
-        "type_info": "Int4"
+        "name": "state:State",
+        "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid",
         "Uuid"
       ]
     },
     "nullable": [
-      true
+      false
     ]
   },
-  "hash": "ad8167f39652a8fef007d2d756366f7a1c7f28b5dd29a920e88a857c2b5928e2"
+  "hash": "b5cc088e40d5bbf140044ee2d61f1383a2a23123e4c826370db66626eec404df"
 }
