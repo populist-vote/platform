@@ -1,6 +1,6 @@
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use chrono::{DateTime, Utc};
-use db::{IssueTag, Organization, Politician};
+use db::{IssueTag, Organization, OrganizationPoliticianNote, Politician};
 use serde_json::Value as JSON;
 
 use crate::context::ApiContext;
@@ -12,7 +12,7 @@ use super::{IssueTagResult, OrganizationResult, PoliticianResult};
 pub struct OrganizationPoliticianNoteResult {
     pub id: ID,
     pub organization_id: ID,
-    pub candidate_id: ID,
+    pub politician_id: ID,
     pub election_id: ID,
     pub notes: JSON,
     pub issue_tag_ids: Vec<ID>,
@@ -32,11 +32,13 @@ impl OrganizationPoliticianNoteResult {
         Ok(organization.into())
     }
 
-    async fn candidate(&self, ctx: &Context<'_>) -> Result<PoliticianResult> {
+    async fn politician(&self, ctx: &Context<'_>) -> Result<PoliticianResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let candidate =
-            Politician::find_by_id(&db_pool, uuid::Uuid::parse_str(&self.candidate_id).unwrap())
-                .await?;
+        let candidate = Politician::find_by_id(
+            &db_pool,
+            uuid::Uuid::parse_str(&self.politician_id).unwrap(),
+        )
+        .await?;
         Ok(candidate.into())
     }
 
@@ -51,5 +53,20 @@ impl OrganizationPoliticianNoteResult {
         )
         .await?;
         Ok(issue_tags.into_iter().map(|it| it.into()).collect())
+    }
+}
+
+impl From<OrganizationPoliticianNote> for OrganizationPoliticianNoteResult {
+    fn from(opn: db::OrganizationPoliticianNote) -> Self {
+        Self {
+            id: opn.id.into(),
+            organization_id: opn.organization_id.into(),
+            politician_id: opn.politician_id.into(),
+            election_id: opn.election_id.into(),
+            notes: opn.notes,
+            issue_tag_ids: opn.issue_tag_ids.into_iter().map(|id| id.into()).collect(),
+            created_at: opn.created_at,
+            updated_at: opn.updated_at,
+        }
     }
 }

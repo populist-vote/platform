@@ -7,6 +7,7 @@ pub mod enums;
 pub mod issue_tag;
 pub mod office;
 pub mod organization;
+pub mod organization_politician_note;
 pub mod politician;
 pub mod race;
 pub mod user;

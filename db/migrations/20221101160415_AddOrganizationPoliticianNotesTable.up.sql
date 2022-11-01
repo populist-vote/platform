@@ -2,7 +2,7 @@
 CREATE TABLE organization_politician_notes (
     id              uuid        NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     organization_id uuid        NOT NULL REFERENCES organization(id),
-    candidate_id    uuid        NOT NULL REFERENCES politician(id),
+    politician_id   uuid        NOT NULL REFERENCES politician(id),
     election_id     uuid        NOT NULL REFERENCES election(id),
     notes           jsonb       NOT NULL DEFAULT '{}'::jsonb,
     issue_tag_ids   uuid[]      NOT NULL DEFAULT '{}'::uuid[],

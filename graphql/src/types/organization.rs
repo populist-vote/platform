@@ -1,9 +1,10 @@
 use crate::context::ApiContext;
 
-use super::IssueTagResult;
+use super::{organization_politician_note::OrganizationPoliticianNoteResult, IssueTagResult};
 use async_graphql::*;
-use db::Organization;
+use db::{Organization, OrganizationPoliticianNote};
 use serde::{Deserialize, Serialize};
+use tracing::trace;
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, SimpleObject)]
 #[serde(rename_all = "camelCase")]
@@ -40,6 +41,43 @@ impl OrganizationResult {
             Organization::issue_tags(&db_pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
         let results = records.into_iter().map(IssueTagResult::from).collect();
         Ok(results)
+    }
+
+    async fn politician_notes(
+        &self,
+        ctx: &Context<'_>,
+        election_id: ID,
+    ) -> Result<Vec<OrganizationPoliticianNoteResult>> {
+        tracing::debug!("election_id = {:?}", election_id);
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records = sqlx::query_as!(
+            OrganizationPoliticianNote,
+            r#"
+            SELECT
+                id,
+                organization_id,
+                politician_id,
+                election_id,
+                notes,
+                issue_tag_ids,
+                created_at,
+                updated_at
+            FROM
+                organization_politician_notes
+            WHERE
+                election_id = $1 AND
+                organization_id = $2
+        "#,
+            uuid::Uuid::parse_str(&election_id).unwrap(),
+            uuid::Uuid::parse_str(&self.id).unwrap()
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        Ok(records
+            .into_iter()
+            .map(OrganizationPoliticianNoteResult::from)
+            .collect())
     }
 }
 
