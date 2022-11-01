@@ -4,7 +4,6 @@ use super::{organization_politician_note::OrganizationPoliticianNoteResult, Issu
 use async_graphql::*;
 use db::{Organization, OrganizationPoliticianNote};
 use serde::{Deserialize, Serialize};
-use tracing::trace;
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, SimpleObject)]
 #[serde(rename_all = "camelCase")]
@@ -48,7 +47,6 @@ impl OrganizationResult {
         ctx: &Context<'_>,
         election_id: ID,
     ) -> Result<Vec<OrganizationPoliticianNoteResult>> {
-        tracing::debug!("election_id = {:?}", election_id);
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let records = sqlx::query_as!(
             OrganizationPoliticianNote,
