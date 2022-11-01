@@ -335,7 +335,9 @@
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
                   "socialist_workers_party",
-                  "socialist_workers"
+                  "socialist_workers",
+                  "colorado_center",
+                  "american_constitution"
                 ]
               },
               "name": "political_party"
@@ -512,7 +514,9 @@
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
                   "socialist_workers_party",
-                  "socialist_workers"
+                  "socialist_workers",
+                  "colorado_center",
+                  "american_constitution"
                 ]
               },
               "name": "political_party"
@@ -2479,6 +2483,62 @@
     },
     "query": "\n                INSERT INTO bill_issue_tags (bill_id, issue_tag_id) \n                VALUES ($1, $2)\n            "
   },
+  "41a95edc968068b3192ff550185b78e4491348b015e55f25e3658fda39f7dfc6": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "slug",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "category",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 5,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 6,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "UuidArray"
+        ]
+      }
+    },
+    "query": "\n                SELECT id, slug, name, description, category, created_at, updated_at FROM issue_tag\n                WHERE id = ANY($1)\n            "
+  },
   "4b211e5363bd8c5396fe8116f4b04827cede5e5bdd09206373af5e2aa98e78d3": {
     "describe": {
       "columns": [],
@@ -3120,7 +3180,9 @@
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
                   "socialist_workers_party",
-                  "socialist_workers"
+                  "socialist_workers",
+                  "colorado_center",
+                  "american_constitution"
                 ]
               },
               "name": "political_party"
@@ -3319,7 +3381,9 @@
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
                   "socialist_workers_party",
-                  "socialist_workers"
+                  "socialist_workers",
+                  "colorado_center",
+                  "american_constitution"
                 ]
               },
               "name": "political_party"
@@ -4008,7 +4072,9 @@
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
                   "socialist_workers_party",
-                  "socialist_workers"
+                  "socialist_workers",
+                  "colorado_center",
+                  "american_constitution"
                 ]
               },
               "name": "political_party"
@@ -5022,7 +5088,9 @@
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
                   "socialist_workers_party",
-                  "socialist_workers"
+                  "socialist_workers",
+                  "colorado_center",
+                  "american_constitution"
                 ]
               },
               "name": "political_party"
@@ -5329,7 +5397,9 @@
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
                   "socialist_workers_party",
-                  "socialist_workers"
+                  "socialist_workers",
+                  "colorado_center",
+                  "american_constitution"
                 ]
               },
               "name": "political_party"
@@ -6294,7 +6364,9 @@
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
                   "socialist_workers_party",
-                  "socialist_workers"
+                  "socialist_workers",
+                  "colorado_center",
+                  "american_constitution"
                 ]
               },
               "name": "political_party"
@@ -6860,7 +6932,9 @@
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
                   "socialist_workers_party",
-                  "socialist_workers"
+                  "socialist_workers",
+                  "colorado_center",
+                  "american_constitution"
                 ]
               },
               "name": "political_party"
@@ -7043,7 +7117,9 @@
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
                   "socialist_workers_party",
-                  "socialist_workers"
+                  "socialist_workers",
+                  "colorado_center",
+                  "american_constitution"
                 ]
               },
               "name": "political_party"
@@ -7600,7 +7676,9 @@
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
                   "socialist_workers_party",
-                  "socialist_workers"
+                  "socialist_workers",
+                  "colorado_center",
+                  "american_constitution"
                 ]
               },
               "name": "political_party"
@@ -8176,7 +8254,9 @@
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
                   "socialist_workers_party",
-                  "socialist_workers"
+                  "socialist_workers",
+                  "colorado_center",
+                  "american_constitution"
                 ]
               },
               "name": "political_party"
@@ -8820,7 +8900,9 @@
                   "grassroots_legalize_cannabis",
                   "legal_marijuana_now",
                   "socialist_workers_party",
-                  "socialist_workers"
+                  "socialist_workers",
+                  "colorado_center",
+                  "american_constitution"
                 ]
               },
               "name": "political_party"

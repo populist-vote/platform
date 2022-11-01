@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT\n                id,\n                slug,\n                title,\n                office_id,\n                race_type AS \"race_type:RaceType\",\n                party AS \"party:PoliticalParty\",\n                state AS \"state:State\",\n                description,\n                ballotpedia_link,\n                early_voting_begins_date,\n                winner_id,\n                total_votes,\n                official_website,\n                election_id,\n                is_special_election,\n                num_elect,\n                created_at,\n                updated_at\n            FROM (\n                SELECT\n                    race.*,\n                    election_date\n                FROM\n                    race\n                    JOIN election ON race.election_id = election.id\n                    JOIN race_candidates ON race.id = race_candidates.race_id\n                WHERE\n                    race_candidates.candidate_id = $1\n                    AND election_date > NOW()) AS r\n            ORDER BY\n                election_date ASC\n            LIMIT 1\n        ",
+  "query": "\n            SELECT\n                r.id,\n                r.slug,\n                r.title,\n                r.office_id,\n                r.race_type AS \"race_type:RaceType\",\n                r.party AS \"party:PoliticalParty\",\n                r.state AS \"state:State\",\n                r.description,\n                r.ballotpedia_link,\n                r.early_voting_begins_date,\n                r.winner_id,\n                r.total_votes,\n                r.official_website,\n                r.election_id,\n                r.is_special_election,\n                r.num_elect,\n                r.created_at,\n                r.updated_at\n            FROM\n                race r\n                JOIN office o ON office_id = o.id\n            WHERE\n                r.election_id = $1 AND (\n                    o.election_scope = 'national'\n                    OR (o.state = $2 AND o.election_scope = 'state')\n                    OR (o.state = $2 AND (  \n                       (o.election_scope = 'city' AND o.municipality = $3) OR\n                       (o.election_scope = 'county' AND o.county = $4) OR\n                       (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR\n                       (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR\n                       (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR\n                       (o.election_scope = 'district' AND o.district_type = 'county' AND county = $3 AND o.district = $8) OR\n                       (CASE \n                         WHEN $10 = '01' THEN\n                          (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'ISD #', '') = $9) AND\n                          (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)\n                         WHEN $10 = '03' THEN\n                           (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'SSD #', '') = $9) AND\n                           (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)\n                        END)\n                    )))\n            ORDER BY o.priority ASC, title DESC\n                ",
   "describe": {
     "columns": [
       {
@@ -60,7 +60,9 @@
                 "grassroots_legalize_cannabis",
                 "legal_marijuana_now",
                 "socialist_workers_party",
-                "socialist_workers"
+                "socialist_workers",
+                "colorado_center",
+                "american_constitution"
               ]
             }
           }
@@ -188,7 +190,76 @@
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Uuid",
+        {
+          "Custom": {
+            "name": "state",
+            "kind": {
+              "Enum": [
+                "AL",
+                "AK",
+                "AZ",
+                "AR",
+                "CA",
+                "CO",
+                "CT",
+                "DC",
+                "DE",
+                "FL",
+                "GA",
+                "HI",
+                "ID",
+                "IL",
+                "IN",
+                "IA",
+                "KS",
+                "KY",
+                "LA",
+                "ME",
+                "MD",
+                "MA",
+                "MI",
+                "MN",
+                "MS",
+                "MO",
+                "MT",
+                "NE",
+                "NV",
+                "NH",
+                "NJ",
+                "NM",
+                "NY",
+                "NC",
+                "ND",
+                "OH",
+                "OK",
+                "OR",
+                "PA",
+                "RI",
+                "SC",
+                "SD",
+                "TN",
+                "TX",
+                "UT",
+                "VT",
+                "VA",
+                "WA",
+                "WV",
+                "WI",
+                "WY"
+              ]
+            }
+          }
+        },
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text"
       ]
     },
     "nullable": [
@@ -212,5 +283,5 @@
       false
     ]
   },
-  "hash": "1a938ccb48645cca01c53e9075d3508c6d90506d2a09bd60d78e66cabba69fc9"
+  "hash": "19850d8b56916d3831cf220a25c1be754079154757917d309836693b55a55e60"
 }

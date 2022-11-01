@@ -9,6 +9,7 @@ mod health;
 mod issue_tag;
 mod office;
 mod organization;
+mod organization_politician_note;
 mod politician;
 mod race;
 mod upload;
