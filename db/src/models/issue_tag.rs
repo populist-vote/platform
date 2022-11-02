@@ -118,6 +118,7 @@ impl IssueTag {
             r#"
                 SELECT id, slug, name, description, category, created_at, updated_at FROM issue_tag
                 WHERE id = ANY($1)
+                ORDER BY name DESC
             "#,
             &ids
         )
