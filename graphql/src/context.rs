@@ -1,4 +1,4 @@
-use async_graphql::dataloader::{DataLoader, HashMapCache};
+use async_graphql::dataloader::{DataLoader, LruCache};
 use db::loaders::{
     office::OfficeLoader, organization::OrganizationLoader, politician::PoliticianLoader,
     race::RaceLoader,
@@ -11,10 +11,10 @@ pub struct ApiContext {
 }
 
 pub struct DataLoaders {
-    pub organization_loader: DataLoader<OrganizationLoader, HashMapCache>,
-    pub politician_loader: DataLoader<PoliticianLoader, HashMapCache>,
-    pub office_loader: DataLoader<OfficeLoader, HashMapCache>,
-    pub race_loader: DataLoader<RaceLoader, HashMapCache>,
+    pub organization_loader: DataLoader<OrganizationLoader, LruCache>,
+    pub politician_loader: DataLoader<PoliticianLoader, LruCache>,
+    pub office_loader: DataLoader<OfficeLoader, LruCache>,
+    pub race_loader: DataLoader<RaceLoader, LruCache>,
 }
 
 impl DataLoaders {
@@ -23,22 +23,22 @@ impl DataLoaders {
             organization_loader: DataLoader::with_cache(
                 OrganizationLoader::new(pool.clone()),
                 tokio::task::spawn,
-                HashMapCache::default(),
+                LruCache::new(64),
             ),
             politician_loader: DataLoader::with_cache(
                 PoliticianLoader::new(pool.clone()),
                 tokio::task::spawn,
-                HashMapCache::default(),
+                LruCache::new(64),
             ),
             office_loader: DataLoader::with_cache(
                 OfficeLoader::new(pool.clone()),
                 tokio::task::spawn,
-                HashMapCache::default(),
+                LruCache::new(64),
             ),
             race_loader: DataLoader::with_cache(
                 RaceLoader::new(pool),
                 tokio::task::spawn,
-                HashMapCache::default(),
+                LruCache::new(64),
             ),
         }
     }

@@ -12,11 +12,10 @@ use poem::{
     http::HeaderMap,
     listener::TcpListener,
     middleware::{Compression, CookieJarManager, Cors},
-    web::{cookie::CookieJar, Data, Html, Json},
+    web::{cookie::CookieJar, Data, Html},
     EndpointExt, IntoResponse, Route, Server,
 };
 use regex::Regex;
-use serde_json::Value;
 use std::str::FromStr;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
@@ -24,15 +23,6 @@ use tracing_subscriber::FmtSubscriber;
 #[handler]
 fn root() -> impl IntoResponse {
     Html(r#"<h1>Populist API Docs</h1>"#)
-}
-
-/// Simple server health check
-// TODO: Make this a GraphQL subscription
-#[handler]
-fn ping() -> Json<Value> {
-    Json(serde_json::json!({
-        "ok": true
-    }))
 }
 
 #[handler]
@@ -119,6 +109,7 @@ async fn main() -> Result<(), std::io::Error> {
 
     let environment = Environment::from_str(&std::env::var("ENVIRONMENT").unwrap()).unwrap();
     let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
+
     let app = Route::new()
         .at("/", get(graphql_playground).post(graphql_handler))
         .at("/ws", get(GraphQLSubscription::new(schema.clone())))
@@ -132,9 +123,7 @@ async fn main() -> Result<(), std::io::Error> {
         .with(CookieJarManager::default());
 
     let address = format!("0.0.0.0:{}", port);
-
     info!("GraphQL Playground live at http://localhost:{}", &port);
-
     let listener = TcpListener::bind(&address);
 
     Server::new(listener).run(app).await
