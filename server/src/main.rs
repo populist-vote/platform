@@ -1,8 +1,5 @@
 use async_graphql::{
-    extensions::{
-        apollo_persisted_queries::{ApolloPersistedQueries, LruCacheStorage},
-        ApolloTracing,
-    },
+    extensions::ApolloTracing,
     http::{playground_source, GraphQLPlaygroundConfig},
 };
 use async_graphql_poem::{GraphQLRequest, GraphQLResponse, GraphQLSubscription};
@@ -118,11 +115,7 @@ async fn main() -> Result<(), std::io::Error> {
 
     let context = ApiContext::new(pool.connection.clone());
 
-    let schema = new_schema()
-        .data(context)
-        .extension(ApolloTracing)
-        .extension(ApolloPersistedQueries::new(LruCacheStorage::new(256)))
-        .finish();
+    let schema = new_schema().data(context).extension(ApolloTracing).finish();
 
     let environment = Environment::from_str(&std::env::var("ENVIRONMENT").unwrap()).unwrap();
     let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
