@@ -1,5 +1,6 @@
 mod errors;
 pub use crate::errors::Error;
+use serde::{Deserialize, Serialize};
 use std::{env, fmt, str::FromStr};
 use url::Url;
 
@@ -20,8 +21,8 @@ impl Default for Config {
             _ => Url::parse("http://localhost:3030").unwrap(),
         };
         let root_domain = match environment {
-            Environment::Production => "populist.us".to_string(),
-            Environment::Staging => "staging.populist.us".to_string(),
+            Environment::Production => "api.populist.us".to_string(),
+            Environment::Staging => "api.staging.populist.us".to_string(),
             _ => "localhost".to_string(),
         };
         Config {
@@ -32,7 +33,7 @@ impl Default for Config {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum Environment {
     Production,
     Staging,

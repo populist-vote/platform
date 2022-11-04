@@ -12,7 +12,7 @@ legiscan = { path = "../legiscan" }
 votesmart = { path = "../votesmart" }
 dotenv = "0.15.0"
 structopt = "0.3.25"
-serde = "*"
+serde = "1.0.130"
 serde_json = "1.0.71"
 tokio = { version = "1.21.1", features = ["full"] }
 sqlx = { version = "0.6.2", features = ["postgres", "uuid"] }
