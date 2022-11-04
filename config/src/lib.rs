@@ -21,7 +21,7 @@ impl Default for Config {
         };
         let root_domain = match environment {
             Environment::Production => "populist.us".to_string(),
-            Environment::Staging => "populist.us".to_string(),
+            Environment::Staging => "staging.populist.us".to_string(),
             _ => "localhost".to_string(),
         };
         Config {
