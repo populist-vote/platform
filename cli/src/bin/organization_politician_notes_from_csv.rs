@@ -7,6 +7,7 @@ use std::time::Instant;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct OrganizationPoliticianNote {
+    id: uuid::Uuid,
     organization_id: uuid::Uuid,
     politician_id: uuid::Uuid,
     election_id: uuid::Uuid,
@@ -32,6 +33,7 @@ async fn organization_politician_notes_from_csv() -> Result<(), Box<dyn Error>> 
         let _input = sqlx::query!(
             r#"
             INSERT INTO organization_politician_notes (
+                id,
                 organization_id,
                 politician_id,
                 election_id,
@@ -43,9 +45,16 @@ async fn organization_politician_notes_from_csv() -> Result<(), Box<dyn Error>> 
                 $2,
                 $3,
                 $4,
-                $5
-            )
+                $5, 
+                $6
+            ) ON CONFLICT (id) DO UPDATE SET
+                organization_id = $2,
+                politician_id = $3,
+                election_id = $4,
+                issue_tag_ids = $5,
+                notes = $6
         "#,
+            input.id,
             input.organization_id,
             input.politician_id,
             input.election_id,
