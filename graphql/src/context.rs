@@ -1,7 +1,7 @@
 use async_graphql::dataloader::{DataLoader, LruCache};
 use db::loaders::{
-    office::OfficeLoader, organization::OrganizationLoader, politician::PoliticianLoader,
-    race::RaceLoader,
+    issue_tag::IssueTagLoader, office::OfficeLoader, organization::OrganizationLoader,
+    politician::PoliticianLoader, race::RaceLoader,
 };
 use sqlx::PgPool;
 
@@ -15,6 +15,7 @@ pub struct DataLoaders {
     pub politician_loader: DataLoader<PoliticianLoader, LruCache>,
     pub office_loader: DataLoader<OfficeLoader, LruCache>,
     pub race_loader: DataLoader<RaceLoader, LruCache>,
+    pub issue_tag_loader: DataLoader<IssueTagLoader, LruCache>,
 }
 
 impl DataLoaders {
@@ -36,9 +37,14 @@ impl DataLoaders {
                 LruCache::new(64),
             ),
             race_loader: DataLoader::with_cache(
-                RaceLoader::new(pool),
+                RaceLoader::new(pool.clone()),
                 tokio::task::spawn,
                 LruCache::new(64),
+            ),
+            issue_tag_loader: DataLoader::with_cache(
+                IssueTagLoader::new(pool),
+                tokio::task::spawn,
+                LruCache::new(128),
             ),
         }
     }

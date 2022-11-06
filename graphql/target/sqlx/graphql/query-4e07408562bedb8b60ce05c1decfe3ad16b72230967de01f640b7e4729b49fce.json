@@ -1,21 +1,22 @@
 {
-  "query": "\n                SELECT\n                    a.state AS \"state:State\"\n                FROM\n                    address a\n                    JOIN user_profile up ON user_id = $1\n                WHERE\n                    up.user_id = $1 AND \n                    up.address_id = a.id\n                ",
+  "query": "\n            SELECT\n                ROUND(CAST(CAST(rc.votes AS FLOAT) / CAST(r.total_votes AS FLOAT) * 100 AS NUMERIC), 1)::FLOAT AS \"percentage\"\n            FROM\n                race_candidates rc\n                JOIN race r ON rc.race_id = $2\n            WHERE\n                rc.candidate_id = $1\n                AND rc.race_id = $2\n                AND rc.votes IS NOT NULL\n                AND r.id = $2\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "state:State",
-        "type_info": "Text"
+        "name": "percentage",
+        "type_info": "Float8"
       }
     ],
     "parameters": {
       "Left": [
+        "Uuid",
         "Uuid"
       ]
     },
     "nullable": [
-      false
+      null
     ]
   },
-  "hash": "b5cc088e40d5bbf140044ee2d61f1383a2a23123e4c826370db66626eec404df"
+  "hash": "41b07e7fe70a2dc38e96ad3b21f69aaba31121635d3e1db29d621363c981390e"
 }

@@ -33,13 +33,22 @@ impl OrganizationPoliticianNoteResult {
     }
 
     async fn politician(&self, ctx: &Context<'_>) -> Result<PoliticianResult> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let candidate = Politician::find_by_id(
-            &db_pool,
-            uuid::Uuid::parse_str(&self.politician_id).unwrap(),
-        )
-        .await?;
-        Ok(candidate.into())
+        let politician_id = uuid::Uuid::parse_str(self.politician_id.as_str()).unwrap();
+
+        let cached_politician = ctx
+            .data::<ApiContext>()?
+            .loaders
+            .politician_loader
+            .load_one(politician_id)
+            .await?;
+
+        if let Some(politician) = cached_politician {
+            Ok(politician.into())
+        } else {
+            let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+            let record = Politician::find_by_id(&db_pool, politician_id).await?;
+            Ok(record.into())
+        }
     }
 
     async fn issue_tags(&self, ctx: &Context<'_>) -> Result<Vec<IssueTagResult>> {
