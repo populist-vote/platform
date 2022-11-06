@@ -532,6 +532,7 @@ impl PoliticianResult {
                     JOIN race_candidates ON race.id = race_candidates.race_id
                 WHERE
                     race_candidates.candidate_id = $1
+                    AND race_candidates.is_running = true
                     AND election_date > NOW()) AS r
             ORDER BY
                 election_date ASC
