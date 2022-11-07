@@ -17,8 +17,8 @@ use poem::{
 };
 use regex::Regex;
 use std::str::FromStr;
-use tracing::{info, Level};
-use tracing_subscriber::FmtSubscriber;
+use tracing::info;
+use tracing_subscriber::EnvFilter;
 
 #[handler]
 fn root() -> impl IntoResponse {
@@ -88,10 +88,10 @@ pub fn cors(environment: Environment) -> Cors {
 async fn main() -> Result<(), std::io::Error> {
     dotenv().ok();
 
-    let subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::DEBUG)
-        .finish();
-    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .with_writer(std::io::stderr)
+        .init();
 
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
