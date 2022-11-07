@@ -29,6 +29,7 @@ pub struct Organization {
     pub updated_at: DateTime,
 }
 
+#[serde_with::serde_as]
 #[derive(InputObject, Debug, Default, Serialize, Deserialize)]
 pub struct UpsertOrganizationInput {
     pub id: Option<uuid::Uuid>,
@@ -46,6 +47,7 @@ pub struct UpsertOrganizationInput {
     pub headquarters_phone: Option<String>,
     pub tax_classification: Option<String>,
     pub issue_tags: Option<CreateOrConnectIssueTagInput>,
+    #[serde_as(as = "serde_with::json::JsonString")]
     pub assets: Option<JSON>,
 }
 

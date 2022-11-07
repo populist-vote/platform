@@ -52,6 +52,7 @@ pub struct Politician {
     pub updated_at: DateTime,
 }
 
+#[serde_with::serde_as]
 #[derive(InputObject, Debug, Default, Serialize, Deserialize)]
 pub struct UpsertPoliticianInput {
     pub id: Option<uuid::Uuid>,
@@ -67,6 +68,7 @@ pub struct UpsertPoliticianInput {
     pub date_of_birth: Option<NaiveDate>,
     pub office_id: Option<uuid::Uuid>,
     pub thumbnail_image_url: Option<String>,
+    #[serde_as(as = "serde_with::json::JsonString")]
     pub assets: Option<JSON>,
     pub official_website_url: Option<String>,
     pub campaign_website_url: Option<String>,
