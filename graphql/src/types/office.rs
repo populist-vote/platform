@@ -31,6 +31,7 @@ pub struct OfficeResult {
     municipality: Option<String>,
     term_length: Option<i32>,
     seat: Option<String>,
+    priority: Option<i32>,
 }
 
 fn compute_office_subtitle(office: &Office, use_short: bool) -> Option<String> {
@@ -231,6 +232,7 @@ impl From<Office> for OfficeResult {
             municipality: o.municipality,
             term_length: o.term_length,
             seat: o.seat,
+            priority: o.priority,
         }
     }
 }
