@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT\n                id,\n                slug,\n                title,\n                office_id,\n                race_type AS \"race_type:RaceType\",\n                party AS \"party:PoliticalParty\",\n                state AS \"state:State\",\n                description,\n                ballotpedia_link,\n                early_voting_begins_date,\n                winner_id,\n                total_votes,\n                official_website,\n                election_id,\n                is_special_election,\n                num_elect,\n                created_at,\n                updated_at\n            FROM (\n                SELECT\n                    race.*,\n                    election_date\n                FROM\n                    race\n                    JOIN election ON race.election_id = election.id\n                    JOIN race_candidates ON race.id = race_candidates.race_id\n                WHERE\n                    race_candidates.candidate_id = $1\n                    AND race_candidates.is_running = true\n                    AND election_date > NOW()) AS r\n            ORDER BY\n                election_date ASC\n            LIMIT 1\n        ",
+  "query": "\n                SELECT\n                    id,\n                    slug,\n                    first_name,\n                    middle_name,\n                    last_name,\n                    suffix,\n                    preferred_name,\n                    biography,\n                    biography_source,\n                    home_state AS \"home_state:State\",\n                    date_of_birth,\n                    office_id,\n                    upcoming_race_id,\n                    thumbnail_image_url,\n                    assets,\n                    official_website_url,\n                    campaign_website_url,\n                    facebook_url,\n                    twitter_url,\n                    instagram_url,\n                    youtube_url,\n                    linkedin_url,\n                    tiktok_url,\n                    email,\n                    phone,\n                    party AS \"party:PoliticalParty\",\n                    votesmart_candidate_id,\n                    votesmart_candidate_bio,\n                    votesmart_candidate_ratings,\n                    legiscan_people_id,\n                    crp_candidate_id,\n                    fec_candidate_id,\n                    race_wins,\n                    race_losses,\n                    p.created_at,\n                    p.updated_at\n                FROM\n                    politician p\n                    JOIN race_candidates rc ON race_id = $1\n                WHERE\n                    p.id = rc.candidate_id\n                    AND rc.is_running = TRUE\n            ",
   "describe": {
     "columns": [
       {
@@ -14,63 +14,42 @@
       },
       {
         "ordinal": 2,
-        "name": "title",
+        "name": "first_name",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "office_id",
-        "type_info": "Uuid"
+        "name": "middle_name",
+        "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "race_type:RaceType",
-        "type_info": {
-          "Custom": {
-            "name": "race_type",
-            "kind": {
-              "Enum": [
-                "primary",
-                "general"
-              ]
-            }
-          }
-        }
+        "name": "last_name",
+        "type_info": "Text"
       },
       {
         "ordinal": 5,
-        "name": "party:PoliticalParty",
-        "type_info": {
-          "Custom": {
-            "name": "political_party",
-            "kind": {
-              "Enum": [
-                "democratic",
-                "republican",
-                "libertarian",
-                "green",
-                "constitution",
-                "unknown",
-                "independent",
-                "freedom",
-                "unity",
-                "approval_voting",
-                "unaffiliated",
-                "democratic_farmer_labor",
-                "grassroots_legalize_cannabis",
-                "legal_marijuana_now",
-                "socialist_workers_party",
-                "socialist_workers",
-                "colorado_center",
-                "american_constitution"
-              ]
-            }
-          }
-        }
+        "name": "suffix",
+        "type_info": "Text"
       },
       {
         "ordinal": 6,
-        "name": "state:State",
+        "name": "preferred_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "biography",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "biography_source",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "home_state:State",
         "type_info": {
           "Custom": {
             "name": "state",
@@ -133,57 +112,158 @@
         }
       },
       {
-        "ordinal": 7,
-        "name": "description",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 8,
-        "name": "ballotpedia_link",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 9,
-        "name": "early_voting_begins_date",
+        "ordinal": 10,
+        "name": "date_of_birth",
         "type_info": "Date"
       },
       {
-        "ordinal": 10,
-        "name": "winner_id",
-        "type_info": "Uuid"
-      },
-      {
         "ordinal": 11,
-        "name": "total_votes",
-        "type_info": "Int4"
+        "name": "office_id",
+        "type_info": "Uuid"
       },
       {
         "ordinal": 12,
-        "name": "official_website",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 13,
-        "name": "election_id",
+        "name": "upcoming_race_id",
         "type_info": "Uuid"
       },
       {
+        "ordinal": 13,
+        "name": "thumbnail_image_url",
+        "type_info": "Text"
+      },
+      {
         "ordinal": 14,
-        "name": "is_special_election",
-        "type_info": "Bool"
+        "name": "assets",
+        "type_info": "Jsonb"
       },
       {
         "ordinal": 15,
-        "name": "num_elect",
-        "type_info": "Int4"
+        "name": "official_website_url",
+        "type_info": "Text"
       },
       {
         "ordinal": 16,
+        "name": "campaign_website_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 17,
+        "name": "facebook_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 18,
+        "name": "twitter_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 19,
+        "name": "instagram_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 20,
+        "name": "youtube_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 21,
+        "name": "linkedin_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 22,
+        "name": "tiktok_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 23,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 24,
+        "name": "phone",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 25,
+        "name": "party:PoliticalParty",
+        "type_info": {
+          "Custom": {
+            "name": "political_party",
+            "kind": {
+              "Enum": [
+                "democratic",
+                "republican",
+                "libertarian",
+                "green",
+                "constitution",
+                "unknown",
+                "independent",
+                "freedom",
+                "unity",
+                "approval_voting",
+                "unaffiliated",
+                "democratic_farmer_labor",
+                "grassroots_legalize_cannabis",
+                "legal_marijuana_now",
+                "socialist_workers_party",
+                "socialist_workers",
+                "colorado_center",
+                "american_constitution"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 26,
+        "name": "votesmart_candidate_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 27,
+        "name": "votesmart_candidate_bio",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 28,
+        "name": "votesmart_candidate_ratings",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 29,
+        "name": "legiscan_people_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 30,
+        "name": "crp_candidate_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 31,
+        "name": "fec_candidate_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 32,
+        "name": "race_wins",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 33,
+        "name": "race_losses",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 34,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 17,
+        "ordinal": 35,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
@@ -197,22 +277,40 @@
       false,
       false,
       false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
       false,
       false,
       true,
       true,
       true,
       true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      false,
       true,
       false,
       false
     ]
   },
-  "hash": "bd6a9b35047d97989853abaa7e63105162c78fb50c8a080f602ce023c33caad3"
+  "hash": "993b378b12893627177c61e7e00d4a7d02605423613417adc68c99f23dc4cfd6"
 }

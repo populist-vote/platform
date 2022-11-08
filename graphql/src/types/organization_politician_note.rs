@@ -1,6 +1,6 @@
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use chrono::{DateTime, Utc};
-use db::{IssueTag, Organization, OrganizationPoliticianNote, Politician};
+use db::{loaders::politician::PoliticianId, IssueTag, Organization, OrganizationPoliticianNote};
 use serde_json::Value as JSON;
 
 use crate::context::ApiContext;
@@ -35,33 +35,38 @@ impl OrganizationPoliticianNoteResult {
     async fn politician(&self, ctx: &Context<'_>) -> Result<PoliticianResult> {
         let politician_id = uuid::Uuid::parse_str(self.politician_id.as_str()).unwrap();
 
-        let cached_politician = ctx
+        let politician = ctx
             .data::<ApiContext>()?
             .loaders
             .politician_loader
-            .load_one(politician_id)
-            .await?;
+            .load_one(PoliticianId(politician_id))
+            .await?
+            .map(PoliticianResult::from)
+            .expect("No politician found for this note.");
 
-        if let Some(politician) = cached_politician {
-            Ok(politician.into())
-        } else {
-            let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-            let record = Politician::find_by_id(&db_pool, politician_id).await?;
-            Ok(record.into())
-        }
+        Ok(politician)
     }
 
     async fn issue_tags(&self, ctx: &Context<'_>) -> Result<Vec<IssueTagResult>> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let issue_tags = IssueTag::find_by_ids(
-            &db_pool,
-            self.issue_tag_ids
-                .iter()
-                .map(|id| uuid::Uuid::parse_str(id.as_str()).unwrap())
-                .collect(),
-        )
-        .await?;
-        Ok(issue_tags.into_iter().map(|it| it.into()).collect())
+        let issue_tag_ids = self
+            .issue_tag_ids
+            .iter()
+            .map(|id| uuid::Uuid::parse_str(id.as_str()).unwrap())
+            .collect::<Vec<uuid::Uuid>>();
+        let issue_tags = ctx
+            .data::<ApiContext>()?
+            .loaders
+            .issue_tag_loader
+            .load_many(issue_tag_ids)
+            .await?;
+        let issue_tag_results = issue_tags
+            .values()
+            .cloned()
+            .collect::<Vec<IssueTag>>()
+            .into_iter()
+            .map(IssueTagResult::from)
+            .collect();
+        Ok(issue_tag_results)
     }
 }
 

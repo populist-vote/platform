@@ -7,6 +7,7 @@ pub mod subscription;
 pub mod types;
 
 use crate::{mutation::Mutation, query::Query, types::Error};
+use async_graphql::extensions::Tracing;
 use async_graphql::{Context, Schema, SchemaBuilder, ID};
 use auth::Claims;
 use dotenv::dotenv;
@@ -27,6 +28,7 @@ pub fn new_schema() -> SchemaBuilder<Query, Mutation, Subscription> {
         Mutation::default(),
         Subscription::default(),
     )
+    .extension(Tracing)
 }
 
 pub struct File {

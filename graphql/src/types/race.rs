@@ -90,6 +90,7 @@ impl RaceResult {
                     home_state AS "home_state:State",
                     date_of_birth,
                     office_id,
+                    upcoming_race_id,
                     thumbnail_image_url,
                     assets,
                     official_website_url,

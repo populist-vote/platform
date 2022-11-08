@@ -1,10 +1,10 @@
 use crate::{context::ApiContext, types::PoliticianResult};
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use db::{
+    loaders::politician::OfficeId,
     models::{
-        enums::{FullState, PoliticalParty, PoliticalScope, State},
+        enums::{FullState, PoliticalScope, State},
         office::Office,
-        politician::Politician,
     },
     Chamber, District, ElectionScope,
 };
@@ -143,58 +143,14 @@ fn compute_office_subtitle(office: &Office, use_short: bool) -> Option<String> {
 #[ComplexObject]
 impl OfficeResult {
     async fn incumbent(&self, ctx: &Context<'_>) -> Result<Option<PoliticianResult>> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let record = sqlx::query_as!(
-            Politician,
-            r#"
-                SELECT id,
-                        slug,
-                        first_name,
-                        middle_name,
-                        last_name,
-                        suffix,
-                        preferred_name,
-                        biography,
-                        biography_source,
-                        home_state AS "home_state:State",
-                        date_of_birth,
-                        office_id,
-                        thumbnail_image_url,
-                        assets,
-                        official_website_url,
-                        campaign_website_url,
-                        facebook_url,
-                        twitter_url,
-                        instagram_url,
-                        youtube_url,
-                        linkedin_url,
-                        tiktok_url,
-                        email,
-                        phone,
-                        party AS "party:PoliticalParty",
-                        votesmart_candidate_id,
-                        votesmart_candidate_bio,
-                        votesmart_candidate_ratings,
-                        legiscan_people_id,
-                        crp_candidate_id,
-                        fec_candidate_id,
-                        race_wins,
-                        race_losses,
-                        created_at,
-                        updated_at FROM politician
-                WHERE office_id = $1
-            "#,
-            uuid::Uuid::parse_str(&self.id.as_str()).unwrap()
-        )
-        .fetch_optional(&db_pool)
-        .await?;
+        let politician = ctx
+            .data::<ApiContext>()?
+            .loaders
+            .politician_loader
+            .load_one(OfficeId(uuid::Uuid::parse_str(&self.id).unwrap()))
+            .await?;
 
-        if let Some(record) = record {
-            let politician_result = PoliticianResult::from(record);
-            Ok(Some(politician_result))
-        } else {
-            Ok(None)
-        }
+        Ok(politician.map(|p| PoliticianResult::from(p)))
     }
 }
 

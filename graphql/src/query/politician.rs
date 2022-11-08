@@ -1,6 +1,6 @@
 use crate::{context::ApiContext, relay, types::PoliticianResult};
 use async_graphql::{Context, Object, Result};
-use db::{Politician, PoliticianFilter};
+use db::{loaders::politician::PoliticianSlug, Politician, PoliticianFilter};
 
 #[derive(Default)]
 pub struct PoliticianQuery;
@@ -17,7 +17,7 @@ impl PoliticianQuery {
             .data::<ApiContext>()?
             .loaders
             .politician_loader
-            .load_one(slug.clone())
+            .load_one(PoliticianSlug(slug.clone()))
             .await?;
 
         if let Some(politician) = cached_politician {

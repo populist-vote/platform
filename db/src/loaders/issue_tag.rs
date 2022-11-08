@@ -27,7 +27,7 @@ impl Loader<uuid::Uuid> for IssueTagLoader {
     ) -> Result<HashMap<uuid::Uuid, Self::Value>, Self::Error> {
         let query = format!(
             r#"SELECT * FROM issue_tag WHERE id IN ({})"#,
-            keys.iter().join(",")
+            keys.iter().map(|t| format!("'{}'", t)).join(",")
         );
 
         let cache = sqlx::query_as(&query)

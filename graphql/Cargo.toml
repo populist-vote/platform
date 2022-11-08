@@ -12,7 +12,7 @@ mailers = { path = "../mailers" }
 open-secrets = { path = "../open-secrets" }
 
 anyhow = "1.0.45"
-async-graphql = { version = "4.0.13", features = ["uuid", "chrono", "unblock", "dataloader", "apollo_persisted_queries"] }
+async-graphql = { version = "4.0.13", features = ["uuid", "chrono", "unblock", "dataloader", "tracing"] }
 async-graphql-poem = "4.0.13"
 bytes = "1.1.0"
 chrono = "0.4.19"

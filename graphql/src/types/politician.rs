@@ -3,13 +3,10 @@ use super::{
 };
 use crate::{context::ApiContext, relay};
 use async_graphql::{ComplexObject, Context, Enum, Result, SimpleObject, ID};
-use db::{
-    models::{
-        bill::Bill,
-        enums::{LegislationStatus, PoliticalParty, RaceType, State},
-        politician::Politician,
-    },
-    Office, Race,
+use db::models::{
+    bill::Bill,
+    enums::{LegislationStatus, PoliticalParty, State},
+    politician::Politician,
 };
 use open_secrets::OpenSecretsProxy;
 use serde::{Deserialize, Serialize};
@@ -38,6 +35,7 @@ pub struct PoliticianResult {
     home_state: Option<State>,
     date_of_birth: Option<NaiveDate>,
     office_id: Option<ID>,
+    upcoming_race_id: Option<ID>,
     thumbnail_image_url: Option<String>,
     assets: PoliticianAssets,
     official_website_url: Option<String>,
@@ -287,7 +285,6 @@ impl PoliticianResult {
         last: Option<i32>,
     ) -> relay::ConnectionResult<RatingResult> {
         let mut ratings = vec![];
-        // let db_pool = ctx.data::<ApiContext>()?.pool.clone();
 
         let unique_sig_ids = self
             .votesmart_candidate_ratings
@@ -448,20 +445,16 @@ impl PoliticianResult {
     pub async fn current_office(&self, ctx: &Context<'_>) -> Result<Option<OfficeResult>> {
         let office_result = match &self.office_id {
             Some(id) => {
-                let cached_office = ctx
+                let office = ctx
                     .data::<ApiContext>()?
                     .loaders
                     .office_loader
                     .load_one(uuid::Uuid::parse_str(id).unwrap())
                     .await?;
 
-                if let Some(office) = cached_office {
-                    Some(OfficeResult::from(office))
-                } else {
-                    let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-                    let record =
-                        Office::find_by_id(&db_pool, uuid::Uuid::parse_str(id).unwrap()).await?;
-                    Some(record.into())
+                match office {
+                    Some(office) => Some(OfficeResult::from(office)),
+                    None => None,
                 }
             }
             None => None,
@@ -498,52 +491,18 @@ impl PoliticianResult {
     }
 
     async fn upcoming_race(&self, ctx: &Context<'_>) -> Result<Option<RaceResult>> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let race = match &self.upcoming_race_id {
+            Some(id) => {
+                ctx.data::<ApiContext>()?
+                    .loaders
+                    .race_loader
+                    .load_one(uuid::Uuid::parse_str(id).unwrap())
+                    .await?
+            }
+            None => None,
+        };
 
-        let race_result = sqlx::query_as!(
-            Race,
-            r#"
-            SELECT
-                id,
-                slug,
-                title,
-                office_id,
-                race_type AS "race_type:RaceType",
-                party AS "party:PoliticalParty",
-                state AS "state:State",
-                description,
-                ballotpedia_link,
-                early_voting_begins_date,
-                winner_id,
-                total_votes,
-                official_website,
-                election_id,
-                is_special_election,
-                num_elect,
-                created_at,
-                updated_at
-            FROM (
-                SELECT
-                    race.*,
-                    election_date
-                FROM
-                    race
-                    JOIN election ON race.election_id = election.id
-                    JOIN race_candidates ON race.id = race_candidates.race_id
-                WHERE
-                    race_candidates.candidate_id = $1
-                    AND race_candidates.is_running = true
-                    AND election_date > NOW()) AS r
-            ORDER BY
-                election_date ASC
-            LIMIT 1
-        "#,
-            uuid::Uuid::parse_str(&self.id).unwrap(),
-        )
-        .fetch_optional(&db_pool)
-        .await?;
-
-        Ok(race_result.map(RaceResult::from))
+        Ok(race.map(RaceResult::from))
     }
 
     async fn votes(&self, ctx: &Context<'_>, race_id: uuid::Uuid) -> Result<Option<i32>> {
@@ -590,6 +549,7 @@ impl From<Politician> for PoliticianResult {
             home_state: p.home_state,
             date_of_birth: p.date_of_birth,
             office_id: p.office_id.map(ID::from),
+            upcoming_race_id: p.upcoming_race_id.map(ID::from),
             thumbnail_image_url: p.thumbnail_image_url,
             assets: serde_json::from_value(p.assets.to_owned()).unwrap_or_default(),
             official_website_url: p.official_website_url,
