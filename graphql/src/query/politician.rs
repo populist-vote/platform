@@ -12,21 +12,15 @@ impl PoliticianQuery {
         &self,
         ctx: &Context<'_>,
         slug: String,
-    ) -> Result<PoliticianResult> {
-        let cached_politician = ctx
+    ) -> Result<Option<PoliticianResult>> {
+        let politician = ctx
             .data::<ApiContext>()?
             .loaders
             .politician_loader
             .load_one(PoliticianSlug(slug.clone()))
             .await?;
 
-        if let Some(politician) = cached_politician {
-            Ok(politician.into())
-        } else {
-            let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-            let record = Politician::find_by_slug(&db_pool, slug).await?;
-            Ok(record.into())
-        }
+        Ok(politician.map(PoliticianResult::from))
     }
 
     #[allow(clippy::needless_collect)]

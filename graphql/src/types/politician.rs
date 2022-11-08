@@ -452,10 +452,7 @@ impl PoliticianResult {
                     .load_one(uuid::Uuid::parse_str(id).unwrap())
                     .await?;
 
-                match office {
-                    Some(office) => Some(OfficeResult::from(office)),
-                    None => None,
-                }
+                office.map(OfficeResult::from)
             }
             None => None,
         };

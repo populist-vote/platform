@@ -150,7 +150,7 @@ impl OfficeResult {
             .load_one(OfficeId(uuid::Uuid::parse_str(&self.id).unwrap()))
             .await?;
 
-        Ok(politician.map(|p| PoliticianResult::from(p)))
+        Ok(politician.map(PoliticianResult::from))
     }
 }
 

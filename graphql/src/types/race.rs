@@ -1,12 +1,9 @@
 use crate::{context::ApiContext, types::OfficeResult};
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
-use db::{
-    models::{
-        enums::{PoliticalParty, RaceType, State},
-        politician::Politician,
-        race::Race,
-    },
-    Office,
+use db::models::{
+    enums::{PoliticalParty, RaceType, State},
+    politician::Politician,
+    race::Race,
 };
 
 use super::PoliticianResult;
@@ -53,22 +50,14 @@ pub struct RaceResultsResult {
 #[ComplexObject]
 impl RaceResult {
     async fn office(&self, ctx: &Context<'_>) -> Result<OfficeResult> {
-        let cached_office = ctx
+        let office = ctx
             .data::<ApiContext>()?
             .loaders
             .office_loader
             .load_one(uuid::Uuid::parse_str(&self.office_id.clone()).unwrap())
             .await?;
 
-        if let Some(office) = cached_office {
-            Ok(OfficeResult::from(office))
-        } else {
-            let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-            let record =
-                Office::find_by_id(&db_pool, uuid::Uuid::parse_str(&self.office_id).unwrap())
-                    .await?;
-            Ok(record.into())
-        }
+        Ok(OfficeResult::from(office.unwrap()))
     }
 
     async fn candidates(&self, ctx: &Context<'_>) -> Result<Vec<PoliticianResult>> {
