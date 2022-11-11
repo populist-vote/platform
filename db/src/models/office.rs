@@ -27,9 +27,6 @@ pub struct Office {
     pub state: Option<State>,
     pub county: Option<String>,
     pub municipality: Option<String>,
-    /// If a new office is introduced for redistricting or other reasons,
-    /// there may not be an incumbent, hence optional
-    pub incumbent_id: Option<uuid::Uuid>,
     pub term_length: Option<i32>,
     pub seat: Option<String>,
     pub priority: Option<i32>,
@@ -56,7 +53,6 @@ pub struct UpsertOfficeInput {
     pub state: Option<State>,
     pub county: Option<String>,
     pub municipality: Option<String>,
-    pub incumbent_id: Option<uuid::Uuid>,
     pub term_length: Option<i32>,
     pub seat: Option<String>,
     pub priority: Option<i32>,
@@ -155,8 +151,8 @@ impl Office {
         let record = sqlx::query_as!(
             Office,
             r#"
-                INSERT INTO office (id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type, hospital_district, school_district, chamber, political_scope, election_scope, state, county, municipality, incumbent_id, term_length, seat, priority)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+                INSERT INTO office (id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type, hospital_district, school_district, chamber, political_scope, election_scope, state, county, municipality, term_length, seat, priority)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
                 ON CONFLICT (id) DO UPDATE
                 SET
                     slug = COALESCE($2, office.slug),
@@ -175,11 +171,10 @@ impl Office {
                     state = COALESCE($15, office.state),
                     county = COALESCE($16, office.county),
                     municipality = COALESCE($17, office.municipality),
-                    incumbent_id = COALESCE($18, office.incumbent_id),
-                    term_length = COALESCE($19, office.term_length),
-                    seat = COALESCE($20, office.seat),
-                    priority = COALESCE($21, office.priority)
-                RETURNING id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:District", hospital_district, school_district, chamber AS "chamber:Chamber", political_scope AS "political_scope:PoliticalScope", election_scope as "election_scope:ElectionScope", state AS "state:State", county, municipality, incumbent_id, term_length, seat, priority, created_at, updated_at
+                    term_length = COALESCE($18, office.term_length),
+                    seat = COALESCE($19, office.seat),
+                    priority = COALESCE($20, office.priority)
+                RETURNING id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:District", hospital_district, school_district, chamber AS "chamber:Chamber", political_scope AS "political_scope:PoliticalScope", election_scope as "election_scope:ElectionScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at
             "#,
             id,
             slug,
@@ -198,7 +193,6 @@ impl Office {
             input.state as Option<State>,
             input.county,
             input.municipality,
-            input.incumbent_id,
             input.term_length,
             input.seat,
             input.priority,
@@ -220,7 +214,7 @@ impl Office {
         let record = sqlx::query_as!(
             Office,
             r#"
-                SELECT id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:District", hospital_district, school_district, chamber AS "chamber:Chamber", election_scope as "election_scope:ElectionScope", political_scope AS "political_scope:PoliticalScope", incumbent_id, state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at FROM office
+                SELECT id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:District", hospital_district, school_district, chamber AS "chamber:Chamber", election_scope as "election_scope:ElectionScope", political_scope AS "political_scope:PoliticalScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at FROM office
                 WHERE id = $1
             "#,
             id
@@ -235,7 +229,7 @@ impl Office {
         let record = sqlx::query_as!(
             Office,
             r#"
-                SELECT id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:District", hospital_district, school_district, chamber AS "chamber:Chamber", election_scope as "election_scope:ElectionScope", political_scope AS "political_scope:PoliticalScope", incumbent_id, state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at FROM office
+                SELECT id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:District", hospital_district, school_district, chamber AS "chamber:Chamber", election_scope as "election_scope:ElectionScope", political_scope AS "political_scope:PoliticalScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at FROM office
                 WHERE slug = $1
             "#,
             slug
@@ -252,7 +246,7 @@ impl Office {
         let records = sqlx::query_as!(
             Office,
             r#"
-                SELECT id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:District",  hospital_district, school_district, chamber AS "chamber:Chamber", election_scope as "election_scope:ElectionScope", political_scope AS "political_scope:PoliticalScope", incumbent_id, state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at FROM office
+                SELECT id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:District",  hospital_district, school_district, chamber AS "chamber:Chamber", election_scope as "election_scope:ElectionScope", political_scope AS "political_scope:PoliticalScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at FROM office
                 WHERE (($1::text = '') IS NOT FALSE OR to_tsvector(concat_ws(' ', slug, title)) @@ to_tsquery($1))
                 AND ($2::state IS NULL OR state = $2)
                 AND ($3::political_scope IS NULL OR political_scope = $3)

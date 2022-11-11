@@ -1,9 +1,12 @@
 use crate::{context::ApiContext, types::OfficeResult};
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
-use db::models::{
-    enums::{PoliticalParty, RaceType, State},
-    politician::Politician,
-    race::Race,
+use db::{
+    loaders::politician::PoliticianId,
+    models::{
+        enums::{PoliticalParty, RaceType, State},
+        politician::Politician,
+        race::Race,
+    },
 };
 
 use super::PoliticianResult;
@@ -44,7 +47,7 @@ pub struct RaceCandidateResult {
 pub struct RaceResultsResult {
     votes_by_candidate: Vec<RaceCandidateResult>,
     total_votes: Option<i32>,
-    winner: Option<PoliticianResult>,
+    winners: Option<Vec<PoliticianResult>>,
 }
 
 #[ComplexObject]
@@ -154,7 +157,7 @@ impl RaceResult {
             r#"
             SELECT
               total_votes,
-              winner_id
+              winner_ids
             FROM
               race
             WHERE
@@ -165,12 +168,25 @@ impl RaceResult {
         .fetch_one(&db_pool)
         .await?;
 
-        let winner = match ctx.look_ahead().field("winner").exists() {
-            true => match race_results.winner_id {
-                Some(winner_id) => Some(PoliticianResult::from(
-                    Politician::find_by_id(&db_pool, winner_id).await?,
-                )),
-                _ => None,
+        let winners = match ctx.look_ahead().field("winners").exists() {
+            true => match race_results.winner_ids {
+                Some(winner_ids) => {
+                    let politicians = ctx
+                        .data::<ApiContext>()?
+                        .loaders
+                        .politician_loader
+                        .load_many(winner_ids.into_iter().map(|id| PoliticianId(id)))
+                        .await?;
+                    let politician_results = politicians
+                        .values()
+                        .cloned()
+                        .collect::<Vec<Politician>>()
+                        .into_iter()
+                        .map(PoliticianResult::from)
+                        .collect();
+                    Some(politician_results)
+                }
+                None => None,
             },
             false => None,
         };
@@ -178,7 +194,7 @@ impl RaceResult {
         Ok(RaceResultsResult {
             votes_by_candidate: race_candidate_results,
             total_votes: race_results.total_votes,
-            winner,
+            winners,
         })
     }
 
