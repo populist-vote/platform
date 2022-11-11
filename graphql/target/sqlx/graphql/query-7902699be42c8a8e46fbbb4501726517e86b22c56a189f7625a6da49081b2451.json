@@ -1,5 +1,5 @@
 {
-  "query": "\n                SELECT\n                    id,\n                    slug,\n                    first_name,\n                    middle_name,\n                    last_name,\n                    suffix,\n                    preferred_name,\n                    biography,\n                    biography_source,\n                    home_state AS \"home_state:State\",\n                    date_of_birth,\n                    office_id,\n                    upcoming_race_id,\n                    thumbnail_image_url,\n                    assets,\n                    official_website_url,\n                    campaign_website_url,\n                    facebook_url,\n                    twitter_url,\n                    instagram_url,\n                    youtube_url,\n                    linkedin_url,\n                    tiktok_url,\n                    email,\n                    phone,\n                    party AS \"party:PoliticalParty\",\n                    votesmart_candidate_id,\n                    votesmart_candidate_bio,\n                    votesmart_candidate_ratings,\n                    legiscan_people_id,\n                    crp_candidate_id,\n                    fec_candidate_id,\n                    race_wins,\n                    race_losses,\n                    p.created_at,\n                    p.updated_at\n                FROM\n                    politician p\n                    JOIN race_candidates rc ON race_id = $1\n                WHERE\n                    p.id = rc.candidate_id\n                    AND rc.is_running = TRUE\n            ",
+  "query": "\n                SELECT id, slug, title, bill_number, legislation_status AS \"legislation_status:LegislationStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, history, votesmart_bill_id, b.created_at, b.updated_at FROM bill b\n                JOIN bill_sponsors \n                ON bill_sponsors.bill_id = id\n                WHERE bill_sponsors.politician_id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -14,256 +14,79 @@
       },
       {
         "ordinal": 2,
-        "name": "first_name",
+        "name": "title",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "middle_name",
+        "name": "bill_number",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "last_name",
-        "type_info": "Text"
+        "name": "legislation_status:LegislationStatus",
+        "type_info": {
+          "Custom": {
+            "name": "legislation_status",
+            "kind": {
+              "Enum": [
+                "introduced",
+                "passed_house",
+                "passed_senate",
+                "failed_house",
+                "failed_senate",
+                "resolving_differences",
+                "sent_to_executive",
+                "became_law",
+                "vetoed",
+                "unknown"
+              ]
+            }
+          }
+        }
       },
       {
         "ordinal": 5,
-        "name": "suffix",
+        "name": "description",
         "type_info": "Text"
       },
       {
         "ordinal": 6,
-        "name": "preferred_name",
+        "name": "official_summary",
         "type_info": "Text"
       },
       {
         "ordinal": 7,
-        "name": "biography",
+        "name": "populist_summary",
         "type_info": "Text"
       },
       {
         "ordinal": 8,
-        "name": "biography_source",
+        "name": "full_text_url",
         "type_info": "Text"
       },
       {
         "ordinal": 9,
-        "name": "home_state:State",
-        "type_info": {
-          "Custom": {
-            "name": "state",
-            "kind": {
-              "Enum": [
-                "AL",
-                "AK",
-                "AZ",
-                "AR",
-                "CA",
-                "CO",
-                "CT",
-                "DC",
-                "DE",
-                "FL",
-                "GA",
-                "HI",
-                "ID",
-                "IL",
-                "IN",
-                "IA",
-                "KS",
-                "KY",
-                "LA",
-                "ME",
-                "MD",
-                "MA",
-                "MI",
-                "MN",
-                "MS",
-                "MO",
-                "MT",
-                "NE",
-                "NV",
-                "NH",
-                "NJ",
-                "NM",
-                "NY",
-                "NC",
-                "ND",
-                "OH",
-                "OK",
-                "OR",
-                "PA",
-                "RI",
-                "SC",
-                "SD",
-                "TN",
-                "TX",
-                "UT",
-                "VT",
-                "VA",
-                "WA",
-                "WV",
-                "WI",
-                "WY"
-              ]
-            }
-          }
-        }
+        "name": "legiscan_bill_id",
+        "type_info": "Int4"
       },
       {
         "ordinal": 10,
-        "name": "date_of_birth",
-        "type_info": "Date"
+        "name": "history",
+        "type_info": "Jsonb"
       },
       {
         "ordinal": 11,
-        "name": "office_id",
-        "type_info": "Uuid"
+        "name": "votesmart_bill_id",
+        "type_info": "Int4"
       },
       {
         "ordinal": 12,
-        "name": "upcoming_race_id",
-        "type_info": "Uuid"
-      },
-      {
-        "ordinal": 13,
-        "name": "thumbnail_image_url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 14,
-        "name": "assets",
-        "type_info": "Jsonb"
-      },
-      {
-        "ordinal": 15,
-        "name": "official_website_url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 16,
-        "name": "campaign_website_url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 17,
-        "name": "facebook_url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 18,
-        "name": "twitter_url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 19,
-        "name": "instagram_url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 20,
-        "name": "youtube_url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 21,
-        "name": "linkedin_url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 22,
-        "name": "tiktok_url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 23,
-        "name": "email",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 24,
-        "name": "phone",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 25,
-        "name": "party:PoliticalParty",
-        "type_info": {
-          "Custom": {
-            "name": "political_party",
-            "kind": {
-              "Enum": [
-                "democratic",
-                "republican",
-                "libertarian",
-                "green",
-                "constitution",
-                "unknown",
-                "independent",
-                "freedom",
-                "unity",
-                "approval_voting",
-                "unaffiliated",
-                "democratic_farmer_labor",
-                "grassroots_legalize_cannabis",
-                "legal_marijuana_now",
-                "socialist_workers_party",
-                "socialist_workers",
-                "colorado_center",
-                "american_constitution"
-              ]
-            }
-          }
-        }
-      },
-      {
-        "ordinal": 26,
-        "name": "votesmart_candidate_id",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 27,
-        "name": "votesmart_candidate_bio",
-        "type_info": "Jsonb"
-      },
-      {
-        "ordinal": 28,
-        "name": "votesmart_candidate_ratings",
-        "type_info": "Jsonb"
-      },
-      {
-        "ordinal": 29,
-        "name": "legiscan_people_id",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 30,
-        "name": "crp_candidate_id",
-        "type_info": "Varchar"
-      },
-      {
-        "ordinal": 31,
-        "name": "fec_candidate_id",
-        "type_info": "Varchar"
-      },
-      {
-        "ordinal": 32,
-        "name": "race_wins",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 33,
-        "name": "race_losses",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 34,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 35,
+        "ordinal": 13,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
@@ -277,40 +100,18 @@
       false,
       false,
       false,
-      true,
-      false,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      false,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
       false,
       false,
       true,
       true,
       true,
       true,
+      true,
+      false,
       true,
       false,
       false
     ]
   },
-  "hash": "993b378b12893627177c61e7e00d4a7d02605423613417adc68c99f23dc4cfd6"
+  "hash": "8c530a0c9163e67b1d4e72157e57d115eef68b40ebc4f3d149f3b93cb01e803a"
 }

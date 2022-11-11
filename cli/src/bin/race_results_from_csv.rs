@@ -7,12 +7,13 @@ use std::io;
 use std::process;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct RaceCandidateResult {
-    // race_id: uuid::Uuid,
-    candidate_id: uuid::Uuid,
-    // votes: i32,
+struct ColoradoSummaryResult {
+    #[serde(rename = "choice name")]
+    full_name: String,
     #[serde(rename = "total votes")]
     total_votes: i32,
+    #[serde(rename = "id (from Politicians)")]
+    politician_id: uuid::Uuid,
 }
 
 async fn import_race_results_from_csv() -> Result<(), Box<dyn Error>> {
@@ -24,22 +25,38 @@ async fn import_race_results_from_csv() -> Result<(), Box<dyn Error>> {
 
     let mut rdr = csv::Reader::from_reader(io::stdin());
     for result in rdr.deserialize() {
-        let candidate: RaceCandidateResult = result?;
+        let candidate: ColoradoSummaryResult = result?;
         let record = sqlx::query!(
             r#"
-            UPDATE
-                race_candidates
-            SET
-                votes = $1
-            WHERE
-                candidate_id = $2
-            RETURNING race_id
+            WITH rc AS (
+                SELECT candidate_id, race_id FROM race_candidates
+                JOIN politician ON politician.id = candidate_id
+                JOIN race ON race.id = race_id
+                JOIN election ON election.id = election_id
+                WHERE election.slug = 'general-election-2022' AND
+                      candidate_id = $2
+            )
+            UPDATE race_candidates
+            SET votes = $1
+            FROM rc
+            WHERE race_candidates.candidate_id = rc.candidate_id AND
+                  race_candidates.race_id = rc.race_id
+            RETURNING race_candidates.race_id
         "#,
             candidate.total_votes,
-            candidate.candidate_id
+            candidate.politician_id
         )
         .fetch_optional(&pool.connection)
         .await?;
+
+        if record.is_none() {
+            eprintln!(
+                "⚠️  {}",
+                format!("\nNO RECORD FOUND FOR {}", candidate.full_name)
+                    .bright_yellow()
+                    .bold()
+            )
+        }
 
         if let Some(record) = record {
             if let Some(count) = total_counts.get_mut(&record.race_id) {
@@ -55,7 +72,7 @@ async fn import_race_results_from_csv() -> Result<(), Box<dyn Error>> {
             r#"
             UPDATE race
             SET total_votes = $1,
-                winner_id = (SELECT candidate_id FROM race_candidates WHERE race_id = $2 ORDER BY votes DESC LIMIT 1)
+                winner_id = (SELECT candidate_id FROM race_candidates WHERE race_id = $2 ORDER BY votes DESC NULLS LAST LIMIT 1)
             WHERE id = $2
             "#,
             count,
@@ -93,7 +110,7 @@ async fn import_race_results_from_csv() -> Result<(), Box<dyn Error>> {
             UPDATE
                 politician AS p
             SET
-                race_losses = race_losses - 1
+                race_losses = race_losses + 1
             FROM
                 race_candidates AS rc
             WHERE
