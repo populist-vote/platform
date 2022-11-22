@@ -113,6 +113,11 @@ impl AuthMutation {
 
         match geocode_result {
             Ok(geocodio_data) => {
+                let city = geocodio_data.results[0]
+                    .address_components
+                    .city
+                    .clone()
+                    .unwrap_or(input.address.city);
                 let coordinates = geocodio_data.results[0].location.clone();
                 let county = geocodio_data.results[0].address_components.county.clone();
                 let primary_result = geocodio_data.results[0].fields.as_ref().unwrap();
@@ -132,6 +137,7 @@ impl AuthMutation {
                             latitude: coordinates.latitude,
                             longitude: coordinates.longitude,
                         }),
+                        city,
                         county,
                         congressional_district: Some(congressional_district.to_string()),
                         state_house_district: Some(state_house_district.to_string()),

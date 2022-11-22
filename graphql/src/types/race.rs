@@ -175,7 +175,7 @@ impl RaceResult {
                         .data::<ApiContext>()?
                         .loaders
                         .politician_loader
-                        .load_many(winner_ids.into_iter().map(|id| PoliticianId(id)))
+                        .load_many(winner_ids.into_iter().map(PoliticianId))
                         .await?;
                     let politician_results = politicians
                         .values()
