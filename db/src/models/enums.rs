@@ -335,3 +335,38 @@ pub enum Chambers {
     House,
     Senate,
 }
+
+#[derive(
+    Display, Enum, Debug, Copy, Clone, Eq, PartialEq, EnumString, sqlx::Type, Serialize, Deserialize,
+)]
+#[strum(ascii_case_insensitive)]
+#[serde(rename_all = "lowercase")]
+#[sqlx(type_name = "chamber", rename_all = "lowercase")]
+pub enum BillType {
+    /// Most states have these types
+    Bill,
+    Resolution,
+
+    /// Some states have these types
+    JointResolution,
+    ConcurrentResolution,
+    Memorial,
+    JointMemorial,
+    ConcurrentMemorial,
+    ConstitutionalAmendment,
+    Proclamation,
+    ExecutiveOrder,
+    JointSessionResolution,
+    RepealBill,
+    Remonstration,
+    StudyRequest,
+    ConcurrentStudyRequest,
+
+    /// New Hampshire
+    Address,
+
+    /// DC City Council
+    CeremonialResolution,
+
+    None,
+}

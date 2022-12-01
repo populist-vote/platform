@@ -1,7 +1,11 @@
 -- Add up migration script here
+ALTER TYPE chamber ADD VALUE 'assembly';
+ALTER TYPE chamber ADD VALUE 'legislature';
+
 ALTER TABLE bill
 ADD COLUMN political_scope political_scope NOT NULL DEFAULT 'federal',
 ADD COLUMN bill_type TEXT NOT NULL DEFAULT 'bill',
+ADD COLUMN chamber chamber,
 ADD COLUMN attributes JSONB NOT NULL DEFAULT '{}'::JSONB;
 
 CREATE TABLE bill_public_votes (
