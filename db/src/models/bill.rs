@@ -1,6 +1,6 @@
 use crate::{
     models::enums::{ArgumentPosition, AuthorType, LegislationStatus},
-    Argument, Chamber, CreateArgumentInput, DateTime, IssueTag,
+    Argument, Chamber, CreateArgumentInput, DateTime, IssueTag, Politician,
 };
 use async_graphql::InputObject;
 use chrono::NaiveDate;
@@ -8,7 +8,7 @@ use serde_json::Value as JSON;
 use slugify::slugify;
 use sqlx::{postgres::PgPool, FromRow};
 
-use super::enums::{PoliticalScope, State};
+use super::enums::{PoliticalParty, PoliticalScope, State};
 
 #[derive(FromRow, Debug, Clone)]
 pub struct Bill {
@@ -289,6 +289,60 @@ impl Bill {
                 JOIN bill_issue_tags
                 ON bill_issue_tags.issue_tag_id = it.id
                 WHERE bill_issue_tags.bill_id = $1
+            "#,
+            bill_id
+        )
+        .fetch_all(db_pool)
+        .await?;
+
+        Ok(records)
+    }
+
+    pub async fn sponsors(
+        db_pool: &PgPool,
+        bill_id: uuid::Uuid,
+    ) -> Result<Vec<Politician>, sqlx::Error> {
+        let records = sqlx::query_as!(
+            Politician,
+            r#"
+                SELECT p.id,
+                        slug,
+                        first_name,
+                        middle_name,
+                        last_name,
+                        suffix,
+                        preferred_name,
+                        biography,
+                        biography_source,
+                        home_state AS "home_state:State",
+                        date_of_birth,
+                        office_id,
+                        upcoming_race_id,
+                        thumbnail_image_url,
+                        assets,
+                        official_website_url,
+                        campaign_website_url,
+                        facebook_url,
+                        twitter_url,
+                        instagram_url,
+                        youtube_url,
+                        linkedin_url,
+                        tiktok_url,
+                        email,
+                        phone,
+                        party AS "party:PoliticalParty",
+                        votesmart_candidate_id,
+                        votesmart_candidate_bio,
+                        votesmart_candidate_ratings,
+                        legiscan_people_id,
+                        crp_candidate_id,
+                        fec_candidate_id,
+                        race_wins,
+                        race_losses,
+                        p.created_at,
+                        p.updated_at FROM politician p 
+                JOIN bill_sponsors bs ON bs.politician_id = p.id 
+                WHERE bs.bill_id = $1
             "#,
             bill_id
         )

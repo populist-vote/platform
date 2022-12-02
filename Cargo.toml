@@ -2,11 +2,11 @@
 default-members = ["server"]
 members = [
     "auth",
-    "cli",
     "config",
     "db",
     "graphql",
     "mailers",
+    "scripts",
     "server",
     "geocodio",
     "votesmart",
