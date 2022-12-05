@@ -1,8 +1,12 @@
-use async_graphql::{ComplexObject, Context, FieldResult, SimpleObject, ID};
+use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use db::models::{
     ballot_measure::BallotMeasure,
     enums::{LegislationStatus, State},
 };
+
+use crate::context::ApiContext;
+
+use super::{ArgumentResult, IssueTagResult};
 
 #[derive(SimpleObject)]
 #[graphql(complex)]
@@ -24,9 +28,17 @@ pub struct BallotMeasureResult {
 
 #[ComplexObject]
 impl BallotMeasureResult {
-    async fn arguments(&self, _ctx: &Context<'_>) -> FieldResult<Vec<BallotMeasureResult>> {
+    async fn arguments(&self, _ctx: &Context<'_>) -> Result<Vec<ArgumentResult>> {
         //Change to ArgumentResult once implemented
         todo!()
+    }
+
+    async fn issue_tags(&self, ctx: &Context<'_>) -> Result<Vec<IssueTagResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records =
+            BallotMeasure::issue_tags(&db_pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
+        let results = records.into_iter().map(IssueTagResult::from).collect();
+        Ok(results)
     }
 }
 

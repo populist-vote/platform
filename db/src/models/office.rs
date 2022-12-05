@@ -112,6 +112,10 @@ pub enum District {
 pub enum Chamber {
     House,
     Senate,
+    // California, Nevada, New Jersey, New York, Wisconsin only
+    Assembly,
+    // Nebraska only, it is unicameral
+    Legislature,
 }
 
 #[derive(Default, Debug, Serialize, Deserialize, InputObject)]

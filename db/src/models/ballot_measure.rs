@@ -1,4 +1,4 @@
-use crate::DateTime;
+use crate::{DateTime, IssueTag};
 use async_graphql::InputObject;
 use slugify::slugify;
 use sqlx::postgres::PgPool;
@@ -179,6 +179,25 @@ impl BallotMeasure {
         )
         .fetch_all(db_pool)
         .await?;
+        Ok(records)
+    }
+
+    pub async fn issue_tags(
+        db_pool: &PgPool,
+        bill_id: uuid::Uuid,
+    ) -> Result<Vec<IssueTag>, sqlx::Error> {
+        let records = sqlx::query_as!(IssueTag,
+            r#"
+                SELECT it.id, slug, name, description, category, it.created_at, it.updated_at FROM issue_tag it
+                JOIN ballot_measure_issue_tags bmit
+                ON bmit.issue_tag_id = it.id
+                WHERE bmit.ballot_measure_id = $1
+            "#,
+            bill_id
+        )
+        .fetch_all(db_pool)
+        .await?;
+
         Ok(records)
     }
 }
