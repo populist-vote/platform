@@ -2,7 +2,7 @@ use crate::{
     models::enums::{ArgumentPosition, AuthorType, LegislationStatus},
     Argument, Chamber, CreateArgumentInput, DateTime, IssueTag, Politician,
 };
-use async_graphql::InputObject;
+use async_graphql::{InputObject, SimpleObject};
 use chrono::NaiveDate;
 use serde_json::Value as JSON;
 use slugify::slugify;
@@ -75,6 +75,13 @@ pub struct BillFilter {
     bill_number: Option<String>,
     state: Option<State>,
     legislation_status: Option<LegislationStatus>,
+}
+
+#[derive(SimpleObject)]
+pub struct PublicVotes {
+    pub support: Option<i64>,
+    pub neutral: Option<i64>,
+    pub oppose: Option<i64>,
 }
 
 impl Bill {
@@ -435,5 +442,49 @@ impl Bill {
         .await?;
 
         Ok(())
+    }
+
+    pub async fn public_votes(
+        db_pool: &PgPool,
+        bill_id: uuid::Uuid,
+    ) -> Result<PublicVotes, sqlx::Error> {
+        let record = sqlx::query_as!(
+            PublicVotes,
+            r#"
+                SELECT SUM(CASE WHEN position = 'support' THEN 1 ELSE 0 END) as support,
+                       SUM(CASE WHEN position = 'neutral' THEN 1 ELSE 0 END) as neutral,
+                       SUM(CASE WHEN position = 'oppose' THEN 1 ELSE 0 END) as oppose
+                FROM bill_public_votes WHERE bill_id = $1
+            "#,
+            bill_id
+        )
+        .fetch_one(db_pool)
+        .await?;
+
+        Ok(record)
+    }
+
+    pub async fn upsert_public_vote(
+        db_pool: &PgPool,
+        bill_id: uuid::Uuid,
+        user_id: uuid::Uuid,
+        position: ArgumentPosition,
+    ) -> Result<PublicVotes, sqlx::Error> {
+        let _upsert = sqlx::query!(
+            r#"
+                INSERT INTO bill_public_votes (bill_id, user_id, position) 
+                VALUES ($1, $2, $3) 
+                ON CONFLICT (bill_id, user_id) DO UPDATE SET position = $3
+            "#,
+            bill_id,
+            user_id,
+            position as ArgumentPosition,
+        )
+        .execute(db_pool)
+        .await?;
+
+        let record = Bill::public_votes(db_pool, bill_id).await?;
+
+        Ok(record)
     }
 }

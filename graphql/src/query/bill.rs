@@ -24,6 +24,14 @@ impl BillQuery {
         relay::query(results, relay::Params::new(after, before, first, last), 10).await
     }
 
+    async fn bill_by_id(&self, ctx: &Context<'_>, id: String) -> Option<BillResult> {
+        let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+        let record = Bill::find_by_id(&db_pool, uuid::Uuid::parse_str(&id).unwrap())
+            .await
+            .unwrap();
+        Some(BillResult::from(record))
+    }
+
     async fn bill_by_slug(&self, ctx: &Context<'_>, slug: String) -> Option<BillResult> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
         let record = Bill::find_by_slug(&db_pool, &slug).await.unwrap();

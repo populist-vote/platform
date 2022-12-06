@@ -1,6 +1,13 @@
-use crate::{context::ApiContext, guard::StaffOnly, is_admin, types::BillResult};
+use crate::{
+    context::ApiContext,
+    guard::{StaffOnly, UserGuard},
+    is_admin,
+    types::BillResult,
+};
 use async_graphql::*;
-use db::{Bill, CreateArgumentInput, UpsertBillInput};
+use db::{
+    models::enums::ArgumentPosition, Bill, CreateArgumentInput, PublicVotes, UpsertBillInput,
+};
 use sqlx::{Pool, Postgres};
 #[derive(Default)]
 pub struct BillMutation;
@@ -47,5 +54,24 @@ impl BillMutation {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         Bill::delete(&db_pool, uuid::Uuid::parse_str(&id)?).await?;
         Ok(DeleteBillResult { id })
+    }
+
+    #[graphql(guard = "UserGuard::new(&user_id)", visible = "is_admin")]
+    async fn upsert_bill_public_vote(
+        &self,
+        ctx: &Context<'_>,
+        bill_id: ID,
+        user_id: ID,
+        position: ArgumentPosition,
+    ) -> Result<PublicVotes> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let record = Bill::upsert_public_vote(
+            &db_pool,
+            uuid::Uuid::parse_str(&bill_id)?,
+            uuid::Uuid::parse_str(&user_id)?,
+            position,
+        )
+        .await?;
+        Ok(record)
     }
 }

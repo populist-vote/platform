@@ -1,21 +1,21 @@
 {
-  "query": "\n                SELECT\n                    id AS candidate_id,\n                    rc.votes,\n                    rc.race_id\n                FROM\n                    politician p\n                    JOIN race_candidates rc ON race_id = $1\n                WHERE\n                    p.id = rc.candidate_id AND \n                    rc.race_id = $1\n\n            ",
+  "query": "\n                SELECT SUM(CASE WHEN position = 'support' THEN 1 ELSE 0 END) as support,\n                       SUM(CASE WHEN position = 'neutral' THEN 1 ELSE 0 END) as neutral,\n                       SUM(CASE WHEN position = 'oppose' THEN 1 ELSE 0 END) as oppose\n                FROM bill_public_votes WHERE bill_id = $1\n            ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "candidate_id",
-        "type_info": "Uuid"
+        "name": "support",
+        "type_info": "Int8"
       },
       {
         "ordinal": 1,
-        "name": "votes",
-        "type_info": "Int4"
+        "name": "neutral",
+        "type_info": "Int8"
       },
       {
         "ordinal": 2,
-        "name": "race_id",
-        "type_info": "Uuid"
+        "name": "oppose",
+        "type_info": "Int8"
       }
     ],
     "parameters": {
@@ -24,10 +24,10 @@
       ]
     },
     "nullable": [
-      false,
-      true,
-      false
+      null,
+      null,
+      null
     ]
   },
-  "hash": "a16cc418ecb64d3c9b6d0df577b60d7f250d158dc1e1c0c67b4928fe396eb0a4"
+  "hash": "b2b3a3c199ac067e31e62df429537746a407d10aa7201f7c153a5de3a6fd66a3"
 }

@@ -24,3 +24,8 @@ CREATE TABLE session (
     created_at timestamptz  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamptz  NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE bill_public_votes 
+ADD CONSTRAINT unique_bill_public_votes_bill_id_user_id UNIQUE (bill_id, user_id),
+ADD COLUMN created_at timestamptz  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN updated_at timestamptz  NOT NULL DEFAULT CURRENT_TIMESTAMP;

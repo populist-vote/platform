@@ -5,7 +5,7 @@ use db::{
         bill::Bill,
         enums::{BillType, LegislationStatus, PoliticalScope, State},
     },
-    Chamber,
+    Chamber, PublicVotes,
 };
 use legiscan::Bill as LegiscanBill;
 use sqlx::{types::Json, Row};
@@ -32,13 +32,6 @@ pub struct BillResult {
     chamber: Option<Chamber>,
     bill_type: BillType,
     political_scope: PoliticalScope,
-}
-
-#[derive(SimpleObject)]
-struct PublicVotes {
-    support: Option<i64>,
-    neutral: Option<i64>,
-    oppose: Option<i64>,
 }
 
 #[ComplexObject]
