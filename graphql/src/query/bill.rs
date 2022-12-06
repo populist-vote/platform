@@ -1,5 +1,5 @@
 use async_graphql::{Context, Object};
-use db::{Bill, BillSearch};
+use db::{Bill, BillFilter};
 
 use crate::{context::ApiContext, relay, types::BillResult};
 
@@ -11,14 +11,14 @@ impl BillQuery {
     async fn bills(
         &self,
         ctx: &Context<'_>,
-        #[graphql(desc = "Search by voteStatus, title, or slug", default)] search: BillSearch,
+        filter: Option<BillFilter>,
         after: Option<String>,
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
     ) -> relay::ConnectionResult<BillResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let records = Bill::search(&db_pool, &search).await?;
+        let records = Bill::filter(&db_pool, &filter.unwrap_or_default()).await?;
         let results = records.into_iter().map(BillResult::from);
 
         relay::query(results, relay::Params::new(after, before, first, last), 10).await

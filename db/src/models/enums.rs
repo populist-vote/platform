@@ -337,13 +337,25 @@ pub enum Chambers {
 }
 
 #[derive(
-    Display, Enum, Debug, Copy, Clone, Eq, PartialEq, EnumString, sqlx::Type, Serialize, Deserialize,
+    Display,
+    Enum,
+    Debug,
+    Copy,
+    Clone,
+    Eq,
+    PartialEq,
+    EnumString,
+    sqlx::Type,
+    Serialize,
+    Deserialize,
+    Default,
 )]
 #[strum(ascii_case_insensitive)]
 #[serde(rename_all = "lowercase")]
 #[sqlx(type_name = "chamber", rename_all = "lowercase")]
 pub enum BillType {
     /// Most states have these types
+    #[default]
     Bill,
     Resolution,
 

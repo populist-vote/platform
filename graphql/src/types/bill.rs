@@ -1,8 +1,15 @@
 use crate::{context::ApiContext, types::ArgumentResult};
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
-use db::models::{bill::Bill, enums::LegislationStatus};
+use db::{
+    models::{
+        bill::Bill,
+        enums::{BillType, LegislationStatus, PoliticalScope, State},
+    },
+    Chamber,
+};
 use legiscan::Bill as LegiscanBill;
 use sqlx::{types::Json, Row};
+use std::str::FromStr;
 use uuid::Uuid;
 
 use super::{IssueTagResult, PoliticianResult};
@@ -18,8 +25,20 @@ pub struct BillResult {
     official_summary: Option<String>,
     populist_summary: Option<String>,
     full_text_url: Option<String>,
+    votesmart_bill_id: Option<i32>,
     legiscan_bill_id: Option<i32>,
     history: serde_json::Value,
+    state: Option<State>,
+    chamber: Option<Chamber>,
+    bill_type: BillType,
+    political_scope: PoliticalScope,
+}
+
+#[derive(SimpleObject)]
+struct PublicVotes {
+    support: Option<i64>,
+    neutral: Option<i64>,
+    oppose: Option<i64>,
 }
 
 #[ComplexObject]
@@ -62,6 +81,24 @@ impl BillResult {
         let results = records.into_iter().map(PoliticianResult::from).collect();
         Ok(results)
     }
+
+    async fn public_votes(&self, ctx: &Context<'_>) -> Result<PublicVotes> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let results = sqlx::query_as!(
+            PublicVotes,
+            r#"
+                SELECT SUM(CASE WHEN position = 'support' THEN 1 ELSE 0 END) as support,
+                       SUM(CASE WHEN position = 'neutral' THEN 1 ELSE 0 END) as neutral,
+                       SUM(CASE WHEN position = 'oppose' THEN 1 ELSE 0 END) as oppose
+                FROM bill_public_votes WHERE bill_id = $1
+            "#,
+            Uuid::parse_str(&self.id).unwrap(),
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(results)
+    }
 }
 
 impl From<Bill> for BillResult {
@@ -76,8 +113,13 @@ impl From<Bill> for BillResult {
             official_summary: b.official_summary,
             populist_summary: b.populist_summary,
             full_text_url: b.full_text_url,
+            votesmart_bill_id: b.votesmart_bill_id,
             legiscan_bill_id: b.legiscan_bill_id,
             history: b.history,
+            state: b.state,
+            chamber: b.chamber,
+            bill_type: BillType::from_str(&b.bill_type).unwrap_or_default(),
+            political_scope: b.political_scope,
         }
     }
 }

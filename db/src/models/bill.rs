@@ -67,11 +67,13 @@ pub struct UpsertBillInput {
     pub attributes: Option<JSON>,
 }
 
-#[derive(Default, InputObject)]
-pub struct BillSearch {
+#[derive(InputObject, Default, Debug)]
+pub struct BillFilter {
+    query: Option<String>,
     slug: Option<String>,
     title: Option<String>,
     bill_number: Option<String>,
+    state: Option<State>,
     legislation_status: Option<LegislationStatus>,
 }
 
@@ -241,28 +243,42 @@ impl Bill {
         Ok(records)
     }
 
-    pub async fn search(db_pool: &PgPool, search: &BillSearch) -> Result<Vec<Self>, sqlx::Error> {
+    pub async fn filter(db_pool: &PgPool, filter: &BillFilter) -> Result<Vec<Self>, sqlx::Error> {
+        let search_query = crate::process_search_query(filter.query.to_owned().unwrap_or_default());
+
         let records = sqlx::query_as!(
             Bill,
             r#"
                 SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_session_id, legiscan_committee_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill
-                WHERE ($1::text IS NULL OR slug = $1)
-                AND ($2::text IS NULL OR title ILIKE $2)
-                AND ($3::legislation_status IS NULL OR legislation_status = $3)
-                AND ($4::text IS NULL OR bill_number ILIKE $4)
+                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', title, description)) @@ to_tsquery('simple', $1))
+                AND ($2::text IS NULL OR slug = $2)
+                AND ($3::text IS NULL OR title ILIKE $3)
+                AND ($4::legislation_status IS NULL OR legislation_status = $4)
+                AND ($5::text IS NULL OR bill_number ILIKE $5)
             "#,
-            search.slug,
-            search.title,
-            search.legislation_status as Option<LegislationStatus>,
-            search.bill_number
+            search_query,
+            filter.slug,
+            filter.title,
+            filter.legislation_status as Option<LegislationStatus>,
+            filter.bill_number
         )
         .fetch_all(db_pool)
         .await?;
         Ok(records)
     }
 
-    pub async fn find_by_id(_db_pool: &PgPool) -> Result<Self, sqlx::Error> {
-        todo!()
+    pub async fn find_by_id(db_pool: &PgPool, id: uuid::Uuid) -> Result<Self, sqlx::Error> {
+        let record = sqlx::query_as!(
+            Bill,
+            r#"
+                SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_session_id, legiscan_committee_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill 
+                WHERE id = $1
+            "#,
+            id
+        )
+        .fetch_one(db_pool)
+        .await?;
+        Ok(record)
     }
 
     pub async fn find_by_slug(db_pool: &PgPool, slug: &str) -> Result<Self, sqlx::Error> {
@@ -270,7 +286,7 @@ impl Bill {
             Bill,
             r#"
                 SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_session_id, legiscan_committee_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill
-                WHERE slug=$1
+                WHERE slug = $1
             "#,
             slug
         )
