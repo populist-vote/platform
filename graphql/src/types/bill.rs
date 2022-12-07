@@ -98,24 +98,25 @@ impl BillResult {
 
     async fn users_vote(&self, ctx: &Context<'_>) -> Result<Option<ArgumentPosition>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let user_id = ctx
-            .data::<Option<TokenData<Claims>>>()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .claims
-            .sub;
-        let results = sqlx::query!(
-            r#"
-                SELECT position AS "position: ArgumentPosition" FROM bill_public_votes WHERE bill_id = $1 AND user_id = $2
-            "#,
-            Uuid::parse_str(&self.id).unwrap(),
-            user_id,
-        )
-        .fetch_optional(&db_pool)
-        .await?;
+        let token = ctx.data::<Option<TokenData<Claims>>>().unwrap().as_ref();
 
-        Ok(results.map(|r| r.position))
+        match token {
+            Some(token) => {
+                let user_id = token.claims.sub;
+                let results = sqlx::query!(
+                    r#"
+                        SELECT position AS "position: ArgumentPosition" FROM bill_public_votes WHERE bill_id = $1 AND user_id = $2
+                    "#,
+                    Uuid::parse_str(&self.id).unwrap(),
+                    user_id,
+                )
+                .fetch_optional(&db_pool)
+                .await?;
+
+                Ok(results.map(|r| r.position))
+            }
+            None => Ok(None),
+        }
     }
 }
 
