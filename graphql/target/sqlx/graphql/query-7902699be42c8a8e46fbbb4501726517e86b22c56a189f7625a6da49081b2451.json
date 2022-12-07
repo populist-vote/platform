@@ -1,33 +1,33 @@
 {
-  "query": "\n                SELECT SUM(CASE WHEN position = 'support' THEN 1 ELSE 0 END) as support,\n                       SUM(CASE WHEN position = 'neutral' THEN 1 ELSE 0 END) as neutral,\n                       SUM(CASE WHEN position = 'oppose' THEN 1 ELSE 0 END) as oppose\n                FROM bill_public_votes WHERE bill_id = $1\n            ",
+  "query": "\n                SELECT position AS \"position: ArgumentPosition\" FROM bill_public_votes WHERE bill_id = $1 AND user_id = $2\n            ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "support",
-        "type_info": "Int8"
-      },
-      {
-        "ordinal": 1,
-        "name": "neutral",
-        "type_info": "Int8"
-      },
-      {
-        "ordinal": 2,
-        "name": "oppose",
-        "type_info": "Int8"
+        "name": "position: ArgumentPosition",
+        "type_info": {
+          "Custom": {
+            "name": "argument_position",
+            "kind": {
+              "Enum": [
+                "support",
+                "neutral",
+                "oppose"
+              ]
+            }
+          }
+        }
       }
     ],
     "parameters": {
       "Left": [
+        "Uuid",
         "Uuid"
       ]
     },
     "nullable": [
-      null,
-      null,
-      null
+      false
     ]
   },
-  "hash": "b2b3a3c199ac067e31e62df429537746a407d10aa7201f7c153a5de3a6fd66a3"
+  "hash": "7c3f61f6c132246e445d9ae9bb59cd757026f0831e347b51bb7a5a1de2054d08"
 }

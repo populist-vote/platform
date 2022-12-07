@@ -1,11 +1,33 @@
 {
-  "query": "\n\n            ",
+  "query": "\n                SELECT position AS \"position: ArgumentPosition\" FROM bill_public_votes WHERE bill_id = $1 AND user_id = $2\n            ",
   "describe": {
-    "columns": [],
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "position: ArgumentPosition",
+        "type_info": {
+          "Custom": {
+            "name": "argument_position",
+            "kind": {
+              "Enum": [
+                "support",
+                "neutral",
+                "oppose"
+              ]
+            }
+          }
+        }
+      }
+    ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
     },
-    "nullable": []
+    "nullable": [
+      false
+    ]
   },
-  "hash": "a4ac634ce4deb921aab382fcb7313549dc3ed93bcf1d592e5c76f70113e99993"
+  "hash": "7c3f61f6c132246e445d9ae9bb59cd757026f0831e347b51bb7a5a1de2054d08"
 }

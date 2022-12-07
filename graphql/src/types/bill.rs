@@ -1,12 +1,14 @@
 use crate::{context::ApiContext, types::ArgumentResult};
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
+use auth::Claims;
 use db::{
     models::{
         bill::Bill,
-        enums::{BillType, LegislationStatus, PoliticalScope, State},
+        enums::{ArgumentPosition, BillType, LegislationStatus, PoliticalScope, State},
     },
     Chamber, PublicVotes,
 };
+use jsonwebtoken::TokenData;
 use legiscan::Bill as LegiscanBill;
 use sqlx::{types::Json, Row};
 use std::str::FromStr;
@@ -92,6 +94,28 @@ impl BillResult {
         .await?;
 
         Ok(results)
+    }
+
+    async fn users_vote(&self, ctx: &Context<'_>) -> Result<Option<ArgumentPosition>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let user_id = ctx
+            .data::<Option<TokenData<Claims>>>()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .claims
+            .sub;
+        let results = sqlx::query!(
+            r#"
+                SELECT position AS "position: ArgumentPosition" FROM bill_public_votes WHERE bill_id = $1 AND user_id = $2
+            "#,
+            Uuid::parse_str(&self.id).unwrap(),
+            user_id,
+        )
+        .fetch_optional(&db_pool)
+        .await?;
+
+        Ok(results.map(|r| r.position))
     }
 }
 
