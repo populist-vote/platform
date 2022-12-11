@@ -274,6 +274,22 @@ impl Bill {
         Ok(records)
     }
 
+    pub async fn popular(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
+        let records = sqlx::query_as!(
+            Bill,
+            r#"
+                SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_session_id, legiscan_committee_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", bill.attributes, bill.created_at, bill.updated_at FROM bill
+                JOIN bill_public_votes ON bill.id = bill_public_votes.bill_id
+                WHERE bill_public_votes.created_at > NOW() - INTERVAL '1 month'
+                ORDER BY created_at DESC
+                LIMIT 20
+            "#,
+        )
+        .fetch_all(db_pool)
+        .await?;
+        Ok(records)
+    }
+
     pub async fn find_by_id(db_pool: &PgPool, id: uuid::Uuid) -> Result<Self, sqlx::Error> {
         let record = sqlx::query_as!(
             Bill,

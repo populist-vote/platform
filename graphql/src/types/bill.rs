@@ -112,8 +112,8 @@ impl BillResult {
                 )
                 .fetch_optional(&db_pool)
                 .await?;
-
-                Ok(results.map(|r| r.position))
+                let position = results.map(|r| r.position);
+                Ok(position)
             }
             None => Ok(None),
         }

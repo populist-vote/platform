@@ -19,9 +19,32 @@ impl BillQuery {
     ) -> relay::ConnectionResult<BillResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let records = Bill::filter(&db_pool, &filter.unwrap_or_default()).await?;
-        let results = records.into_iter().map(BillResult::from);
 
-        relay::query(results, relay::Params::new(after, before, first, last), 10).await
+        relay::query(
+            records.into_iter().map(BillResult::from),
+            relay::Params::new(after, before, first, last),
+            10,
+        )
+        .await
+    }
+
+    async fn popular_bills(
+        &self,
+        ctx: &Context<'_>,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+    ) -> relay::ConnectionResult<BillResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records = Bill::popular(&db_pool).await?;
+
+        relay::query(
+            records.into_iter().map(BillResult::from),
+            relay::Params::new(after, before, first, last),
+            10,
+        )
+        .await
     }
 
     async fn bill_by_id(&self, ctx: &Context<'_>, id: String) -> Option<BillResult> {
