@@ -262,12 +262,14 @@ impl Bill {
                 AND ($3::text IS NULL OR title ILIKE $3)
                 AND ($4::legislation_status IS NULL OR legislation_status = $4)
                 AND ($5::text IS NULL OR bill_number ILIKE $5)
+                AND ($6::state IS NULL OR state = $6)
             "#,
             search_query,
             filter.slug,
             filter.title,
             filter.legislation_status as Option<LegislationStatus>,
-            filter.bill_number
+            filter.bill_number,
+            filter.state as Option<State>,
         )
         .fetch_all(db_pool)
         .await?;
@@ -281,11 +283,12 @@ impl Bill {
             r#"
                 SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_session_id, legiscan_committee_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", bill.attributes, bill.created_at, bill.updated_at FROM bill
                 JOIN bill_public_votes bpv ON bill.id = bpv.bill_id
-                AND (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', title, description)) @@ to_tsquery('simple', $1))
+                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', title, description)) @@ to_tsquery('simple', $1))
                 AND ($2::text IS NULL OR slug = $2)
                 AND ($3::text IS NULL OR title ILIKE $3)
                 AND ($4::legislation_status IS NULL OR legislation_status = $4)
                 AND ($5::text IS NULL OR bill_number ILIKE $5)
+                AND ($6::state IS NULL OR state = $6)
                 GROUP BY (bill.id)
                 ORDER BY COUNT(bill.id) DESC
                 LIMIT 20
@@ -294,7 +297,8 @@ impl Bill {
             filter.slug,
             filter.title,
             filter.legislation_status as Option<LegislationStatus>,
-            filter.bill_number
+            filter.bill_number,
+            filter.state as Option<State>,
         )
         .fetch_all(db_pool)
         .await?;
