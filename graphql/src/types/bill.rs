@@ -37,6 +37,16 @@ pub struct BillResult {
     political_scope: PoliticalScope,
 }
 
+#[derive(SimpleObject)]
+pub struct SessionResult {
+    name: String,
+    description: String,
+    start_date: Option<chrono::NaiveDate>,
+    end_date: Option<chrono::NaiveDate>,
+    state: Option<State>,
+    congress_name: String,
+}
+
 #[ComplexObject]
 impl BillResult {
     async fn arguments(&self, ctx: &Context<'_>) -> Result<Vec<ArgumentResult>> {
@@ -117,6 +127,23 @@ impl BillResult {
             }
             None => Ok(None),
         }
+    }
+
+    async fn session(&self, ctx: &Context<'_>) -> Result<SessionResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let result = sqlx::query_as!(SessionResult,
+            r#"
+                SELECT s.name, s.description, s.start_date, s.end_date, s.state AS "state: State", s.congress_name
+                FROM session s
+                INNER JOIN bill b ON b.session_id = s.id
+                WHERE b.id = $1
+            "#,
+            Uuid::parse_str(&self.id).unwrap(),
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(result)
     }
 }
 
