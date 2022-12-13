@@ -1,10 +1,10 @@
 use crate::{DateTime, IssueTag};
 use async_graphql::InputObject;
-use slugify::slugify;
 use sqlx::postgres::PgPool;
 use sqlx::FromRow;
+use uuid::Uuid;
 
-use super::enums::{LegislationStatus, State};
+use super::enums::{BallotMeasureStatus, State};
 
 #[derive(FromRow, Debug, Clone)]
 pub struct BallotMeasure {
@@ -12,43 +12,27 @@ pub struct BallotMeasure {
     pub id: uuid::Uuid,
     pub slug: String,
     pub title: String,
-    pub legislation_status: LegislationStatus,
+    pub status: BallotMeasureStatus,
     pub election_id: uuid::Uuid,
     pub ballot_state: State,
     pub ballot_measure_code: String,
     pub measure_type: String, //perhaps make enum later
     pub definitions: String,  // markdown list of bulleted items
-
     //optional fields
     pub description: Option<String>,
     pub official_summary: Option<String>,
     pub populist_summary: Option<String>,
     pub full_text_url: Option<String>,
-
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
 
 #[derive(InputObject)]
-pub struct CreateBallotMeasureInput {
-    pub slug: Option<String>,
-    pub title: String,
-    pub legislation_status: LegislationStatus,
-    pub ballot_state: State,
-    pub ballot_measure_code: String,
-    pub measure_type: String,
-    pub definitions: String,
-    pub description: Option<String>,
-    pub official_summary: Option<String>,
-    pub populist_summary: Option<String>,
-    pub full_text_url: Option<String>,
-}
-
-#[derive(InputObject)]
-pub struct UpdateBallotMeasureInput {
+pub struct UpsertBallotMeasureInput {
+    pub id: Option<uuid::Uuid>,
     pub slug: Option<String>,
     pub title: Option<String>,
-    pub legislation_status: Option<LegislationStatus>,
+    pub status: Option<BallotMeasureStatus>,
     pub ballot_state: Option<State>,
     pub ballot_measure_code: Option<String>,
     pub measure_type: Option<String>,
@@ -64,38 +48,48 @@ pub struct BallotMeasureSearch {
     slug: Option<String>,
     title: Option<String>,
     ballot_state: Option<State>,
-    legislation_status: Option<LegislationStatus>,
+    status: Option<BallotMeasureStatus>,
 }
 
 impl BallotMeasure {
-    pub async fn create(
+    pub async fn upsert(
         db_pool: &PgPool,
         election_id: uuid::Uuid,
-        input: &CreateBallotMeasureInput,
+        input: &UpsertBallotMeasureInput,
     ) -> Result<Self, sqlx::Error> {
-        let slug = match &input.slug {
-            Some(slug) => slug.to_owned(),
-            None => slugify!(&input.title),
-        };
+        let id = input.id.unwrap_or_else(Uuid::new_v4);
         let record = sqlx::query_as!(
             BallotMeasure,
             r#"
                 INSERT INTO ballot_measure 
-                (election_id, slug, title, legislation_status, description, official_summary, 
+                (id, election_id, slug, title, status, description, official_summary, 
                 populist_summary, full_text_url, ballot_state, ballot_measure_code, 
                 measure_type, definitions) 
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
-                RETURNING id, election_id, slug, title, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, created_at, updated_at
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                ON CONFLICT (id) DO UPDATE SET
+                    slug = COALESCE($3, ballot_measure.slug),
+                    title = COALESCE($4, ballot_measure.title),
+                    status = COALESCE($5, ballot_measure.status),
+                    description = COALESCE($6, ballot_measure.description),
+                    official_summary = COALESCE($7, ballot_measure.official_summary),
+                    populist_summary = COALESCE($8, ballot_measure.populist_summary),
+                    full_text_url = COALESCE($9, ballot_measure.full_text_url),
+                    ballot_state = COALESCE($10, ballot_measure.ballot_state),
+                    ballot_measure_code = COALESCE($11, ballot_measure.ballot_measure_code),
+                    measure_type = COALESCE($12, ballot_measure.measure_type),
+                    definitions = COALESCE($13, ballot_measure.definitions)
+                RETURNING id, election_id, slug, title, status AS "status: BallotMeasureStatus", description, official_summary, populist_summary, full_text_url, ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, created_at, updated_at
             "#,
+            id,
             election_id,
-            slug,
+            input.slug,
             input.title,
-            input.legislation_status as LegislationStatus,
+            input.status as Option<BallotMeasureStatus>,
             input.description,
             input.official_summary,
             input.populist_summary,
             input.full_text_url,
-            input.ballot_state as State,
+            input.ballot_state as Option<State>,
             input.ballot_measure_code,
             input.measure_type,
             input.definitions
@@ -103,45 +97,6 @@ impl BallotMeasure {
         .fetch_one(db_pool)
         .await?;
 
-        Ok(record)
-    }
-
-    pub async fn update(
-        db_pool: &PgPool,
-        id: uuid::Uuid,
-        input: &UpdateBallotMeasureInput,
-    ) -> Result<Self, sqlx::Error> {
-        let record = sqlx::query_as!(
-            BallotMeasure,
-            r#"
-                UPDATE ballot_measure
-                SET slug = COALESCE($2, slug),
-                    title = COALESCE($3, title),
-                    legislation_status = COALESCE($4, legislation_status),
-                    ballot_state = COALESCE($5, ballot_state),
-                    ballot_measure_code = COALESCE($6, ballot_measure_code),
-                    measure_type = COALESCE($7, measure_type),
-                    definitions = COALESCE($8, definitions),
-                    description = COALESCE($9, description),
-                    official_summary = COALESCE($10, official_summary),
-                    populist_summary = COALESCE($11, populist_summary),
-                    full_text_url = COALESCE($12, full_text_url)
-                WHERE id=$1    
-                RETURNING id, election_id, slug, title, legislation_status AS "legislation_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at
-            "#,
-            id,
-            input.slug,
-            input.title,
-            input.legislation_status as Option<LegislationStatus>,
-            input.ballot_state as Option<State>,
-            input.ballot_measure_code,
-            input.measure_type,
-            input.definitions,
-            input.description,
-            input.official_summary,
-            input.populist_summary,
-            input.full_text_url
-        ).fetch_one(db_pool).await?;
         Ok(record)
     }
 
@@ -153,7 +108,7 @@ impl BallotMeasure {
     }
 
     pub async fn index(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
-        let records = sqlx::query_as!(BallotMeasure, r#"SELECT id, election_id, slug, title, legislation_status AS "legislation_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure"#,)
+        let records = sqlx::query_as!(BallotMeasure, r#"SELECT id, election_id, slug, title, status AS "status: BallotMeasureStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure"#,)
             .fetch_all(db_pool)
             .await?;
         Ok(records)
@@ -166,16 +121,16 @@ impl BallotMeasure {
         let records = sqlx::query_as!(
             BallotMeasure,
             r#"
-                SELECT id, election_id, slug, title, legislation_status AS "legislation_status:LegislationStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure
+                SELECT id, election_id, slug, title, status AS "status: BallotMeasureStatus", ballot_state AS "ballot_state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure
                 WHERE ($1::text IS NULL OR slug = $1)
                 AND ($2::text IS NULL OR levenshtein($2, title) <=5)
                 AND ($3::state IS NULL OR ballot_state = $3)
-                AND ($4::legislation_status IS NULL OR legislation_status = $4)
+                AND ($4::ballot_measure_status IS NULL OR status = $4)
             "#,
             search.slug,
             search.title,
             search.ballot_state as Option<State>,
-            search.legislation_status as Option<LegislationStatus>
+            search.status as Option<BallotMeasureStatus>
         )
         .fetch_all(db_pool)
         .await?;

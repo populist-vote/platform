@@ -1,7 +1,7 @@
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use db::models::{
     ballot_measure::BallotMeasure,
-    enums::{LegislationStatus, State},
+    enums::{BallotMeasureStatus, State},
 };
 
 use crate::context::ApiContext;
@@ -14,7 +14,7 @@ pub struct BallotMeasureResult {
     id: ID,
     slug: String,
     title: String,
-    legislation_status: LegislationStatus,
+    status: BallotMeasureStatus,
     election_id: ID,
     ballot_state: State,
     ballot_measure_code: String,
@@ -48,7 +48,7 @@ impl From<BallotMeasure> for BallotMeasureResult {
             id: ID::from(b.id),
             slug: b.slug,
             title: b.title,
-            legislation_status: b.legislation_status,
+            status: b.status,
             election_id: ID::from(b.election_id),
             ballot_state: b.ballot_state,
             ballot_measure_code: b.ballot_measure_code,

@@ -1,6 +1,6 @@
 use crate::{context::ApiContext, guard::StaffOnly, is_admin, types::BallotMeasureResult};
 use async_graphql::*;
-use db::{BallotMeasure, CreateBallotMeasureInput, UpdateBallotMeasureInput};
+use db::{BallotMeasure, UpsertBallotMeasureInput};
 #[derive(Default)]
 pub struct BallotMeasureMutation;
 
@@ -13,28 +13,15 @@ struct DeleteBallotMeasureResult {
 #[Object]
 impl BallotMeasureMutation {
     #[graphql(guard = "StaffOnly", visible = "is_admin")]
-    async fn create_ballot_measure(
+    async fn upsert_ballot_measure(
         &self,
         ctx: &Context<'_>,
         election_id: uuid::Uuid,
-        input: CreateBallotMeasureInput,
+        input: UpsertBallotMeasureInput,
     ) -> Result<BallotMeasureResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let new_record = BallotMeasure::create(&db_pool, election_id, &input).await?;
+        let new_record = BallotMeasure::upsert(&db_pool, election_id, &input).await?;
         Ok(BallotMeasureResult::from(new_record))
-    }
-
-    #[graphql(guard = "StaffOnly", visible = "is_admin")]
-    async fn update_ballot_measure(
-        &self,
-        ctx: &Context<'_>,
-        id: String,
-        input: UpdateBallotMeasureInput,
-    ) -> Result<BallotMeasureResult> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let updated_record =
-            BallotMeasure::update(&db_pool, uuid::Uuid::parse_str(&id)?, &input).await?;
-        Ok(BallotMeasureResult::from(updated_record))
     }
 
     #[graphql(guard = "StaffOnly", visible = "is_admin")]

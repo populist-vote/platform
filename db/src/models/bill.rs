@@ -1,5 +1,5 @@
 use crate::{
-    models::enums::{ArgumentPosition, AuthorType, LegislationStatus},
+    models::enums::{ArgumentPosition, AuthorType, BillStatus},
     Argument, Chamber, CreateArgumentInput, DateTime, IssueTag, Politician,
 };
 use async_graphql::{InputObject, SimpleObject};
@@ -16,15 +16,13 @@ pub struct Bill {
     pub slug: String,
     pub title: String,
     pub bill_number: String,
-    pub legislation_status: LegislationStatus,
+    pub status: BillStatus,
     pub description: Option<String>,
     pub official_summary: Option<String>,
     pub populist_summary: Option<String>,
     pub full_text_url: Option<String>,
     pub votesmart_bill_id: Option<i32>,
     pub legiscan_bill_id: Option<i32>,
-    pub legiscan_session_id: Option<i32>,
-    pub legiscan_committee_id: Option<i32>,
     pub legiscan_committee: Option<String>,
     pub legiscan_last_action: Option<String>,
     pub legiscan_last_action_date: Option<NaiveDate>,
@@ -45,7 +43,7 @@ pub struct UpsertBillInput {
     pub slug: Option<String>,
     pub title: Option<String>,
     pub bill_number: String,
-    pub legislation_status: LegislationStatus,
+    pub status: BillStatus,
     pub description: Option<String>,
     pub official_summary: Option<String>,
     pub populist_summary: Option<String>,
@@ -74,7 +72,8 @@ pub struct BillFilter {
     title: Option<String>,
     bill_number: Option<String>,
     state: Option<State>,
-    legislation_status: Option<LegislationStatus>,
+    year: Option<i32>,
+    status: Option<BillStatus>,
 }
 
 #[derive(SimpleObject)]
@@ -110,14 +109,12 @@ impl Bill {
                 slug,
                 title,
                 bill_number,
-                legislation_status,
+                status,
                 description,
                 official_summary,
                 populist_summary,
                 full_text_url,
                 legiscan_bill_id,
-                legiscan_session_id,
-                legiscan_committee_id,
                 legiscan_committee,
                 legiscan_last_action,
                 legiscan_last_action_date,
@@ -150,46 +147,40 @@ impl Bill {
                 $18,
                 $19,
                 $20,
-                $21,
-                $22,
-                $23
+                $21
             ) ON CONFLICT (id) DO UPDATE 
             SET
                 slug = COALESCE($2, bill.slug),
                 title = COALESCE($3, bill.title),
                 bill_number = COALESCE($4, bill.bill_number),
-                legislation_status = COALESCE($5, bill.legislation_status),
+                status = COALESCE($5, bill.status),
                 description = COALESCE($6, bill.description),
                 official_summary = COALESCE($7, bill.official_summary),
                 populist_summary = COALESCE($8, bill.populist_summary),
                 full_text_url = COALESCE($9, bill.full_text_url),
                 legiscan_bill_id = COALESCE($10, bill.legiscan_bill_id),
-                legiscan_session_id = COALESCE($11, bill.legiscan_session_id),
-                legiscan_committee_id = COALESCE($12, bill.legiscan_committee_id),
-                legiscan_committee = COALESCE($13, bill.legiscan_committee),
-                legiscan_last_action = COALESCE($14, bill.legiscan_last_action),
-                legiscan_last_action_date = COALESCE($15, bill.legiscan_last_action_date),
-                legiscan_data = COALESCE($16, bill.legiscan_data),
-                votesmart_bill_id = COALESCE($17, bill.votesmart_bill_id),
-                history = COALESCE($18, bill.history),
-                state = COALESCE($19, bill.state),
-                political_scope = COALESCE($20, bill.political_scope),
-                bill_type = COALESCE($21, bill.bill_type),
-                chamber = COALESCE($22, bill.chamber),
-                attributes = COALESCE($23, bill.attributes)
+                legiscan_committee = COALESCE($11, bill.legiscan_committee),
+                legiscan_last_action = COALESCE($12, bill.legiscan_last_action),
+                legiscan_last_action_date = COALESCE($13, bill.legiscan_last_action_date),
+                legiscan_data = COALESCE($14, bill.legiscan_data),
+                votesmart_bill_id = COALESCE($15, bill.votesmart_bill_id),
+                history = COALESCE($16, bill.history),
+                state = COALESCE($17, bill.state),
+                political_scope = COALESCE($18, bill.political_scope),
+                bill_type = COALESCE($19, bill.bill_type),
+                chamber = COALESCE($20, bill.chamber),
+                attributes = COALESCE($21, bill.attributes)
             RETURNING 
                 id,
                 slug,
                 title,
                 bill_number,
-                legislation_status AS "legislation_status: LegislationStatus",
+                status AS "status: BillStatus",
                 description,
                 official_summary,
                 populist_summary,
                 full_text_url,
                 legiscan_bill_id,
-                legiscan_session_id,
-                legiscan_committee_id,
                 legiscan_committee,
                 legiscan_last_action,
                 legiscan_last_action_date,
@@ -208,14 +199,12 @@ impl Bill {
             slug,
             title,
             input.bill_number,
-            input.legislation_status as LegislationStatus,
+            input.status as BillStatus,
             input.description,
             input.official_summary,
             input.populist_summary,
             input.full_text_url,
             input.legiscan_bill_id,
-            input.legiscan_session_id,
-            input.legiscan_committee_id,
             input.legiscan_committee,
             input.legiscan_last_action,
             input.legiscan_last_action_date as Option<NaiveDate>,
@@ -244,7 +233,7 @@ impl Bill {
     // this table is too big to run this query, its too expensive and will blow up heroku
     pub async fn index(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
         let records = sqlx::query_as!(Bill, r#"
-            SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_session_id, legiscan_committee_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill"#)
+            SELECT id, slug, title, bill_number, status AS "status: BillStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill"#)
             .fetch_all(db_pool)
             .await?;
         Ok(records)
@@ -253,21 +242,26 @@ impl Bill {
     pub async fn filter(db_pool: &PgPool, filter: &BillFilter) -> Result<Vec<Self>, sqlx::Error> {
         let search_query = crate::process_search_query(filter.query.to_owned().unwrap_or_default());
 
+        // TODO Join session to filter by year
+        // TODO Join committee to filter by committee
+        // TODO Join sponsor to filter by sponsor
+        // TODO Dynamic ORDER BY with case statement to sort by popularity
+
         let records = sqlx::query_as!(
             Bill,
             r#"
-                SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_session_id, legiscan_committee_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill
+                SELECT id, slug, title, bill_number, status AS "status: BillStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill
                 WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', title, description)) @@ to_tsquery('simple', $1))
                 AND ($2::text IS NULL OR slug = $2)
                 AND ($3::text IS NULL OR title ILIKE $3)
-                AND ($4::legislation_status IS NULL OR legislation_status = $4)
+                AND ($4::bill_status IS NULL OR status = $4)
                 AND ($5::text IS NULL OR bill_number ILIKE $5)
                 AND ($6::state IS NULL OR state = $6)
             "#,
             search_query,
             filter.slug,
             filter.title,
-            filter.legislation_status as Option<LegislationStatus>,
+            filter.status as Option<BillStatus>,
             filter.bill_number,
             filter.state as Option<State>,
         )
@@ -281,12 +275,12 @@ impl Bill {
         let records = sqlx::query_as!(
             Bill,
             r#"
-                SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_session_id, legiscan_committee_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", bill.attributes, bill.created_at, bill.updated_at FROM bill
+                SELECT id, slug, title, bill_number, status AS "status: BillStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", bill.attributes, bill.created_at, bill.updated_at FROM bill
                 JOIN bill_public_votes bpv ON bill.id = bpv.bill_id
                 WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', title, description)) @@ to_tsquery('simple', $1))
                 AND ($2::text IS NULL OR slug = $2)
                 AND ($3::text IS NULL OR title ILIKE $3)
-                AND ($4::legislation_status IS NULL OR legislation_status = $4)
+                AND ($4::bill_status IS NULL OR status = $4)
                 AND ($5::text IS NULL OR bill_number ILIKE $5)
                 AND ($6::state IS NULL OR state = $6)
                 GROUP BY (bill.id)
@@ -296,7 +290,7 @@ impl Bill {
             search_query,
             filter.slug,
             filter.title,
-            filter.legislation_status as Option<LegislationStatus>,
+            filter.status as Option<BillStatus>,
             filter.bill_number,
             filter.state as Option<State>,
         )
@@ -309,7 +303,7 @@ impl Bill {
         let record = sqlx::query_as!(
             Bill,
             r#"
-                SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_session_id, legiscan_committee_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill 
+                SELECT id, slug, title, bill_number, status AS "status: BillStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill 
                 WHERE id = $1
             "#,
             id
@@ -323,7 +317,7 @@ impl Bill {
         let record = sqlx::query_as!(
             Bill,
             r#"
-                SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_session_id, legiscan_committee_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill
+                SELECT id, slug, title, bill_number, status AS "status: BillStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill
                 WHERE slug = $1
             "#,
             slug

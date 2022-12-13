@@ -1,22 +1,11 @@
 {
-  "query": "\n                        SELECT position AS \"position: ArgumentPosition\" FROM bill_public_votes WHERE bill_id = $1 AND user_id = $2\n                    ",
+  "query": "\n            SELECT\n                votes\n            FROM\n                race_candidates\n            WHERE\n                race_candidates.candidate_id = $1 AND\n                race_candidates.race_id = $2\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "position: ArgumentPosition",
-        "type_info": {
-          "Custom": {
-            "name": "argument_position",
-            "kind": {
-              "Enum": [
-                "support",
-                "neutral",
-                "oppose"
-              ]
-            }
-          }
-        }
+        "name": "votes",
+        "type_info": "Int4"
       }
     ],
     "parameters": {
@@ -26,8 +15,8 @@
       ]
     },
     "nullable": [
-      false
+      true
     ]
   },
-  "hash": "e2cebc87fff2341190fe0654ab5ebfdf179c59c54ea225393caa962f6ac29858"
+  "hash": "ad8167f39652a8fef007d2d756366f7a1c7f28b5dd29a920e88a857c2b5928e2"
 }

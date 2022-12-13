@@ -244,25 +244,30 @@ pub enum ArgumentPosition {
     Oppose,
 }
 
-#[derive(Enum, Debug, Copy, Clone, Eq, PartialEq, sqlx::Type)]
-#[sqlx(type_name = "legislation_status", rename_all = "snake_case")]
-pub enum LegislationStatus {
+#[derive(Enum, Debug, Copy, Clone, Eq, PartialEq, sqlx::Type, Default)]
+#[sqlx(type_name = "bill_status", rename_all = "snake_case")]
+pub enum BillStatus {
     Introduced,
-    PassedHouse,
-    PassedSenate,
-    FailedHouse,
-    FailedSenate,
-    ResolvingDifferences,
-    SentToExecutive,
+    InConsideration,
     BecameLaw,
+    Failed,
     Vetoed,
+    #[default]
     Unknown,
 }
 
-impl Default for LegislationStatus {
-    fn default() -> Self {
-        LegislationStatus::Introduced
-    }
+#[derive(Enum, Debug, Copy, Clone, Eq, PartialEq, sqlx::Type, Default)]
+#[sqlx(type_name = "ballot_measure_status", rename_all = "snake_case")]
+pub enum BallotMeasureStatus {
+    Introduced,
+    InConsideration,
+    Proposed,
+    GatheringSignatures,
+    OnTheBallot,
+    BecameLaw,
+    Failed,
+    #[default]
+    Unknown,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]

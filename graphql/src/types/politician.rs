@@ -5,11 +5,10 @@ use crate::{context::ApiContext, relay};
 use async_graphql::{ComplexObject, Context, Enum, Result, SimpleObject, ID};
 use db::{
     models::{
-        bill::Bill,
-        enums::{LegislationStatus, PoliticalParty, PoliticalScope, State},
+        enums::{BillStatus, PoliticalParty, PoliticalScope, State},
         politician::Politician,
     },
-    Chamber,
+    Bill, Chamber,
 };
 use open_secrets::OpenSecretsProxy;
 use serde::{Deserialize, Serialize};
@@ -431,7 +430,7 @@ impl PoliticianResult {
         let records = sqlx::query_as!(
             Bill,
             r#"
-                SELECT id, slug, title, bill_number, legislation_status AS "legislation_status:LegislationStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id,  legiscan_session_id, legiscan_committee_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, b.created_at, b.updated_at FROM bill b
+                SELECT id, slug, title, bill_number, status AS "status: BillStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, b.created_at, b.updated_at FROM bill b
                 JOIN bill_sponsors 
                 ON bill_sponsors.bill_id = id
                 WHERE bill_sponsors.politician_id = $1

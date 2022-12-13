@@ -4,7 +4,7 @@ use auth::Claims;
 use db::{
     models::{
         bill::Bill,
-        enums::{ArgumentPosition, BillType, LegislationStatus, PoliticalScope, State},
+        enums::{ArgumentPosition, BillStatus, BillType, PoliticalScope, State},
     },
     Chamber, PublicVotes,
 };
@@ -22,7 +22,7 @@ pub struct BillResult {
     slug: String,
     title: String,
     bill_number: String,
-    legislation_status: LegislationStatus,
+    status: BillStatus,
     description: Option<String>,
     official_summary: Option<String>,
     populist_summary: Option<String>,
@@ -127,7 +127,7 @@ impl From<Bill> for BillResult {
             slug: b.slug,
             title: b.title,
             bill_number: b.bill_number,
-            legislation_status: b.legislation_status,
+            status: b.status,
             description: b.description,
             official_summary: b.official_summary,
             populist_summary: b.populist_summary,
