@@ -24,6 +24,7 @@ pub struct BillResult {
     bill_number: String,
     status: BillStatus,
     description: Option<String>,
+    session_id: Option<ID>,
     official_summary: Option<String>,
     populist_summary: Option<String>,
     full_text_url: Option<String>,
@@ -129,21 +130,25 @@ impl BillResult {
         }
     }
 
-    async fn session(&self, ctx: &Context<'_>) -> Result<SessionResult> {
+    async fn session(&self, ctx: &Context<'_>) -> Result<Option<SessionResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let result = sqlx::query_as!(SessionResult,
-            r#"
-                SELECT s.name, s.description, s.start_date, s.end_date, s.state AS "state: State", s.congress_name
-                FROM session s
-                INNER JOIN bill b ON b.session_id = s.id
-                WHERE b.id = $1
-            "#,
-            Uuid::parse_str(&self.id).unwrap(),
-        )
-        .fetch_one(&db_pool)
-        .await?;
+        match self.session_id {
+            Some(ref session_id) => {
+                let result = sqlx::query_as!(SessionResult,
+                    r#"
+                        SELECT s.name, s.description, s.start_date, s.end_date, s.state AS "state: State", s.congress_name
+                        FROM session s
+                        WHERE id = $1
+                    "#,
+                    Uuid::parse_str(&session_id.as_str()).unwrap(),
+                )
+                .fetch_one(&db_pool)
+                .await?;
 
-        Ok(result)
+                Ok(Some(result))
+            }
+            None => Ok(None),
+        }
     }
 }
 
@@ -167,6 +172,7 @@ impl From<Bill> for BillResult {
             chamber: b.chamber,
             bill_type: BillType::from_str(&b.bill_type).unwrap_or_default(),
             political_scope: b.political_scope,
+            session_id: b.session_id.map(ID::from),
         }
     }
 }
