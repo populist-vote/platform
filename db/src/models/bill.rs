@@ -70,9 +70,7 @@ pub struct UpsertBillInput {
 #[derive(InputObject, Default, Debug)]
 pub struct BillFilter {
     query: Option<String>,
-    slug: Option<String>,
-    title: Option<String>,
-    bill_number: Option<String>,
+    political_scope: Option<PoliticalScope>,
     state: Option<State>,
     year: Option<i32>,
     status: Option<BillStatus>,
@@ -261,32 +259,28 @@ impl Bill {
             r#"
             SELECT id, slug, title, bill_number, status, description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state, votesmart_bill_id, political_scope, bill_type, chamber, bill.attributes, bill.created_at, bill.updated_at FROM bill
             LEFT JOIN bill_public_votes bpv ON bill.id = bpv.bill_id
-            WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', title, description)) @@ to_tsquery('simple', $1))
-            AND ($2::text IS NULL OR slug = $2)
-            AND ($3::text IS NULL OR title ILIKE $3)
-            AND ($4::bill_status IS NULL OR status = $4)
-            AND ($5::text IS NULL OR bill_number ILIKE $5)
-            AND ($6::state IS NULL OR state = $6)
+            WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', title, description, bill_number)) @@ to_tsquery('simple', $1))
+            AND ($2::bill_status IS NULL OR status = $4)
+            AND ($3::political_scope IS NULL OR political_scope = $3)
+            AND (($4::state IS NULL OR state = $4) OR $3::political_scope = 'federal')
             GROUP BY (bill.id)
-            {order_by}
+            ORDER BY {order_by}
             LIMIT 20
         "#,
             order_by = match sort.popularity {
-                Some(PopularitySort::MostPopular) => "ORDER BY COUNT(bpv.*) DESC NULLS LAST",
+                Some(PopularitySort::MostPopular) => "COUNT(bpv.*) DESC NULLS LAST",
                 Some(PopularitySort::MostSupported) =>
-                    "ORDER BY SUM(CASE WHEN bpv.position = 'support' THEN 1 ELSE 0 END) DESC NULLS LAST",
+                    "SUM(CASE WHEN bpv.position = 'support' THEN 1 ELSE 0 END) DESC NULLS LAST",
                 Some(PopularitySort::MostOpposed) =>
-                    "ORDER BY SUM(CASE WHEN bpv.position = 'oppose' THEN 1 ELSE 0 END) DESC NULLS LAST",
-                None => "ORDER BY bill.created_at DESC"
+                    "SUM(CASE WHEN bpv.position = 'oppose' THEN 1 ELSE 0 END) DESC NULLS LAST",
+                None => "bill.created_at DESC",
             }
         );
 
         let records = sqlx::query_as::<_, Bill>(&query)
             .bind(search_query)
-            .bind(filter.slug.clone())
-            .bind(filter.title.clone())
-            .bind(filter.status.clone() as Option<BillStatus>)
-            .bind(filter.bill_number.clone())
+            .bind(filter.status as Option<BillStatus>)
+            .bind(filter.political_scope)
             .bind(filter.state)
             .fetch_all(db_pool)
             .await?;
@@ -301,21 +295,17 @@ impl Bill {
             r#"
                 SELECT id, slug, title, bill_number, status AS "status: BillStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", bill.attributes, session_id, bill.created_at, bill.updated_at FROM bill
                 JOIN bill_public_votes bpv ON bill.id = bpv.bill_id
-                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', title, description)) @@ to_tsquery('simple', $1))
-                AND ($2::text IS NULL OR slug = $2)
-                AND ($3::text IS NULL OR title ILIKE $3)
-                AND ($4::bill_status IS NULL OR status = $4)
-                AND ($5::text IS NULL OR bill_number ILIKE $5)
-                AND ($6::state IS NULL OR state = $6)
+                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', title, description, bill_number)) @@ to_tsquery('simple', $1))
+                AND ($2::bill_status IS NULL OR status = $2)
+                AND ($3::political_scope IS NULL OR political_scope = $3)
+                AND (($4::state IS NULL OR state = $4) OR $3::political_scope = 'federal')
                 GROUP BY (bill.id)
                 ORDER BY COUNT(bill.id) DESC
                 LIMIT 20
             "#,
             search_query,
-            filter.slug,
-            filter.title,
             filter.status as Option<BillStatus>,
-            filter.bill_number,
+            filter.political_scope as Option<PoliticalScope>,
             filter.state as Option<State>,
         )
         .fetch_all(db_pool)
