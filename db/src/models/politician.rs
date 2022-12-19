@@ -487,6 +487,7 @@ impl Politician {
                     ($5 = 'House' AND o.title ILIKE '%Representative')
                 ))
                 ORDER BY last_name ASC
+                LIMIT 50
             "#,
             search_query,
             filter.home_state as Option<State>,
