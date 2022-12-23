@@ -96,7 +96,7 @@ impl BillQuery {
         sqlx::query_as!(
             Committee,
             r#"
-            SELECT DISTINCT c.id, name, c.description, c.state AS "state: State", chair_id, c.legiscan_committee_id, c.created_at, c.updated_at FROM committee c
+            SELECT DISTINCT c.id, c.slug, name, c.description, c.state AS "state: State", chair_id, c.legiscan_committee_id, c.created_at, c.updated_at FROM committee c
             JOIN bill b ON b.committee_id = c.id
         "#
         )

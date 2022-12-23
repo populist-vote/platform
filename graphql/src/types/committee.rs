@@ -5,6 +5,7 @@ use db::models::{committee::Committee, enums::State};
 pub struct CommitteeResult {
     id: ID,
     name: String,
+    slug: String,
     description: String,
     state: Option<State>,
     chair_id: Option<ID>,
@@ -16,6 +17,7 @@ impl From<Committee> for CommitteeResult {
         Self {
             id: ID(committee.id.to_string()),
             name: committee.name,
+            slug: committee.slug,
             description: committee.description,
             state: committee.state,
             chair_id: committee.chair_id.map(|id| ID(id.to_string())),

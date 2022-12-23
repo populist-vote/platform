@@ -7,6 +7,7 @@ use super::enums::State;
 pub struct Committee {
     pub id: uuid::Uuid,
     pub name: String,
+    pub slug: String,
     pub description: String,
     pub state: Option<State>,
     pub chair_id: Option<uuid::Uuid>,
