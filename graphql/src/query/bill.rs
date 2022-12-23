@@ -1,7 +1,14 @@
 use async_graphql::{Context, Object};
-use db::{Bill, BillFilter};
+use db::{
+    models::{committee::Committee, enums::State},
+    Bill, BillFilter, IssueTag,
+};
 
-use crate::{context::ApiContext, relay, types::BillResult};
+use crate::{
+    context::ApiContext,
+    relay,
+    types::{BillResult, CommitteeResult, IssueTagResult},
+};
 
 #[derive(Default)]
 pub struct BillQuery;
@@ -60,5 +67,35 @@ impl BillQuery {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
         let record = Bill::find_by_slug(&db_pool, &slug).await.unwrap();
         Some(BillResult::from(record))
+    }
+
+    /// Returns all issue tags that have an associated bill
+    async fn bill_issue_tags(&self, ctx: &Context<'_>) -> Vec<IssueTagResult> {
+        let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+        sqlx::query_as!(
+            IssueTag,
+            r#"
+            SELECT DISTINCT it.id, name, slug, description, category, it.created_at, it.updated_at FROM issue_tag it
+            JOIN bill_issue_tags bit ON bit.issue_tag_id = it.id
+        "#
+        )
+        .fetch_all(&db_pool)
+        .await
+        .unwrap().into_iter().map(IssueTagResult::from).collect()
+    }
+
+    /// Returns all committees that have an associated bill
+    async fn bill_committees(&self, ctx: &Context<'_>) -> Vec<CommitteeResult> {
+        let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+        sqlx::query_as!(
+            Committee,
+            r#"
+            SELECT DISTINCT c.id, name, c.description, c.state AS "state: State", chair_id, c.legiscan_committee_id, c.created_at, c.updated_at FROM committee c
+            JOIN bill b ON b.committee_id = c.id
+        "#
+        )
+        .fetch_all(&db_pool)
+        .await
+        .unwrap().into_iter().map(CommitteeResult::from).collect()
     }
 }

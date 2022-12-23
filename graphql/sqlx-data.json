@@ -460,6 +460,60 @@
     },
     "query": "SELECT id, slug, title, description, state AS \"state:State\", election_date FROM election WHERE id = $1"
   },
+  "51bc5ef693590250d86273b0cb175a6e9fc61d992007447d8a2dd08a7c179e63": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "name",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "slug",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "category",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 5,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 6,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "\n            SELECT DISTINCT it.id, name, slug, description, category, it.created_at, it.updated_at FROM issue_tag it\n            JOIN bill_issue_tags bit ON bit.issue_tag_id = it.id\n        "
+  },
   "604858fafe8b5b14d44db393e5bfb9a5db3fa410c5d8596abef08c342e2125ec": {
     "describe": {
       "columns": [
@@ -529,6 +583,260 @@
       }
     },
     "query": "\n            DELETE FROM populist_user WHERE email = $1\n            RETURNING id\n        "
+  },
+  "684c4da3d7f368b7ad9c052e509e1fe5729949d8449e9277565d70a813ddfd4c": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "slug",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "title",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "bill_number",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "status: BillStatus",
+          "ordinal": 4,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "in_consideration",
+                  "became_law",
+                  "failed",
+                  "vetoed",
+                  "unknown"
+                ]
+              },
+              "name": "bill_status"
+            }
+          }
+        },
+        {
+          "name": "description",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "session_id",
+          "ordinal": 6,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "official_summary",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "populist_summary",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "full_text_url",
+          "ordinal": 9,
+          "type_info": "Text"
+        },
+        {
+          "name": "legiscan_bill_id",
+          "ordinal": 10,
+          "type_info": "Int4"
+        },
+        {
+          "name": "legiscan_committee",
+          "ordinal": 11,
+          "type_info": "Text"
+        },
+        {
+          "name": "legiscan_last_action",
+          "ordinal": 12,
+          "type_info": "Text"
+        },
+        {
+          "name": "legiscan_last_action_date",
+          "ordinal": 13,
+          "type_info": "Date"
+        },
+        {
+          "name": "legiscan_data",
+          "ordinal": 14,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "history",
+          "ordinal": 15,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "state: State",
+          "ordinal": 16,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              },
+              "name": "state"
+            }
+          }
+        },
+        {
+          "name": "votesmart_bill_id",
+          "ordinal": 17,
+          "type_info": "Int4"
+        },
+        {
+          "name": "political_scope: PoliticalScope",
+          "ordinal": 18,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "local",
+                  "state",
+                  "federal"
+                ]
+              },
+              "name": "political_scope"
+            }
+          }
+        },
+        {
+          "name": "bill_type",
+          "ordinal": 19,
+          "type_info": "Text"
+        },
+        {
+          "name": "chamber: Chamber",
+          "ordinal": 20,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "house",
+                  "senate",
+                  "assembly",
+                  "legislature"
+                ]
+              },
+              "name": "chamber"
+            }
+          }
+        },
+        {
+          "name": "attributes",
+          "ordinal": 21,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 22,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 23,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n                SELECT id, slug, title, bill_number, status AS \"status: BillStatus\", description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS \"state: State\", votesmart_bill_id, political_scope AS \"political_scope: PoliticalScope\", bill_type, chamber AS \"chamber: Chamber\", attributes, b.created_at, b.updated_at FROM bill b\n                JOIN bill_sponsors \n                ON bill_sponsors.bill_id = id\n                WHERE bill_sponsors.politician_id = $1\n            "
   },
   "722cfb9974f5c78359106ea1754801fb454006b9c2919919b6fae75919f3afee": {
     "describe": {
@@ -2156,6 +2464,115 @@
     },
     "query": "\n                SELECT SUM(CASE WHEN position = 'support' THEN 1 ELSE 0 END) as support,\n                       SUM(CASE WHEN position = 'neutral' THEN 1 ELSE 0 END) as neutral,\n                       SUM(CASE WHEN position = 'oppose' THEN 1 ELSE 0 END) as oppose\n                FROM bill_public_votes WHERE bill_id = $1\n            "
   },
+  "b4a42e915930ea389c6aab7921ffedcbfe682c4c83c9699695a2a7df1a4623da": {
+    "describe": {
+      "columns": [
+        {
+          "name": "name",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "start_date",
+          "ordinal": 2,
+          "type_info": "Date"
+        },
+        {
+          "name": "end_date",
+          "ordinal": 3,
+          "type_info": "Date"
+        },
+        {
+          "name": "state: State",
+          "ordinal": 4,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              },
+              "name": "state"
+            }
+          }
+        },
+        {
+          "name": "congress_name",
+          "ordinal": 5,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true,
+        true,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n                        SELECT s.name, s.description, s.start_date, s.end_date, s.state AS \"state: State\", s.congress_name\n                        FROM session s\n                        WHERE id = $1\n                    "
+  },
   "b5cc088e40d5bbf140044ee2d61f1383a2a23123e4c826370db66626eec404df": {
     "describe": {
       "columns": [
@@ -2440,40 +2857,7 @@
     },
     "query": "\n            SELECT DISTINCT\n                r.id,\n                r.slug,\n                r.title,\n                office_id,\n                race_type AS \"race_type:RaceType\",\n                party AS \"party:PoliticalParty\",\n                r.state AS \"state:State\",\n                r.description,\n                ballotpedia_link,\n                early_voting_begins_date,\n                winner_ids,\n                total_votes,\n                official_website,\n                election_id,\n                is_special_election,\n                num_elect,\n                r.created_at,\n                r.updated_at,\n                o.priority \n            FROM\n                race r\n            JOIN office o ON o.id = r.office_id\n            JOIN race_candidates rc ON rc.race_id = r.id\n            JOIN voting_guide_candidates vgc ON vgc.candidate_id = rc.candidate_id\n            WHERE\n                r.election_id = $1 AND\n                vgc.voting_guide_id = $2 AND \n                (vgc.is_endorsement = true OR vgc.note IS NOT NULL)\n            ORDER BY o.priority ASC, r.title DESC\n            "
   },
-  "c2c46ee84c24b520439da7dd5b5cbf48794f5b52d2f9a92bfaf9704a0761d8a5": {
-    "describe": {
-      "columns": [
-        {
-          "name": "candidate_id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "is_endorsement",
-          "ordinal": 1,
-          "type_info": "Bool"
-        },
-        {
-          "name": "note",
-          "ordinal": 2,
-          "type_info": "Text"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        true
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Uuid"
-        ]
-      }
-    },
-    "query": "\n            UPDATE voting_guide_candidates\n            SET note = NULL\n            WHERE voting_guide_id = $1 AND candidate_id = $2\n            RETURNING\n                candidate_id,\n                is_endorsement,\n                note\n        "
-  },
-  "c88c644737e8941e0098e61e566d9d4715f868c931a869c82f4946d6d94d85ed": {
+  "c1f4b37d211ae7e3a27fd15cd52033ab6f8783c8d27a9c9682575fc93b3c205c": {
     "describe": {
       "columns": [
         {
@@ -2482,92 +2866,18 @@
           "type_info": "Uuid"
         },
         {
-          "name": "slug",
+          "name": "name",
           "ordinal": 1,
           "type_info": "Text"
         },
         {
-          "name": "title",
+          "name": "description",
           "ordinal": 2,
           "type_info": "Text"
         },
         {
-          "name": "bill_number",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "status: BillStatus",
-          "ordinal": 4,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "in_consideration",
-                  "became_law",
-                  "failed",
-                  "vetoed",
-                  "unknown"
-                ]
-              },
-              "name": "bill_status"
-            }
-          }
-        },
-        {
-          "name": "description",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "official_summary",
-          "ordinal": 6,
-          "type_info": "Text"
-        },
-        {
-          "name": "populist_summary",
-          "ordinal": 7,
-          "type_info": "Text"
-        },
-        {
-          "name": "full_text_url",
-          "ordinal": 8,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_bill_id",
-          "ordinal": 9,
-          "type_info": "Int4"
-        },
-        {
-          "name": "legiscan_committee",
-          "ordinal": 10,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_last_action",
-          "ordinal": 11,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_last_action_date",
-          "ordinal": 12,
-          "type_info": "Date"
-        },
-        {
-          "name": "legiscan_data",
-          "ordinal": 13,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "history",
-          "ordinal": 14,
-          "type_info": "Jsonb"
-        },
-        {
           "name": "state: State",
-          "ordinal": 15,
+          "ordinal": 3,
           "type_info": {
             "Custom": {
               "kind": {
@@ -2630,61 +2940,23 @@
           }
         },
         {
-          "name": "votesmart_bill_id",
-          "ordinal": 16,
+          "name": "chair_id",
+          "ordinal": 4,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "legiscan_committee_id",
+          "ordinal": 5,
           "type_info": "Int4"
         },
         {
-          "name": "political_scope: PoliticalScope",
-          "ordinal": 17,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "local",
-                  "state",
-                  "federal"
-                ]
-              },
-              "name": "political_scope"
-            }
-          }
-        },
-        {
-          "name": "bill_type",
-          "ordinal": 18,
-          "type_info": "Text"
-        },
-        {
-          "name": "chamber: Chamber",
-          "ordinal": 19,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "house",
-                  "senate",
-                  "assembly",
-                  "legislature"
-                ]
-              },
-              "name": "chamber"
-            }
-          }
-        },
-        {
-          "name": "attributes",
-          "ordinal": 20,
-          "type_info": "Jsonb"
-        },
-        {
           "name": "created_at",
-          "ordinal": 21,
+          "ordinal": 6,
           "type_info": "Timestamptz"
         },
         {
           "name": "updated_at",
-          "ordinal": 22,
+          "ordinal": 7,
           "type_info": "Timestamptz"
         }
       ],
@@ -2692,34 +2964,50 @@
         false,
         false,
         false,
-        false,
-        false,
         true,
         true,
         true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        true,
-        true,
-        false,
-        false,
-        true,
-        false,
         false,
         false
       ],
       "parameters": {
+        "Left": []
+      }
+    },
+    "query": "\n            SELECT DISTINCT c.id, name, c.description, c.state AS \"state: State\", chair_id, c.legiscan_committee_id, c.created_at, c.updated_at FROM committee c\n            JOIN bill b ON b.committee_id = c.id\n        "
+  },
+  "c2c46ee84c24b520439da7dd5b5cbf48794f5b52d2f9a92bfaf9704a0761d8a5": {
+    "describe": {
+      "columns": [
+        {
+          "name": "candidate_id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "is_endorsement",
+          "ordinal": 1,
+          "type_info": "Bool"
+        },
+        {
+          "name": "note",
+          "ordinal": 2,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        true
+      ],
+      "parameters": {
         "Left": [
+          "Uuid",
           "Uuid"
         ]
       }
     },
-    "query": "\n                SELECT id, slug, title, bill_number, status AS \"status: BillStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS \"state: State\", votesmart_bill_id, political_scope AS \"political_scope: PoliticalScope\", bill_type, chamber AS \"chamber: Chamber\", attributes, b.created_at, b.updated_at FROM bill b\n                JOIN bill_sponsors \n                ON bill_sponsors.bill_id = id\n                WHERE bill_sponsors.politician_id = $1\n            "
+    "query": "\n            UPDATE voting_guide_candidates\n            SET note = NULL\n            WHERE voting_guide_id = $1 AND candidate_id = $2\n            RETURNING\n                candidate_id,\n                is_endorsement,\n                note\n        "
   },
   "e1ad50c24e7b79cea67dfe9c6d3799e19c09abb86f360ff51b3a202cd7a658fd": {
     "describe": {

@@ -247,7 +247,6 @@ impl Bill {
                 AND ($3::political_scope IS NULL OR political_scope = $3)
                 AND (($4::state IS NULL OR state = $4) OR $3::political_scope = 'federal')
                 GROUP BY (bill.id)
-                ORDER BY COUNT(bill.id) DESC
                 LIMIT 50
             "#,
             search_query,

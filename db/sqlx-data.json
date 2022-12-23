@@ -2493,7 +2493,337 @@
     },
     "query": "DELETE FROM bill WHERE id=$1"
   },
-  "51b810f79f6b60c205ebb4255dd41bf9441ed0d58d065e45c4cbbb25542eefe6": {
+  "5285f8b9638a676da4f2b8a7d019c4969fdf7c4409a10e51c3e7c072a6188a66": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "slug",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "category",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 5,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 6,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n                SELECT it.id, slug, name, description, category, it.created_at, it.updated_at FROM issue_tag it\n                JOIN bill_issue_tags\n                ON bill_issue_tags.issue_tag_id = it.id\n                WHERE bill_issue_tags.bill_id = $1\n            "
+  },
+  "543d173875300cc8d644526034188e505742626f2700441dcadb640268d4c6ea": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "author_id",
+          "ordinal": 1,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "author_type:AuthorType",
+          "ordinal": 2,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "politician",
+                  "organization"
+                ]
+              },
+              "name": "author_type"
+            }
+          }
+        },
+        {
+          "name": "title",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "position:ArgumentPosition",
+          "ordinal": 4,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "support",
+                  "neutral",
+                  "oppose"
+                ]
+              },
+              "name": "argument_position"
+            }
+          }
+        },
+        {
+          "name": "body",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 6,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 7,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Uuid",
+          "Text",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "support",
+                  "neutral",
+                  "oppose"
+                ]
+              },
+              "name": "argument_position"
+            }
+          },
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                WITH ins_argument AS (\n                    INSERT INTO argument (author_id, title, position, body) \n                    VALUES ($2, $3, $4, $5) \n                    RETURNING id, author_id, title, position, body, created_at, updated_at\n                ),\n                ins_bill_argument AS (\n                    INSERT INTO bill_arguments (bill_id, argument_id) \n                    VALUES ($1, (SELECT id FROM ins_argument))\n                )\n                SELECT ins_argument.id, ins_argument.author_id, a.author_type AS \"author_type:AuthorType\", ins_argument.title, ins_argument.position AS \"position:ArgumentPosition\", ins_argument.body, ins_argument.created_at, ins_argument.updated_at\n                FROM ins_argument JOIN author AS a ON a.id = ins_argument.author_id\n            "
+  },
+  "5472a8407ec6c82e37a826165383ea6106a10a0ef0fe9bdf76e5bae87ccb0c58": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "slug",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "category",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 5,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 6,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Text",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                INSERT INTO issue_tag (id, slug, name, description, category) VALUES ($1, $2, $3, $4, $5)\n                ON CONFLICT (id) DO UPDATE SET\n                    slug = COALESCE($2, issue_tag.slug),   \n                    name = COALESCE($3, issue_tag.name),\n                    description = COALESCE($4, issue_tag.description),\n                    category = COALESCE($5, issue_tag.category)\n                RETURNING id, slug, name, description, category, created_at, updated_at\n            "
+  },
+  "56c150b8ac7d3f065c22a058536ed964369503d1cbfa2470d522de2399950179": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "slug",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "thumbnail_image_url",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "website_url",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "facebook_url",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "twitter_url",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "instagram_url",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "email",
+          "ordinal": 9,
+          "type_info": "Text"
+        },
+        {
+          "name": "votesmart_sig_id",
+          "ordinal": 10,
+          "type_info": "Int4"
+        },
+        {
+          "name": "headquarters_address_id",
+          "ordinal": 11,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "headquarters_phone",
+          "ordinal": 12,
+          "type_info": "Text"
+        },
+        {
+          "name": "tax_classification",
+          "ordinal": 13,
+          "type_info": "Text"
+        },
+        {
+          "name": "assets",
+          "ordinal": 14,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 15,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 16,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n                SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, o.assets, o.created_at, o.updated_at  FROM organization o\n                JOIN politician_organization_endorsements\n                ON politician_organization_endorsements.organization_id = o.id\n                WHERE politician_organization_endorsements.politician_id = $1\n            "
+  },
+  "5c5cbbda39ba03e94e0d3c9fcd5dc29deebb98ffe50dd6662908f1e3ffa9ec7c": {
     "describe": {
       "columns": [
         {
@@ -2832,337 +3162,7 @@
         ]
       }
     },
-    "query": "\n                SELECT id, slug, title, bill_number, status AS \"status: BillStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS \"state: State\", votesmart_bill_id, political_scope AS \"political_scope: PoliticalScope\", bill_type, chamber AS \"chamber: Chamber\", bill.attributes, session_id, bill.created_at, bill.updated_at FROM bill\n                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', title, description, bill_number)) @@ to_tsquery('simple', $1))\n                AND ($2::bill_status IS NULL OR status = $2)\n                AND ($3::political_scope IS NULL OR political_scope = $3)\n                AND (($4::state IS NULL OR state = $4) OR $3::political_scope = 'federal')\n                GROUP BY (bill.id)\n                ORDER BY COUNT(bill.id) DESC\n                LIMIT 50\n            "
-  },
-  "5285f8b9638a676da4f2b8a7d019c4969fdf7c4409a10e51c3e7c072a6188a66": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "slug",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "name",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "description",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "category",
-          "ordinal": 4,
-          "type_info": "Text"
-        },
-        {
-          "name": "created_at",
-          "ordinal": 5,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "updated_at",
-          "ordinal": 6,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        true,
-        true,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      }
-    },
-    "query": "\n                SELECT it.id, slug, name, description, category, it.created_at, it.updated_at FROM issue_tag it\n                JOIN bill_issue_tags\n                ON bill_issue_tags.issue_tag_id = it.id\n                WHERE bill_issue_tags.bill_id = $1\n            "
-  },
-  "543d173875300cc8d644526034188e505742626f2700441dcadb640268d4c6ea": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "author_id",
-          "ordinal": 1,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "author_type:AuthorType",
-          "ordinal": 2,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "politician",
-                  "organization"
-                ]
-              },
-              "name": "author_type"
-            }
-          }
-        },
-        {
-          "name": "title",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "position:ArgumentPosition",
-          "ordinal": 4,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "support",
-                  "neutral",
-                  "oppose"
-                ]
-              },
-              "name": "argument_position"
-            }
-          }
-        },
-        {
-          "name": "body",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "created_at",
-          "ordinal": 6,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "updated_at",
-          "ordinal": 7,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Uuid",
-          "Text",
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "support",
-                  "neutral",
-                  "oppose"
-                ]
-              },
-              "name": "argument_position"
-            }
-          },
-          "Text"
-        ]
-      }
-    },
-    "query": "\n                WITH ins_argument AS (\n                    INSERT INTO argument (author_id, title, position, body) \n                    VALUES ($2, $3, $4, $5) \n                    RETURNING id, author_id, title, position, body, created_at, updated_at\n                ),\n                ins_bill_argument AS (\n                    INSERT INTO bill_arguments (bill_id, argument_id) \n                    VALUES ($1, (SELECT id FROM ins_argument))\n                )\n                SELECT ins_argument.id, ins_argument.author_id, a.author_type AS \"author_type:AuthorType\", ins_argument.title, ins_argument.position AS \"position:ArgumentPosition\", ins_argument.body, ins_argument.created_at, ins_argument.updated_at\n                FROM ins_argument JOIN author AS a ON a.id = ins_argument.author_id\n            "
-  },
-  "5472a8407ec6c82e37a826165383ea6106a10a0ef0fe9bdf76e5bae87ccb0c58": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "slug",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "name",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "description",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "category",
-          "ordinal": 4,
-          "type_info": "Text"
-        },
-        {
-          "name": "created_at",
-          "ordinal": 5,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "updated_at",
-          "ordinal": 6,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        true,
-        true,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Text",
-          "Text",
-          "Text",
-          "Text"
-        ]
-      }
-    },
-    "query": "\n                INSERT INTO issue_tag (id, slug, name, description, category) VALUES ($1, $2, $3, $4, $5)\n                ON CONFLICT (id) DO UPDATE SET\n                    slug = COALESCE($2, issue_tag.slug),   \n                    name = COALESCE($3, issue_tag.name),\n                    description = COALESCE($4, issue_tag.description),\n                    category = COALESCE($5, issue_tag.category)\n                RETURNING id, slug, name, description, category, created_at, updated_at\n            "
-  },
-  "56c150b8ac7d3f065c22a058536ed964369503d1cbfa2470d522de2399950179": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "slug",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "name",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "description",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "thumbnail_image_url",
-          "ordinal": 4,
-          "type_info": "Text"
-        },
-        {
-          "name": "website_url",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "facebook_url",
-          "ordinal": 6,
-          "type_info": "Text"
-        },
-        {
-          "name": "twitter_url",
-          "ordinal": 7,
-          "type_info": "Text"
-        },
-        {
-          "name": "instagram_url",
-          "ordinal": 8,
-          "type_info": "Text"
-        },
-        {
-          "name": "email",
-          "ordinal": 9,
-          "type_info": "Text"
-        },
-        {
-          "name": "votesmart_sig_id",
-          "ordinal": 10,
-          "type_info": "Int4"
-        },
-        {
-          "name": "headquarters_address_id",
-          "ordinal": 11,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "headquarters_phone",
-          "ordinal": 12,
-          "type_info": "Text"
-        },
-        {
-          "name": "tax_classification",
-          "ordinal": 13,
-          "type_info": "Text"
-        },
-        {
-          "name": "assets",
-          "ordinal": 14,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "created_at",
-          "ordinal": 15,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "updated_at",
-          "ordinal": 16,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      }
-    },
-    "query": "\n                SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, o.assets, o.created_at, o.updated_at  FROM organization o\n                JOIN politician_organization_endorsements\n                ON politician_organization_endorsements.organization_id = o.id\n                WHERE politician_organization_endorsements.politician_id = $1\n            "
+    "query": "\n                SELECT id, slug, title, bill_number, status AS \"status: BillStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS \"state: State\", votesmart_bill_id, political_scope AS \"political_scope: PoliticalScope\", bill_type, chamber AS \"chamber: Chamber\", bill.attributes, session_id, bill.created_at, bill.updated_at FROM bill\n                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', title, description, bill_number)) @@ to_tsquery('simple', $1))\n                AND ($2::bill_status IS NULL OR status = $2)\n                AND ($3::political_scope IS NULL OR political_scope = $3)\n                AND (($4::state IS NULL OR state = $4) OR $3::political_scope = 'federal')\n                GROUP BY (bill.id)\n                LIMIT 50\n            "
   },
   "5d951f5bc58818fc233bce6ecf531032883205425a464d56f0c5997b47fb90a8": {
     "describe": {

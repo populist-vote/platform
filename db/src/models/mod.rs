@@ -2,6 +2,7 @@ pub mod address;
 pub mod argument;
 pub mod ballot_measure;
 pub mod bill;
+pub mod committee;
 pub mod election;
 pub mod enums;
 pub mod issue_tag;
