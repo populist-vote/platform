@@ -1,8 +1,5 @@
 use async_graphql::{Context, Object};
-use db::{
-    models::{committee::Committee, enums::State},
-    Bill, BillFilter, IssueTag,
-};
+use db::{Bill, BillFilter, BillSort};
 
 use crate::{
     context::ApiContext,
@@ -19,13 +16,19 @@ impl BillQuery {
         &self,
         ctx: &Context<'_>,
         filter: Option<BillFilter>,
+        sort: Option<BillSort>,
         after: Option<String>,
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
     ) -> relay::ConnectionResult<BillResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let records = Bill::filter(&db_pool, &filter.unwrap_or_default()).await?;
+        let records = Bill::filter(
+            &db_pool,
+            &filter.unwrap_or_default(),
+            &sort.unwrap_or_default(),
+        )
+        .await?;
 
         relay::query(
             records.into_iter().map(BillResult::from),
