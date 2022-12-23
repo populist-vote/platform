@@ -1,5 +1,8 @@
 use async_graphql::{Context, Object};
-use db::{models::enums::State, Bill, BillFilter, BillSort, IssueTag};
+use db::{
+    models::{committee::Committee, enums::State},
+    Bill, BillFilter, BillSort, IssueTag,
+};
 
 use crate::{
     context::ApiContext,
