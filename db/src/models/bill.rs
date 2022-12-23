@@ -2,7 +2,7 @@ use crate::{
     models::enums::{ArgumentPosition, AuthorType, BillStatus},
     Argument, Chamber, CreateArgumentInput, DateTime, IssueTag, Politician,
 };
-use async_graphql::{Enum, InputObject, SimpleObject};
+use async_graphql::{InputObject, SimpleObject};
 use chrono::NaiveDate;
 use serde_json::Value as JSON;
 use slugify::slugify;
@@ -76,24 +76,11 @@ pub struct BillFilter {
     status: Option<BillStatus>,
 }
 
-#[derive(InputObject, Default, Debug)]
-pub struct BillSort {
-    popularity: Option<PopularitySort>,
-}
-
 #[derive(SimpleObject)]
 pub struct PublicVotes {
     pub support: Option<i64>,
     pub neutral: Option<i64>,
     pub oppose: Option<i64>,
-}
-
-#[derive(Enum, Copy, Clone, Eq, PartialEq, Debug, Default)]
-pub enum PopularitySort {
-    #[default]
-    MostPopular,
-    MostSupported,
-    MostOpposed,
 }
 
 impl Bill {
@@ -248,42 +235,28 @@ impl Bill {
         Ok(())
     }
 
-    pub async fn filter(
-        db_pool: &PgPool,
-        filter: &BillFilter,
-        sort: &BillSort,
-    ) -> Result<Vec<Self>, sqlx::Error> {
+    pub async fn filter(db_pool: &PgPool, filter: &BillFilter) -> Result<Vec<Self>, sqlx::Error> {
         let search_query = crate::process_search_query(filter.query.to_owned().unwrap_or_default());
 
-        let query = format!(
+        let records = sqlx::query_as!(
+            Bill,
             r#"
-            SELECT id, slug, title, bill_number, status, description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state, votesmart_bill_id, political_scope, bill_type, chamber, bill.attributes, bill.created_at, bill.updated_at FROM bill
-            LEFT JOIN bill_public_votes bpv ON bill.id = bpv.bill_id
-            WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', title, description, bill_number)) @@ to_tsquery('simple', $1))
-            AND ($2::bill_status IS NULL OR status = $4)
-            AND ($3::political_scope IS NULL OR political_scope = $3)
-            AND (($4::state IS NULL OR state = $4) OR $3::political_scope = 'federal')
-            GROUP BY (bill.id)
-            ORDER BY {order_by}
-            LIMIT 20
-        "#,
-            order_by = match sort.popularity {
-                Some(PopularitySort::MostPopular) => "COUNT(bpv.*) DESC NULLS LAST",
-                Some(PopularitySort::MostSupported) =>
-                    "SUM(CASE WHEN bpv.position = 'support' THEN 1 ELSE 0 END) DESC NULLS LAST",
-                Some(PopularitySort::MostOpposed) =>
-                    "SUM(CASE WHEN bpv.position = 'oppose' THEN 1 ELSE 0 END) DESC NULLS LAST",
-                None => "bill.created_at DESC",
-            }
-        );
-
-        let records = sqlx::query_as::<_, Bill>(&query)
-            .bind(search_query)
-            .bind(filter.status as Option<BillStatus>)
-            .bind(filter.political_scope)
-            .bind(filter.state)
-            .fetch_all(db_pool)
-            .await?;
+                SELECT id, slug, title, bill_number, status AS "status: BillStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", bill.attributes, session_id, bill.created_at, bill.updated_at FROM bill
+                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', title, description, bill_number)) @@ to_tsquery('simple', $1))
+                AND ($2::bill_status IS NULL OR status = $2)
+                AND ($3::political_scope IS NULL OR political_scope = $3)
+                AND (($4::state IS NULL OR state = $4) OR $3::political_scope = 'federal')
+                GROUP BY (bill.id)
+                ORDER BY COUNT(bill.id) DESC
+                LIMIT 50
+            "#,
+            search_query,
+            filter.status as Option<BillStatus>,
+            filter.political_scope as Option<PoliticalScope>,
+            filter.state as Option<State>,
+        )
+        .fetch_all(db_pool)
+        .await?;
         Ok(records)
     }
 

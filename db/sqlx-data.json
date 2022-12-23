@@ -1,253 +1,5 @@
 {
   "db": "PostgreSQL",
-  "01faf94656d7edccb4f8bbf19bbe8686b2d9243b9a650d8b4ae356b8a9b541ba": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "slug",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "title",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "bill_number",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "status: BillStatus",
-          "ordinal": 4,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "in_consideration",
-                  "became_law",
-                  "failed",
-                  "vetoed",
-                  "unknown"
-                ]
-              },
-              "name": "bill_status"
-            }
-          }
-        },
-        {
-          "name": "description",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "official_summary",
-          "ordinal": 6,
-          "type_info": "Text"
-        },
-        {
-          "name": "populist_summary",
-          "ordinal": 7,
-          "type_info": "Text"
-        },
-        {
-          "name": "full_text_url",
-          "ordinal": 8,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_bill_id",
-          "ordinal": 9,
-          "type_info": "Int4"
-        },
-        {
-          "name": "legiscan_committee",
-          "ordinal": 10,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_last_action",
-          "ordinal": 11,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_last_action_date",
-          "ordinal": 12,
-          "type_info": "Date"
-        },
-        {
-          "name": "legiscan_data",
-          "ordinal": 13,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "history",
-          "ordinal": 14,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "state: State",
-          "ordinal": 15,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              },
-              "name": "state"
-            }
-          }
-        },
-        {
-          "name": "votesmart_bill_id",
-          "ordinal": 16,
-          "type_info": "Int4"
-        },
-        {
-          "name": "political_scope: PoliticalScope",
-          "ordinal": 17,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "local",
-                  "state",
-                  "federal"
-                ]
-              },
-              "name": "political_scope"
-            }
-          }
-        },
-        {
-          "name": "bill_type",
-          "ordinal": 18,
-          "type_info": "Text"
-        },
-        {
-          "name": "chamber: Chamber",
-          "ordinal": 19,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "house",
-                  "senate",
-                  "assembly",
-                  "legislature"
-                ]
-              },
-              "name": "chamber"
-            }
-          }
-        },
-        {
-          "name": "attributes",
-          "ordinal": 20,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "created_at",
-          "ordinal": 21,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "updated_at",
-          "ordinal": 22,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        true,
-        true,
-        false,
-        false,
-        true,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      }
-    },
-    "query": "\n                SELECT id, slug, title, bill_number, status AS \"status: BillStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS \"state: State\", votesmart_bill_id, political_scope AS \"political_scope: PoliticalScope\", bill_type, chamber AS \"chamber: Chamber\", attributes, created_at, updated_at FROM bill \n                WHERE id = $1\n            "
-  },
   "0dbe3b666d7726e78e78245a888fc228a62dc61ef59874419091138d998c5659": {
     "describe": {
       "columns": [
@@ -399,332 +151,6 @@
       }
     },
     "query": "\n            SELECT slug\n            FROM politician\n            WHERE slug = $1 AND id != $2\n            "
-  },
-  "1277d341f1d3a5c5d70e66fbce2e2c38459981700f1f63c0703a152d39faa597": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "slug",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "title",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "bill_number",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "status: BillStatus",
-          "ordinal": 4,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "in_consideration",
-                  "became_law",
-                  "failed",
-                  "vetoed",
-                  "unknown"
-                ]
-              },
-              "name": "bill_status"
-            }
-          }
-        },
-        {
-          "name": "description",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "official_summary",
-          "ordinal": 6,
-          "type_info": "Text"
-        },
-        {
-          "name": "populist_summary",
-          "ordinal": 7,
-          "type_info": "Text"
-        },
-        {
-          "name": "full_text_url",
-          "ordinal": 8,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_bill_id",
-          "ordinal": 9,
-          "type_info": "Int4"
-        },
-        {
-          "name": "legiscan_committee",
-          "ordinal": 10,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_last_action",
-          "ordinal": 11,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_last_action_date",
-          "ordinal": 12,
-          "type_info": "Date"
-        },
-        {
-          "name": "legiscan_data",
-          "ordinal": 13,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "history",
-          "ordinal": 14,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "state: State",
-          "ordinal": 15,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              },
-              "name": "state"
-            }
-          }
-        },
-        {
-          "name": "votesmart_bill_id",
-          "ordinal": 16,
-          "type_info": "Int4"
-        },
-        {
-          "name": "political_scope: PoliticalScope",
-          "ordinal": 17,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "local",
-                  "state",
-                  "federal"
-                ]
-              },
-              "name": "political_scope"
-            }
-          }
-        },
-        {
-          "name": "bill_type",
-          "ordinal": 18,
-          "type_info": "Text"
-        },
-        {
-          "name": "chamber: Chamber",
-          "ordinal": 19,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "house",
-                  "senate",
-                  "assembly",
-                  "legislature"
-                ]
-              },
-              "name": "chamber"
-            }
-          }
-        },
-        {
-          "name": "attributes",
-          "ordinal": 20,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "created_at",
-          "ordinal": 21,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "updated_at",
-          "ordinal": 22,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        true,
-        true,
-        false,
-        false,
-        true,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text",
-          "Text",
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "in_consideration",
-                  "became_law",
-                  "failed",
-                  "vetoed",
-                  "unknown"
-                ]
-              },
-              "name": "bill_status"
-            }
-          },
-          "Text",
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              },
-              "name": "state"
-            }
-          }
-        ]
-      }
-    },
-    "query": "\n                SELECT id, slug, title, bill_number, status AS \"status: BillStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS \"state: State\", votesmart_bill_id, political_scope AS \"political_scope: PoliticalScope\", bill_type, chamber AS \"chamber: Chamber\", attributes, created_at, updated_at FROM bill\n                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', title, description)) @@ to_tsquery('simple', $1))\n                AND ($2::text IS NULL OR slug = $2)\n                AND ($3::text IS NULL OR title ILIKE $3)\n                AND ($4::bill_status IS NULL OR status = $4)\n                AND ($5::text IS NULL OR bill_number ILIKE $5)\n                AND ($6::state IS NULL OR state = $6)\n            "
   },
   "133452b9e3e79b701affdb4775335e28117019e5ea2891b22e7dbe97db8f6f7c": {
     "describe": {
@@ -1457,6 +883,260 @@
     },
     "query": "\n                SELECT it.id, slug, name, description, category, it.created_at, it.updated_at FROM issue_tag it\n                JOIN ballot_measure_issue_tags bmit\n                ON bmit.issue_tag_id = it.id\n                WHERE bmit.ballot_measure_id = $1\n            "
   },
+  "1f892b6ecaf541ea5fb192b87b9e320806b29f5612cb18622d2272cf673d3f45": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "slug",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "title",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "bill_number",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "status: BillStatus",
+          "ordinal": 4,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "in_consideration",
+                  "became_law",
+                  "failed",
+                  "vetoed",
+                  "unknown"
+                ]
+              },
+              "name": "bill_status"
+            }
+          }
+        },
+        {
+          "name": "description",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "session_id",
+          "ordinal": 6,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "official_summary",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "populist_summary",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "full_text_url",
+          "ordinal": 9,
+          "type_info": "Text"
+        },
+        {
+          "name": "legiscan_bill_id",
+          "ordinal": 10,
+          "type_info": "Int4"
+        },
+        {
+          "name": "legiscan_committee",
+          "ordinal": 11,
+          "type_info": "Text"
+        },
+        {
+          "name": "legiscan_last_action",
+          "ordinal": 12,
+          "type_info": "Text"
+        },
+        {
+          "name": "legiscan_last_action_date",
+          "ordinal": 13,
+          "type_info": "Date"
+        },
+        {
+          "name": "legiscan_data",
+          "ordinal": 14,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "history",
+          "ordinal": 15,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "state: State",
+          "ordinal": 16,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              },
+              "name": "state"
+            }
+          }
+        },
+        {
+          "name": "votesmart_bill_id",
+          "ordinal": 17,
+          "type_info": "Int4"
+        },
+        {
+          "name": "political_scope: PoliticalScope",
+          "ordinal": 18,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "local",
+                  "state",
+                  "federal"
+                ]
+              },
+              "name": "political_scope"
+            }
+          }
+        },
+        {
+          "name": "bill_type",
+          "ordinal": 19,
+          "type_info": "Text"
+        },
+        {
+          "name": "chamber: Chamber",
+          "ordinal": 20,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "house",
+                  "senate",
+                  "assembly",
+                  "legislature"
+                ]
+              },
+              "name": "chamber"
+            }
+          }
+        },
+        {
+          "name": "attributes",
+          "ordinal": 21,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 22,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 23,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                SELECT id, slug, title, bill_number, status AS \"status: BillStatus\", description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS \"state: State\", votesmart_bill_id, political_scope AS \"political_scope: PoliticalScope\", bill_type, chamber AS \"chamber: Chamber\", attributes, created_at, updated_at FROM bill\n                WHERE slug = $1\n            "
+  },
   "20736866ab7cb3e1653c6fc6248e6dc37a82d26157484f1785b7a3796582abd1": {
     "describe": {
       "columns": [
@@ -2109,370 +1789,6 @@
       }
     },
     "query": "\n                SELECT id, slug, name, description, category, created_at, updated_at FROM issue_tag\n                WHERE slug = $1\n            "
-  },
-  "283fdcaabb2375e2a14139071d9d7feca0fb3620bc91a62dc72d2e3a2d8cf76f": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "slug",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "title",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "bill_number",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "status: BillStatus",
-          "ordinal": 4,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "in_consideration",
-                  "became_law",
-                  "failed",
-                  "vetoed",
-                  "unknown"
-                ]
-              },
-              "name": "bill_status"
-            }
-          }
-        },
-        {
-          "name": "description",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "official_summary",
-          "ordinal": 6,
-          "type_info": "Text"
-        },
-        {
-          "name": "populist_summary",
-          "ordinal": 7,
-          "type_info": "Text"
-        },
-        {
-          "name": "full_text_url",
-          "ordinal": 8,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_bill_id",
-          "ordinal": 9,
-          "type_info": "Int4"
-        },
-        {
-          "name": "legiscan_committee",
-          "ordinal": 10,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_last_action",
-          "ordinal": 11,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_last_action_date",
-          "ordinal": 12,
-          "type_info": "Date"
-        },
-        {
-          "name": "legiscan_data",
-          "ordinal": 13,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "votesmart_bill_id",
-          "ordinal": 14,
-          "type_info": "Int4"
-        },
-        {
-          "name": "history",
-          "ordinal": 15,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "state: State",
-          "ordinal": 16,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              },
-              "name": "state"
-            }
-          }
-        },
-        {
-          "name": "political_scope: PoliticalScope",
-          "ordinal": 17,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "local",
-                  "state",
-                  "federal"
-                ]
-              },
-              "name": "political_scope"
-            }
-          }
-        },
-        {
-          "name": "bill_type",
-          "ordinal": 18,
-          "type_info": "Text"
-        },
-        {
-          "name": "chamber: Chamber",
-          "ordinal": 19,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "house",
-                  "senate",
-                  "assembly",
-                  "legislature"
-                ]
-              },
-              "name": "chamber"
-            }
-          }
-        },
-        {
-          "name": "attributes",
-          "ordinal": 20,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "created_at",
-          "ordinal": 21,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "updated_at",
-          "ordinal": 22,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        true,
-        false,
-        true,
-        false,
-        false,
-        true,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Text",
-          "Text",
-          "Text",
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "in_consideration",
-                  "became_law",
-                  "failed",
-                  "vetoed",
-                  "unknown"
-                ]
-              },
-              "name": "bill_status"
-            }
-          },
-          "Text",
-          "Text",
-          "Text",
-          "Text",
-          "Int4",
-          "Text",
-          "Text",
-          "Date",
-          "Jsonb",
-          "Int4",
-          "Jsonb",
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              },
-              "name": "state"
-            }
-          },
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "local",
-                  "state",
-                  "federal"
-                ]
-              },
-              "name": "political_scope"
-            }
-          },
-          "Text",
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "house",
-                  "senate",
-                  "assembly",
-                  "legislature"
-                ]
-              },
-              "name": "chamber"
-            }
-          },
-          "Jsonb"
-        ]
-      }
-    },
-    "query": "\n            INSERT INTO bill (\n                id,\n                slug,\n                title,\n                bill_number,\n                status,\n                description,\n                official_summary,\n                populist_summary,\n                full_text_url,\n                legiscan_bill_id,\n                legiscan_committee,\n                legiscan_last_action,\n                legiscan_last_action_date,\n                legiscan_data,\n                votesmart_bill_id,\n                history,\n                state,\n                political_scope,\n                bill_type,\n                chamber,\n                attributes\n            ) VALUES (\n                $1,\n                $2,\n                $3,\n                $4,\n                $5,\n                $6,\n                $7,\n                $8,\n                $9,\n                $10,\n                $11,\n                $12,\n                $13,\n                $14,\n                $15,\n                $16,\n                $17,\n                $18,\n                $19,\n                $20,\n                $21\n            ) ON CONFLICT (id) DO UPDATE \n            SET\n                slug = COALESCE($2, bill.slug),\n                title = COALESCE($3, bill.title),\n                bill_number = COALESCE($4, bill.bill_number),\n                status = COALESCE($5, bill.status),\n                description = COALESCE($6, bill.description),\n                official_summary = COALESCE($7, bill.official_summary),\n                populist_summary = COALESCE($8, bill.populist_summary),\n                full_text_url = COALESCE($9, bill.full_text_url),\n                legiscan_bill_id = COALESCE($10, bill.legiscan_bill_id),\n                legiscan_committee = COALESCE($11, bill.legiscan_committee),\n                legiscan_last_action = COALESCE($12, bill.legiscan_last_action),\n                legiscan_last_action_date = COALESCE($13, bill.legiscan_last_action_date),\n                legiscan_data = COALESCE($14, bill.legiscan_data),\n                votesmart_bill_id = COALESCE($15, bill.votesmart_bill_id),\n                history = COALESCE($16, bill.history),\n                state = COALESCE($17, bill.state),\n                political_scope = COALESCE($18, bill.political_scope),\n                bill_type = COALESCE($19, bill.bill_type),\n                chamber = COALESCE($20, bill.chamber),\n                attributes = COALESCE($21, bill.attributes)\n            RETURNING \n                id,\n                slug,\n                title,\n                bill_number,\n                status AS \"status: BillStatus\",\n                description,\n                official_summary,\n                populist_summary,\n                full_text_url,\n                legiscan_bill_id,\n                legiscan_committee,\n                legiscan_last_action,\n                legiscan_last_action_date,\n                legiscan_data,\n                votesmart_bill_id,\n                history,\n                state AS \"state: State\",\n                political_scope AS \"political_scope: PoliticalScope\",\n                bill_type,\n                chamber AS \"chamber: Chamber\",\n                attributes,\n                created_at,\n                updated_at\n            "
   },
   "3000efe162639aeb67972959f17f5ec0dde88df03712508761d1e7aec53c1681": {
     "describe": {
@@ -3176,6 +2492,347 @@
       }
     },
     "query": "DELETE FROM bill WHERE id=$1"
+  },
+  "51b810f79f6b60c205ebb4255dd41bf9441ed0d58d065e45c4cbbb25542eefe6": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "slug",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "title",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "bill_number",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "status: BillStatus",
+          "ordinal": 4,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "in_consideration",
+                  "became_law",
+                  "failed",
+                  "vetoed",
+                  "unknown"
+                ]
+              },
+              "name": "bill_status"
+            }
+          }
+        },
+        {
+          "name": "description",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "official_summary",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "populist_summary",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "full_text_url",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "legiscan_bill_id",
+          "ordinal": 9,
+          "type_info": "Int4"
+        },
+        {
+          "name": "legiscan_committee",
+          "ordinal": 10,
+          "type_info": "Text"
+        },
+        {
+          "name": "legiscan_last_action",
+          "ordinal": 11,
+          "type_info": "Text"
+        },
+        {
+          "name": "legiscan_last_action_date",
+          "ordinal": 12,
+          "type_info": "Date"
+        },
+        {
+          "name": "legiscan_data",
+          "ordinal": 13,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "history",
+          "ordinal": 14,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "state: State",
+          "ordinal": 15,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              },
+              "name": "state"
+            }
+          }
+        },
+        {
+          "name": "votesmart_bill_id",
+          "ordinal": 16,
+          "type_info": "Int4"
+        },
+        {
+          "name": "political_scope: PoliticalScope",
+          "ordinal": 17,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "local",
+                  "state",
+                  "federal"
+                ]
+              },
+              "name": "political_scope"
+            }
+          }
+        },
+        {
+          "name": "bill_type",
+          "ordinal": 18,
+          "type_info": "Text"
+        },
+        {
+          "name": "chamber: Chamber",
+          "ordinal": 19,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "house",
+                  "senate",
+                  "assembly",
+                  "legislature"
+                ]
+              },
+              "name": "chamber"
+            }
+          }
+        },
+        {
+          "name": "attributes",
+          "ordinal": 20,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "session_id",
+          "ordinal": 21,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 22,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 23,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        false,
+        false,
+        true,
+        false,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "in_consideration",
+                  "became_law",
+                  "failed",
+                  "vetoed",
+                  "unknown"
+                ]
+              },
+              "name": "bill_status"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "local",
+                  "state",
+                  "federal"
+                ]
+              },
+              "name": "political_scope"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              },
+              "name": "state"
+            }
+          }
+        ]
+      }
+    },
+    "query": "\n                SELECT id, slug, title, bill_number, status AS \"status: BillStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS \"state: State\", votesmart_bill_id, political_scope AS \"political_scope: PoliticalScope\", bill_type, chamber AS \"chamber: Chamber\", bill.attributes, session_id, bill.created_at, bill.updated_at FROM bill\n                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', title, description, bill_number)) @@ to_tsquery('simple', $1))\n                AND ($2::bill_status IS NULL OR status = $2)\n                AND ($3::political_scope IS NULL OR political_scope = $3)\n                AND (($4::state IS NULL OR state = $4) OR $3::political_scope = 'federal')\n                GROUP BY (bill.id)\n                ORDER BY COUNT(bill.id) DESC\n                LIMIT 50\n            "
   },
   "5285f8b9638a676da4f2b8a7d019c4969fdf7c4409a10e51c3e7c072a6188a66": {
     "describe": {
@@ -3895,6 +3552,377 @@
       }
     },
     "query": "DELETE FROM organization WHERE id=$1"
+  },
+  "633ef03f4c40d155fb332c45a437c9296b357708f446c91c81a8d177797c838e": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "slug",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "title",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "bill_number",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "status: BillStatus",
+          "ordinal": 4,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "in_consideration",
+                  "became_law",
+                  "failed",
+                  "vetoed",
+                  "unknown"
+                ]
+              },
+              "name": "bill_status"
+            }
+          }
+        },
+        {
+          "name": "description",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "session_id",
+          "ordinal": 6,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "official_summary",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "populist_summary",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "full_text_url",
+          "ordinal": 9,
+          "type_info": "Text"
+        },
+        {
+          "name": "legiscan_bill_id",
+          "ordinal": 10,
+          "type_info": "Int4"
+        },
+        {
+          "name": "legiscan_committee",
+          "ordinal": 11,
+          "type_info": "Text"
+        },
+        {
+          "name": "legiscan_last_action",
+          "ordinal": 12,
+          "type_info": "Text"
+        },
+        {
+          "name": "legiscan_last_action_date",
+          "ordinal": 13,
+          "type_info": "Date"
+        },
+        {
+          "name": "legiscan_data",
+          "ordinal": 14,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "votesmart_bill_id",
+          "ordinal": 15,
+          "type_info": "Int4"
+        },
+        {
+          "name": "history",
+          "ordinal": 16,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "state: State",
+          "ordinal": 17,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              },
+              "name": "state"
+            }
+          }
+        },
+        {
+          "name": "political_scope: PoliticalScope",
+          "ordinal": 18,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "local",
+                  "state",
+                  "federal"
+                ]
+              },
+              "name": "political_scope"
+            }
+          }
+        },
+        {
+          "name": "bill_type",
+          "ordinal": 19,
+          "type_info": "Text"
+        },
+        {
+          "name": "chamber: Chamber",
+          "ordinal": 20,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "house",
+                  "senate",
+                  "assembly",
+                  "legislature"
+                ]
+              },
+              "name": "chamber"
+            }
+          }
+        },
+        {
+          "name": "attributes",
+          "ordinal": 21,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 22,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 23,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        false,
+        true,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Text",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "in_consideration",
+                  "became_law",
+                  "failed",
+                  "vetoed",
+                  "unknown"
+                ]
+              },
+              "name": "bill_status"
+            }
+          },
+          "Text",
+          "Uuid",
+          "Text",
+          "Text",
+          "Text",
+          "Int4",
+          "Text",
+          "Text",
+          "Date",
+          "Jsonb",
+          "Int4",
+          "Jsonb",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              },
+              "name": "state"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "local",
+                  "state",
+                  "federal"
+                ]
+              },
+              "name": "political_scope"
+            }
+          },
+          "Text",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "house",
+                  "senate",
+                  "assembly",
+                  "legislature"
+                ]
+              },
+              "name": "chamber"
+            }
+          },
+          "Jsonb"
+        ]
+      }
+    },
+    "query": "\n            INSERT INTO bill (\n                id,\n                slug,\n                title,\n                bill_number,\n                status,\n                description,\n                session_id,\n                official_summary,\n                populist_summary,\n                full_text_url,\n                legiscan_bill_id,\n                legiscan_committee,\n                legiscan_last_action,\n                legiscan_last_action_date,\n                legiscan_data,\n                votesmart_bill_id,\n                history,\n                state,\n                political_scope,\n                bill_type,\n                chamber,\n                attributes\n            ) VALUES (\n                $1,\n                $2,\n                $3,\n                $4,\n                $5,\n                $6,\n                $7,\n                $8,\n                $9,\n                $10,\n                $11,\n                $12,\n                $13,\n                $14,\n                $15,\n                $16,\n                $17,\n                $18,\n                $19,\n                $20,\n                $21,\n                $22\n            ) ON CONFLICT (id) DO UPDATE \n            SET\n                slug = COALESCE($2, bill.slug),\n                title = COALESCE($3, bill.title),\n                bill_number = COALESCE($4, bill.bill_number),\n                status = COALESCE($5, bill.status),\n                description = COALESCE($6, bill.description),\n                session_id = COALESCE($7, bill.session_id),\n                official_summary = COALESCE($8, bill.official_summary),\n                populist_summary = COALESCE($9, bill.populist_summary),\n                full_text_url = COALESCE($10, bill.full_text_url),\n                legiscan_bill_id = COALESCE($11, bill.legiscan_bill_id),\n                legiscan_committee = COALESCE($12, bill.legiscan_committee),\n                legiscan_last_action = COALESCE($13, bill.legiscan_last_action),\n                legiscan_last_action_date = COALESCE($14, bill.legiscan_last_action_date),\n                legiscan_data = COALESCE($15, bill.legiscan_data),\n                votesmart_bill_id = COALESCE($16, bill.votesmart_bill_id),\n                history = COALESCE($17, bill.history),\n                state = COALESCE($18, bill.state),\n                political_scope = COALESCE($19, bill.political_scope),\n                bill_type = COALESCE($20, bill.bill_type),\n                chamber = COALESCE($21, bill.chamber),\n                attributes = COALESCE($22, bill.attributes)\n            RETURNING \n                id,\n                slug,\n                title,\n                bill_number,\n                status AS \"status: BillStatus\",\n                description,\n                session_id,\n                official_summary,\n                populist_summary,\n                full_text_url,\n                legiscan_bill_id,\n                legiscan_committee,\n                legiscan_last_action,\n                legiscan_last_action_date,\n                legiscan_data,\n                votesmart_bill_id,\n                history,\n                state AS \"state: State\",\n                political_scope AS \"political_scope: PoliticalScope\",\n                bill_type,\n                chamber AS \"chamber: Chamber\",\n                attributes,\n                created_at,\n                updated_at\n            "
   },
   "65752905575d3b7680a5cd3a39c0efc4fe8ba7c717afedb3ea423ab4774391f1": {
     "describe": {
@@ -4644,332 +4672,6 @@
     },
     "query": "\n                SELECT p.id,\n                        slug,\n                        first_name,\n                        middle_name,\n                        last_name,\n                        suffix,\n                        preferred_name,\n                        biography,\n                        biography_source,\n                        home_state AS \"home_state:State\",\n                        date_of_birth,\n                        office_id,\n                        upcoming_race_id,\n                        thumbnail_image_url,\n                        assets,\n                        official_website_url,\n                        campaign_website_url,\n                        facebook_url,\n                        twitter_url,\n                        instagram_url,\n                        youtube_url,\n                        linkedin_url,\n                        tiktok_url,\n                        email,\n                        phone,\n                        party AS \"party:PoliticalParty\",\n                        votesmart_candidate_id,\n                        votesmart_candidate_bio,\n                        votesmart_candidate_ratings,\n                        legiscan_people_id,\n                        crp_candidate_id,\n                        fec_candidate_id,\n                        race_wins,\n                        race_losses,\n                        p.created_at,\n                        p.updated_at FROM politician p\n                JOIN politician_issue_tags\n                ON politician_issue_tags.politician_id = p.id\n                WHERE politician_issue_tags.issue_tag_id = $1\n            "
   },
-  "6c2ebfe25605a6237f95938320fc9d501493ad9c0188ff1d7a3741849cbe0653": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "slug",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "title",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "bill_number",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "status: BillStatus",
-          "ordinal": 4,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "in_consideration",
-                  "became_law",
-                  "failed",
-                  "vetoed",
-                  "unknown"
-                ]
-              },
-              "name": "bill_status"
-            }
-          }
-        },
-        {
-          "name": "description",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "official_summary",
-          "ordinal": 6,
-          "type_info": "Text"
-        },
-        {
-          "name": "populist_summary",
-          "ordinal": 7,
-          "type_info": "Text"
-        },
-        {
-          "name": "full_text_url",
-          "ordinal": 8,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_bill_id",
-          "ordinal": 9,
-          "type_info": "Int4"
-        },
-        {
-          "name": "legiscan_committee",
-          "ordinal": 10,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_last_action",
-          "ordinal": 11,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_last_action_date",
-          "ordinal": 12,
-          "type_info": "Date"
-        },
-        {
-          "name": "legiscan_data",
-          "ordinal": 13,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "history",
-          "ordinal": 14,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "state: State",
-          "ordinal": 15,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              },
-              "name": "state"
-            }
-          }
-        },
-        {
-          "name": "votesmart_bill_id",
-          "ordinal": 16,
-          "type_info": "Int4"
-        },
-        {
-          "name": "political_scope: PoliticalScope",
-          "ordinal": 17,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "local",
-                  "state",
-                  "federal"
-                ]
-              },
-              "name": "political_scope"
-            }
-          }
-        },
-        {
-          "name": "bill_type",
-          "ordinal": 18,
-          "type_info": "Text"
-        },
-        {
-          "name": "chamber: Chamber",
-          "ordinal": 19,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "house",
-                  "senate",
-                  "assembly",
-                  "legislature"
-                ]
-              },
-              "name": "chamber"
-            }
-          }
-        },
-        {
-          "name": "attributes",
-          "ordinal": 20,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "created_at",
-          "ordinal": 21,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "updated_at",
-          "ordinal": 22,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        true,
-        true,
-        false,
-        false,
-        true,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text",
-          "Text",
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "in_consideration",
-                  "became_law",
-                  "failed",
-                  "vetoed",
-                  "unknown"
-                ]
-              },
-              "name": "bill_status"
-            }
-          },
-          "Text",
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              },
-              "name": "state"
-            }
-          }
-        ]
-      }
-    },
-    "query": "\n                SELECT id, slug, title, bill_number, status AS \"status: BillStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS \"state: State\", votesmart_bill_id, political_scope AS \"political_scope: PoliticalScope\", bill_type, chamber AS \"chamber: Chamber\", bill.attributes, bill.created_at, bill.updated_at FROM bill\n                JOIN bill_public_votes bpv ON bill.id = bpv.bill_id\n                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', title, description)) @@ to_tsquery('simple', $1))\n                AND ($2::text IS NULL OR slug = $2)\n                AND ($3::text IS NULL OR title ILIKE $3)\n                AND ($4::bill_status IS NULL OR status = $4)\n                AND ($5::text IS NULL OR bill_number ILIKE $5)\n                AND ($6::state IS NULL OR state = $6)\n                GROUP BY (bill.id)\n                ORDER BY COUNT(bill.id) DESC\n                LIMIT 20\n            "
-  },
   "74369a4f9d187fad46d0c2b3c96957b30453fc856124565c217529fd498f27ac": {
     "describe": {
       "columns": [
@@ -5119,252 +4821,6 @@
       }
     },
     "query": "\n                INSERT INTO organization (id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, assets)\n                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) \n                ON CONFLICT (id) DO UPDATE SET\n                    slug = COALESCE($2, organization.slug),\n                    name = COALESCE($3, organization.name),\n                    description = COALESCE($4, organization.description),\n                    thumbnail_image_url = COALESCE($5, organization.thumbnail_image_url),\n                    website_url = COALESCE($6, organization.website_url),\n                    facebook_url = COALESCE($7, organization.facebook_url),\n                    twitter_url = COALESCE($8, organization.twitter_url),\n                    instagram_url = COALESCE($9, organization.instagram_url),\n                    email = COALESCE($10, organization.email),\n                    votesmart_sig_id = COALESCE($11, organization.votesmart_sig_id),\n                    headquarters_address_id = COALESCE($12, organization.headquarters_address_id),\n                    headquarters_phone = COALESCE($13, organization.headquarters_phone),\n                    tax_classification = COALESCE($14, organization.tax_classification),\n                    assets = COALESCE($15, organization.assets)\n                RETURNING\n                    id,\n                    slug,\n                    name,\n                    description,\n                    thumbnail_image_url,\n                    website_url,\n                    facebook_url,\n                    twitter_url,\n                    instagram_url,\n                    email,\n                    votesmart_sig_id,\n                    headquarters_address_id,\n                    headquarters_phone,\n                    tax_classification,\n                    assets,\n                    created_at,\n                    updated_at\n            "
-  },
-  "75282d716d406bd02420acd7d126849ac27a19bfda723c4e58bc8e2e692ce9fa": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "slug",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "title",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "bill_number",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "status: BillStatus",
-          "ordinal": 4,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "in_consideration",
-                  "became_law",
-                  "failed",
-                  "vetoed",
-                  "unknown"
-                ]
-              },
-              "name": "bill_status"
-            }
-          }
-        },
-        {
-          "name": "description",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "official_summary",
-          "ordinal": 6,
-          "type_info": "Text"
-        },
-        {
-          "name": "populist_summary",
-          "ordinal": 7,
-          "type_info": "Text"
-        },
-        {
-          "name": "full_text_url",
-          "ordinal": 8,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_bill_id",
-          "ordinal": 9,
-          "type_info": "Int4"
-        },
-        {
-          "name": "legiscan_committee",
-          "ordinal": 10,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_last_action",
-          "ordinal": 11,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_last_action_date",
-          "ordinal": 12,
-          "type_info": "Date"
-        },
-        {
-          "name": "legiscan_data",
-          "ordinal": 13,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "history",
-          "ordinal": 14,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "state: State",
-          "ordinal": 15,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              },
-              "name": "state"
-            }
-          }
-        },
-        {
-          "name": "votesmart_bill_id",
-          "ordinal": 16,
-          "type_info": "Int4"
-        },
-        {
-          "name": "political_scope: PoliticalScope",
-          "ordinal": 17,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "local",
-                  "state",
-                  "federal"
-                ]
-              },
-              "name": "political_scope"
-            }
-          }
-        },
-        {
-          "name": "bill_type",
-          "ordinal": 18,
-          "type_info": "Text"
-        },
-        {
-          "name": "chamber: Chamber",
-          "ordinal": 19,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "house",
-                  "senate",
-                  "assembly",
-                  "legislature"
-                ]
-              },
-              "name": "chamber"
-            }
-          }
-        },
-        {
-          "name": "attributes",
-          "ordinal": 20,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "created_at",
-          "ordinal": 21,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "updated_at",
-          "ordinal": 22,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        true,
-        true,
-        false,
-        false,
-        true,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": []
-      }
-    },
-    "query": "\n            SELECT id, slug, title, bill_number, status AS \"status: BillStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS \"state: State\", votesmart_bill_id, political_scope AS \"political_scope: PoliticalScope\", bill_type, chamber AS \"chamber: Chamber\", attributes, created_at, updated_at FROM bill"
   },
   "75bbc5005a2ae4c0acab10fde3c107f7cb1f47c5d4b3b8465db36d5d4987e8c8": {
     "describe": {
@@ -5578,6 +5034,260 @@
       }
     },
     "query": "\n                UPDATE populist_user\n                SET password = $1\n                WHERE id = $2\n            "
+  },
+  "7c875cb25250015ed29d8e8935ff55d01b7007caf13573d90e91579b72df8e8c": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "slug",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "title",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "bill_number",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "status: BillStatus",
+          "ordinal": 4,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "in_consideration",
+                  "became_law",
+                  "failed",
+                  "vetoed",
+                  "unknown"
+                ]
+              },
+              "name": "bill_status"
+            }
+          }
+        },
+        {
+          "name": "description",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "session_id",
+          "ordinal": 6,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "official_summary",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "populist_summary",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "full_text_url",
+          "ordinal": 9,
+          "type_info": "Text"
+        },
+        {
+          "name": "legiscan_bill_id",
+          "ordinal": 10,
+          "type_info": "Int4"
+        },
+        {
+          "name": "legiscan_committee",
+          "ordinal": 11,
+          "type_info": "Text"
+        },
+        {
+          "name": "legiscan_last_action",
+          "ordinal": 12,
+          "type_info": "Text"
+        },
+        {
+          "name": "legiscan_last_action_date",
+          "ordinal": 13,
+          "type_info": "Date"
+        },
+        {
+          "name": "legiscan_data",
+          "ordinal": 14,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "history",
+          "ordinal": 15,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "state: State",
+          "ordinal": 16,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              },
+              "name": "state"
+            }
+          }
+        },
+        {
+          "name": "votesmart_bill_id",
+          "ordinal": 17,
+          "type_info": "Int4"
+        },
+        {
+          "name": "political_scope: PoliticalScope",
+          "ordinal": 18,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "local",
+                  "state",
+                  "federal"
+                ]
+              },
+              "name": "political_scope"
+            }
+          }
+        },
+        {
+          "name": "bill_type",
+          "ordinal": 19,
+          "type_info": "Text"
+        },
+        {
+          "name": "chamber: Chamber",
+          "ordinal": 20,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "house",
+                  "senate",
+                  "assembly",
+                  "legislature"
+                ]
+              },
+              "name": "chamber"
+            }
+          }
+        },
+        {
+          "name": "attributes",
+          "ordinal": 21,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 22,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 23,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "\n                SELECT id, slug, title, bill_number, status AS \"status: BillStatus\", description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS \"state: State\", votesmart_bill_id, political_scope AS \"political_scope: PoliticalScope\", bill_type, chamber AS \"chamber: Chamber\", attributes, created_at, updated_at FROM bill \n                WHERE id = $1\n            "
   },
   "7cf5dcf6ba6991fe1ba6c70e5474628de404f9f45058a894b6dc067951ee25c8": {
     "describe": {
@@ -6086,19 +5796,7 @@
     },
     "query": "SELECT id, election_id, slug, title, status AS \"status: BallotMeasureStatus\", ballot_state AS \"ballot_state:State\", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure"
   },
-  "820da212134fc1bbcc4959bdb1dbb307a86e2be4a6f4d835f0c718e788513ba6": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Uuid"
-        ]
-      }
-    },
-    "query": "DELETE FROM election WHERE id=$1"
-  },
-  "8481856704f4913025736e380c278f6c1e9ebc9c6874142aaa67ec20fc89a9a6": {
+  "7f0af33e6bd7103e6aff1091638453e211e50689412eda39513b49c632481491": {
     "describe": {
       "columns": [
         {
@@ -6112,43 +5810,87 @@
           "type_info": "Text"
         },
         {
-          "name": "first_name",
+          "name": "title",
           "ordinal": 2,
           "type_info": "Text"
         },
         {
-          "name": "middle_name",
+          "name": "bill_number",
           "ordinal": 3,
           "type_info": "Text"
         },
         {
-          "name": "last_name",
+          "name": "status: BillStatus",
           "ordinal": 4,
-          "type_info": "Text"
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "introduced",
+                  "in_consideration",
+                  "became_law",
+                  "failed",
+                  "vetoed",
+                  "unknown"
+                ]
+              },
+              "name": "bill_status"
+            }
+          }
         },
         {
-          "name": "suffix",
+          "name": "description",
           "ordinal": 5,
           "type_info": "Text"
         },
         {
-          "name": "preferred_name",
+          "name": "official_summary",
           "ordinal": 6,
           "type_info": "Text"
         },
         {
-          "name": "biography",
+          "name": "populist_summary",
           "ordinal": 7,
           "type_info": "Text"
         },
         {
-          "name": "biography_source",
+          "name": "full_text_url",
           "ordinal": 8,
           "type_info": "Text"
         },
         {
-          "name": "home_state:State",
+          "name": "legiscan_bill_id",
           "ordinal": 9,
+          "type_info": "Int4"
+        },
+        {
+          "name": "legiscan_committee",
+          "ordinal": 10,
+          "type_info": "Text"
+        },
+        {
+          "name": "legiscan_last_action",
+          "ordinal": 11,
+          "type_info": "Text"
+        },
+        {
+          "name": "legiscan_last_action_date",
+          "ordinal": 12,
+          "type_info": "Date"
+        },
+        {
+          "name": "legiscan_data",
+          "ordinal": 13,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "history",
+          "ordinal": 14,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "state: State",
+          "ordinal": 15,
           "type_info": {
             "Custom": {
               "kind": {
@@ -6211,159 +5953,66 @@
           }
         },
         {
-          "name": "date_of_birth",
-          "ordinal": 10,
-          "type_info": "Date"
-        },
-        {
-          "name": "office_id",
-          "ordinal": 11,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "upcoming_race_id",
-          "ordinal": 12,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "thumbnail_image_url",
-          "ordinal": 13,
-          "type_info": "Text"
-        },
-        {
-          "name": "assets",
-          "ordinal": 14,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "official_website_url",
-          "ordinal": 15,
-          "type_info": "Text"
-        },
-        {
-          "name": "campaign_website_url",
+          "name": "votesmart_bill_id",
           "ordinal": 16,
-          "type_info": "Text"
+          "type_info": "Int4"
         },
         {
-          "name": "facebook_url",
+          "name": "political_scope: PoliticalScope",
           "ordinal": 17,
-          "type_info": "Text"
-        },
-        {
-          "name": "twitter_url",
-          "ordinal": 18,
-          "type_info": "Text"
-        },
-        {
-          "name": "instagram_url",
-          "ordinal": 19,
-          "type_info": "Text"
-        },
-        {
-          "name": "youtube_url",
-          "ordinal": 20,
-          "type_info": "Text"
-        },
-        {
-          "name": "linkedin_url",
-          "ordinal": 21,
-          "type_info": "Text"
-        },
-        {
-          "name": "tiktok_url",
-          "ordinal": 22,
-          "type_info": "Text"
-        },
-        {
-          "name": "email",
-          "ordinal": 23,
-          "type_info": "Text"
-        },
-        {
-          "name": "phone",
-          "ordinal": 24,
-          "type_info": "Text"
-        },
-        {
-          "name": "party:PoliticalParty",
-          "ordinal": 25,
           "type_info": {
             "Custom": {
               "kind": {
                 "Enum": [
-                  "democratic",
-                  "republican",
-                  "libertarian",
-                  "green",
-                  "constitution",
-                  "unknown",
-                  "independent",
-                  "freedom",
-                  "unity",
-                  "approval_voting",
-                  "unaffiliated",
-                  "democratic_farmer_labor",
-                  "grassroots_legalize_cannabis",
-                  "legal_marijuana_now",
-                  "socialist_workers_party",
-                  "socialist_workers",
-                  "colorado_center",
-                  "american_constitution"
+                  "local",
+                  "state",
+                  "federal"
                 ]
               },
-              "name": "political_party"
+              "name": "political_scope"
             }
           }
         },
         {
-          "name": "votesmart_candidate_id",
-          "ordinal": 26,
-          "type_info": "Int4"
+          "name": "bill_type",
+          "ordinal": 18,
+          "type_info": "Text"
         },
         {
-          "name": "votesmart_candidate_bio",
-          "ordinal": 27,
+          "name": "chamber: Chamber",
+          "ordinal": 19,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "house",
+                  "senate",
+                  "assembly",
+                  "legislature"
+                ]
+              },
+              "name": "chamber"
+            }
+          }
+        },
+        {
+          "name": "attributes",
+          "ordinal": 20,
           "type_info": "Jsonb"
         },
         {
-          "name": "votesmart_candidate_ratings",
-          "ordinal": 28,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "legiscan_people_id",
-          "ordinal": 29,
-          "type_info": "Int4"
-        },
-        {
-          "name": "crp_candidate_id",
-          "ordinal": 30,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "fec_candidate_id",
-          "ordinal": 31,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "race_wins",
-          "ordinal": 32,
-          "type_info": "Int4"
-        },
-        {
-          "name": "race_losses",
-          "ordinal": 33,
-          "type_info": "Int4"
+          "name": "session_id",
+          "ordinal": 21,
+          "type_info": "Uuid"
         },
         {
           "name": "created_at",
-          "ordinal": 34,
+          "ordinal": 22,
           "type_info": "Timestamptz"
         },
         {
           "name": "updated_at",
-          "ordinal": 35,
+          "ordinal": 23,
           "type_info": "Timestamptz"
         }
       ],
@@ -6371,22 +6020,8 @@
         false,
         false,
         false,
-        true,
         false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
         false,
-        true,
-        true,
-        true,
-        true,
         true,
         true,
         true,
@@ -6399,8 +6034,10 @@
         false,
         true,
         true,
+        false,
+        false,
         true,
-        true,
+        false,
         true,
         false,
         false
@@ -6412,87 +6049,15 @@
             "Custom": {
               "kind": {
                 "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
+                  "introduced",
+                  "in_consideration",
+                  "became_law",
+                  "failed",
+                  "vetoed",
+                  "unknown"
                 ]
               },
-              "name": "state"
-            }
-          },
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "democratic",
-                  "republican",
-                  "libertarian",
-                  "green",
-                  "constitution",
-                  "unknown",
-                  "independent",
-                  "freedom",
-                  "unity",
-                  "approval_voting",
-                  "unaffiliated",
-                  "democratic_farmer_labor",
-                  "grassroots_legalize_cannabis",
-                  "legal_marijuana_now",
-                  "socialist_workers_party",
-                  "socialist_workers",
-                  "colorado_center",
-                  "american_constitution"
-                ]
-              },
-              "name": "political_party"
+              "name": "bill_status"
             }
           },
           {
@@ -6507,11 +6072,82 @@
               "name": "political_scope"
             }
           },
-          "Text"
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              },
+              "name": "state"
+            }
+          }
         ]
       }
     },
-    "query": "\n                SELECT  p.id,\n                        p.slug,\n                        first_name,\n                        middle_name,\n                        last_name,\n                        suffix,\n                        preferred_name,\n                        biography,\n                        biography_source,\n                        home_state AS \"home_state:State\",\n                        date_of_birth,\n                        office_id,\n                        upcoming_race_id,\n                        thumbnail_image_url,\n                        assets,\n                        official_website_url,\n                        campaign_website_url,\n                        facebook_url,\n                        twitter_url,\n                        instagram_url,\n                        youtube_url,\n                        linkedin_url,\n                        tiktok_url,\n                        email,\n                        phone,\n                        party AS \"party:PoliticalParty\",\n                        votesmart_candidate_id,\n                        votesmart_candidate_bio,\n                        votesmart_candidate_ratings,\n                        legiscan_people_id,\n                        crp_candidate_id,\n                        fec_candidate_id,\n                        race_wins,\n                        race_losses,\n                        p.created_at,\n                        p.updated_at FROM politician p\n                LEFT JOIN office o ON office_id = o.id\n                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', first_name, last_name, preferred_name)) @@ to_tsquery('simple', $1))\n                AND ($2::state IS NULL OR home_state = $2)\n                AND ($3::political_party IS NULL OR party = $3)\n                AND ($4::political_scope IS NULL OR political_scope = $4)\n                AND ($5::text IS NULL OR $5 = 'All' OR (\n                    ($5 = 'Senate' AND o.title ILIKE '%Senator') OR\n                    ($5 = 'House' AND o.title ILIKE '%Representative')\n                ))\n                ORDER BY last_name ASC\n            "
+    "query": "\n                SELECT id, slug, title, bill_number, status AS \"status: BillStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS \"state: State\", votesmart_bill_id, political_scope AS \"political_scope: PoliticalScope\", bill_type, chamber AS \"chamber: Chamber\", bill.attributes, session_id, bill.created_at, bill.updated_at FROM bill\n                JOIN bill_public_votes bpv ON bill.id = bpv.bill_id\n                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', title, description, bill_number)) @@ to_tsquery('simple', $1))\n                AND ($2::bill_status IS NULL OR status = $2)\n                AND ($3::political_scope IS NULL OR political_scope = $3)\n                AND (($4::state IS NULL OR state = $4) OR $3::political_scope = 'federal')\n                GROUP BY (bill.id)\n                ORDER BY COUNT(bill.id) DESC\n                LIMIT 20\n            "
+  },
+  "820da212134fc1bbcc4959bdb1dbb307a86e2be4a6f4d835f0c718e788513ba6": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid"
+        ]
+      }
+    },
+    "query": "DELETE FROM election WHERE id=$1"
   },
   "885d4b723f12b560de147d3a8853a4d309b616320d79484b767c9d9e610d0449": {
     "describe": {
@@ -7342,254 +6978,6 @@
       }
     },
     "query": "\n                INSERT INTO bill_public_votes (bill_id, user_id, position) \n                VALUES ($1, $2, $3) \n                ON CONFLICT (bill_id, user_id) DO UPDATE SET position = $3\n            "
-  },
-  "94963b992299ebef6ce550df4fd2eda2b30a41457c54856e9e7ed2a1e8c6fe95": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Uuid"
-        },
-        {
-          "name": "slug",
-          "ordinal": 1,
-          "type_info": "Text"
-        },
-        {
-          "name": "title",
-          "ordinal": 2,
-          "type_info": "Text"
-        },
-        {
-          "name": "bill_number",
-          "ordinal": 3,
-          "type_info": "Text"
-        },
-        {
-          "name": "status: BillStatus",
-          "ordinal": 4,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "introduced",
-                  "in_consideration",
-                  "became_law",
-                  "failed",
-                  "vetoed",
-                  "unknown"
-                ]
-              },
-              "name": "bill_status"
-            }
-          }
-        },
-        {
-          "name": "description",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "official_summary",
-          "ordinal": 6,
-          "type_info": "Text"
-        },
-        {
-          "name": "populist_summary",
-          "ordinal": 7,
-          "type_info": "Text"
-        },
-        {
-          "name": "full_text_url",
-          "ordinal": 8,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_bill_id",
-          "ordinal": 9,
-          "type_info": "Int4"
-        },
-        {
-          "name": "legiscan_committee",
-          "ordinal": 10,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_last_action",
-          "ordinal": 11,
-          "type_info": "Text"
-        },
-        {
-          "name": "legiscan_last_action_date",
-          "ordinal": 12,
-          "type_info": "Date"
-        },
-        {
-          "name": "legiscan_data",
-          "ordinal": 13,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "history",
-          "ordinal": 14,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "state: State",
-          "ordinal": 15,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "AL",
-                  "AK",
-                  "AZ",
-                  "AR",
-                  "CA",
-                  "CO",
-                  "CT",
-                  "DC",
-                  "DE",
-                  "FL",
-                  "GA",
-                  "HI",
-                  "ID",
-                  "IL",
-                  "IN",
-                  "IA",
-                  "KS",
-                  "KY",
-                  "LA",
-                  "ME",
-                  "MD",
-                  "MA",
-                  "MI",
-                  "MN",
-                  "MS",
-                  "MO",
-                  "MT",
-                  "NE",
-                  "NV",
-                  "NH",
-                  "NJ",
-                  "NM",
-                  "NY",
-                  "NC",
-                  "ND",
-                  "OH",
-                  "OK",
-                  "OR",
-                  "PA",
-                  "RI",
-                  "SC",
-                  "SD",
-                  "TN",
-                  "TX",
-                  "UT",
-                  "VT",
-                  "VA",
-                  "WA",
-                  "WV",
-                  "WI",
-                  "WY"
-                ]
-              },
-              "name": "state"
-            }
-          }
-        },
-        {
-          "name": "votesmart_bill_id",
-          "ordinal": 16,
-          "type_info": "Int4"
-        },
-        {
-          "name": "political_scope: PoliticalScope",
-          "ordinal": 17,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "local",
-                  "state",
-                  "federal"
-                ]
-              },
-              "name": "political_scope"
-            }
-          }
-        },
-        {
-          "name": "bill_type",
-          "ordinal": 18,
-          "type_info": "Text"
-        },
-        {
-          "name": "chamber: Chamber",
-          "ordinal": 19,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "house",
-                  "senate",
-                  "assembly",
-                  "legislature"
-                ]
-              },
-              "name": "chamber"
-            }
-          }
-        },
-        {
-          "name": "attributes",
-          "ordinal": 20,
-          "type_info": "Jsonb"
-        },
-        {
-          "name": "created_at",
-          "ordinal": 21,
-          "type_info": "Timestamptz"
-        },
-        {
-          "name": "updated_at",
-          "ordinal": 22,
-          "type_info": "Timestamptz"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        true,
-        true,
-        false,
-        false,
-        true,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "\n                SELECT id, slug, title, bill_number, status AS \"status: BillStatus\", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS \"state: State\", votesmart_bill_id, political_scope AS \"political_scope: PoliticalScope\", bill_type, chamber AS \"chamber: Chamber\", attributes, created_at, updated_at FROM bill\n                WHERE slug = $1\n            "
   },
   "98c6d83694b8eee2c2a7df6e04ee051cfc0ae1b05e323537e0230445d2080c49": {
     "describe": {
@@ -10075,6 +9463,421 @@
       }
     },
     "query": "\n                        INSERT INTO organization_issue_tags (organization_id, issue_tag_id) \n                        VALUES ($1, (SELECT id FROM issue_tag WHERE slug = $2))\n                    "
+  },
+  "c9c05a3662b334550a17c4520e587f6bccebe82d5c862f98522d452af12cd123": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "slug",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "first_name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "middle_name",
+          "ordinal": 3,
+          "type_info": "Text"
+        },
+        {
+          "name": "last_name",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "suffix",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "preferred_name",
+          "ordinal": 6,
+          "type_info": "Text"
+        },
+        {
+          "name": "biography",
+          "ordinal": 7,
+          "type_info": "Text"
+        },
+        {
+          "name": "biography_source",
+          "ordinal": 8,
+          "type_info": "Text"
+        },
+        {
+          "name": "home_state:State",
+          "ordinal": 9,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              },
+              "name": "state"
+            }
+          }
+        },
+        {
+          "name": "date_of_birth",
+          "ordinal": 10,
+          "type_info": "Date"
+        },
+        {
+          "name": "office_id",
+          "ordinal": 11,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "upcoming_race_id",
+          "ordinal": 12,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "thumbnail_image_url",
+          "ordinal": 13,
+          "type_info": "Text"
+        },
+        {
+          "name": "assets",
+          "ordinal": 14,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "official_website_url",
+          "ordinal": 15,
+          "type_info": "Text"
+        },
+        {
+          "name": "campaign_website_url",
+          "ordinal": 16,
+          "type_info": "Text"
+        },
+        {
+          "name": "facebook_url",
+          "ordinal": 17,
+          "type_info": "Text"
+        },
+        {
+          "name": "twitter_url",
+          "ordinal": 18,
+          "type_info": "Text"
+        },
+        {
+          "name": "instagram_url",
+          "ordinal": 19,
+          "type_info": "Text"
+        },
+        {
+          "name": "youtube_url",
+          "ordinal": 20,
+          "type_info": "Text"
+        },
+        {
+          "name": "linkedin_url",
+          "ordinal": 21,
+          "type_info": "Text"
+        },
+        {
+          "name": "tiktok_url",
+          "ordinal": 22,
+          "type_info": "Text"
+        },
+        {
+          "name": "email",
+          "ordinal": 23,
+          "type_info": "Text"
+        },
+        {
+          "name": "phone",
+          "ordinal": 24,
+          "type_info": "Text"
+        },
+        {
+          "name": "party:PoliticalParty",
+          "ordinal": 25,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "democratic",
+                  "republican",
+                  "libertarian",
+                  "green",
+                  "constitution",
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now",
+                  "socialist_workers_party",
+                  "socialist_workers",
+                  "colorado_center",
+                  "american_constitution"
+                ]
+              },
+              "name": "political_party"
+            }
+          }
+        },
+        {
+          "name": "votesmart_candidate_id",
+          "ordinal": 26,
+          "type_info": "Int4"
+        },
+        {
+          "name": "votesmart_candidate_bio",
+          "ordinal": 27,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "votesmart_candidate_ratings",
+          "ordinal": 28,
+          "type_info": "Jsonb"
+        },
+        {
+          "name": "legiscan_people_id",
+          "ordinal": 29,
+          "type_info": "Int4"
+        },
+        {
+          "name": "crp_candidate_id",
+          "ordinal": 30,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "fec_candidate_id",
+          "ordinal": 31,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "race_wins",
+          "ordinal": 32,
+          "type_info": "Int4"
+        },
+        {
+          "name": "race_losses",
+          "ordinal": 33,
+          "type_info": "Int4"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 34,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 35,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "AL",
+                  "AK",
+                  "AZ",
+                  "AR",
+                  "CA",
+                  "CO",
+                  "CT",
+                  "DC",
+                  "DE",
+                  "FL",
+                  "GA",
+                  "HI",
+                  "ID",
+                  "IL",
+                  "IN",
+                  "IA",
+                  "KS",
+                  "KY",
+                  "LA",
+                  "ME",
+                  "MD",
+                  "MA",
+                  "MI",
+                  "MN",
+                  "MS",
+                  "MO",
+                  "MT",
+                  "NE",
+                  "NV",
+                  "NH",
+                  "NJ",
+                  "NM",
+                  "NY",
+                  "NC",
+                  "ND",
+                  "OH",
+                  "OK",
+                  "OR",
+                  "PA",
+                  "RI",
+                  "SC",
+                  "SD",
+                  "TN",
+                  "TX",
+                  "UT",
+                  "VT",
+                  "VA",
+                  "WA",
+                  "WV",
+                  "WI",
+                  "WY"
+                ]
+              },
+              "name": "state"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "democratic",
+                  "republican",
+                  "libertarian",
+                  "green",
+                  "constitution",
+                  "unknown",
+                  "independent",
+                  "freedom",
+                  "unity",
+                  "approval_voting",
+                  "unaffiliated",
+                  "democratic_farmer_labor",
+                  "grassroots_legalize_cannabis",
+                  "legal_marijuana_now",
+                  "socialist_workers_party",
+                  "socialist_workers",
+                  "colorado_center",
+                  "american_constitution"
+                ]
+              },
+              "name": "political_party"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "local",
+                  "state",
+                  "federal"
+                ]
+              },
+              "name": "political_scope"
+            }
+          },
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                SELECT  p.id,\n                        p.slug,\n                        first_name,\n                        middle_name,\n                        last_name,\n                        suffix,\n                        preferred_name,\n                        biography,\n                        biography_source,\n                        home_state AS \"home_state:State\",\n                        date_of_birth,\n                        office_id,\n                        upcoming_race_id,\n                        thumbnail_image_url,\n                        assets,\n                        official_website_url,\n                        campaign_website_url,\n                        facebook_url,\n                        twitter_url,\n                        instagram_url,\n                        youtube_url,\n                        linkedin_url,\n                        tiktok_url,\n                        email,\n                        phone,\n                        party AS \"party:PoliticalParty\",\n                        votesmart_candidate_id,\n                        votesmart_candidate_bio,\n                        votesmart_candidate_ratings,\n                        legiscan_people_id,\n                        crp_candidate_id,\n                        fec_candidate_id,\n                        race_wins,\n                        race_losses,\n                        p.created_at,\n                        p.updated_at FROM politician p\n                LEFT JOIN office o ON office_id = o.id\n                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', first_name, last_name, preferred_name)) @@ to_tsquery('simple', $1))\n                AND ($2::state IS NULL OR home_state = $2)\n                AND ($3::political_party IS NULL OR party = $3)\n                AND ($4::political_scope IS NULL OR political_scope = $4)\n                AND ($5::text IS NULL OR $5 = 'All' OR (\n                    ($5 = 'Senate' AND o.title ILIKE '%Senator') OR\n                    ($5 = 'House' AND o.title ILIKE '%Representative')\n                ))\n                ORDER BY last_name ASC\n                LIMIT 50\n            "
   },
   "cdacddb1849f442c8ae5f8e340d2d470c79e2075e1ec18b60bd1467eb63fe173": {
     "describe": {

@@ -42,7 +42,7 @@ impl<'a> UserGuard<'a> {
 impl<'a> Guard for UserGuard<'a> {
     async fn check(&self, ctx: &Context<'_>) -> Result<()> {
         if let Some(token_data) = ctx.data_unchecked::<Option<TokenData<Claims>>>() {
-            if token_data.claims.sub == Uuid::parse_str(self.id.as_str())? {
+            if token_data.claims.sub == Uuid::try_from(self.id.to_owned())? {
                 Ok(())
             } else {
                 Err("You don't have permission to to run this query/mutation".into())
