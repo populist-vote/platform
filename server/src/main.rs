@@ -32,17 +32,36 @@ async fn graphql_handler(
     headers: &HeaderMap,
     cookie_jar: &CookieJar,
 ) -> GraphQLResponse {
-    let authorization_header = headers
+    let bearer_token = headers
         .get("authorization")
         .and_then(|header| header.to_str().ok())
         .and_then(|header| header.split_whitespace().nth(1));
-    let bearer_token_data = authorization_header.map(|token| jwt::validate_token(token).unwrap());
+
+    let bearer_token_data = if let Some(token) = bearer_token {
+        let token_data = jwt::validate_token(token);
+        if let Ok(token_data) = token_data {
+            Some(token_data)
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
     let cookie = cookie_jar.get("access_token");
-    let cookie_token_data = cookie.map(|token| jwt::validate_token(token.value_str()).unwrap());
+    let cookie_token_data = if let Some(cookie) = cookie {
+        let token_data = jwt::validate_token(cookie.value_str());
+        if let Ok(token_data) = token_data {
+            Some(token_data)
+        } else {
+            None
+        }
+    } else {
+        None
+    };
 
     // Use the bearer token if it's present, otherwise use the cookie
     let token_data = bearer_token_data.or(cookie_token_data);
-
     schema.execute(req.0.data(token_data)).await.into()
 }
 
