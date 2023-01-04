@@ -12,10 +12,13 @@ use poem::{
     http::HeaderMap,
     listener::TcpListener,
     middleware::{Compression, CookieJarManager, Cors},
-    web::{cookie::CookieJar, Data, Html},
+    web::{
+        cookie::CookieJar,
+        headers::{authorization::Bearer, Authorization, Header},
+        Data, Html,
+    },
     EndpointExt, IntoResponse, Route, Server,
 };
-use regex::Regex;
 use std::str::FromStr;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
@@ -73,22 +76,13 @@ fn graphql_playground() -> impl IntoResponse {
 }
 
 pub fn cors(environment: Environment) -> Cors {
-    let cors = Cors::new().allow_credentials(true);
-
-    fn allowed_staging_origins(origin: &str) -> bool {
-        let staging_origins = vec![
-            "https://populist-api-staging.herokuapp.com",
-            "https://api.staging.populist.us",
-            "https://staging.populist.us",
-            "http://localhost:3030",
-        ];
-        let re = Regex::new(r"https://web-.*?-populist\.vercel\.app$").unwrap();
-        re.is_match(origin) || staging_origins.contains(&origin)
-    }
+    let cors = Cors::new()
+        .allow_credentials(true)
+        .allow_header(Authorization::<Bearer>::name());
 
     match environment {
         Environment::Local => cors,
-        Environment::Staging => cors.allow_origins_fn(allowed_staging_origins),
+        Environment::Staging => cors.allow_origin("*"),
         Environment::Production => cors.allow_origins(vec![
             "http://localhost:3030",
             "https://populist-api-production.herokuapp.com",

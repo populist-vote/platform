@@ -255,6 +255,8 @@ impl Bill {
     ) -> Result<Vec<Self>, sqlx::Error> {
         let search_query = crate::process_search_query(filter.query.to_owned().unwrap_or_default());
 
+        tracing::info!("sort: {:?}", sort);
+
         let query = format!(
             r#"
             SELECT id, slug, title, bill_number, status, description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state, votesmart_bill_id, political_scope, bill_type, chamber, bill.attributes, bill.created_at, bill.updated_at FROM bill
