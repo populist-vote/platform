@@ -12,13 +12,10 @@ use poem::{
     http::HeaderMap,
     listener::TcpListener,
     middleware::{Compression, CookieJarManager, Cors},
-    web::{
-        cookie::CookieJar,
-        headers::{authorization::Bearer, Authorization, Header},
-        Data, Html,
-    },
+    web::{cookie::CookieJar, Data, Html},
     EndpointExt, IntoResponse, Route, Server,
 };
+use regex::Regex;
 use std::str::FromStr;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
@@ -78,9 +75,20 @@ fn graphql_playground() -> impl IntoResponse {
 pub fn cors(environment: Environment) -> Cors {
     let cors = Cors::new().allow_credentials(true);
 
+    fn allowed_staging_origins(origin: &str) -> bool {
+        let staging_origins = vec![
+            "https://populist-api-staging.herokuapp.com",
+            "https://api.staging.populist.us",
+            "https://staging.populist.us",
+            "http://localhost:3030",
+        ];
+        let re = Regex::new(r"https://web-.*?-populist\.vercel\.app$").unwrap();
+        re.is_match(origin) || staging_origins.contains(&origin)
+    }
+
     match environment {
         Environment::Local => cors,
-        Environment::Staging => cors.allow_origin("*"),
+        Environment::Staging => cors.allow_origins_fn(allowed_staging_origins),
         Environment::Production => cors.allow_origins(vec![
             "http://localhost:3030",
             "https://populist-api-production.herokuapp.com",
@@ -126,10 +134,6 @@ async fn main() -> Result<(), std::io::Error> {
         .at("/ws", get(GraphQLSubscription::new(schema.clone())))
         .data(schema)
         .with(cors(environment))
-        // Will need to implement a custom X-Forwarded-Proto header for Heroku to
-        // get https redirects to work
-        // https://help.heroku.com/VKLSBMJS/why-am-i-getting-a-message-too-many-redirects
-        // .with_if(environment != Environment::Local, ForceHttps::default())
         .with(Compression::default())
         .with(CookieJarManager::default());
 
