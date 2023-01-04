@@ -76,9 +76,7 @@ fn graphql_playground() -> impl IntoResponse {
 }
 
 pub fn cors(environment: Environment) -> Cors {
-    let cors = Cors::new()
-        .allow_credentials(true)
-        .allow_header(Authorization::<Bearer>::name());
+    let cors = Cors::new().allow_credentials(true);
 
     match environment {
         Environment::Local => cors,
