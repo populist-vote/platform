@@ -1,4 +1,4 @@
-use pretty_assertions::{assert_eq, assert_ne};
+use pretty_assertions::assert_eq;
 use serde_json::{json, Value};
 use std::net::{SocketAddr, TcpListener};
 

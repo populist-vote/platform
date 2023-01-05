@@ -4,7 +4,8 @@ use crate::{
     is_admin,
     types::{CreateUserResult, Error, LoginResult},
 };
-use async_graphql::*;
+use ::http::header::SET_COOKIE;
+use async_graphql::{Context, InputObject, Object, Result};
 use auth::{
     create_access_token_for_user, create_random_token, create_temporary_username,
     format_auth_cookie, Claims,
@@ -13,7 +14,6 @@ use db::{AddressInput, Coordinates, CreateUserInput, CreateUserWithProfileInput,
 use geocodio::GeocodioProxy;
 use jsonwebtoken::TokenData;
 use mailers::EmailClient;
-use poem::http::header::SET_COOKIE;
 use pwhash::bcrypt;
 use serde::{Deserialize, Serialize};
 
