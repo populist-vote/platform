@@ -13,6 +13,7 @@ use crate::{
 #[derive(Default)]
 pub struct BillQuery;
 
+#[allow(clippy::too_many_arguments)]
 #[Object]
 impl BillQuery {
     async fn bills(
