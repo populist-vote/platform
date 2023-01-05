@@ -1,18 +1,13 @@
 use async_graphql::extensions::ApolloTracing;
+use axum::{extract::Extension, headers::HeaderMap, routing::get, Router, Server};
 use config::Environment;
 use graphql::{context::ApiContext, new_schema};
-use poem::{http::HeaderMap, middleware::Cors, Route};
 use regex::Regex;
 mod handlers;
-use async_graphql_poem::GraphQLSubscription;
 use dotenv::dotenv;
 pub use handlers::{graphql_handler, graphql_playground};
-use poem::{
-    get,
-    listener::TcpListener,
-    middleware::{Compression, CookieJarManager},
-    EndpointExt, Server,
-};
+use tower_cookies::CookieManagerLayer;
+use tower_http::cors::CorsLayer;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
@@ -80,7 +75,7 @@ pub fn determine_request_type(environment: Environment, headers: &HeaderMap) -> 
     }
 }
 
-pub async fn run() -> std::io::Result<()> {
+pub async fn app() -> Router {
     dotenv().ok();
 
     tracing_subscriber::fmt()
@@ -100,23 +95,25 @@ pub async fn run() -> std::io::Result<()> {
 
     let context = ApiContext::new(pool.connection.clone());
 
-    let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
     let schema = new_schema().data(context).extension(ApolloTracing).finish();
 
     // Use a permissive CORS policy to allow external requests
-    let cors = Cors::new().allow_credentials(true);
+    let cors = CorsLayer::new().allow_credentials(true);
 
-    let app = Route::new()
-        .at("/", get(graphql_playground).post(graphql_handler))
-        .at("/ws", get(GraphQLSubscription::new(schema.clone())))
-        .data(schema)
-        .with(cors)
-        .with(Compression::default())
-        .with(CookieJarManager::default());
+    let app = axum::Router::new()
+        .route("/", get(graphql_playground).post(graphql_handler))
+        .layer(Extension(schema))
+        .layer(cors)
+        .layer(CookieManagerLayer::new());
 
-    let address = format!("0.0.0.0:{}", port);
+    app
+}
+
+pub async fn run() {
+    let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
     info!("GraphQL Playground live at http://localhost:{}", &port);
-    let listener = TcpListener::bind(&address);
-
-    Server::new(listener).run(app).await
+    Server::bind(&format!("127.0.0.1:{}", port).parse().unwrap())
+        .serve(app().await.into_make_service())
+        .await
+        .unwrap();
 }

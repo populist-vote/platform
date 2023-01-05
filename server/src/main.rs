@@ -1,4 +1,4 @@
 #[tokio::main]
-async fn main() -> Result<(), std::io::Error> {
+async fn main() {
     server::run().await
 }
