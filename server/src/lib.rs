@@ -98,21 +98,19 @@ pub async fn app() -> Router {
     let schema = new_schema().data(context).extension(ApolloTracing).finish();
 
     // Use a permissive CORS policy to allow external requests
-    let cors = CorsLayer::new().allow_credentials(true);
+    let cors = CorsLayer::permissive();
 
-    let app = axum::Router::new()
+    axum::Router::new()
         .route("/", get(graphql_playground).post(graphql_handler))
         .layer(Extension(schema))
         .layer(cors)
-        .layer(CookieManagerLayer::new());
-
-    app
+        .layer(CookieManagerLayer::new())
 }
 
 pub async fn run() {
     let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
     info!("GraphQL Playground live at http://localhost:{}", &port);
-    Server::bind(&format!("127.0.0.1:{}", port).parse().unwrap())
+    Server::bind(&format!("0.0.0.0:{}", port).parse().unwrap())
         .serve(app().await.into_make_service())
         .await
         .unwrap();
