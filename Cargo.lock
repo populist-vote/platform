@@ -2982,6 +2982,7 @@ dependencies = [
  "sqlx",
  "thiserror",
  "tokio",
+ "tower",
  "tower-cookies",
  "tower-http",
  "tracing",
