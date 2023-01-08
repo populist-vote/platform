@@ -1,79 +1,16 @@
 use async_graphql::extensions::ApolloTracing;
-use axum::{extract::Extension, headers::HeaderMap, routing::get, Router, Server};
+use axum::{extract::Extension, routing::get, Router, Server};
 use config::Environment;
 use graphql::{context::ApiContext, new_schema};
+use http::{request::Parts, HeaderValue};
 use regex::Regex;
 mod handlers;
 use dotenv::dotenv;
-pub use handlers::{graphql_handler, graphql_playground};
+pub use handlers::{external_graphql_handler, graphql_playground, internal_graphql_handler};
 use tower_cookies::CookieManagerLayer;
-use tower_http::cors::CorsLayer;
+use tower_http::cors::{AllowOrigin, CorsLayer};
 use tracing::info;
 use tracing_subscriber::EnvFilter;
-
-fn is_internal_staging_origin(origin: &str) -> bool {
-    let staging_origins = vec![
-        "https://populist-api-staging.herokuapp.com",
-        "https://api.staging.populist.us",
-        "https://staging.populist.us",
-        "http://localhost:1234",
-        "http://localhost:3030",
-    ];
-    let re = Regex::new(r"https://web-.*?-populist\.vercel\.app$").unwrap();
-    re.is_match(origin) || staging_origins.contains(&origin)
-}
-
-fn is_internal_production_origin(origin: &str) -> bool {
-    let production_origins = vec![
-        "https://populist-api-production.herokuapp.com",
-        "https://api.populist.us",
-        "https://populist.us",
-        "https://www.populist.us",
-        "https://web-five-kohl.vercel.app",
-        "https://web-populist.vercel.app",
-        "https://web-git-main-populist.vercel.app",
-    ];
-
-    production_origins.contains(&origin)
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum RequestType {
-    Internal,
-    External,
-}
-
-pub fn determine_request_type(environment: Environment, headers: &HeaderMap) -> RequestType {
-    let origin = headers
-        .get("origin")
-        .and_then(|header| header.to_str().ok());
-
-    match environment {
-        Environment::Staging => {
-            if let Some(origin) = origin {
-                if is_internal_staging_origin(origin) {
-                    RequestType::Internal
-                } else {
-                    RequestType::External
-                }
-            } else {
-                RequestType::External
-            }
-        }
-        Environment::Production => {
-            if let Some(origin) = origin {
-                if is_internal_production_origin(origin) {
-                    RequestType::Internal
-                } else {
-                    RequestType::External
-                }
-            } else {
-                RequestType::External
-            }
-        }
-        _ => RequestType::Internal,
-    }
-}
 
 pub async fn app() -> Router {
     dotenv().ok();
@@ -97,13 +34,58 @@ pub async fn app() -> Router {
 
     let schema = new_schema().data(context).extension(ApolloTracing).finish();
 
-    // Use a permissive CORS policy to allow external requests
-    let cors = CorsLayer::very_permissive();
+    pub fn cors(environment: Environment) -> CorsLayer {
+        let cors = CorsLayer::new().allow_credentials(true);
+
+        fn allowed_staging_origins(origin: &HeaderValue, _request_parts: &Parts) -> bool {
+            let staging_origins = vec![
+                "https://populist-api-staging.herokuapp.com",
+                "https://api.staging.populist.us",
+                "https://staging.populist.us",
+                "http://localhost:3030",
+            ];
+            let re = Regex::new(r"https://web-.*?-populist\.vercel\.app$").unwrap();
+            let origin = origin.to_str().unwrap();
+            re.is_match(origin) || staging_origins.contains(&origin)
+        }
+
+        let production_origins = [
+            "http://localhost:3030".parse().unwrap(),
+            "https://populist-api-production.herokuapp.com"
+                .parse()
+                .unwrap(),
+            "https://api.populist.us".parse().unwrap(),
+            "https://populist.us".parse().unwrap(),
+            "https://www.populist.us".parse().unwrap(),
+            "https://web-five-kohl.vercel.app".parse().unwrap(),
+            "https://web-populist.vercel.app".parse().unwrap(),
+            "https://web-git-main-populist.vercel.app".parse().unwrap(),
+        ];
+
+        match environment {
+            Environment::Local => cors,
+            Environment::Staging => {
+                cors.allow_origin(AllowOrigin::predicate(allowed_staging_origins))
+            }
+            Environment::Production => cors.allow_origin(production_origins),
+            _ => cors,
+        }
+    }
+
+    // Use a permissive CORS policy to allow external requests for /graphql endpoint
+    let permissive_cors = CorsLayer::very_permissive();
+
+    let environment = config::Config::default().environment;
 
     axum::Router::new()
-        .route("/", get(graphql_playground).post(graphql_handler))
+        .route("/", get(graphql_playground).post(internal_graphql_handler))
+        .route_layer(cors(environment))
+        .route(
+            "/graphql",
+            get(graphql_playground).post(external_graphql_handler),
+        )
+        .route_layer(permissive_cors)
         .layer(Extension(schema))
-        .layer(cors)
         .layer(CookieManagerLayer::new())
 }
 
