@@ -16,6 +16,7 @@ pub struct User {
     pub username: String,
     pub password: String,
     pub role: Role,
+    pub organization_id: Option<uuid::Uuid>,
     pub created_at: DateTime,
     pub confirmed_at: Option<DateTime>,
     pub updated_at: DateTime,
@@ -47,6 +48,7 @@ pub struct CreateUserInput {
     pub username: String,
     pub password: String,
     pub role: Option<Role>,
+    pub organization_id: Option<uuid::Uuid>,
 }
 
 #[derive(Serialize, Deserialize, InputObject)]
@@ -78,14 +80,15 @@ impl User {
         let record = sqlx::query_as!(
             User,
             r#"
-                INSERT INTO populist_user (email, username, password, role)
-                VALUES (LOWER($1), LOWER($2), $3, $4)
-                RETURNING id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at
+                INSERT INTO populist_user (email, username, password, role, organization_id)
+                VALUES (LOWER($1), LOWER($2), $3, $4, $5)
+                RETURNING id, email, username, password, role AS "role:Role", organization_id, created_at, confirmed_at, updated_at
             "#,
             input.email,
             input.username,
             hash,
-            role as Role
+            role as Role,
+            input.organization_id
         ).fetch_one(db_pool).await?;
 
         Ok(record)
@@ -112,7 +115,7 @@ impl User {
                 WITH ins_user AS (
                     INSERT INTO populist_user (email, username, password, role, confirmation_token)
                     VALUES (LOWER($1), LOWER($2), $3, $4, $16)
-                    RETURNING id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at
+                    RETURNING id, email, username, password, role AS "role:Role", organization_id, created_at, confirmed_at, updated_at
                 ),
                 ins_address AS (
                     INSERT INTO address (line_1, line_2, city, state, county, country, postal_code, geog, congressional_district, state_senate_district, state_house_district)
@@ -152,7 +155,7 @@ impl User {
         let record = sqlx::query_as!(
             User,
             r#"
-                SELECT id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at FROM populist_user 
+                SELECT id, email, username, password, role AS "role:Role", organization_id, created_at, confirmed_at, updated_at FROM populist_user 
                 WHERE $1 = id;
             "#,
             id
@@ -177,6 +180,7 @@ impl User {
                     username, 
                     password, 
                     role AS "role:Role", 
+                    organization_id,
                     created_at, 
                     confirmed_at, 
                     updated_at 
@@ -225,7 +229,7 @@ impl User {
                     reset_token = NULL
                 WHERE reset_token = $2
                 AND reset_token_expires_at > now()
-                RETURNING id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at
+                RETURNING id, email, username, password, role AS "role:Role", organization_id, created_at, confirmed_at, updated_at
             "#,
             hash,
             reset_token

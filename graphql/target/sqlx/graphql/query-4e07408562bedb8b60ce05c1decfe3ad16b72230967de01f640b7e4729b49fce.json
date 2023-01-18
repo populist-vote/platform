@@ -1,21 +1,21 @@
 {
-  "query": "\n            SELECT password FROM populist_user \n            WHERE id = $1",
+  "query": "\n            SELECT id FROM populist_user WHERE email = $1\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "password",
-        "type_info": "Text"
+        "name": "id",
+        "type_info": "Uuid"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Text"
       ]
     },
     "nullable": [
       false
     ]
   },
-  "hash": "b5f8bb777be364f196aa0da547e7527cf58249eb9e172e46e977c9525c8bd508"
+  "hash": "7c3de9dc9a7a66c521d2884819f21bde79f41cbb86055b2e8012733795d0f72b"
 }

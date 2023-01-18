@@ -135,7 +135,7 @@ impl UserMutation {
             r#"
             UPDATE populist_user SET username = $1
             WHERE id = $2
-            RETURNING id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at
+            RETURNING id, email, username, password, role AS "role:Role", organization_id, created_at, confirmed_at, updated_at
         "#,
             username,
             user_id,
@@ -182,7 +182,7 @@ impl UserMutation {
             r#"
             UPDATE populist_user SET email = $1
             WHERE id = $2
-            RETURNING id, email, username, password, role AS "role:Role", created_at, confirmed_at, updated_at
+            RETURNING id, email, username, password, role AS "role:Role", organization_id, created_at, confirmed_at, updated_at
         "#,
             email,
             user_id,
