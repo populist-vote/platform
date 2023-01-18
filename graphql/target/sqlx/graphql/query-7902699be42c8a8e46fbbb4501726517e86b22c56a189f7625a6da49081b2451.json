@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT DISTINCT c.id, c.slug, name, c.description, c.state AS \"state: State\", chair_id, c.legiscan_committee_id, c.created_at, c.updated_at FROM committee c\n            JOIN bill b ON b.committee_id = c.id\n        ",
+  "query": "\n            UPDATE populist_user SET email = $1\n            WHERE id = $2\n            RETURNING id, email, username, password, role AS \"role:Role\", organization_id, created_at, confirmed_at, updated_at\n        ",
   "describe": {
     "columns": [
       {
@@ -9,78 +9,31 @@
       },
       {
         "ordinal": 1,
-        "name": "slug",
+        "name": "email",
         "type_info": "Text"
       },
       {
         "ordinal": 2,
-        "name": "name",
+        "name": "username",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "description",
+        "name": "password",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "state: State",
+        "name": "role:Role",
         "type_info": {
           "Custom": {
-            "name": "state",
+            "name": "user_role",
             "kind": {
               "Enum": [
-                "AL",
-                "AK",
-                "AZ",
-                "AR",
-                "CA",
-                "CO",
-                "CT",
-                "DC",
-                "DE",
-                "FL",
-                "GA",
-                "HI",
-                "ID",
-                "IL",
-                "IN",
-                "IA",
-                "KS",
-                "KY",
-                "LA",
-                "ME",
-                "MD",
-                "MA",
-                "MI",
-                "MN",
-                "MS",
-                "MO",
-                "MT",
-                "NE",
-                "NV",
-                "NH",
-                "NJ",
-                "NM",
-                "NY",
-                "NC",
-                "ND",
-                "OH",
-                "OK",
-                "OR",
-                "PA",
-                "RI",
-                "SC",
-                "SD",
-                "TN",
-                "TX",
-                "UT",
-                "VT",
-                "VA",
-                "WA",
-                "WV",
-                "WI",
-                "WY"
+                "superuser",
+                "staff",
+                "premium",
+                "basic"
               ]
             }
           }
@@ -88,17 +41,17 @@
       },
       {
         "ordinal": 5,
-        "name": "chair_id",
+        "name": "organization_id",
         "type_info": "Uuid"
       },
       {
         "ordinal": 6,
-        "name": "legiscan_committee_id",
-        "type_info": "Int4"
+        "name": "created_at",
+        "type_info": "Timestamptz"
       },
       {
         "ordinal": 7,
-        "name": "created_at",
+        "name": "confirmed_at",
         "type_info": "Timestamptz"
       },
       {
@@ -108,19 +61,22 @@
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Text",
+        "Uuid"
+      ]
     },
     "nullable": [
       false,
       false,
       false,
       false,
-      true,
-      true,
+      false,
       true,
       false,
+      true,
       false
     ]
   },
-  "hash": "ee20c9e7ff1f96a81915d33b7463ae1864f98bca58a97b0c28fea619efd402e1"
+  "hash": "ba9724a7c8744936a4d12781d73f75bbc0e1c2604389844a9d5056cb291bba6c"
 }

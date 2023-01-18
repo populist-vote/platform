@@ -11,6 +11,7 @@ pub struct Claims {
     pub username: String,
     pub email: String,
     pub role: Role,
+    pub organization_id: Option<uuid::Uuid>,
     pub exp: usize,
 }
 
@@ -26,6 +27,7 @@ pub fn create_power_token() -> Result<String, Error> {
         username: "superadmin".to_string(),
         email: "info@populist.us".to_string(),
         role: Role::SUPERUSER,
+        organization_id: None,
         exp: expiration as usize,
     };
 
@@ -54,6 +56,7 @@ pub fn create_access_token_for_user(user_record: User) -> Result<String, Error> 
         username: user_record.username,
         email: user_record.email,
         role: user_record.role,
+        organization_id: user_record.organization_id,
         exp: expiration as usize,
     };
 

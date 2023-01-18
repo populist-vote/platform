@@ -14,6 +14,7 @@ pub struct AuthTokenResult {
     username: String,
     email: String,
     role: Role,
+    organization_id: Option<ID>,
 }
 
 #[derive(SimpleObject)]
@@ -63,6 +64,7 @@ impl From<&TokenData<Claims>> for AuthTokenResult {
             username: user.claims.username.clone(),
             email: user.claims.email.clone(),
             role: user.claims.role,
+            organization_id: user.claims.organization_id.map(|id| ID::from(id)),
         }
     }
 }
