@@ -64,7 +64,7 @@ impl From<&TokenData<Claims>> for AuthTokenResult {
             username: user.claims.username.clone(),
             email: user.claims.email.clone(),
             role: user.claims.role,
-            organization_id: user.claims.organization_id.map(|id| ID::from(id)),
+            organization_id: user.claims.organization_id.map(ID::from),
         }
     }
 }
