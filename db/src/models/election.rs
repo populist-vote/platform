@@ -5,7 +5,6 @@ use sqlx::FromRow;
 use super::enums::State;
 
 #[derive(FromRow, Debug, Clone)]
-
 pub struct Election {
     pub id: uuid::Uuid,
     pub slug: String,
