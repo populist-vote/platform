@@ -1,4 +1,4 @@
-use async_graphql::{Context, Object, Result};
+use async_graphql::{Context, Object, Result, ID};
 use db::{Organization, OrganizationSearch};
 
 use crate::context::ApiContext;
@@ -37,11 +37,7 @@ impl OrganizationQuery {
         Ok(record.into())
     }
 
-    async fn organization_by_id(
-        &self,
-        ctx: &Context<'_>,
-        id: String,
-    ) -> Result<OrganizationResult> {
+    async fn organization_by_id(&self, ctx: &Context<'_>, id: ID) -> Result<OrganizationResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = Organization::find_by_id(&db_pool, uuid::Uuid::parse_str(&id)?).await?;
 
