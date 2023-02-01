@@ -1,21 +1,33 @@
 use async_graphql::{Context, Object, Result};
+use auth::Claims;
 use db::{Embed, UpsertEmbedInput};
+use jsonwebtoken::TokenData;
 
-use crate::{context::ApiContext, types::EmbedResult};
+use crate::{context::ApiContext, is_admin, types::EmbedResult};
 
 #[derive(Default)]
 pub struct EmbedMutation;
 
 #[Object]
 impl EmbedMutation {
-    // TODO: New guard to check organization_id (and role ultimately)
+    #[graphql(visible = "is_admin")]
     async fn upsert_embed(
         &self,
         ctx: &Context<'_>,
         input: UpsertEmbedInput,
     ) -> Result<EmbedResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let new_record = Embed::upsert(&db_pool, &input).await?;
-        Ok(EmbedResult::from(new_record))
+        let user_org_id = ctx.data::<TokenData<Claims>>()?.claims.organization_id;
+        let existing_embed_org_id = Embed::find_by_id(&db_pool, input.id.unwrap())
+            .await?
+            .organization_id;
+        if existing_embed_org_id != input.organization_id.unwrap() {
+            return Err("Unauthorized".into());
+        }
+        if existing_embed_org_id != user_org_id.unwrap() {
+            return Err("Unauthorized".into());
+        }
+        let upserted_record = Embed::upsert(&db_pool, &input).await?;
+        Ok(EmbedResult::from(upserted_record))
     }
 }
