@@ -12,16 +12,20 @@ pub struct Embed {
     pub attributes: JSON,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: chrono::DateTime<chrono::Utc>,
+    pub created_by: uuid::Uuid,
+    pub updated_by: uuid::Uuid,
 }
 
 #[derive(InputObject)]
 pub struct UpsertEmbedInput {
     pub id: Option<uuid::Uuid>,
-    pub organization_id: uuid::Uuid,
-    pub name: String,
+    pub organization_id: Option<uuid::Uuid>,
+    pub name: Option<String>,
     pub description: Option<String>,
-    pub populist_url: String,
-    pub attributes: JSON,
+    pub populist_url: Option<String>,
+    pub attributes: Option<JSON>,
+    pub created_by: Option<uuid::Uuid>,
+    pub updated_by: uuid::Uuid,
 }
 
 impl Embed {
@@ -38,21 +42,26 @@ impl Embed {
                 name,
                 description,
                 populist_url,
-                attributes
+                attributes,
+                created_by,
+                updated_by
             ) VALUES (
                 $1,
                 $2,
                 $3,
                 $4,
                 $5,
-                $6
+                $6,
+                $7,
+                $8
             )
             ON CONFLICT (id) DO UPDATE SET
                 organization_id = $2,
                 name = $3,
                 description = $4,
                 populist_url = $5,
-                attributes = $6
+                attributes = $6,
+                updated_by = $8
             RETURNING *
             "#,
             input.id.unwrap_or(uuid::Uuid::new_v4()),
@@ -60,7 +69,9 @@ impl Embed {
             input.name,
             input.description,
             input.populist_url,
-            input.attributes
+            input.attributes,
+            input.created_by,
+            input.updated_by
         )
         .fetch_one(pool)
         .await?;

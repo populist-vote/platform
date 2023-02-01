@@ -1,9 +1,14 @@
-use async_graphql::{SimpleObject, ID};
+use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use chrono::{DateTime, Utc};
-use db::Embed;
+use db::{Embed, UserWithProfile};
 use serde_json::Value as JSON;
 
+use crate::context::ApiContext;
+
+use super::{Error, UserResult};
+
 #[derive(SimpleObject, Clone, Debug)]
+#[graphql(complex)]
 pub struct EmbedResult {
     pub id: ID,
     pub organization_id: ID,
@@ -13,6 +18,49 @@ pub struct EmbedResult {
     pub attributes: JSON,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    pub created_by_id: ID,
+    pub updated_by_id: ID,
+}
+
+#[ComplexObject]
+impl EmbedResult {
+    async fn created_by(&self, ctx: &Context<'_>) -> Result<UserResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let record = sqlx::query_as!(
+            UserWithProfile,
+            r#"
+            SELECT u.id, u.username, u.email, first_name, last_name, profile_picture_url FROM user_profile up
+            JOIN populist_user u ON up.user_id = u.id WHERE u.id = $1
+        "#,
+            uuid::Uuid::parse_str(&self.created_by_id.as_str()).unwrap(),
+        )
+        .fetch_optional(&db_pool)
+        .await?;
+
+        match record {
+            Some(user) => Ok(user.into()),
+            None => Err(Error::UserNotFound.into()),
+        }
+    }
+
+    async fn updated_by(&self, ctx: &Context<'_>) -> Result<UserResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let record = sqlx::query_as!(
+            UserWithProfile,
+            r#"
+            SELECT u.id, u.username, u.email, first_name, last_name, profile_picture_url FROM user_profile up
+            JOIN populist_user u ON up.user_id = u.id WHERE u.id = $1
+        "#,
+            uuid::Uuid::parse_str(&self.updated_by_id.as_str()).unwrap(),
+        )
+        .fetch_optional(&db_pool)
+        .await?;
+
+        match record {
+            Some(user) => Ok(user.into()),
+            None => Err(Error::UserNotFound.into()),
+        }
+    }
 }
 
 impl From<Embed> for EmbedResult {
@@ -26,6 +74,8 @@ impl From<Embed> for EmbedResult {
             attributes: embed.attributes,
             created_at: embed.created_at,
             updated_at: embed.updated_at,
+            created_by_id: embed.created_by.into(),
+            updated_by_id: embed.updated_by.into(),
         }
     }
 }
