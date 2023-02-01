@@ -1,4 +1,4 @@
-use async_graphql::{Context, Object};
+use async_graphql::{Context, Object, ID};
 use db::{
     models::{committee::Committee, enums::State},
     Bill, BillFilter, BillSort, IssueTag,
@@ -62,7 +62,7 @@ impl BillQuery {
         .await
     }
 
-    async fn bill_by_id(&self, ctx: &Context<'_>, id: String) -> Option<BillResult> {
+    async fn bill_by_id(&self, ctx: &Context<'_>, id: ID) -> Option<BillResult> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
         let record = Bill::find_by_id(&db_pool, uuid::Uuid::parse_str(&id).unwrap())
             .await
