@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT DISTINCT c.id, c.slug, name, c.description, c.state AS \"state: State\", chair_id, c.legiscan_committee_id, c.created_at, c.updated_at FROM committee c\n            JOIN bill b ON b.committee_id = c.id\n        ",
+  "query": "\n            SELECT u.id, u.username, u.email, first_name, last_name, profile_picture_url FROM user_profile up\n            JOIN populist_user u ON up.user_id = u.id WHERE u.id = $1\n        ",
   "describe": {
     "columns": [
       {
@@ -9,118 +9,43 @@
       },
       {
         "ordinal": 1,
-        "name": "slug",
+        "name": "username",
         "type_info": "Text"
       },
       {
         "ordinal": 2,
-        "name": "name",
+        "name": "email",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "description",
+        "name": "first_name",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "state: State",
-        "type_info": {
-          "Custom": {
-            "name": "state",
-            "kind": {
-              "Enum": [
-                "AL",
-                "AK",
-                "AZ",
-                "AR",
-                "CA",
-                "CO",
-                "CT",
-                "DC",
-                "DE",
-                "FL",
-                "GA",
-                "HI",
-                "ID",
-                "IL",
-                "IN",
-                "IA",
-                "KS",
-                "KY",
-                "LA",
-                "ME",
-                "MD",
-                "MA",
-                "MI",
-                "MN",
-                "MS",
-                "MO",
-                "MT",
-                "NE",
-                "NV",
-                "NH",
-                "NJ",
-                "NM",
-                "NY",
-                "NC",
-                "ND",
-                "OH",
-                "OK",
-                "OR",
-                "PA",
-                "RI",
-                "SC",
-                "SD",
-                "TN",
-                "TX",
-                "UT",
-                "VT",
-                "VA",
-                "WA",
-                "WV",
-                "WI",
-                "WY"
-              ]
-            }
-          }
-        }
+        "name": "last_name",
+        "type_info": "Text"
       },
       {
         "ordinal": 5,
-        "name": "chair_id",
-        "type_info": "Uuid"
-      },
-      {
-        "ordinal": 6,
-        "name": "legiscan_committee_id",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 7,
-        "name": "created_at",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 8,
-        "name": "updated_at",
-        "type_info": "Timestamptz"
+        "name": "profile_picture_url",
+        "type_info": "Text"
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Uuid"
+      ]
     },
     "nullable": [
       false,
       false,
       false,
-      false,
       true,
       true,
-      true,
-      false,
-      false
+      true
     ]
   },
-  "hash": "ee20c9e7ff1f96a81915d33b7463ae1864f98bca58a97b0c28fea619efd402e1"
+  "hash": "3890dd0b74b9e3a9a8a89a7f25bd8ffeb253d911c47eed7c86b5b0bc866ea55d"
 }

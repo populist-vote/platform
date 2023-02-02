@@ -119,6 +119,7 @@ impl Embed {
             SELECT *
             FROM embed
             WHERE organization_id = $1
+            ORDER BY updated_at DESC
             "#,
             organization_id
         )
