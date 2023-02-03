@@ -24,15 +24,15 @@ pub struct UpsertEmbedInput {
     pub description: Option<String>,
     pub populist_url: Option<String>,
     pub attributes: Option<JSON>,
-    pub created_by: Option<uuid::Uuid>,
-    pub updated_by: uuid::Uuid,
 }
 
 impl Embed {
     pub async fn upsert(
         pool: &sqlx::PgPool,
         input: &UpsertEmbedInput,
+        updated_by: &uuid::Uuid,
     ) -> Result<Embed, sqlx::Error> {
+        let created_by = updated_by.clone();
         let embed = sqlx::query_as!(
             Embed,
             r#"
@@ -70,8 +70,8 @@ impl Embed {
             input.description,
             input.populist_url,
             input.attributes,
-            input.created_by,
-            input.updated_by
+            created_by,
+            updated_by
         )
         .fetch_one(pool)
         .await?;

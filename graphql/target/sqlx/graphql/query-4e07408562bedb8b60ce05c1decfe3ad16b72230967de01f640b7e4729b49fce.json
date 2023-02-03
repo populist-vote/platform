@@ -1,21 +1,33 @@
 {
-  "query": "\n            DELETE FROM populist_user WHERE email = $1\n            RETURNING id\n        ",
+  "query": "\n                SELECT\n                    candidate_id,\n                    is_endorsement,\n                    note\n                FROM\n                    voting_guide_candidates\n                WHERE\n                    voting_guide_id = $1\n                    AND (is_endorsement = true OR note IS NOT NULL)\n            ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id",
+        "name": "candidate_id",
         "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "is_endorsement",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 2,
+        "name": "note",
+        "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
-        "Text"
+        "Uuid"
       ]
     },
     "nullable": [
-      false
+      false,
+      false,
+      true
     ]
   },
-  "hash": "6574a1f62eced11151acc740651c859932667e1298ace73b04dd1fe5caf78dcb"
+  "hash": "822ee3352cf0ade11df3adc9a2cc34597badffb68f8b75396c5b95a53e9bf24d"
 }
