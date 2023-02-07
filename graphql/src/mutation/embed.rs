@@ -1,4 +1,4 @@
-use async_graphql::{Context, Object, Result, ID};
+use async_graphql::{Context, Object, Result};
 use auth::Claims;
 use db::{Embed, UpsertEmbedInput};
 use jsonwebtoken::TokenData;

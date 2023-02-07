@@ -224,9 +224,8 @@ impl AuthMutation {
 
             if password_is_valid {
                 let access_token = create_access_token_for_user(user.clone())?;
-
                 ctx.insert_http_header(SET_COOKIE, format_auth_cookie(&access_token));
-
+                User::set_last_login_at(&db_pool, user.id).await?;
                 Ok(LoginResult {
                     user_id: user.id.into(),
                 })

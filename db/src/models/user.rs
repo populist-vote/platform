@@ -215,6 +215,23 @@ impl User {
         }
     }
 
+    pub async fn set_last_login_at(db_pool: &PgPool, id: uuid::Uuid) -> Result<Self, Error> {
+        let record = sqlx::query_as!(
+            User,
+            r#"
+                UPDATE populist_user
+                SET last_login_at = now()
+                WHERE id = $1
+                RETURNING id, email, username, password, role AS "role:Role", organization_id, created_at, confirmed_at, updated_at
+            "#,
+            id
+        )
+        .fetch_one(db_pool)
+        .await?;
+
+        Ok(record)
+    }
+
     pub async fn reset_password(
         db_pool: &PgPool,
         new_password: String,
