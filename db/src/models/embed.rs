@@ -32,7 +32,7 @@ impl Embed {
         input: &UpsertEmbedInput,
         updated_by: &uuid::Uuid,
     ) -> Result<Embed, sqlx::Error> {
-        let created_by = updated_by.clone();
+        let created_by = updated_by;
         let embed = sqlx::query_as!(
             Embed,
             r#"
