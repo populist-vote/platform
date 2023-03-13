@@ -253,29 +253,66 @@ impl Bill {
         filter: &BillFilter,
         sort: &BillSort,
     ) -> Result<Vec<Self>, sqlx::Error> {
-        let search_query = crate::process_search_query(filter.query.to_owned().unwrap_or_default());
-
-        tracing::info!("sort: {:?}", sort);
+        let search_query = filter.query.to_owned().unwrap_or_default();
 
         let query = format!(
             r#"
-            SELECT id, slug, title, bill_number, status, description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state, votesmart_bill_id, political_scope, bill_type, chamber, bill.attributes, bill.created_at, bill.updated_at FROM bill
-            LEFT JOIN bill_public_votes bpv ON bill.id = bpv.bill_id
-            WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', title, description, bill_number)) @@ to_tsquery('simple', $1))
-            AND ($2::bill_status IS NULL OR status = $2)
-            AND ($3::political_scope IS NULL OR political_scope = $3)
-            AND (($4::state IS NULL OR state = $4) OR $3::political_scope = 'federal')
-            GROUP BY (bill.id)
+            SELECT
+                id,
+                slug,
+                title,
+                bill_number,
+                status,
+                description,
+                session_id,
+                official_summary,
+                populist_summary,
+                full_text_url,
+                legiscan_bill_id,
+                legiscan_committee,
+                legiscan_last_action,
+                legiscan_last_action_date,
+                legiscan_data,
+                history,
+                state,
+                votesmart_bill_id,
+                political_scope,
+                bill_type,
+                chamber,
+                bill.attributes,
+                bill.created_at,
+                bill.updated_at,
+                rank_bill_number,
+                rank_title,
+                rank_description
+            FROM
+                bill
+                LEFT JOIN bill_public_votes bpv ON bill.id = bpv.bill_id,
+                to_tsvector(bill_number || ' ' || title || ' ' || description) document,
+                websearch_to_tsquery($1::text) query,
+                NULLIF(ts_rank(to_tsvector(bill_number), query), 0) rank_bill_number,
+                NULLIF(ts_rank(to_tsvector(title), query), 0) rank_title,
+                NULLIF(ts_rank(to_tsvector(description), query), 0) rank_description
+            WHERE
+                document @@ query
+                AND($2::bill_status IS NULL
+                    OR status = $2)
+                AND($3::political_scope IS NULL
+                    OR political_scope = $3)
+                AND(($4::state IS NULL
+                    OR state = $4)
+                OR $3::political_scope = 'federal')
+            GROUP BY (bill.id, rank_bill_number, rank_title, rank_description)
             ORDER BY {order_by}
             LIMIT 20
         "#,
             order_by = match sort.popularity {
-                Some(PopularitySort::MostPopular) => "COUNT(bpv.*) DESC NULLS LAST",
+                Some(PopularitySort::MostPopular) => "rank_bill_number, rank_title, rank_description, COUNT(bpv.*) DESC NULLS LAST",
                 Some(PopularitySort::MostSupported) =>
-                    "SUM(CASE WHEN bpv.position = 'support' THEN 1 ELSE 0 END) DESC NULLS LAST",
+                    "rank_bill_number, rank_title, rank_description, SUM(CASE WHEN bpv.position = 'support' THEN 1 ELSE 0 END)DESC NULLS LAST",
                 Some(PopularitySort::MostOpposed) =>
-                    "SUM(CASE WHEN bpv.position = 'oppose' THEN 1 ELSE 0 END) DESC NULLS LAST",
-                None => "bill.created_at DESC",
+                    "rank_bill_number, rank_title, rank_description, SUM(CASE WHEN bpv.position = 'oppose' THEN 1 ELSE 0 END) DESC NULLS LAST",
+                None => "rank_bill_number, rank_title, rank_description DESC NULLS LAST",
             }
         );
 
@@ -290,7 +327,7 @@ impl Bill {
     }
 
     pub async fn popular(db_pool: &PgPool, filter: &BillFilter) -> Result<Vec<Self>, sqlx::Error> {
-        let search_query = crate::process_search_query(filter.query.to_owned().unwrap_or_default());
+        let search_query = filter.query.to_owned().unwrap_or_default();
 
         let records = sqlx::query_as!(
             Bill,

@@ -37,36 +37,37 @@ I like to create a .dump file for these once they are inserted that can be used 
 
 Once we have the source data loaded into our db (or your local db to start), we can use the magic of SQL to create, update, and transform the records to our needs. Here is an example query inserting the bills for California data: 
 ```postgresql
--- Upsert CA bills.  
-INSERT INTO bill (slug, title, bill_number, legislation_status, description, full_text_url, legiscan_bill_id, legiscan_session_id, legiscan_committee_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, state)
-SELECT 
-	slugify(CONCAT('ca', ' ', bill_number)),
+-- Upsert MN bills.  
+INSERT INTO bill (legiscan_bill_id, slug, title, bill_number, status, description, full_text_url, session_id, legiscan_committee_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, state)
+SELECT
+	bill_id,
+	slugify (CONCAT('mn', ' ', bill_number, ' ', '2023')),
 	title,
 	bill_number,
-	-- Note we should follow on and update status that are set here as 'passed_senate' based on the last action (if the action was passed house, it should be updated to 'passed_house')
-	COALESCE(((json_build_object(1, 'introduced', 2, 'passed_senate', 4, 'became_law')::jsonb) ->> (status::text))::legislation_status, 'introduced'),
+	COALESCE(((json_build_object(1, 'introduced', 2, 'in_consideration', 4, 'became_law')::jsonb) ->> (status::text))::bill_status, 'introduced'),
 	description,
 	state_link,
-	bill_id,
-	session_id,
+	'934eac59-a915-46b8-ba6f-406ae61cec36',
 	committee_id,
 	committee,
 	last_action,
 	last_action_date::date,
-	'CA' 
+	'MN'
 FROM
-	p6t_state_ca.legiscan_ca_bills_2021_2022
-ON CONFLICT (legiscan_bill_id) DO UPDATE
-SET 
-  slug = EXCLUDED.slug,
-  title = EXCLUDED.title,
-  bill_number = EXCLUDED.bill_number,
-  legislation_status = EXCLUDED.legislation_status,
-  description = EXCLUDED.description,
-  full_text_url = EXCLUDED.full_text_url,
-  legiscan_last_action = EXCLUDED.legiscan_last_action,
-  legiscan_last_action_date = EXCLUDED.legiscan_last_action_date
-RETURNING *;
+	p6t_state_mn.legiscan_mn_2023_bills ON CONFLICT (legiscan_bill_id)
+	DO
+	UPDATE
+	SET
+		slug = EXCLUDED.slug,
+		title = EXCLUDED.title,
+		bill_number = EXCLUDED.bill_number,
+		status = EXCLUDED.status,
+		description = EXCLUDED.description,
+		full_text_url = EXCLUDED.full_text_url,
+		legiscan_last_action = EXCLUDED.legiscan_last_action,
+		legiscan_last_action_date = EXCLUDED.legiscan_last_action_date
+	RETURNING
+		*;
 ```
 
 And an example query inserting bill sponsor records:
