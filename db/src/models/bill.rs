@@ -258,12 +258,12 @@ impl Bill {
         let query = format!(
             r#"
             SELECT
-                id,
+                bill.id,
                 slug,
                 title,
                 bill_number,
                 status,
-                description,
+                bill.description,
                 session_id,
                 official_summary,
                 populist_summary,
@@ -274,7 +274,7 @@ impl Bill {
                 legiscan_last_action_date,
                 legiscan_data,
                 history,
-                state,
+                bill.state,
                 votesmart_bill_id,
                 political_scope,
                 bill_type,
@@ -287,12 +287,13 @@ impl Bill {
                 rank_description
             FROM
                 bill
-                LEFT JOIN bill_public_votes bpv ON bill.id = bpv.bill_id,
-                to_tsvector(bill_number || ' ' || title || ' ' || COALESCE(description, '')) document,
+                LEFT JOIN bill_public_votes bpv ON bill.id = bpv.bill_id
+                JOIN session ON session.id = bill.session_id,
+                to_tsvector(bill_number || ' ' || title || ' ' || COALESCE(bill.description, '')) document,
                 websearch_to_tsquery($1::text) query,
                 NULLIF(ts_rank(to_tsvector(bill_number), query), 0) rank_bill_number,
                 NULLIF(ts_rank(to_tsvector(title), query), 0) rank_title,
-                NULLIF(ts_rank(to_tsvector(description), query), 0) rank_description
+                NULLIF(ts_rank(to_tsvector(bill.description), query), 0) rank_description
             WHERE
                 document @@ query
                 AND($2::bill_status IS NULL
@@ -300,8 +301,9 @@ impl Bill {
                 AND($3::political_scope IS NULL
                     OR political_scope = $3)
                 AND(($4::state IS NULL
-                    OR state = $4)
+                    OR bill.state = $4)
                 OR $3::political_scope = 'federal')
+                AND ($5::integer IS NULL OR EXTRACT(YEAR FROM session.start_date) = $5)
             GROUP BY (bill.id, rank_bill_number, rank_title, rank_description)
             ORDER BY {order_by}
             LIMIT 20
@@ -321,6 +323,7 @@ impl Bill {
             .bind(filter.status as Option<BillStatus>)
             .bind(filter.political_scope)
             .bind(filter.state)
+            .bind(filter.year)
             .fetch_all(db_pool)
             .await?;
         Ok(records)
