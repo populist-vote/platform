@@ -288,7 +288,7 @@ impl Bill {
             FROM
                 bill
                 LEFT JOIN bill_public_votes bpv ON bill.id = bpv.bill_id,
-                to_tsvector(bill_number || ' ' || title || ' ' || description) document,
+                to_tsvector(bill_number || ' ' || title || ' ' || COALESCE(description, '')) document,
                 websearch_to_tsquery($1::text) query,
                 NULLIF(ts_rank(to_tsvector(bill_number), query), 0) rank_bill_number,
                 NULLIF(ts_rank(to_tsvector(title), query), 0) rank_title,
