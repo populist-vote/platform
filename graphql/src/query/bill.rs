@@ -91,6 +91,26 @@ impl BillQuery {
         .unwrap().into_iter().map(IssueTagResult::from).collect()
     }
 
+    /// Returns all session years that have an associated bill
+    async fn bill_years(&self, ctx: &Context<'_>) -> Vec<i32> {
+        let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+        sqlx::query!(
+            r#"
+            SELECT DISTINCT
+                EXTRACT(YEAR FROM start_date)::INTEGER AS session_year
+            FROM
+                bill
+            JOIN session ON bill.session_id = session.id 
+        "#
+        )
+        .fetch_all(&db_pool)
+        .await
+        .unwrap()
+        .into_iter()
+        .flat_map(|row| row.session_year)
+        .collect()
+    }
+
     /// Returns all committees that have an associated bill
     async fn bill_committees(&self, ctx: &Context<'_>) -> Vec<CommitteeResult> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
