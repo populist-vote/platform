@@ -295,7 +295,7 @@ impl Bill {
                 NULLIF(ts_rank(to_tsvector(title), query), 0) rank_title,
                 NULLIF(ts_rank(to_tsvector(bill.description), query), 0) rank_description
             WHERE
-                document @@ query
+                (query IS NULL OR document @@ query)
                 AND($2::bill_status IS NULL
                     OR status = $2)
                 AND($3::political_scope IS NULL
