@@ -34,6 +34,8 @@ impl BillQuery {
         )
         .await?;
 
+        println!("records.len() = {:?}", records.len());
+
         relay::query(
             records.into_iter().map(BillResult::from),
             relay::Params::new(after, before, first, last),

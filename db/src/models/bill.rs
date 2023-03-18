@@ -74,6 +74,7 @@ pub struct BillFilter {
     state: Option<State>,
     year: Option<i32>,
     status: Option<BillStatus>,
+    issue_tag: Option<String>,
 }
 
 #[derive(InputObject, Default, Debug)]
@@ -253,13 +254,14 @@ impl Bill {
         filter: &BillFilter,
         sort: &BillSort,
     ) -> Result<Vec<Self>, sqlx::Error> {
-        let search_query = filter.query.to_owned().unwrap_or_default();
+        let search_query = filter.query.to_owned();
 
         let query = format!(
             r#"
             SELECT
                 bill.id,
-                slug,
+                bill.slug,
+                t.tag_array,
                 title,
                 bill_number,
                 status,
@@ -286,25 +288,45 @@ impl Bill {
                 rank_title,
                 rank_description
             FROM
-                bill
-                LEFT JOIN bill_public_votes bpv ON bill.id = bpv.bill_id
-                JOIN session ON session.id = bill.session_id,
-                to_tsvector(bill_number || ' ' || title || ' ' || COALESCE(bill.description, '')) document,
-                websearch_to_tsquery($1::text) query,
-                NULLIF(ts_rank(to_tsvector(bill_number), query), 0) rank_bill_number,
-                NULLIF(ts_rank(to_tsvector(title), query), 0) rank_title,
-                NULLIF(ts_rank(to_tsvector(bill.description), query), 0) rank_description
-            WHERE
-                (query IS NULL OR document @@ query)
-                AND($2::bill_status IS NULL
-                    OR status = $2)
-                AND($3::political_scope IS NULL
-                    OR political_scope = $3)
-                AND(($4::state IS NULL
-                    OR bill.state = $4)
-                OR $3::political_scope = 'federal')
-                AND ($5::integer IS NULL OR EXTRACT(YEAR FROM session.start_date) = $5)
-            GROUP BY (bill.id, rank_bill_number, rank_title, rank_description)
+            bill
+            LEFT JOIN bill_public_votes bpv ON bill.id = bpv.bill_id
+            JOIN session ON session.id = bill.session_id,
+            LATERAL (
+                SELECT
+                ARRAY (
+                    SELECT
+                    t.slug
+                    FROM
+                    bill_issue_tags bit
+                    JOIN issue_tag t ON t.id = bit.issue_tag_id
+                    WHERE
+                    bit.bill_id = bill.id
+                ) AS tag_array
+            ) t,
+            to_tsvector(
+                bill_number || ' ' || title || ' ' || COALESCE(bill.description, '')
+            ) document,
+            websearch_to_tsquery ($1::text) query,
+            NULLIF(ts_rank(to_tsvector(bill_number), query), 0) rank_bill_number,
+            NULLIF(ts_rank(to_tsvector(title), query), 0) rank_title,
+            NULLIF(ts_rank(to_tsvector(bill.description), query), 0) rank_description
+            WHERE ($1::text IS NULL OR document @@ query)
+            AND($2::bill_status IS NULL OR status = $2)
+            AND($3::political_scope IS NULL OR political_scope = $3)
+            AND(
+                ($4::state IS NULL OR bill.state = $4)
+                OR $3::political_scope = 'federal'
+            )
+            AND ($5::integer IS NULL OR EXTRACT(YEAR FROM session.start_date) = $5)
+            AND ($6::text IS NULL OR $6::text = ANY(t.tag_array))
+            GROUP BY
+            (
+                bill.id,
+                rank_bill_number,
+                rank_title,
+                rank_description,
+                t.tag_array
+            )
             ORDER BY {order_by}
             LIMIT 20
         "#,
@@ -324,8 +346,10 @@ impl Bill {
             .bind(filter.political_scope)
             .bind(filter.state)
             .bind(filter.year)
+            .bind(filter.issue_tag.clone())
             .fetch_all(db_pool)
             .await?;
+
         Ok(records)
     }
 
