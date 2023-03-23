@@ -21,15 +21,16 @@ impl ElectionQuery {
         Ok(results)
     }
 
-    async fn elections_by_user_state(&self, ctx: &Context<'_>) -> Result<Vec<ElectionResult>> {
+    async fn elections_by_user(&self, ctx: &Context<'_>) -> Result<Vec<ElectionResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let token = ctx.data::<Option<TokenData<Claims>>>();
 
         if let Some(token_data) = token.unwrap() {
-            let users_state = sqlx::query!(
+            let users_address = sqlx::query!(
                 r#"
                 SELECT
-                    a.state AS "state:State"
+                    a.state AS "state:State",
+                    a.city
                 FROM
                     address a
                     JOIN user_profile up ON user_id = $1
@@ -40,8 +41,7 @@ impl ElectionQuery {
                 token_data.claims.sub
             )
             .fetch_one(&db_pool)
-            .await?
-            .state;
+            .await?;
 
             let records = sqlx::query_as!(
                 Election,
@@ -52,16 +52,18 @@ impl ElectionQuery {
                     title,
                     description,
                     state AS "state:State",
+                    municipality,
                     election_date
                 FROM
                     election
                 WHERE
-                    state = $1
-                    OR state IS NULL
+                    (state = $1 OR state IS NULL) AND
+                    (municipality = $2 OR municipality IS NULL)
                 ORDER BY
                     election_date ASC
                 "#,
-                users_state as State
+                users_address.state as State,
+                users_address.city
             )
             .fetch_all(&db_pool)
             .await?;
@@ -83,6 +85,7 @@ impl ElectionQuery {
                 title,
                 description,
                 state AS "state:State",
+                municipality,
                 election_date
             FROM
                 election
@@ -100,7 +103,7 @@ impl ElectionQuery {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query_as!(
             Election,
-            r#"SELECT id, slug, title, description, state AS "state:State", election_date FROM election WHERE id = $1"#,
+            r#"SELECT id, slug, title, description, state AS "state:State", municipality, election_date FROM election WHERE id = $1"#,
             uuid::Uuid::parse_str(id.as_str()).unwrap()
         )
         .fetch_one(&db_pool)
@@ -112,7 +115,7 @@ impl ElectionQuery {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query_as!(
             Election,
-            r#"SELECT id, slug, title, description, state AS "state:State", election_date FROM election WHERE slug = $1"#,
+            r#"SELECT id, slug, title, description, state AS "state:State", municipality, election_date FROM election WHERE slug = $1"#,
             slug
         )
         .fetch_one(&db_pool)

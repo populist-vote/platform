@@ -11,6 +11,7 @@ pub struct Election {
     pub title: String,
     pub description: Option<String>,
     pub state: Option<State>,
+    pub municipality: Option<String>,
     pub election_date: chrono::NaiveDate,
 }
 
@@ -21,6 +22,7 @@ pub struct UpsertElectionInput {
     pub title: Option<String>,
     pub description: Option<String>,
     pub state: Option<State>,
+    pub municipality: Option<String>,
     /// Must use format YYYY-MM-DD
     pub election_date: Option<chrono::NaiveDate>,
 }
@@ -42,21 +44,23 @@ impl Election {
             Election,
             r#"
                 INSERT INTO election
-                (id, slug, title, description, state, election_date)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                (id, slug, title, description, state, municipality, election_date)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 ON CONFLICT (id) DO UPDATE SET
                     slug = COALESCE($2, election.slug),
                     title = COALESCE($3, election.title),
                     description = COALESCE($4, election.description),
                     state = COALESCE($5, election.state),
-                    election_date = COALESCE($6, election.election_date)
-                RETURNING id, slug, title, description, state AS "state:State", election_date
+                    municipality = COALESCE($6, election.municipality),
+                    election_date = COALESCE($7, election.election_date)
+                RETURNING id, slug, title, description, state AS "state:State", municipality, election_date
             "#,
             id,
             input.slug,
             input.title,
             input.description,
             input.state as Option<State>,
+            input.municipality,
             input.election_date
         )
         .fetch_one(db_pool)
@@ -76,7 +80,7 @@ impl Election {
         sqlx::query_as!(
             Election,
             r#"
-                SELECT id, slug, title, description, state AS "state:State", election_date
+                SELECT id, slug, title, description, state AS "state:State", municipality, election_date
                 FROM election
                 WHERE id=$1
             "#,
@@ -89,7 +93,7 @@ impl Election {
     pub async fn index(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
         let records = sqlx::query_as!(
             Election,
-            r#"SELECT id, slug, title, description, state AS "state:State", election_date FROM election"#,
+            r#"SELECT id, slug, title, description, state AS "state:State", municipality, election_date FROM election"#,
         )
         .fetch_all(db_pool)
         .await?;
@@ -103,7 +107,7 @@ impl Election {
         let records = sqlx::query_as!(
             Election,
             r#"
-                SELECT id, slug, title, description, state AS "state:State", election_date FROM election
+                SELECT id, slug, title, description, state AS "state:State", municipality, election_date FROM election
                 WHERE ($1::text IS NULL OR slug = $1)
                 AND ($2::text IS NULL OR title = $2)
                 AND ($3::state IS NULL OR state = $3)
