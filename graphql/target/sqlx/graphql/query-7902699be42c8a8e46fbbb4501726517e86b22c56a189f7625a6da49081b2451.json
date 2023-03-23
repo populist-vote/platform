@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT DISTINCT c.id, c.slug, name, c.description, c.state AS \"state: State\", chair_id, c.legiscan_committee_id, c.created_at, c.updated_at FROM committee c\n            JOIN bill b ON b.committee_id = c.id\n        ",
+  "query": "\n                SELECT id, slug, title, bill_number, status AS \"status: BillStatus\", description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS \"state: State\", votesmart_bill_id, political_scope AS \"political_scope: PoliticalScope\", bill_type, chamber AS \"chamber: Chamber\", attributes, b.created_at, b.updated_at FROM bill b\n                JOIN bill_sponsors \n                ON bill_sponsors.bill_id = id\n                WHERE bill_sponsors.politician_id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -14,16 +14,90 @@
       },
       {
         "ordinal": 2,
-        "name": "name",
+        "name": "title",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "description",
+        "name": "bill_number",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
+        "name": "status: BillStatus",
+        "type_info": {
+          "Custom": {
+            "name": "bill_status",
+            "kind": {
+              "Enum": [
+                "introduced",
+                "in_consideration",
+                "became_law",
+                "failed",
+                "vetoed",
+                "unknown"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "session_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 7,
+        "name": "official_summary",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "populist_summary",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "full_text_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "legiscan_bill_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 11,
+        "name": "legiscan_committee",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "legiscan_last_action",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "legiscan_last_action_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 14,
+        "name": "legiscan_data",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 15,
+        "name": "history",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 16,
         "name": "state: State",
         "type_info": {
           "Custom": {
@@ -87,40 +161,95 @@
         }
       },
       {
-        "ordinal": 5,
-        "name": "chair_id",
-        "type_info": "Uuid"
-      },
-      {
-        "ordinal": 6,
-        "name": "legiscan_committee_id",
+        "ordinal": 17,
+        "name": "votesmart_bill_id",
         "type_info": "Int4"
       },
       {
-        "ordinal": 7,
+        "ordinal": 18,
+        "name": "political_scope: PoliticalScope",
+        "type_info": {
+          "Custom": {
+            "name": "political_scope",
+            "kind": {
+              "Enum": [
+                "local",
+                "state",
+                "federal"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 19,
+        "name": "bill_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 20,
+        "name": "chamber: Chamber",
+        "type_info": {
+          "Custom": {
+            "name": "chamber",
+            "kind": {
+              "Enum": [
+                "house",
+                "senate",
+                "assembly",
+                "legislature"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 21,
+        "name": "attributes",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 22,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 8,
+        "ordinal": 23,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Uuid"
+      ]
     },
     "nullable": [
       false,
       false,
       false,
       false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
       true,
       true,
       true,
       false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false,
       false
     ]
   },
-  "hash": "ee20c9e7ff1f96a81915d33b7463ae1864f98bca58a97b0c28fea619efd402e1"
+  "hash": "684c4da3d7f368b7ad9c052e509e1fe5729949d8449e9277565d70a813ddfd4c"
 }

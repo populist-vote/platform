@@ -477,8 +477,16 @@ impl Politician {
                         race_losses,
                         p.created_at,
                         p.updated_at FROM politician p
-                LEFT JOIN office o ON office_id = o.id
-                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector('simple', concat_ws(' ', first_name, last_name, preferred_name)) @@ to_tsquery('simple', $1))
+                LEFT JOIN office o ON office_id = o.id,
+                to_tsvector(
+                    first_name || ' ' || last_name || ' ' || COALESCE(preferred_name, '') || o.title
+                 ) document,
+                websearch_to_tsquery($1::text) query,
+                NULLIF(ts_rank(to_tsvector(first_name), query), 0) rank_first_name,
+                NULLIF(ts_rank(to_tsvector(last_name), query), 0) rank_last_name,
+                NULLIF(ts_rank(to_tsvector(preferred_name), query), 0) rank_preferred_name,
+                NULLIF(ts_rank(to_tsvector(o.title), query), 0) rank_office_title
+                WHERE (($1::text = '') IS NOT FALSE OR query @@ document)
                 AND ($2::state IS NULL OR home_state = $2)
                 AND ($3::political_party IS NULL OR party = $3)
                 AND ($4::political_scope IS NULL OR political_scope = $4)
@@ -486,6 +494,14 @@ impl Politician {
                     ($5 = 'Senate' AND o.title ILIKE '%Senator') OR
                     ($5 = 'House' AND o.title ILIKE '%Representative')
                 ))
+                GROUP BY (
+                    p.id,
+                    rank_last_name,
+                    rank_preferred_name,
+                    rank_first_name,
+                    rank_office_title,
+                    o.title
+                )
                 ORDER BY last_name ASC
                 LIMIT 50
             "#,
