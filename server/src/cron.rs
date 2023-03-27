@@ -2,9 +2,7 @@ use std::collections::HashMap;
 use tokio_cron_scheduler::{Job, JobScheduler};
 use tracing::{info, warn};
 
-// A function that handles the entire job queue and all chron jobs
-// that can be run by the servers main function.
-
+// Creates a new job scheduler and adds an async job to update legiscan bill data
 pub async fn init_job_schedule() {
     let sched = JobScheduler::new().await.unwrap();
 
