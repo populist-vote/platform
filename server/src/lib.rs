@@ -4,7 +4,9 @@ use config::Environment;
 use graphql::{context::ApiContext, new_schema};
 use http::{request::Parts, HeaderValue};
 use regex::Regex;
+mod cron;
 mod handlers;
+pub use cron::init_job_schedule;
 use dotenv::dotenv;
 pub use handlers::{external_graphql_handler, graphql_playground, internal_graphql_handler};
 use tower_cookies::CookieManagerLayer;
@@ -22,6 +24,9 @@ pub async fn app() -> Router {
 
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
+
+    // Run cron jobs in seperate thread
+    tokio::spawn(cron::init_job_schedule());
 
     // Embed migrations into binary
     let migrator = pool.connection.clone();
