@@ -104,12 +104,6 @@ pub enum State {
     WY,
 }
 
-impl Default for State {
-    fn default() -> Self {
-        State::CO
-    }
-}
-
 pub trait FullState {
     fn full_state(&self) -> &str;
 }
@@ -210,12 +204,6 @@ pub enum PoliticalParty {
     SocialistWorkers,
     Unaffiliated,
     Unknown,
-}
-
-impl Default for PoliticalParty {
-    fn default() -> Self {
-        PoliticalParty::Unknown
-    }
 }
 
 #[derive(

@@ -10,7 +10,6 @@ use db::{
 };
 use jsonwebtoken::TokenData;
 use legiscan::Bill as LegiscanBill;
-use sqlx::{types::Json, Row};
 use std::str::FromStr;
 use uuid::Uuid;
 
@@ -57,22 +56,29 @@ impl BillResult {
         Ok(results)
     }
 
-    async fn legiscan_data(&self, ctx: &Context<'_>) -> Result<LegiscanBill> {
+    async fn legiscan_data(&self, ctx: &Context<'_>) -> Result<Option<LegiscanBill>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
 
-        let record = sqlx::query(
+        let record = sqlx::query!(
             r#"
-                SELECT legiscan_data FROM bill
-                WHERE id=$1
+                SELECT legiscan_data
+                FROM bill
+                WHERE id = $1
             "#,
+            uuid::Uuid::parse_str(&self.id).unwrap()
         )
-        .bind(Uuid::parse_str(&self.id).unwrap())
-        .fetch_one(&db_pool)
+        .fetch_optional(&db_pool)
         .await?;
 
-        let legiscan_data: Json<LegiscanBill> = record.get(0);
+        let legiscan_data = match record {
+            Some(record) => {
+                let legiscan_data: LegiscanBill = serde_json::from_value(record.legiscan_data)?;
+                Some(legiscan_data)
+            }
+            None => None,
+        };
 
-        Ok(legiscan_data.0)
+        Ok(legiscan_data)
     }
 
     async fn issue_tags(&self, ctx: &Context<'_>) -> Result<Vec<IssueTagResult>> {

@@ -479,7 +479,7 @@ impl Politician {
                         p.updated_at FROM politician p
                 LEFT JOIN office o ON office_id = o.id,
                 to_tsvector(
-                    first_name || ' ' || last_name || ' ' || COALESCE(preferred_name, '') || o.title
+                    first_name || ' ' || last_name || ' ' || COALESCE(preferred_name, '') || COALESCE(o.title, '')
                  ) document,
                 websearch_to_tsquery($1::text) query,
                 NULLIF(ts_rank(to_tsvector(first_name), query), 0) rank_first_name,
