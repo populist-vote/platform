@@ -1,22 +1,19 @@
 {
-  "query": "\n            SELECT\n                votes\n            FROM\n                race_candidates\n            WHERE\n                race_candidates.candidate_id = $1 AND\n                race_candidates.race_id = $2\n        ",
+  "query": "\n            SELECT DISTINCT\n                EXTRACT(YEAR FROM start_date)::INTEGER AS session_year\n            FROM\n                bill\n            JOIN session ON bill.session_id = session.id \n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "votes",
+        "name": "session_year",
         "type_info": "Int4"
       }
     ],
     "parameters": {
-      "Left": [
-        "Uuid",
-        "Uuid"
-      ]
+      "Left": []
     },
     "nullable": [
-      true
+      null
     ]
   },
-  "hash": "ad8167f39652a8fef007d2d756366f7a1c7f28b5dd29a920e88a857c2b5928e2"
+  "hash": "248b94575c3dfb9725c00cebb76022c785fe21d2b5a88e8a6f34aba105a2fc92"
 }

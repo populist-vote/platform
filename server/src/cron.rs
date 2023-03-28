@@ -6,23 +6,22 @@ use tracing::{info, warn};
 pub async fn init_job_schedule() {
     let sched = JobScheduler::new().await.unwrap();
 
-    // Update legiscan bills every weekday at 6am
-    let update_legiscan_bills_job =
-        Job::new_async("0 0 6 * * Mon, Tue, Wed, Thu, Fri", |uuid, mut l| {
-            Box::pin(async move {
-                update_legiscan_bill_data()
-                    .await
-                    .map_err(|e| warn!("Failed to update bill data: {}", e))
-                    .ok();
+    // Update legiscan bills every four hours
+    let update_legiscan_bills_job = Job::new_async("0 0 4,8,12,16,20 * * *", |uuid, mut l| {
+        Box::pin(async move {
+            update_legiscan_bill_data()
+                .await
+                .map_err(|e| warn!("Failed to update bill data: {}", e))
+                .ok();
 
-                let next_tick = l.next_tick_for_job(uuid).await;
-                match next_tick {
-                    Ok(Some(ts)) => info!("Next time for update_legsican_bill_data is {:?}", ts),
-                    _ => warn!("Could not get next tick for update_legsican_bill_data job"),
-                }
-            })
+            let next_tick = l.next_tick_for_job(uuid).await;
+            match next_tick {
+                Ok(Some(ts)) => info!("Next time for update_legsican_bill_data is {:?}", ts),
+                _ => warn!("Could not get next tick for update_legsican_bill_data job"),
+            }
         })
-        .unwrap();
+    })
+    .unwrap();
 
     sched.add(update_legiscan_bills_job).await.unwrap();
 
@@ -82,7 +81,9 @@ pub async fn update_legiscan_bill_data() -> anyhow::Result<()> {
                 SET legiscan_data = $1,
                     status = COALESCE(((
                         json_build_object(1, 'introduced', 2, 'in_consideration', 4, 'became_law')::jsonb)
-                        ->> ($1::jsonb->>'status'))::bill_status, 'introduced')
+                        ->> ($1::jsonb->>'status'))::bill_status, 'introduced'),
+                    legiscan_committee = $1::jsonb->>'committee',
+                    legiscan_committee_id = ($1::jsonb->>'committee_id')::int
                 WHERE id = $2
             "#,
             bill_data_json,
