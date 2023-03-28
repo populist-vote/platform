@@ -47,14 +47,13 @@ impl BillQuery {
     async fn popular_bills(
         &self,
         ctx: &Context<'_>,
-        filter: Option<BillFilter>,
         after: Option<String>,
         before: Option<String>,
         first: Option<i32>,
         last: Option<i32>,
     ) -> relay::ConnectionResult<BillResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let records = Bill::popular(&db_pool, &filter.unwrap_or_default()).await?;
+        let records = Bill::popular(&db_pool).await?;
 
         relay::query(
             records.into_iter().map(BillResult::from),

@@ -353,52 +353,16 @@ impl Bill {
         Ok(records)
     }
 
-    pub async fn popular(db_pool: &PgPool, filter: &BillFilter) -> Result<Vec<Self>, sqlx::Error> {
-        let search_query = filter.query.to_owned().unwrap_or_default();
-
+    pub async fn popular(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
         let records = sqlx::query_as!(
             Bill,
             r#"
-                SELECT id, slug, title, bill_number, status AS "status: BillStatus", description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", bill.attributes, session_id, bill.created_at, bill.updated_at FROM bill
-                JOIN bill_public_votes bpv ON bill.id = bpv.bill_id,
-                LATERAL (
-                    SELECT
-                    ARRAY (
-                        SELECT
-                        t.slug
-                        FROM
-                        bill_issue_tags bit
-                        JOIN issue_tag t ON t.id = bit.issue_tag_id
-                        WHERE
-                        bit.bill_id = bill.id
-                    ) AS tag_array
-                ) t,
-                to_tsvector(
-                    bill_number || ' ' || title || ' ' || COALESCE(bill.description, '')
-                ) document,
-                websearch_to_tsquery ($1::text) query,
-                NULLIF(ts_rank(to_tsvector(bill_number), query), 0) rank_bill_number,
-                NULLIF(ts_rank(to_tsvector(title), query), 0) rank_title,
-                NULLIF(ts_rank(to_tsvector(bill.description), query), 0) rank_description
-                WHERE ($1::text IS NULL OR document @@ query)
-                AND ($2::bill_status IS NULL OR status = $2)
-                AND ($3::political_scope IS NULL OR political_scope = $3)
-                AND (($4::state IS NULL OR state = $4) OR $3::political_scope = 'federal')
-                GROUP BY
-                (
-                    bill.id,
-                    rank_bill_number,
-                    rank_title,
-                    rank_description,
-                    t.tag_array
-                )
-                ORDER BY COUNT(bill.id) DESC
-                LIMIT 20
+            SELECT bill.id, slug, title, bill_number, status AS "status: BillStatus", bill.description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, bill.state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", bill.attributes, session_id, bill.created_at, bill.updated_at FROM bill
+            LEFT JOIN bill_public_votes bpv ON bill.id = bpv.bill_id
+            GROUP BY(bill.id)
+            ORDER BY COUNT(bpv.*) DESC NULLS LAST
+            LIMIT 20
             "#,
-            search_query,
-            filter.status as Option<BillStatus>,
-            filter.political_scope as Option<PoliticalScope>,
-            filter.state as Option<State>,
         )
         .fetch_all(db_pool)
         .await?;
