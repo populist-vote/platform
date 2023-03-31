@@ -4,6 +4,12 @@ use tracing::{info, warn};
 
 // Creates a new job scheduler and adds an async job to update legiscan bill data
 pub async fn init_job_schedule() {
+    let environment = config::Config::default().environment;
+    if environment != config::Environment::Production {
+        warn!("Not running cron jobs in non-production environment");
+        return;
+    }
+
     let sched = JobScheduler::new().await.unwrap();
 
     // Update legiscan bills every four hours
@@ -82,8 +88,8 @@ pub async fn update_legiscan_bill_data() -> anyhow::Result<()> {
                     status = COALESCE(((
                         json_build_object(1, 'introduced', 2, 'in_consideration', 4, 'became_law')::jsonb)
                         ->> ($1::jsonb->>'status'))::bill_status, 'introduced'),
-                    legiscan_committee = $1::jsonb->>'committee',
-                    legiscan_committee_id = ($1::jsonb->>'committee_id')::int
+                    legiscan_committee = $1::jsonb->'committee'->>'name',
+                    legiscan_committee_id = ($1::jsonb->'committee'->>'committee_id')::int
                 WHERE id = $2
             "#,
             bill_data_json,
@@ -97,4 +103,12 @@ pub async fn update_legiscan_bill_data() -> anyhow::Result<()> {
     println!("Updated {} bills", updated_bills.len());
 
     Ok(())
+}
+
+#[tokio::test]
+
+async fn test_update_legiscan_bill_data() {
+    let _ = tracing_subscriber::fmt::try_init();
+    let _ = db::init_pool().await;
+    let _ = update_legiscan_bill_data().await;
 }
