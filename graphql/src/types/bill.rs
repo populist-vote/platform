@@ -11,6 +11,7 @@ use db::{
 use jsonwebtoken::TokenData;
 use legiscan::Bill as LegiscanBill;
 use std::str::FromStr;
+use tracing::log::warn;
 use uuid::Uuid;
 
 use super::{IssueTagResult, PoliticianResult};
@@ -72,8 +73,14 @@ impl BillResult {
 
         let legiscan_data = match record {
             Some(record) => {
-                let legiscan_data: LegiscanBill = serde_json::from_value(record.legiscan_data)?;
-                Some(legiscan_data)
+                let legiscan_data = serde_json::from_value::<LegiscanBill>(record.legiscan_data);
+                match legiscan_data {
+                    Ok(legiscan_data) => Some(legiscan_data),
+                    Err(e) => {
+                        warn!("Error parsing Legiscan data: {}", e);
+                        None
+                    }
+                }
             }
             None => None,
         };

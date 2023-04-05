@@ -1,26 +1,26 @@
 {
-  "query": "\n            SELECT DISTINCT c.id, c.slug, name, c.description, c.state AS \"state: State\", chair_id, c.legiscan_committee_id, c.created_at, c.updated_at FROM committee c\n            JOIN bill b ON b.committee_id = c.id\n        ",
+  "query": "\n                        SELECT s.name, s.description, s.start_date, s.end_date, s.state AS \"state: State\", s.congress_name\n                        FROM session s\n                        WHERE id = $1\n                    ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id",
-        "type_info": "Uuid"
-      },
-      {
-        "ordinal": 1,
-        "name": "slug",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 2,
         "name": "name",
         "type_info": "Text"
       },
       {
-        "ordinal": 3,
+        "ordinal": 1,
         "name": "description",
         "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "start_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 3,
+        "name": "end_date",
+        "type_info": "Date"
       },
       {
         "ordinal": 4,
@@ -88,39 +88,23 @@
       },
       {
         "ordinal": 5,
-        "name": "chair_id",
-        "type_info": "Uuid"
-      },
-      {
-        "ordinal": 6,
-        "name": "legiscan_committee_id",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 7,
-        "name": "created_at",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 8,
-        "name": "updated_at",
-        "type_info": "Timestamptz"
+        "name": "congress_name",
+        "type_info": "Text"
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Uuid"
+      ]
     },
     "nullable": [
       false,
       false,
-      false,
-      false,
       true,
       true,
       true,
-      false,
       false
     ]
   },
-  "hash": "ee20c9e7ff1f96a81915d33b7463ae1864f98bca58a97b0c28fea619efd402e1"
+  "hash": "b4a42e915930ea389c6aab7921ffedcbfe682c4c83c9699695a2a7df1a4623da"
 }
