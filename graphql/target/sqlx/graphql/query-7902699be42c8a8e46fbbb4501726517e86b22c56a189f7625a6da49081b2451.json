@@ -1,94 +1,35 @@
 {
-  "query": "\n                        SELECT s.name, s.description, s.start_date, s.end_date, s.state AS \"state: State\", s.congress_name\n                        FROM session s\n                        WHERE id = $1\n                    ",
+  "query": "\n            SELECT u.id, u.username, u.email, first_name, last_name, profile_picture_url FROM user_profile up\n            JOIN populist_user u ON up.user_id = u.id WHERE u.id = $1\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "name",
-        "type_info": "Text"
+        "name": "id",
+        "type_info": "Uuid"
       },
       {
         "ordinal": 1,
-        "name": "description",
+        "name": "username",
         "type_info": "Text"
       },
       {
         "ordinal": 2,
-        "name": "start_date",
-        "type_info": "Date"
+        "name": "email",
+        "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "end_date",
-        "type_info": "Date"
+        "name": "first_name",
+        "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "state: State",
-        "type_info": {
-          "Custom": {
-            "name": "state",
-            "kind": {
-              "Enum": [
-                "AL",
-                "AK",
-                "AZ",
-                "AR",
-                "CA",
-                "CO",
-                "CT",
-                "DC",
-                "DE",
-                "FL",
-                "GA",
-                "HI",
-                "ID",
-                "IL",
-                "IN",
-                "IA",
-                "KS",
-                "KY",
-                "LA",
-                "ME",
-                "MD",
-                "MA",
-                "MI",
-                "MN",
-                "MS",
-                "MO",
-                "MT",
-                "NE",
-                "NV",
-                "NH",
-                "NJ",
-                "NM",
-                "NY",
-                "NC",
-                "ND",
-                "OH",
-                "OK",
-                "OR",
-                "PA",
-                "RI",
-                "SC",
-                "SD",
-                "TN",
-                "TX",
-                "UT",
-                "VT",
-                "VA",
-                "WA",
-                "WV",
-                "WI",
-                "WY"
-              ]
-            }
-          }
-        }
+        "name": "last_name",
+        "type_info": "Text"
       },
       {
         "ordinal": 5,
-        "name": "congress_name",
+        "name": "profile_picture_url",
         "type_info": "Text"
       }
     ],
@@ -100,11 +41,11 @@
     "nullable": [
       false,
       false,
+      false,
       true,
       true,
-      true,
-      false
+      true
     ]
   },
-  "hash": "b4a42e915930ea389c6aab7921ffedcbfe682c4c83c9699695a2a7df1a4623da"
+  "hash": "3890dd0b74b9e3a9a8a89a7f25bd8ffeb253d911c47eed7c86b5b0bc866ea55d"
 }
