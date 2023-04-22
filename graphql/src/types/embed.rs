@@ -5,7 +5,7 @@ use serde_json::Value as JSON;
 
 use crate::context::ApiContext;
 
-use super::{Error, UserResult};
+use super::{BillResult, Error, UserResult};
 
 #[derive(SimpleObject, Clone, Debug)]
 #[graphql(complex)]
@@ -59,6 +59,19 @@ impl EmbedResult {
         match record {
             Some(user) => Ok(user.into()),
             None => Err(Error::UserNotFound.into()),
+        }
+    }
+
+    async fn bill(&self, ctx: &Context<'_>) -> Result<Option<BillResult>> {
+        let bill_id = self.attributes["billId"].as_str();
+        if let Some(bill_id) = bill_id {
+            let bill_id = uuid::Uuid::parse_str(bill_id)?;
+            let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+            let record = db::Bill::find_by_id(&db_pool, bill_id).await?;
+
+            Ok(Some(record.into()))
+        } else {
+            Ok(None)
         }
     }
 }
