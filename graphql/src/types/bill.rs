@@ -36,6 +36,7 @@ pub struct BillResult {
     chamber: Option<Chamber>,
     bill_type: BillType,
     political_scope: PoliticalScope,
+    updated_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(SimpleObject)]
@@ -186,6 +187,7 @@ impl From<Bill> for BillResult {
             bill_type: BillType::from_str(&b.bill_type).unwrap_or_default(),
             political_scope: b.political_scope,
             session_id: b.session_id.map(ID::from),
+            updated_at: b.updated_at,
         }
     }
 }

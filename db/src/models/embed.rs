@@ -2,6 +2,13 @@ use async_graphql::InputObject;
 use serde_json::Value as JSON;
 use sqlx::FromRow;
 
+pub enum EmbedType {
+    Legislation,
+    Politician,
+    Question,
+    Poll,
+}
+
 #[derive(FromRow, Debug, Clone)]
 pub struct Embed {
     pub id: uuid::Uuid,
