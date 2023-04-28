@@ -8,6 +8,7 @@ mod issue_tag;
 mod office;
 pub mod organization;
 mod politician;
+mod poll;
 mod race;
 mod user;
 mod voting_guide;

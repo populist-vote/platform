@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS question (
     prompt TEXT NOT NULL,
     response_char_limit INTEGER,
     response_placeholder_text TEXT,
-    embed_id UUID NOT NULL REFERENCES embed(id) ON DELETE CASCADE,
+    embed_id UUID REFERENCES embed(id) ON DELETE CASCADE,
     created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS question (
 CREATE TABLE respondent (
     id uuid NOT NULL PRIMARY KEY,
     name TEXT NOT NULL,
-    email TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
     created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -28,8 +28,9 @@ CREATE TABLE IF NOT EXISTS question_submission (
 
 CREATE TABLE IF NOT EXISTS poll (
     id uuid NOT NULL PRIMARY KEY,
+    name TEXT,
     prompt TEXT NOT NULL,
-    embed_id UUID NOT NULL REFERENCES embed(id) ON DELETE CASCADE,
+    embed_id UUID REFERENCES embed(id) ON DELETE CASCADE,
     created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

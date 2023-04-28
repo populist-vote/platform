@@ -17,8 +17,8 @@ pub struct User {
     pub password: String,
     pub role: Role,
     pub organization_id: Option<uuid::Uuid>,
-    pub created_at: DateTime,
     pub confirmed_at: Option<DateTime>,
+    pub created_at: DateTime,
     pub updated_at: DateTime,
 }
 

@@ -18,6 +18,7 @@ pub use models::office::*;
 pub use models::organization::*;
 pub use models::organization_politician_note::*;
 pub use models::politician::*;
+pub use models::poll::*;
 pub use models::race::*;
 pub use models::user::*;
 pub use pool::*;
