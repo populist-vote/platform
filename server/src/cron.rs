@@ -64,6 +64,7 @@ pub async fn update_legiscan_bill_data() -> anyhow::Result<()> {
                 FROM hash, jsonb_each_text(h)
                 WHERE key::int = legiscan_bill_id
                 AND value != legiscan_change_hash
+                AND is_locked = false
                 RETURNING id, legiscan_bill_id, legiscan_change_hash
             "#,
         json
@@ -71,8 +72,6 @@ pub async fn update_legiscan_bill_data() -> anyhow::Result<()> {
     .fetch_all(&pool.connection)
     .await
     .expect("Failed to update bill change hashes");
-
-    println!("There are {} updated bills", updated_bills.len());
 
     for bill in updated_bills.iter() {
         let bill_data = legiscan
@@ -100,7 +99,7 @@ pub async fn update_legiscan_bill_data() -> anyhow::Result<()> {
         .expect("Failed to update bill data");
     }
 
-    println!("Updated {} bills", updated_bills.len());
+    info!("Updated {} bills", updated_bills.len());
 
     Ok(())
 }
