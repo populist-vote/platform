@@ -1,6 +1,9 @@
 use crate::{context::ApiContext, relay, types::PoliticianResult};
-use async_graphql::{Context, Object, Result};
-use db::{loaders::politician::PoliticianSlug, Politician, PoliticianFilter};
+use async_graphql::{Context, Object, Result, ID};
+use db::{
+    loaders::politician::{PoliticianId, PoliticianSlug},
+    Politician, PoliticianFilter,
+};
 
 #[derive(Default)]
 pub struct PoliticianQuery;
@@ -8,6 +11,21 @@ pub struct PoliticianQuery;
 #[allow(clippy::too_many_arguments)]
 #[Object]
 impl PoliticianQuery {
+    async fn politician_by_id(
+        &self,
+        ctx: &Context<'_>,
+        id: ID,
+    ) -> Result<Option<PoliticianResult>> {
+        let politician = ctx
+            .data::<ApiContext>()?
+            .loaders
+            .politician_loader
+            .load_one(PoliticianId(uuid::Uuid::parse_str(&id)?))
+            .await?;
+
+        Ok(politician.map(PoliticianResult::from))
+    }
+
     async fn politician_by_slug(
         &self,
         ctx: &Context<'_>,
