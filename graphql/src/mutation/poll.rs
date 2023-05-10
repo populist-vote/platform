@@ -1,6 +1,6 @@
-use crate::is_admin;
+use crate::{is_admin, types::PollSubmissionResult};
 use async_graphql::{Context, Object, Result, SimpleObject, ID};
-use db::UpsertPollInput;
+use db::{Respondent, UpsertPollInput, UpsertPollSubmissionInput, UpsertRespondentInput};
 
 use crate::{context::ApiContext, types::PollResult};
 
@@ -19,6 +19,27 @@ impl PollMutation {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let new_poll = db::Poll::upsert(&db_pool, &input).await?;
         Ok(new_poll.into())
+    }
+
+    async fn upsert_poll_submission(
+        &self,
+        ctx: &Context<'_>,
+        respondent_input: UpsertRespondentInput,
+        poll_submission_input: UpsertPollSubmissionInput,
+    ) -> Result<PollSubmissionResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let respondent: Option<Respondent> =
+            if respondent_input.name.len() > 0 && respondent_input.email.len() > 0 {
+                Some(db::Respondent::upsert(&db_pool, &respondent_input).await?)
+            } else {
+                None
+            };
+        let poll_submission_input = UpsertPollSubmissionInput {
+            respondent_id: respondent.map(|r| r.id),
+            ..poll_submission_input
+        };
+        let poll = db::PollSubmission::upsert(&db_pool, &poll_submission_input).await?;
+        Ok(poll.into())
     }
 
     async fn delete_poll(&self, ctx: &Context<'_>, id: ID) -> Result<DeletePollResult> {

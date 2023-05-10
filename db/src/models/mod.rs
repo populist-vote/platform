@@ -12,6 +12,7 @@ pub mod organization;
 pub mod organization_politician_note;
 pub mod politician;
 pub mod poll;
+pub mod question;
 pub mod race;
 pub mod respondent;
 pub mod user;

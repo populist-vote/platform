@@ -10,6 +10,7 @@ pub struct Poll {
     pub name: Option<String>,
     pub prompt: String,
     pub embed_id: Option<uuid::Uuid>,
+    pub allow_anonymous_responses: bool,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
@@ -35,11 +36,11 @@ pub struct PollSubmission {
     pub updated_at: DateTime,
 }
 
-#[derive(FromRow, Debug, Clone)]
+#[derive(FromRow, Debug, Clone, InputObject)]
 pub struct UpsertPollSubmissionInput {
     pub id: Option<uuid::Uuid>,
     pub poll_id: uuid::Uuid,
-    pub respondent_id: uuid::Uuid,
+    pub respondent_id: Option<uuid::Uuid>,
     pub poll_option_id: uuid::Uuid,
     pub write_in_response: Option<String>,
 }
@@ -47,8 +48,9 @@ pub struct UpsertPollSubmissionInput {
 #[derive(Serialize, Deserialize, InputObject)]
 pub struct UpsertPollInput {
     pub id: Option<uuid::Uuid>,
-    pub name: String,
     pub prompt: String,
+    pub name: Option<String>,
+    pub allow_anonymous_responses: Option<bool>,
     pub options: Vec<UpsertPollOptionInput>,
 }
 
@@ -71,19 +73,22 @@ impl Poll {
             r#"
             INSERT INTO poll (
                 id,
+                prompt,
                 name,
-                prompt
+                allow_anonymous_responses
             ) VALUES (
                 $1,
                 $2,
-                $3
+                $3,
+                $4
             ) ON CONFLICT (id) DO UPDATE SET
                 prompt = EXCLUDED.prompt
             RETURNING *
             "#,
             id,
-            input.name,
             input.prompt,
+            input.name,
+            input.allow_anonymous_responses.unwrap_or(false),
         )
         .fetch_one(&mut tx)
         .await?;

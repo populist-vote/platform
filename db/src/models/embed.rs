@@ -1,7 +1,8 @@
-use async_graphql::InputObject;
+use async_graphql::{Enum, InputObject};
 use serde_json::Value as JSON;
 use sqlx::FromRow;
 
+#[derive(Enum, Copy, Clone, PartialEq, Eq, Debug)]
 pub enum EmbedType {
     Legislation,
     Politician,
@@ -27,6 +28,7 @@ pub struct Embed {
 pub struct UpsertEmbedInput {
     pub id: Option<uuid::Uuid>,
     pub organization_id: Option<uuid::Uuid>,
+    pub embed_type: Option<EmbedType>,
     pub name: Option<String>,
     pub description: Option<String>,
     pub populist_url: Option<String>,

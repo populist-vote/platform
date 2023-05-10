@@ -1,3 +1,4 @@
+use async_graphql::InputObject;
 use sqlx::FromRow;
 
 use crate::DateTime;
@@ -11,6 +12,7 @@ pub struct Respondent {
     pub updated_at: DateTime,
 }
 
+#[derive(Debug, Clone, InputObject)]
 pub struct UpsertRespondentInput {
     pub id: Option<uuid::Uuid>,
     pub name: String,
@@ -22,6 +24,7 @@ impl Respondent {
         pool: &sqlx::PgPool,
         input: &UpsertRespondentInput,
     ) -> Result<Respondent, sqlx::Error> {
+        let id = input.id.unwrap_or_else(uuid::Uuid::new_v4);
         let respondent = sqlx::query_as!(
             Respondent,
             r#"
@@ -38,7 +41,7 @@ impl Respondent {
                 updated_at = now()
             RETURNING *
             "#,
-            input.id,
+            id,
             input.name,
             input.email
         )
