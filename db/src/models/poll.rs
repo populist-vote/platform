@@ -1,6 +1,7 @@
 use async_graphql::InputObject;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
+use tracing::log::warn;
 
 use crate::{DateTime, Error};
 
@@ -11,6 +12,7 @@ pub struct Poll {
     pub prompt: String,
     pub embed_id: Option<uuid::Uuid>,
     pub allow_anonymous_responses: bool,
+    pub allow_write_in_responses: bool,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
@@ -29,7 +31,7 @@ pub struct PollOption {
 pub struct PollSubmission {
     pub id: uuid::Uuid,
     pub poll_id: uuid::Uuid,
-    pub respondent_id: uuid::Uuid,
+    pub respondent_id: Option<uuid::Uuid>,
     pub poll_option_id: uuid::Uuid,
     pub write_in_response: Option<String>,
     pub created_at: DateTime,
@@ -45,17 +47,19 @@ pub struct UpsertPollSubmissionInput {
     pub write_in_response: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, InputObject)]
+#[derive(Serialize, Deserialize, InputObject, Debug)]
 pub struct UpsertPollInput {
     pub id: Option<uuid::Uuid>,
-    pub prompt: String,
+    pub prompt: Option<String>,
     pub name: Option<String>,
     pub allow_anonymous_responses: Option<bool>,
+    pub allow_write_in_responses: Option<bool>,
     pub options: Vec<UpsertPollOptionInput>,
 }
 
-#[derive(Serialize, Deserialize, InputObject)]
+#[derive(Serialize, Deserialize, InputObject, Debug)]
 pub struct UpsertPollOptionInput {
+    pub id: Option<uuid::Uuid>,
     pub option_text: String,
     pub is_write_in: Option<bool>,
 }
@@ -75,28 +79,55 @@ impl Poll {
                 id,
                 prompt,
                 name,
-                allow_anonymous_responses
+                allow_anonymous_responses,
+                allow_write_in_responses
             ) VALUES (
                 $1,
                 $2,
                 $3,
-                $4
+                $4,
+                $5
             ) ON CONFLICT (id) DO UPDATE SET
-                prompt = EXCLUDED.prompt
+                prompt = EXCLUDED.prompt,
+                name = EXCLUDED.name,
+                allow_anonymous_responses = EXCLUDED.allow_anonymous_responses,
+                allow_write_in_responses = EXCLUDED.allow_write_in_responses
             RETURNING *
             "#,
             id,
             input.prompt,
             input.name,
-            input.allow_anonymous_responses.unwrap_or(false),
+            input.allow_anonymous_responses,
+            input.allow_write_in_responses,
         )
         .fetch_one(&mut tx)
         .await?;
 
-        tracing::info!("Upserted poll {:?}", poll);
+        warn!("input options: {:?}", input.options);
+        // Delete any poll options whose IDs are not passed in the input
+        sqlx::query!(
+            r#"
+            DELETE FROM poll_option
+            WHERE poll_id = $1
+            AND id NOT IN (
+                SELECT id FROM UNNEST($2::uuid[])
+            )
+            "#,
+            id,
+            &input
+                .options
+                .iter()
+                .filter_map(|option| option.id)
+                .collect::<Vec<uuid::Uuid>>()
+        )
+        .execute(&mut tx)
+        .await?;
 
         for option in input.options.iter() {
-            let option_id = uuid::Uuid::new_v4();
+            let option_id = match option.id {
+                Some(id) => id,
+                None => uuid::Uuid::new_v4(),
+            };
             let is_write_in = option.is_write_in.unwrap_or(false);
             sqlx::query!(
                 r#"
@@ -126,6 +157,20 @@ impl Poll {
         tx.commit().await?;
 
         Ok(poll)
+    }
+
+    pub async fn find_by_id(db_pool: &PgPool, id: uuid::Uuid) -> Result<Self, Error> {
+        let record = sqlx::query_as!(
+            Poll,
+            r#"
+                SELECT * FROM poll 
+                WHERE id = $1
+            "#,
+            id
+        )
+        .fetch_one(db_pool)
+        .await?;
+        Ok(record)
     }
 }
 

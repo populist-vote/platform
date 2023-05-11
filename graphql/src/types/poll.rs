@@ -1,10 +1,12 @@
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use db::{
     models::poll::{Poll, PollOption},
-    DateTime, PollSubmission,
+    DateTime, PollSubmission, Respondent,
 };
 
 use crate::context::ApiContext;
+
+use super::RespondentResult;
 
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
@@ -13,6 +15,8 @@ pub struct PollResult {
     name: Option<String>,
     prompt: String,
     embed_id: Option<ID>,
+    allow_anonymous_responses: bool,
+    allow_write_in_responses: bool,
     created_at: DateTime,
     updated_at: DateTime,
 }
@@ -32,7 +36,7 @@ pub struct PollOptionResult {
 pub struct PollSubmissionResult {
     pub id: ID,
     pub poll_id: ID,
-    pub respondent_id: ID,
+    pub respondent_id: Option<ID>,
     pub poll_option_id: ID,
     pub write_in_response: Option<String>,
     pub created_at: DateTime,
@@ -74,6 +78,46 @@ impl PollSubmissionResult {
         .await?;
         Ok(poll.into())
     }
+
+    async fn respondent(&self, ctx: &Context<'_>) -> Result<Option<RespondentResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        if let Some(respondent_id) = self.respondent_id.clone() {
+            let respondent = sqlx::query_as!(
+                Respondent,
+                r#"
+                    SELECT
+                      id,
+                      name,
+                      email,
+                      created_at,
+                      updated_at
+                    FROM respondent
+                    WHERE id = $1
+                "#,
+                uuid::Uuid::parse_str(respondent_id.as_str()).unwrap(),
+            )
+            .fetch_one(&db_pool)
+            .await?;
+
+            Ok(Some(respondent.into()))
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn option(&self, ctx: &Context<'_>) -> Result<PollOptionResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let option = sqlx::query_as!(
+            PollOption,
+            r#"
+                SELECT * FROM poll_option WHERE id = $1
+            "#,
+            uuid::Uuid::parse_str(&self.poll_option_id)?
+        )
+        .fetch_one(&db_pool)
+        .await?;
+        Ok(option.into())
+    }
 }
 
 impl From<Poll> for PollResult {
@@ -82,6 +126,8 @@ impl From<Poll> for PollResult {
             id: p.id.into(),
             name: p.name,
             prompt: p.prompt,
+            allow_anonymous_responses: p.allow_anonymous_responses,
+            allow_write_in_responses: p.allow_write_in_responses,
             embed_id: p.embed_id.map(|id| id.into()),
             created_at: p.created_at,
             updated_at: p.updated_at,
@@ -107,7 +153,7 @@ impl From<PollSubmission> for PollSubmissionResult {
         Self {
             id: p.id.into(),
             poll_id: p.poll_id.into(),
-            respondent_id: p.respondent_id.into(),
+            respondent_id: p.respondent_id.map(|id| id.into()),
             poll_option_id: p.poll_option_id.into(),
             write_in_response: p.write_in_response,
             created_at: p.created_at,

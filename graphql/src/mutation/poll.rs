@@ -17,8 +17,8 @@ struct DeletePollResult {
 impl PollMutation {
     async fn upsert_poll(&self, ctx: &Context<'_>, input: UpsertPollInput) -> Result<PollResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let new_poll = db::Poll::upsert(&db_pool, &input).await?;
-        Ok(new_poll.into())
+        let upserted_poll = db::Poll::upsert(&db_pool, &input).await?;
+        Ok(upserted_poll.into())
     }
 
     async fn upsert_poll_submission(

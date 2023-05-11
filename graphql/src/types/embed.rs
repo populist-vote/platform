@@ -2,10 +2,11 @@ use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use chrono::{DateTime, Utc};
 use db::{Embed, UserWithProfile};
 use serde_json::Value as JSON;
+use tracing::log::warn;
 
 use crate::context::ApiContext;
 
-use super::{BillResult, Error, PoliticianResult, QuestionResult, UserResult};
+use super::{BillResult, Error, PoliticianResult, PollResult, QuestionResult, UserResult};
 
 #[derive(SimpleObject, Clone, Debug)]
 #[graphql(complex)]
@@ -92,6 +93,19 @@ impl EmbedResult {
             let question_id = uuid::Uuid::parse_str(question_id)?;
             let db_pool = ctx.data::<ApiContext>()?.pool.clone();
             let record = db::Question::find_by_id(&db_pool, question_id).await?;
+            Ok(Some(record.into()))
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn poll(&self, ctx: &Context<'_>) -> Result<Option<PollResult>> {
+        let poll_id = self.attributes["pollId"].as_str();
+        warn!("poll_id: {:?}", poll_id);
+        if let Some(poll_id) = poll_id {
+            let poll_id = uuid::Uuid::parse_str(poll_id)?;
+            let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+            let record = db::Poll::find_by_id(&db_pool, poll_id).await?;
             Ok(Some(record.into()))
         } else {
             Ok(None)
