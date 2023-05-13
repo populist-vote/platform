@@ -5,7 +5,7 @@ use crate::{
 use async_graphql::{Context, Object, Result, SimpleObject, ID};
 use db::{
     models::{question::UpsertQuestionInput, respondent::UpsertRespondentInput},
-    Respondent, UpsertQuestionSubmissionInput,
+    UpsertQuestionSubmissionInput,
 };
 
 use crate::context::ApiContext;
@@ -34,16 +34,16 @@ impl QuestionMutation {
     async fn upsert_question_submission(
         &self,
         ctx: &Context<'_>,
-        respondent_input: UpsertRespondentInput,
+        respondent_input: Option<UpsertRespondentInput>,
         question_submission_input: UpsertQuestionSubmissionInput,
     ) -> Result<QuestionSubmissionResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let respondent: Option<Respondent> =
-            if respondent_input.name.len() > 0 && respondent_input.email.len() > 0 {
+        let respondent = match respondent_input {
+            Some(respondent_input) => {
                 Some(db::Respondent::upsert(&db_pool, &respondent_input).await?)
-            } else {
-                None
-            };
+            }
+            None => None,
+        };
 
         let question_submission_input = UpsertQuestionSubmissionInput {
             respondent_id: respondent.map(|r| r.id),

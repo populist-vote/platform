@@ -24,16 +24,16 @@ impl PollMutation {
     async fn upsert_poll_submission(
         &self,
         ctx: &Context<'_>,
-        respondent_input: UpsertRespondentInput,
+        respondent_input: Option<UpsertRespondentInput>,
         poll_submission_input: UpsertPollSubmissionInput,
     ) -> Result<PollSubmissionResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let respondent: Option<Respondent> =
-            if respondent_input.name.len() > 0 && respondent_input.email.len() > 0 {
+        let respondent = match respondent_input {
+            Some(respondent_input) => {
                 Some(db::Respondent::upsert(&db_pool, &respondent_input).await?)
-            } else {
-                None
-            };
+            }
+            None => None,
+        };
         let poll_submission_input = UpsertPollSubmissionInput {
             respondent_id: respondent.map(|r| r.id),
             ..poll_submission_input
