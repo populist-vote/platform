@@ -61,6 +61,30 @@ impl PollResult {
         .collect();
         Ok(options)
     }
+
+    async fn submissions(&self, ctx: &Context<'_>) -> Result<Vec<PollSubmissionResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let submissions = sqlx::query_as!(
+            PollSubmission,
+            r#"
+                SELECT
+                  id,
+                  poll_id,
+                  poll_option_id,
+                  write_in_response,
+                  respondent_id,
+                  created_at,
+                  updated_at
+                FROM poll_submission
+                WHERE poll_id = $1
+            "#,
+            uuid::Uuid::parse_str(self.id.as_str()).unwrap(),
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        Ok(submissions.into_iter().map(|s| s.into()).collect())
+    }
 }
 
 #[ComplexObject]

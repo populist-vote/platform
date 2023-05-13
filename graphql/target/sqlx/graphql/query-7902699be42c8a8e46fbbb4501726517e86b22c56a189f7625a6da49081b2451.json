@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT u.id, u.username, u.email, first_name, last_name, profile_picture_url FROM user_profile up\n            JOIN populist_user u ON up.user_id = u.id WHERE u.id = $1\n        ",
+  "query": "\n                SELECT\n                  id,\n                  poll_id,\n                  poll_option_id,\n                  write_in_response,\n                  respondent_id,\n                  created_at,\n                  updated_at\n                FROM poll_submission\n                WHERE poll_id = $1\n            ",
   "describe": {
     "columns": [
       {
@@ -9,28 +9,33 @@
       },
       {
         "ordinal": 1,
-        "name": "username",
-        "type_info": "Text"
+        "name": "poll_id",
+        "type_info": "Uuid"
       },
       {
         "ordinal": 2,
-        "name": "email",
-        "type_info": "Text"
+        "name": "poll_option_id",
+        "type_info": "Uuid"
       },
       {
         "ordinal": 3,
-        "name": "first_name",
+        "name": "write_in_response",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "last_name",
-        "type_info": "Text"
+        "name": "respondent_id",
+        "type_info": "Uuid"
       },
       {
         "ordinal": 5,
-        "name": "profile_picture_url",
-        "type_info": "Text"
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
       }
     ],
     "parameters": {
@@ -44,8 +49,9 @@
       false,
       true,
       true,
-      true
+      false,
+      false
     ]
   },
-  "hash": "3890dd0b74b9e3a9a8a89a7f25bd8ffeb253d911c47eed7c86b5b0bc866ea55d"
+  "hash": "7570ea04a25a95c14940a76dac236f7253296fb1a8e1bd20921e58983914eec1"
 }
