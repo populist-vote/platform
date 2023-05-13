@@ -1,6 +1,6 @@
 use crate::{is_admin, types::PollSubmissionResult};
 use async_graphql::{Context, Object, Result, SimpleObject, ID};
-use db::{Respondent, UpsertPollInput, UpsertPollSubmissionInput, UpsertRespondentInput};
+use db::{UpsertPollInput, UpsertPollSubmissionInput, UpsertRespondentInput};
 
 use crate::{context::ApiContext, types::PollResult};
 
