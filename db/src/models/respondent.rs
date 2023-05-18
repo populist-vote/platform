@@ -37,7 +37,7 @@ impl Respondent {
                 $2,
                 $3
             ) ON CONFLICT (email) DO UPDATE SET
-                name = $1,
+                name = $2,
                 updated_at = now()
             RETURNING *
             "#,
