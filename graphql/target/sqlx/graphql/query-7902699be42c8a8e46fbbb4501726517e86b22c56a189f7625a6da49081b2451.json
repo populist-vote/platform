@@ -1,5 +1,5 @@
 {
-  "query": "\n                SELECT\n                  id,\n                  poll_id,\n                  poll_option_id,\n                  write_in_response,\n                  respondent_id,\n                  created_at,\n                  updated_at\n                FROM poll_submission\n                WHERE poll_id = $1\n            ",
+  "query": "\n                    SELECT\n                      id,\n                      name,\n                      email,\n                      created_at,\n                      updated_at\n                    FROM respondent\n                    WHERE id = $1\n                ",
   "describe": {
     "columns": [
       {
@@ -9,31 +9,21 @@
       },
       {
         "ordinal": 1,
-        "name": "poll_id",
-        "type_info": "Uuid"
-      },
-      {
-        "ordinal": 2,
-        "name": "poll_option_id",
-        "type_info": "Uuid"
-      },
-      {
-        "ordinal": 3,
-        "name": "write_in_response",
+        "name": "name",
         "type_info": "Text"
       },
       {
-        "ordinal": 4,
-        "name": "respondent_id",
-        "type_info": "Uuid"
+        "ordinal": 2,
+        "name": "email",
+        "type_info": "Text"
       },
       {
-        "ordinal": 5,
+        "ordinal": 3,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 6,
+        "ordinal": 4,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
@@ -47,11 +37,9 @@
       false,
       false,
       false,
-      true,
-      true,
       false,
       false
     ]
   },
-  "hash": "7570ea04a25a95c14940a76dac236f7253296fb1a8e1bd20921e58983914eec1"
+  "hash": "1f2d629187a885d59a6d15534a1a66dba8c2eacdacb56fe41e45ad70c02b5b11"
 }

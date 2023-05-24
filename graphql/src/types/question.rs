@@ -2,6 +2,8 @@ use crate::context::ApiContext;
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use db::{DateTime, Question, QuestionSubmission, Respondent};
 
+use super::SubmissionsOverTimeResult;
+
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
 pub struct QuestionResult {
@@ -59,6 +61,36 @@ impl QuestionResult {
         .await?;
 
         Ok(submissions.into_iter().map(|s| s.into()).collect())
+    }
+
+    async fn submission_count_by_date(
+        &self,
+        ctx: &Context<'_>,
+    ) -> Result<Vec<SubmissionsOverTimeResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let submission_count_by_date = sqlx::query!(
+            r#"
+                SELECT
+                  date_trunc('day', created_at) AS date,
+                  COUNT(*) AS count
+                FROM question_submission
+                WHERE question_id = $1
+                GROUP BY date
+                ORDER BY date
+            "#,
+            uuid::Uuid::parse_str(self.id.as_str()).unwrap(),
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        Ok(submission_count_by_date
+            .into_iter()
+            .filter(|s| s.date.is_some())
+            .map(|s| SubmissionsOverTimeResult {
+                date: s.date.unwrap(),
+                count: s.count.unwrap(),
+            })
+            .collect())
     }
 }
 
