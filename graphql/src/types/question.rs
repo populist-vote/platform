@@ -2,7 +2,7 @@ use crate::context::ApiContext;
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use db::{DateTime, Question, QuestionSubmission, Respondent};
 
-use super::SubmissionsOverTimeResult;
+use super::SubmissionCountByDateResult;
 
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
@@ -38,6 +38,12 @@ pub struct RespondentResult {
     email: String,
 }
 
+#[derive(SimpleObject, Debug, Clone, sqlx::FromRow)]
+pub struct CommonWordsResult {
+    word: String,
+    count: i32,
+}
+
 #[ComplexObject]
 impl QuestionResult {
     async fn submissions(&self, ctx: &Context<'_>) -> Result<Vec<QuestionSubmissionResult>> {
@@ -66,7 +72,7 @@ impl QuestionResult {
     async fn submission_count_by_date(
         &self,
         ctx: &Context<'_>,
-    ) -> Result<Vec<SubmissionsOverTimeResult>> {
+    ) -> Result<Vec<SubmissionCountByDateResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let submission_count_by_date = sqlx::query!(
             r#"
@@ -86,11 +92,34 @@ impl QuestionResult {
         Ok(submission_count_by_date
             .into_iter()
             .filter(|s| s.date.is_some())
-            .map(|s| SubmissionsOverTimeResult {
+            .map(|s| SubmissionCountByDateResult {
                 date: s.date.unwrap(),
                 count: s.count.unwrap(),
             })
             .collect())
+    }
+
+    async fn common_words(&self, ctx: &Context<'_>) -> Result<Vec<CommonWordsResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let query = format!(
+            r#"
+                SELECT word, ndoc AS count
+                FROM ts_stat($$
+                    SELECT to_tsvector('ts.english_simple', response)
+                    FROM (
+                        SELECT response
+                        FROM question_submission
+                        WHERE question_id = '{}'
+                    ) AS qs
+                $$) AS stats
+                WHERE ndoc > 1
+                ORDER BY ndoc DESC
+                LIMIT 10;
+            "#,
+            uuid::Uuid::parse_str(self.id.as_str()).unwrap()
+        );
+        let common_words = sqlx::query_as(&query).fetch_all(&db_pool).await?;
+        Ok(common_words)
     }
 }
 

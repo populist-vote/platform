@@ -44,7 +44,7 @@ pub struct PollSubmissionResult {
 }
 
 #[derive(SimpleObject, Debug, Clone)]
-pub struct SubmissionsOverTimeResult {
+pub struct SubmissionCountByDateResult {
     pub date: DateTime,
     pub count: i64,
 }
@@ -95,7 +95,7 @@ impl PollResult {
     async fn submission_count_by_date(
         &self,
         ctx: &Context<'_>,
-    ) -> Result<Vec<SubmissionsOverTimeResult>> {
+    ) -> Result<Vec<SubmissionCountByDateResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let submission_count_by_date = sqlx::query!(
             r#"
@@ -115,7 +115,7 @@ impl PollResult {
         Ok(submission_count_by_date
             .into_iter()
             .filter(|s| s.date.is_some())
-            .map(|s| SubmissionsOverTimeResult {
+            .map(|s| SubmissionCountByDateResult {
                 date: s.date.unwrap(),
                 count: s.count.unwrap(),
             })

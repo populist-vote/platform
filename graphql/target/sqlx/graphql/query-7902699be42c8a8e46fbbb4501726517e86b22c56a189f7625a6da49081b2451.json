@@ -1,31 +1,16 @@
 {
-  "query": "\n                    SELECT\n                      id,\n                      name,\n                      email,\n                      created_at,\n                      updated_at\n                    FROM respondent\n                    WHERE id = $1\n                ",
+  "query": "\n                SELECT word, ndoc AS count                                       \n                FROM   ts_stat($$SELECT to_tsvector('ts.english_simple', response) FROM question_submission$$), question_submission\n                WHERE question_id = $1\n                AND ndoc > 1\n                ORDER  BY ndoc DESC\n                LIMIT  10;\n            ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id",
-        "type_info": "Uuid"
+        "name": "word",
+        "type_info": "Text"
       },
       {
         "ordinal": 1,
-        "name": "name",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 2,
-        "name": "email",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 3,
-        "name": "created_at",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 4,
-        "name": "updated_at",
-        "type_info": "Timestamptz"
+        "name": "count",
+        "type_info": "Int4"
       }
     ],
     "parameters": {
@@ -34,12 +19,9 @@
       ]
     },
     "nullable": [
-      false,
-      false,
-      false,
-      false,
-      false
+      null,
+      null
     ]
   },
-  "hash": "1f2d629187a885d59a6d15534a1a66dba8c2eacdacb56fe41e45ad70c02b5b11"
+  "hash": "dfa2726db8d17d3b8ffba9c001411fadba04b26b22812b6c6bf35ac1e9212fd8"
 }
