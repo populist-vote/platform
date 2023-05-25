@@ -1,16 +1,36 @@
 {
-  "query": "\n                SELECT word, ndoc AS count                                       \n                FROM   ts_stat($$SELECT to_tsvector('ts.english_simple', response) FROM question_submission$$), question_submission\n                WHERE question_id = $1\n                AND ndoc > 1\n                ORDER  BY ndoc DESC\n                LIMIT  10;\n            ",
+  "query": "\n                SELECT * FROM poll_option WHERE id = $1\n            ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "word",
-        "type_info": "Text"
+        "name": "id",
+        "type_info": "Uuid"
       },
       {
         "ordinal": 1,
-        "name": "count",
-        "type_info": "Int4"
+        "name": "poll_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "option_text",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "is_write_in",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
       }
     ],
     "parameters": {
@@ -19,9 +39,13 @@
       ]
     },
     "nullable": [
-      null,
-      null
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
     ]
   },
-  "hash": "dfa2726db8d17d3b8ffba9c001411fadba04b26b22812b6c6bf35ac1e9212fd8"
+  "hash": "064c0f1ec73f422fdc68eb7f7f5e0dfbf5d2120abc1b87d3514b5f759d35121a"
 }

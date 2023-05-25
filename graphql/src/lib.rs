@@ -29,7 +29,7 @@ pub fn new_schema() -> SchemaBuilder<Query, Mutation, Subscription> {
         Subscription::default(),
     )
     .limit_depth(8)
-    .limit_complexity(64)
+    .limit_complexity(128)
     .limit_recursive_depth(32)
     .extension(Tracing)
 }

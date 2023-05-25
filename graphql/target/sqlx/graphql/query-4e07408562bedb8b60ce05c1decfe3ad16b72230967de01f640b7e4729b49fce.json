@@ -1,5 +1,5 @@
 {
-  "query": "\n                SELECT\n                  date_trunc('day', created_at) AS date,\n                  COUNT(*) AS count\n                FROM question_submission\n                WHERE question_id = $1\n                GROUP BY date\n                ORDER BY date\n            ",
+  "query": "\n                SELECT\n                  date_trunc('day', created_at) AS date,\n                  COUNT(*) AS count\n                FROM poll_submission\n                WHERE poll_id = $1\n                GROUP BY date\n                ORDER BY date\n            ",
   "describe": {
     "columns": [
       {
@@ -23,5 +23,5 @@
       null
     ]
   },
-  "hash": "8a4186f18a871eafda7131d98a87d7817fe859e77eb35b1a93081ce06d8a4e6b"
+  "hash": "f1721dab6e0cee264c66aa8e93f9d9c9d4256f1942d4352ec3bb81bff48b1289"
 }
