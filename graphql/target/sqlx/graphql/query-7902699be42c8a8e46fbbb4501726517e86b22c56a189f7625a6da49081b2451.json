@@ -1,53 +1,16 @@
 {
-  "query": "\n                SELECT\n                  id,\n                  question_id,\n                  respondent_id,\n                  response,\n                  sentiment AS \"sentiment: Sentiment\",\n                  created_at,\n                  updated_at\n                FROM question_submission\n                WHERE question_id = $1\n            ",
+  "query": "\n                SELECT\n                  date_trunc('day', created_at) AS date,\n                  COUNT(*) AS count\n                FROM question_submission\n                WHERE question_id = $1\n                GROUP BY date\n                ORDER BY date\n            ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "id",
-        "type_info": "Uuid"
+        "name": "date",
+        "type_info": "Timestamptz"
       },
       {
         "ordinal": 1,
-        "name": "question_id",
-        "type_info": "Uuid"
-      },
-      {
-        "ordinal": 2,
-        "name": "respondent_id",
-        "type_info": "Uuid"
-      },
-      {
-        "ordinal": 3,
-        "name": "response",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 4,
-        "name": "sentiment: Sentiment",
-        "type_info": {
-          "Custom": {
-            "name": "sentiment",
-            "kind": {
-              "Enum": [
-                "positive",
-                "negative",
-                "neutral",
-                "unknown"
-              ]
-            }
-          }
-        }
-      },
-      {
-        "ordinal": 5,
-        "name": "created_at",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 6,
-        "name": "updated_at",
-        "type_info": "Timestamptz"
+        "name": "count",
+        "type_info": "Int8"
       }
     ],
     "parameters": {
@@ -56,14 +19,9 @@
       ]
     },
     "nullable": [
-      false,
-      false,
-      true,
-      false,
-      true,
-      false,
-      false
+      null,
+      null
     ]
   },
-  "hash": "3caa6d4b1cfb15c7fbd61e52fe34604855d7d8df6239f8cdefd469ad912f4836"
+  "hash": "8a4186f18a871eafda7131d98a87d7817fe859e77eb35b1a93081ce06d8a4e6b"
 }

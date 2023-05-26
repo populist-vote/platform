@@ -45,6 +45,12 @@ pub struct CommonWordsResult {
     count: i32,
 }
 
+#[derive(SimpleObject, Debug, Clone, sqlx::FromRow)]
+pub struct SentimentCountResult {
+    sentiment: Sentiment,
+    count: i64,
+}
+
 #[ComplexObject]
 impl QuestionResult {
     async fn submissions(&self, ctx: &Context<'_>) -> Result<Vec<QuestionSubmissionResult>> {
@@ -122,6 +128,30 @@ impl QuestionResult {
         );
         let common_words = sqlx::query_as(&query).fetch_all(&db_pool).await?;
         Ok(common_words)
+    }
+
+    async fn sentiment_counts(&self, ctx: &Context<'_>) -> Result<Vec<SentimentCountResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let sentiment_counts = sqlx::query!(
+            r#"
+                SELECT sentiment AS "sentiment: Sentiment", COUNT(sentiment) as count
+                FROM question_submission
+                WHERE question_id = $1
+                GROUP BY sentiment
+                ORDER BY count DESC
+            "#,
+            uuid::Uuid::parse_str(self.id.as_str()).unwrap(),
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        Ok(sentiment_counts
+            .into_iter()
+            .map(|s| SentimentCountResult {
+                sentiment: s.sentiment.unwrap(),
+                count: s.count.unwrap(),
+            })
+            .collect())
     }
 }
 

@@ -1,13 +1,39 @@
 {
-  "query": "\n                DELETE FROM question WHERE id = $1\n            ",
+  "query": "\n                SELECT sentiment AS \"sentiment: Sentiment\", COUNT(sentiment) as count\n                FROM question_submission\n                WHERE question_id = $1\n                GROUP BY sentiment\n                ORDER BY count DESC\n            ",
   "describe": {
-    "columns": [],
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "sentiment: Sentiment",
+        "type_info": {
+          "Custom": {
+            "name": "sentiment",
+            "kind": {
+              "Enum": [
+                "positive",
+                "negative",
+                "neutral",
+                "unknown"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "count",
+        "type_info": "Int8"
+      }
+    ],
     "parameters": {
       "Left": [
         "Uuid"
       ]
     },
-    "nullable": []
+    "nullable": [
+      true,
+      null
+    ]
   },
-  "hash": "276fef47f5e6fda9d4546f5c5be6503c43b4752a82c556bd134f615bbde3eeef"
+  "hash": "40f458441c6e434d4c6a2e90e293c6d6d9e24c01d63512ac54fd7a26dbddfa8b"
 }
