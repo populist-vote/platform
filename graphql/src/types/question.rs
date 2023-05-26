@@ -130,7 +130,10 @@ impl QuestionResult {
         Ok(common_words)
     }
 
-    async fn sentiment_counts(&self, ctx: &Context<'_>) -> Result<Vec<SentimentCountResult>> {
+    async fn sentiment_counts(
+        &self,
+        ctx: &Context<'_>,
+    ) -> Result<Vec<Option<SentimentCountResult>>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let sentiment_counts = sqlx::query!(
             r#"
@@ -147,9 +150,15 @@ impl QuestionResult {
 
         Ok(sentiment_counts
             .into_iter()
-            .map(|s| SentimentCountResult {
-                sentiment: s.sentiment.unwrap(),
-                count: s.count.unwrap(),
+            .map(|s| {
+                if let Some(sentiment) = s.sentiment {
+                    Some(SentimentCountResult {
+                        sentiment,
+                        count: s.count.unwrap_or(0),
+                    })
+                } else {
+                    None
+                }
             })
             .collect())
     }
