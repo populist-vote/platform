@@ -70,7 +70,7 @@ impl QuestionMutation {
                     .as_str()
                     .trim()
                     .to_lowercase();
-                let sentiment = if trimmed_response_text.contains("positive") {
+                if trimmed_response_text.contains("positive") {
                     Sentiment::Positive
                 } else if trimmed_response_text.contains("negative") {
                     Sentiment::Negative
@@ -78,8 +78,7 @@ impl QuestionMutation {
                     Sentiment::Neutral
                 } else {
                     Sentiment::Unknown
-                };
-                sentiment
+                }
             }
             Err(err) => {
                 tracing::error!("Error classifying sentiment with OpenAI: {:?}", err);
