@@ -3,10 +3,12 @@ use crate::{
     types::{QuestionResult, QuestionSubmissionResult},
 };
 use async_graphql::{Context, Object, Result, SimpleObject, ID};
+use async_openai::types::CreateCompletionRequestArgs;
 use db::{
     models::{question::UpsertQuestionInput, respondent::UpsertRespondentInput},
-    UpsertQuestionSubmissionInput,
+    Sentiment, UpsertQuestionSubmissionInput,
 };
+use std::str::FromStr;
 
 use crate::context::ApiContext;
 
@@ -45,10 +47,28 @@ impl QuestionMutation {
             None => None,
         };
 
+        // Use OpenAI to determine the sentiment of the response
+        let client = async_openai::Client::new();
+        let prompt = format!(
+            r#"
+                Classify the sentiment in this response as either positive, negative, or neutral:
+                Response: {}"#,
+            question_submission_input.response
+        );
+        let request = CreateCompletionRequestArgs::default()
+            .model("text-davinci-003")
+            .prompt(prompt)
+            .max_tokens(40_u16)
+            .build()?;
+        let response = client.completions().create(request).await?;
+        let response_text = response.choices.first().unwrap().text.as_str().trim();
+        let sentiment = Sentiment::from_str(response_text).unwrap_or(Sentiment::Unknown);
         let question_submission_input = UpsertQuestionSubmissionInput {
             respondent_id: respondent.map(|r| r.id),
+            sentiment: Some(sentiment),
             ..question_submission_input
         };
+
         let question = db::QuestionSubmission::upsert(&db_pool, &question_submission_input).await?;
         Ok(question.into())
     }

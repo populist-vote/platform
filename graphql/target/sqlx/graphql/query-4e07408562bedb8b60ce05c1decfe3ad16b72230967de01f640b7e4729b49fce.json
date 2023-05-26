@@ -1,27 +1,13 @@
 {
-  "query": "\n                SELECT\n                  date_trunc('day', created_at) AS date,\n                  COUNT(*) AS count\n                FROM poll_submission\n                WHERE poll_id = $1\n                GROUP BY date\n                ORDER BY date\n            ",
+  "query": "\n                DELETE FROM question WHERE id = $1\n            ",
   "describe": {
-    "columns": [
-      {
-        "ordinal": 0,
-        "name": "date",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 1,
-        "name": "count",
-        "type_info": "Int8"
-      }
-    ],
+    "columns": [],
     "parameters": {
       "Left": [
         "Uuid"
       ]
     },
-    "nullable": [
-      null,
-      null
-    ]
+    "nullable": []
   },
-  "hash": "f1721dab6e0cee264c66aa8e93f9d9c9d4256f1942d4352ec3bb81bff48b1289"
+  "hash": "276fef47f5e6fda9d4546f5c5be6503c43b4752a82c556bd134f615bbde3eeef"
 }

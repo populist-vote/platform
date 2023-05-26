@@ -1,6 +1,6 @@
 use crate::context::ApiContext;
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
-use db::{DateTime, Question, QuestionSubmission, Respondent};
+use db::{DateTime, Question, QuestionSubmission, Respondent, Sentiment};
 
 use super::SubmissionCountByDateResult;
 
@@ -22,6 +22,7 @@ pub struct QuestionSubmissionResult {
     id: ID,
     respondent_id: Option<ID>,
     response: String,
+    sentiment: Option<Sentiment>,
     created_at: DateTime,
     updated_at: DateTime,
 }
@@ -56,6 +57,7 @@ impl QuestionResult {
                   question_id,
                   respondent_id,
                   response,
+                  sentiment AS "sentiment: Sentiment",
                   created_at,
                   updated_at
                 FROM question_submission
@@ -172,6 +174,7 @@ impl From<QuestionSubmission> for QuestionSubmissionResult {
             id: q.id.into(),
             respondent_id: q.respondent_id.map(|id| id.into()),
             response: q.response,
+            sentiment: q.sentiment,
             created_at: q.created_at,
             updated_at: q.updated_at,
         }

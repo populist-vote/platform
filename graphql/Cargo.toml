@@ -13,6 +13,8 @@ open-secrets = { path = "../open-secrets" }
 
 anyhow = "1.0.45"
 async-graphql = { version = "5.0.5", features = ["uuid", "chrono", "unblock", "dataloader", "tracing"] }
+async-graphql-axum = "5.0.5"
+async-openai = "0.10.3"
 bytes = "1.1.0"
 chrono = "0.4.19"
 tokio = { version = "1.21.1", features = ["full"] }
@@ -35,4 +37,5 @@ zxcvbn = { version = "2.2.1", features = ["ser"] }
 url = "2.2.2"
 tracing = "0.1.35"
 tokio-stream = "*"
-async-graphql-axum = "5.0.5"
+strum_macros = "0.24.3"
+strum = "0.24.1"

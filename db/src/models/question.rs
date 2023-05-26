@@ -1,8 +1,8 @@
-use async_graphql::InputObject;
-use sqlx::{FromRow, PgPool};
-use uuid::Uuid;
-
 use crate::{DateTime, Error};
+use async_graphql::{Enum, InputObject};
+use sqlx::{FromRow, PgPool};
+use strum_macros::{Display, EnumString};
+use uuid::Uuid;
 
 #[derive(FromRow, Debug, Clone)]
 pub struct Question {
@@ -22,6 +22,7 @@ pub struct QuestionSubmission {
     pub question_id: uuid::Uuid,
     pub respondent_id: Option<uuid::Uuid>,
     pub response: String,
+    pub sentiment: Option<Sentiment>,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
@@ -43,6 +44,17 @@ pub struct UpsertQuestionSubmissionInput {
     pub question_id: uuid::Uuid,
     pub respondent_id: Option<Uuid>,
     pub response: String,
+    pub sentiment: Option<Sentiment>,
+}
+
+#[derive(Display, Copy, Clone, Eq, PartialEq, Debug, Enum, EnumString, sqlx::Type)]
+#[strum(ascii_case_insensitive)]
+#[sqlx(type_name = "sentiment", rename_all = "lowercase")]
+pub enum Sentiment {
+    Positive,
+    Negative,
+    Neutral,
+    Unknown,
 }
 
 impl Question {
@@ -120,21 +132,32 @@ impl QuestionSubmission {
                     id,
                     question_id,
                     respondent_id,
-                    response
+                    response,
+                    sentiment
                 ) VALUES (
                     $1,
                     $2,
                     $3,
-                    $4
+                    $4,
+                    $5
                 ) ON CONFLICT (id) DO UPDATE SET
                     response = $4,
+                    sentiment = $5,
                     updated_at = now()
-                RETURNING *
+                RETURNING 
+                    id,
+                    question_id,
+                    respondent_id,
+                    response,
+                    sentiment AS "sentiment:Sentiment",
+                    created_at,
+                    updated_at
             "#,
             id,
             input.question_id,
             input.respondent_id,
-            input.response
+            input.response,
+            input.sentiment as Option<Sentiment>
         )
         .fetch_one(db_pool)
         .await?;
