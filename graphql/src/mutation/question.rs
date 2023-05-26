@@ -8,7 +8,6 @@ use db::{
     models::{question::UpsertQuestionInput, respondent::UpsertRespondentInput},
     Sentiment, UpsertQuestionSubmissionInput,
 };
-use std::str::FromStr;
 
 use crate::context::ApiContext;
 
@@ -60,9 +59,34 @@ impl QuestionMutation {
             .prompt(prompt)
             .max_tokens(40_u16)
             .build()?;
-        let response = client.completions().create(request).await?;
-        let response_text = response.choices.first().unwrap().text.as_str().trim();
-        let sentiment = Sentiment::from_str(response_text).unwrap_or(Sentiment::Unknown);
+        let response = client.completions().create(request).await;
+        let sentiment = match response {
+            Ok(response) => {
+                let trimmed_response_text = &response
+                    .choices
+                    .first()
+                    .unwrap()
+                    .text
+                    .as_str()
+                    .trim()
+                    .to_lowercase();
+                let sentiment = if trimmed_response_text.contains("positive") {
+                    Sentiment::Positive
+                } else if trimmed_response_text.contains("negative") {
+                    Sentiment::Negative
+                } else if trimmed_response_text.contains("neutral") {
+                    Sentiment::Neutral
+                } else {
+                    Sentiment::Unknown
+                };
+                sentiment
+            }
+            Err(err) => {
+                tracing::error!("Error classifying sentiment with OpenAI: {:?}", err);
+                Sentiment::Unknown
+            }
+        };
+
         let question_submission_input = UpsertQuestionSubmissionInput {
             respondent_id: respondent.map(|r| r.id),
             sentiment: Some(sentiment),
