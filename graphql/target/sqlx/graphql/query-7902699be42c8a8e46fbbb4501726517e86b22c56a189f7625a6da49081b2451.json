@@ -1,28 +1,16 @@
 {
-  "query": "\n                SELECT sentiment AS \"sentiment: Sentiment\", COUNT(sentiment) as count\n                FROM question_submission\n                WHERE question_id = $1\n                GROUP BY sentiment\n                ORDER BY count DESC\n            ",
+  "query": "\n            SELECT url, last_ping_at FROM embed_origin WHERE embed_id = $1\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "sentiment: Sentiment",
-        "type_info": {
-          "Custom": {
-            "name": "sentiment",
-            "kind": {
-              "Enum": [
-                "positive",
-                "negative",
-                "neutral",
-                "unknown"
-              ]
-            }
-          }
-        }
+        "name": "url",
+        "type_info": "Text"
       },
       {
         "ordinal": 1,
-        "name": "count",
-        "type_info": "Int8"
+        "name": "last_ping_at",
+        "type_info": "Timestamp"
       }
     ],
     "parameters": {
@@ -31,9 +19,9 @@
       ]
     },
     "nullable": [
-      true,
-      null
+      false,
+      false
     ]
   },
-  "hash": "40f458441c6e434d4c6a2e90e293c6d6d9e24c01d63512ac54fd7a26dbddfa8b"
+  "hash": "807f37f91f8c819049486ee23fe0544ea1ef5911c8186e759616a58882886ac1"
 }

@@ -1,9 +1,13 @@
-use async_graphql::{Context, Object, Result, SimpleObject};
+use async_graphql::{Context, InputObject, Object, Result, SimpleObject};
 use auth::Claims;
-use db::{Embed, UpsertEmbedInput};
+use db::{DateTime, Embed, UpsertEmbedInput};
 use jsonwebtoken::TokenData;
 
-use crate::{context::ApiContext, is_admin, types::EmbedResult};
+use crate::{
+    context::ApiContext,
+    is_admin,
+    types::{EmbedOriginResult, EmbedResult},
+};
 
 #[derive(Default)]
 pub struct EmbedMutation;
@@ -12,6 +16,13 @@ pub struct EmbedMutation;
 #[graphql(visible = "is_admin")]
 struct DeleteEmbedResult {
     id: String,
+}
+
+#[derive(InputObject)]
+#[graphql(visible = "is_admin")]
+struct PingEmbedOriginInput {
+    embed_id: uuid::Uuid,
+    url: String,
 }
 
 #[Object]
@@ -51,6 +62,30 @@ impl EmbedMutation {
 
         let upserted_record = Embed::upsert(&db_pool, &input, &updated_by).await?;
         Ok(EmbedResult::from(upserted_record))
+    }
+
+    async fn ping_embed_origin(
+        &self,
+        ctx: &Context<'_>,
+        input: PingEmbedOriginInput,
+    ) -> Result<EmbedOriginResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let record = sqlx::query_as!(
+            EmbedOriginResult,
+            r#"
+            INSERT INTO embed_origin (embed_id, url)
+            VALUES ($1, $2)
+            ON CONFLICT (embed_id, url)
+            DO UPDATE SET last_ping_at = CURRENT_TIMESTAMP
+            RETURNING url, last_ping_at as "last_ping_at: DateTime"
+        "#,
+            input.embed_id,
+            input.url
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(record)
     }
 
     #[graphql(visible = "is_admin")]

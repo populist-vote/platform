@@ -1,6 +1,6 @@
+use crate::is_admin;
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
-use chrono::{DateTime, Utc};
-use db::{Embed, UserWithProfile};
+use db::{DateTime, Embed, UserWithProfile};
 use serde_json::Value as JSON;
 use tracing::log::warn;
 
@@ -17,10 +17,17 @@ pub struct EmbedResult {
     pub description: Option<String>,
     pub populist_url: String,
     pub attributes: JSON,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub created_at: DateTime,
+    pub updated_at: DateTime,
     pub created_by_id: ID,
     pub updated_by_id: ID,
+}
+
+#[derive(SimpleObject)]
+#[graphql(visible = "is_admin")]
+pub struct EmbedOriginResult {
+    pub url: String,
+    pub last_ping_at: DateTime,
 }
 
 #[ComplexObject]
@@ -61,6 +68,21 @@ impl EmbedResult {
             Some(user) => Ok(user.into()),
             None => Err(Error::UserNotFound.into()),
         }
+    }
+
+    async fn origins(&self, ctx: &Context<'_>) -> Result<Vec<EmbedOriginResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records = sqlx::query_as!(
+            EmbedOriginResult,
+            r#"
+            SELECT url, last_ping_at FROM embed_origin WHERE embed_id = $1
+        "#,
+            uuid::Uuid::parse_str(&self.id.as_str()).unwrap(),
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        Ok(records.into_iter().map(|r| r.into()).collect())
     }
 
     async fn bill(&self, ctx: &Context<'_>) -> Result<Option<BillResult>> {

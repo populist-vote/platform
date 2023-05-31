@@ -28,7 +28,7 @@ pub use ballot_measure::BallotMeasureResult;
 pub use bill::BillResult;
 pub use committee::CommitteeResult;
 pub use election::ElectionResult;
-pub use embed::EmbedResult;
+pub use embed::*;
 pub use errors::Error;
 pub use health::Heartbeat;
 pub use issue_tag::IssueTagResult;
