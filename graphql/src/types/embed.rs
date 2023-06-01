@@ -1,6 +1,6 @@
 use crate::is_admin;
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
-use db::{DateTime, Embed, UserWithProfile};
+use db::{DateTime, Embed, EmbedType, UserWithProfile};
 use serde_json::Value as JSON;
 use tracing::log::warn;
 
@@ -16,6 +16,7 @@ pub struct EmbedResult {
     pub name: String,
     pub description: Option<String>,
     pub populist_url: String,
+    pub embed_type: EmbedType,
     pub attributes: JSON,
     pub created_at: DateTime,
     pub updated_at: DateTime,
@@ -143,6 +144,7 @@ impl From<Embed> for EmbedResult {
             name: embed.name,
             description: embed.description,
             populist_url: embed.populist_url,
+            embed_type: embed.embed_type,
             attributes: embed.attributes,
             created_at: embed.created_at,
             updated_at: embed.updated_at,
