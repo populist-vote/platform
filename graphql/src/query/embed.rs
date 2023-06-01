@@ -1,6 +1,6 @@
 use async_graphql::{Context, Object, Result, ID};
 use auth::Claims;
-use db::Embed;
+use db::{Embed, EmbedFilter};
 use jsonwebtoken::TokenData;
 
 use crate::{context::ApiContext, guard::OrganizationGuard, is_admin, types::EmbedResult};
@@ -18,11 +18,15 @@ impl EmbedQuery {
         &self,
         ctx: &Context<'_>,
         organization_id: ID,
+        filter: Option<EmbedFilter>,
     ) -> Result<Vec<EmbedResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let records =
-            Embed::find_by_organization_id(&db_pool, uuid::Uuid::parse_str(&organization_id)?)
-                .await?;
+        let records = Embed::find_by_organization_id(
+            &db_pool,
+            uuid::Uuid::parse_str(&organization_id)?,
+            filter.unwrap_or_default(),
+        )
+        .await?;
         let results = records.into_iter().map(EmbedResult::from).collect();
         Ok(results)
     }

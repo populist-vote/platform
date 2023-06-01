@@ -1,7 +1,6 @@
+use crate::DateTime;
 use async_graphql::InputObject;
 use sqlx::FromRow;
-
-use crate::DateTime;
 
 #[derive(FromRow, Debug, Clone)]
 pub struct Respondent {
