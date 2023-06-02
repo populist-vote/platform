@@ -10,7 +10,7 @@ use auth::{
     create_access_token_for_user, create_random_token, create_temporary_username,
     format_auth_cookie, Claims,
 };
-use db::{AddressInput, Coordinates, CreateUserInput, CreateUserWithProfileInput, User};
+use db::{AddressInput, Coordinates, CreateUserInput, CreateUserWithProfileInput, Role, User};
 use geocodio::GeocodioProxy;
 use jsonwebtoken::TokenData;
 use mailers::EmailClient;
@@ -30,7 +30,7 @@ pub struct BeginUserRegistrationInput {
     #[graphql(validator(email))]
     pub email: String,
     pub password: String,
-    pub address: AddressInput,
+    pub address: Option<AddressInput>,
 }
 
 #[derive(Serialize, Deserialize, InputObject)]
@@ -65,7 +65,7 @@ impl AuthMutation {
     }
 
     #[graphql(visible = "is_admin")]
-    async fn begin_user_registration(
+    async fn _begin_user_registration(
         &self,
         ctx: &Context<'_>,
         input: BeginUserRegistrationInput,
@@ -94,92 +94,111 @@ impl AuthMutation {
         // Create confirmation token so user can securely confirm their email is legitimate
         let confirmation_token = create_random_token().unwrap();
 
-        // Use geocodio to get congressional district and state legislative districts
-        let address_clone = input.address.clone();
-        let geocodio = GeocodioProxy::new().unwrap();
-        let geocode_result = geocodio
-            .geocode(
-                geocodio::AddressParams::AddressInput(geocodio::AddressInput {
-                    line_1: address_clone.line_1,
-                    line_2: address_clone.line_2,
-                    city: address_clone.city,
-                    state: address_clone.state.to_string(),
-                    country: address_clone.country,
-                    postal_code: address_clone.postal_code,
-                }),
-                Some(&["cd118", "stateleg-next"]),
-            )
-            .await;
+        let new_user_result = match input.address {
+            Some(address) => {
+                let address_clone = address.clone();
+                let geocodio = GeocodioProxy::new().unwrap();
+                let geocode_result = geocodio
+                    .geocode(
+                        geocodio::AddressParams::AddressInput(geocodio::AddressInput {
+                            line_1: address_clone.line_1,
+                            line_2: address_clone.line_2,
+                            city: address_clone.city,
+                            state: address_clone.state.to_string(),
+                            country: address_clone.country,
+                            postal_code: address_clone.postal_code,
+                        }),
+                        Some(&["cd118", "stateleg-next"]),
+                    )
+                    .await;
 
-        match geocode_result {
-            Ok(geocodio_data) => {
-                let city = geocodio_data.results[0]
-                    .address_components
-                    .city
-                    .clone()
-                    .unwrap_or(input.address.city);
-                let coordinates = geocodio_data.results[0].location.clone();
-                let county = geocodio_data.results[0].address_components.county.clone();
-                let primary_result = geocodio_data.results[0].fields.as_ref().unwrap();
-                let congressional_district =
-                    &primary_result.congressional_districts.as_ref().unwrap()[0].district_number;
-                let state_legislative_districts =
-                    primary_result.state_legislative_districts.as_ref().unwrap();
-                let state_house_district = &state_legislative_districts.house[0].district_number;
-                let state_senate_district = &state_legislative_districts.senate[0].district_number;
+                let t = match geocode_result {
+                    Ok(geocodio_data) => {
+                        let city = geocodio_data.results[0]
+                            .address_components
+                            .city
+                            .clone()
+                            .unwrap_or(address.city);
+                        let coordinates = geocodio_data.results[0].location.clone();
+                        let county = geocodio_data.results[0].address_components.county.clone();
+                        let primary_result = geocodio_data.results[0].fields.as_ref().unwrap();
+                        let congressional_district =
+                            &primary_result.congressional_districts.as_ref().unwrap()[0]
+                                .district_number;
+                        let state_legislative_districts =
+                            primary_result.state_legislative_districts.as_ref().unwrap();
+                        let state_house_district =
+                            &state_legislative_districts.house[0].district_number;
+                        let state_senate_district =
+                            &state_legislative_districts.senate[0].district_number;
 
-                let new_user_input = CreateUserWithProfileInput {
+                        let new_user_input = CreateUserWithProfileInput {
+                            email: input.email.clone(),
+                            username: temp_username,
+                            password: input.password,
+                            address: AddressInput {
+                                coordinates: Some(Coordinates {
+                                    latitude: coordinates.latitude,
+                                    longitude: coordinates.longitude,
+                                }),
+                                city,
+                                county,
+                                congressional_district: Some(congressional_district.to_string()),
+                                state_house_district: Some(state_house_district.to_string()),
+                                state_senate_district: Some(state_senate_district.to_string()),
+                                ..address
+                            },
+                            confirmation_token: confirmation_token.clone(),
+                        };
+
+                        Ok(User::create_with_profile(&db_pool, &new_user_input).await?)
+                    }
+                    Err(err) => match err {
+                        geocodio::Error::BadAddress(_err) => Err(Error::BadAddress),
+                        _ => Err(err.into()),
+                    },
+                };
+                t
+            }
+
+            None => {
+                // Handle register without address
+                let new_user_input = CreateUserInput {
                     email: input.email.clone(),
                     username: temp_username,
                     password: input.password,
-                    address: AddressInput {
-                        coordinates: Some(Coordinates {
-                            latitude: coordinates.latitude,
-                            longitude: coordinates.longitude,
-                        }),
-                        city,
-                        county,
-                        congressional_district: Some(congressional_district.to_string()),
-                        state_house_district: Some(state_house_district.to_string()),
-                        state_senate_district: Some(state_senate_district.to_string()),
-                        ..input.address
-                    },
-                    confirmation_token: confirmation_token.clone(),
+                    role: Some(Role::BASIC),
+                    organization_id: None,
                 };
 
-                let new_record = User::create_with_profile(&db_pool, &new_user_input).await;
-
-                match new_record {
-                    Ok(new_user) => {
-                        // Create Access Token to log user in
-                        let access_token = create_access_token_for_user(new_user.clone())?;
-
-                        let account_confirmation_url = format!(
-                            "{}auth/confirm?token={}",
-                            config::Config::default().web_app_url,
-                            confirmation_token
-                        );
-
-                        if let Err(err) = EmailClient::default()
-                            .send_welcome_email(new_user.email, account_confirmation_url)
-                            .await
-                        {
-                            println!("Error sending welcome email: {}", err)
-                        }
-
-                        ctx.insert_http_header(SET_COOKIE, format_auth_cookie(&access_token));
-
-                        Ok(LoginResult {
-                            user_id: new_user.id.into(),
-                        })
-                    }
-                    Err(err) => Err(err.into()),
-                }
+                Ok(User::create(&db_pool, &new_user_input).await?)
             }
-            Err(err) => match err {
-                geocodio::Error::BadAddress(_err) => Err(Error::BadAddress),
-                _ => Err(err.into()),
-            },
+        };
+
+        match new_user_result {
+            Ok(new_user) => {
+                let access_token = create_access_token_for_user(new_user.clone())?;
+
+                let account_confirmation_url = format!(
+                    "{}auth/confirm?token={}",
+                    config::Config::default().web_app_url,
+                    confirmation_token
+                );
+
+                if let Err(err) = EmailClient::default()
+                    .send_welcome_email(new_user.email, account_confirmation_url)
+                    .await
+                {
+                    println!("Error sending welcome email: {}", err)
+                }
+
+                ctx.insert_http_header(SET_COOKIE, format_auth_cookie(&access_token));
+
+                Ok(LoginResult {
+                    user_id: new_user.id.into(),
+                })
+            }
+            Err(err) => Err(err),
         }
     }
 

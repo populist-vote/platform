@@ -51,7 +51,7 @@ pub struct CreateUserInput {
     pub organization_id: Option<uuid::Uuid>,
 }
 
-#[derive(Serialize, Deserialize, InputObject)]
+#[derive(Serialize, Deserialize, InputObject, Debug)]
 pub struct CreateUserWithProfileInput {
     #[graphql(validator(email))]
     pub email: String,
@@ -99,27 +99,29 @@ impl User {
         input: &CreateUserWithProfileInput,
     ) -> Result<Self, Error> {
         let hash = bcrypt::hash(&input.password).unwrap();
-
-        // Very cumbersome to get PostGIS geography type to insert with sqlx
-        let coordinates: geo_types::Geometry<f64> = input
+        let lon = input
             .address
             .coordinates
             .as_ref()
-            .map(|c| geo::Point::new(c.latitude, c.longitude))
-            .unwrap()
-            .into();
-
+            .map(|c| c.longitude)
+            .unwrap();
+        let lat = input
+            .address
+            .coordinates
+            .as_ref()
+            .map(|c| c.latitude)
+            .unwrap();
         let record = sqlx::query_as!(
             User,
             r#"
                 WITH ins_user AS (
                     INSERT INTO populist_user (email, username, password, role, confirmation_token)
-                    VALUES (LOWER($1), LOWER($2), $3, $4, $16)
+                    VALUES (LOWER($1), LOWER($2), $3, $4, $5)
                     RETURNING id, email, username, password, role AS "role:Role", organization_id, created_at, confirmed_at, updated_at
                 ),
                 ins_address AS (
-                    INSERT INTO address (line_1, line_2, city, state, county, country, postal_code, geog, congressional_district, state_senate_district, state_house_district)
-                    VALUES ($5, $6, $7, $8, $9, $10, $11, $12::geography, $13, $14, $15)
+                    INSERT INTO address (line_1, line_2, city, state, county, country, postal_code, lon, lat, geog, geom, congressional_district, state_senate_district, state_house_district)
+                    VALUES ($6, $7, $8, $9, $10, $11, $12, $13, $14, ST_SetSRID(ST_MakePoint($13, $14), 4326), ST_GeomFromText($15, 4326), $16, $17, $18)
                     RETURNING id
                 ),
                 ins_profile AS (
@@ -132,6 +134,7 @@ impl User {
             input.username,
             hash,
             Role::BASIC as Role,
+            input.confirmation_token,
             input.address.line_1,
             input.address.line_2,
             input.address.city,
@@ -139,11 +142,12 @@ impl User {
             input.address.county,
             input.address.country,
             input.address.postal_code,
-            wkb::geom_to_wkb(&coordinates).unwrap() as _,
+            lon,
+            lat,
+            format!("POINT({} {})", lon, lat), // A string we pass into ST_GeomFromText function
             input.address.congressional_district,
             input.address.state_senate_district,
             input.address.state_house_district,
-            input.confirmation_token,
         ).fetch_one(db_pool).await?;
 
         // Need to handle case of existing user
@@ -325,11 +329,6 @@ impl User {
                 let state_senate_district = &state_legislative_districts.senate[0].district_number;
                 let lat = coordinates.latitude;
                 let lon = coordinates.longitude;
-                let coordinates: geo_types::Geometry<f64> = Some(coordinates)
-                    .as_ref()
-                    .map(|c| geo::Point::new(c.latitude, c.longitude))
-                    .unwrap()
-                    .into();
 
                 let updated_record_result = sqlx::query_as!(
                     Address,
@@ -344,13 +343,13 @@ impl User {
                         county = $6,
                         postal_code = $7,
                         country = $8,
-                        geog = $9::geography,
-                        congressional_district = $10,
-                        state_house_district = $11,
-                        state_senate_district = $12,
-                        geom = ST_GeomFromText($13, 4326),
-                        lat = $14,
-                        lon = $15
+                        lon = $9,
+                        lat = $10,
+                        geog = ST_SetSRID(ST_MakePoint($9, $10), 4326),
+                        geom = ST_GeomFromText($11, 4326),
+                        congressional_district = $12,
+                        state_house_district = $13,
+                        state_senate_district = $14
                     FROM
                         user_profile up
                     WHERE
@@ -377,13 +376,12 @@ impl User {
                     county,
                     address.postal_code,
                     address.country,
-                    wkb::geom_to_wkb(&coordinates).unwrap() as _,
+                    lon,
+                    lat,
+                    format!("POINT({} {})", lon, lat), // A string we pass into ST_GeomFromText function
                     Some(congressional_district),
                     state_house_district,
                     state_senate_district,
-                    format!("POINT({} {})", lon, lat), // A string we pass into ST_GeomFromText function
-                    lat,
-                    lon,
                 )
                 .fetch_one(db_pool)
                 .await;

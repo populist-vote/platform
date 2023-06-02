@@ -1,27 +1,82 @@
 {
-  "query": "\n            SELECT url, last_ping_at FROM embed_origin WHERE embed_id = $1\n        ",
+  "query": "\n            UPDATE populist_user SET email = $1\n            WHERE id = $2\n            RETURNING id, email, username, password, role AS \"role:Role\", organization_id, created_at, confirmed_at, updated_at\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "url",
-        "type_info": "Text"
+        "name": "id",
+        "type_info": "Uuid"
       },
       {
         "ordinal": 1,
-        "name": "last_ping_at",
-        "type_info": "Timestamp"
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "username",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "password",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "role:Role",
+        "type_info": {
+          "Custom": {
+            "name": "user_role",
+            "kind": {
+              "Enum": [
+                "superuser",
+                "staff",
+                "premium",
+                "basic"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "confirmed_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
       }
     ],
     "parameters": {
       "Left": [
+        "Text",
         "Uuid"
       ]
     },
     "nullable": [
       false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
       false
     ]
   },
-  "hash": "807f37f91f8c819049486ee23fe0544ea1ef5911c8186e759616a58882886ac1"
+  "hash": "ba9724a7c8744936a4d12781d73f75bbc0e1c2604389844a9d5056cb291bba6c"
 }

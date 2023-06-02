@@ -19,7 +19,7 @@ pub struct Address {
     pub state_house_district: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, InputObject)]
+#[derive(Serialize, Deserialize, Clone, InputObject, Debug)]
 pub struct AddressInput {
     pub line_1: String,
     pub line_2: Option<String>,
@@ -34,7 +34,7 @@ pub struct AddressInput {
     pub state_house_district: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, InputObject)]
+#[derive(Serialize, Deserialize, Clone, InputObject, Debug)]
 pub struct Coordinates {
     pub latitude: f64,
     pub longitude: f64,
