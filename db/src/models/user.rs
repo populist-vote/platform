@@ -27,7 +27,7 @@ pub struct UserProfile {
     pub id: uuid::Uuid,
     pub first_name: Option<String>,
     pub last_name: Option<String>,
-    pub address_id: uuid::Uuid,
+    pub address_id: Option<uuid::Uuid>,
     pub user_id: uuid::Uuid,
 }
 
