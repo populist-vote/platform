@@ -83,7 +83,7 @@ impl EmbedResult {
         .fetch_all(&db_pool)
         .await?;
 
-        Ok(records.into_iter().map(|r| r.into()).collect())
+        Ok(records)
     }
 
     async fn bill(&self, ctx: &Context<'_>) -> Result<Option<BillResult>> {

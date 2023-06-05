@@ -1,5 +1,5 @@
 {
-  "query": "\n            UPDATE populist_user SET email = $1\n            WHERE id = $2\n            RETURNING id, email, username, password, role AS \"role:Role\", organization_id, created_at, confirmed_at, updated_at\n        ",
+  "query": "\n            SELECT u.id, u.username, u.email, first_name, last_name, profile_picture_url FROM user_profile up\n            JOIN populist_user u ON up.user_id = u.id WHERE u.id = $1\n        ",
   "describe": {
     "columns": [
       {
@@ -9,60 +9,32 @@
       },
       {
         "ordinal": 1,
-        "name": "email",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 2,
         "name": "username",
         "type_info": "Text"
       },
       {
+        "ordinal": 2,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
         "ordinal": 3,
-        "name": "password",
+        "name": "first_name",
         "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "role:Role",
-        "type_info": {
-          "Custom": {
-            "name": "user_role",
-            "kind": {
-              "Enum": [
-                "superuser",
-                "staff",
-                "premium",
-                "basic"
-              ]
-            }
-          }
-        }
+        "name": "last_name",
+        "type_info": "Text"
       },
       {
         "ordinal": 5,
-        "name": "organization_id",
-        "type_info": "Uuid"
-      },
-      {
-        "ordinal": 6,
-        "name": "created_at",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 7,
-        "name": "confirmed_at",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 8,
-        "name": "updated_at",
-        "type_info": "Timestamptz"
+        "name": "profile_picture_url",
+        "type_info": "Text"
       }
     ],
     "parameters": {
       "Left": [
-        "Text",
         "Uuid"
       ]
     },
@@ -70,13 +42,10 @@
       false,
       false,
       false,
-      false,
-      false,
       true,
-      false,
       true,
-      false
+      true
     ]
   },
-  "hash": "ba9724a7c8744936a4d12781d73f75bbc0e1c2604389844a9d5056cb291bba6c"
+  "hash": "3890dd0b74b9e3a9a8a89a7f25bd8ffeb253d911c47eed7c86b5b0bc866ea55d"
 }

@@ -65,7 +65,7 @@ impl AuthMutation {
     }
 
     #[graphql(visible = "is_admin")]
-    async fn _begin_user_registration(
+    async fn begin_user_registration(
         &self,
         ctx: &Context<'_>,
         input: BeginUserRegistrationInput,
