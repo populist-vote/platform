@@ -79,10 +79,17 @@ impl User {
         let role = input.role.unwrap_or(Role::BASIC);
         let record = sqlx::query_as!(
             User,
-            r#"
+            r#" 
+            WITH ins_user AS (
                 INSERT INTO populist_user (email, username, password, role, organization_id)
                 VALUES (LOWER($1), LOWER($2), $3, $4, $5)
-                RETURNING id, email, username, password, role AS "role:Role", organization_id, created_at, confirmed_at, updated_at
+                RETURNING *
+            ), 
+            ins_profile AS (
+                INSERT INTO user_profile (user_id)
+                SELECT id FROM ins_user
+            )
+            SELECT id, email, username, password, role AS "role:Role", organization_id, created_at, confirmed_at, updated_at FROM ins_user
             "#,
             input.email,
             input.username,
@@ -333,30 +340,27 @@ impl User {
                 let updated_record_result = sqlx::query_as!(
                     Address,
                     r#"
-                   UPDATE
-                        address a
-                    SET
-                        line_1 = $2,
-                        line_2 = $3,
-                        city = $4,
-                        state = $5,
-                        county = $6,
-                        postal_code = $7,
-                        country = $8,
-                        lon = $9,
-                        lat = $10,
-                        geog = ST_SetSRID(ST_MakePoint($9, $10), 4326),
-                        geom = ST_GeomFromText($11, 4326),
-                        congressional_district = $12,
-                        state_house_district = $13,
-                        state_senate_district = $14
-                    FROM
-                        user_profile up
-                    WHERE
-                        up.address_id = a.id
-                        AND up.user_id = $1
+                    INSERT INTO address (id, line_1, line_2, city, county, state, postal_code, country, lon, lat, geog, geom, congressional_district, state_house_district, state_senate_district)
+                    VALUES(
+                        COALESCE((SELECT address_id FROM user_profile WHERE user_id = $1), gen_random_uuid()), 
+                        $2, $3, $4, $6, $5, $7, $8, $9, $10, ST_SetSRID (ST_MakePoint ($9, $10), 4326), ST_GeomFromText($11, 4326), $12, $13, $14) ON CONFLICT (id)
+                    DO UPDATE SET
+                        line_1 = EXCLUDED.line_1,
+                        line_2 = EXCLUDED.line_2,
+                        city = EXCLUDED.city,
+                        county = EXCLUDED.county,
+                        state = EXCLUDED.state,
+                        postal_code = EXCLUDED.postal_code,
+                        country = EXCLUDED.country,
+                        lon = EXCLUDED.lon,
+                        lat = EXCLUDED.lat,
+                        geog = EXCLUDED.geog,
+                        geom = EXCLUDED.geom,
+                        congressional_district = EXCLUDED.congressional_district,
+                        state_house_district = EXCLUDED.state_house_district,
+                        state_senate_district = EXCLUDED.state_senate_district
                     RETURNING
-                        a.id,
+                        id,
                         line_1,
                         line_2,
                         city,
@@ -387,7 +391,20 @@ impl User {
                 .await;
 
                 match updated_record_result {
-                    Ok(updated_record) => Ok(updated_record),
+                    Ok(updated_record) => {
+                        let _ = sqlx::query!(
+                            r#"
+                            UPDATE user_profile
+                            SET address_id = $1
+                            WHERE user_id = $2
+                        "#,
+                            updated_record.id,
+                            user_id
+                        )
+                        .execute(db_pool)
+                        .await;
+                        Ok(updated_record)
+                    }
                     Err(err) => Err(err.into()),
                 }
             }

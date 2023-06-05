@@ -35,6 +35,9 @@ pub enum Error {
     #[error("No user was found in our database")]
     UserNotFound,
 
+    #[error("No user address data")]
+    UserAddressNotFound,
+
     #[error("This username is already taken")]
     UsernameTaken,
 

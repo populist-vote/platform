@@ -33,6 +33,14 @@ struct UpdateNameResult {
     pub last_name: Option<String>,
 }
 
+pub async fn refresh_access_token(ctx: &Context<'_>, user_id: uuid::Uuid) -> Result<bool> {
+    let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+    let user = User::find_by_id(&db_pool, user_id).await?;
+    let access_token = create_access_token_for_user(user.clone())?;
+    ctx.insert_http_header(SET_COOKIE, format_auth_cookie(&access_token));
+    Ok(true)
+}
+
 #[Object]
 impl UserMutation {
     #[graphql(visible = "is_admin")]
@@ -264,6 +272,8 @@ impl UserMutation {
             .sub;
 
         let result = User::update_address(&db_pool, user_id, address).await?;
+
+        refresh_access_token(ctx, user_id).await?;
 
         Ok(result.into())
     }

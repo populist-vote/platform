@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT u.id, u.username, u.email, first_name, last_name, profile_picture_url FROM user_profile up\n            JOIN populist_user u ON up.user_id = u.id WHERE u.id = $1\n        ",
+  "query": "\n        SELECT id, username, email, role, organization_id FROM populist_user WHERE id = $1\n        ",
   "describe": {
     "columns": [
       {
@@ -19,18 +19,25 @@
       },
       {
         "ordinal": 3,
-        "name": "first_name",
-        "type_info": "Text"
+        "name": "role",
+        "type_info": {
+          "Custom": {
+            "name": "user_role",
+            "kind": {
+              "Enum": [
+                "superuser",
+                "staff",
+                "premium",
+                "basic"
+              ]
+            }
+          }
+        }
       },
       {
         "ordinal": 4,
-        "name": "last_name",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 5,
-        "name": "profile_picture_url",
-        "type_info": "Text"
+        "name": "organization_id",
+        "type_info": "Uuid"
       }
     ],
     "parameters": {
@@ -42,10 +49,9 @@
       false,
       false,
       false,
-      true,
-      true,
+      false,
       true
     ]
   },
-  "hash": "3890dd0b74b9e3a9a8a89a7f25bd8ffeb253d911c47eed7c86b5b0bc866ea55d"
+  "hash": "ef744552e4113ab4b779ed6e689ea0bba51383fd5f86005d1a6153e028115a95"
 }

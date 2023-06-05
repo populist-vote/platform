@@ -3,7 +3,10 @@ use auth::Claims;
 use db::{models::enums::State, Election, ElectionSearchInput};
 use jsonwebtoken::TokenData;
 
-use crate::{context::ApiContext, types::ElectionResult};
+use crate::{
+    context::ApiContext,
+    types::{ElectionResult, Error},
+};
 
 #[derive(Default)]
 pub struct ElectionQuery;
@@ -21,12 +24,12 @@ impl ElectionQuery {
         Ok(results)
     }
 
-    async fn elections_by_user(&self, ctx: &Context<'_>) -> Result<Vec<ElectionResult>> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+    async fn elections_by_user(&self, ctx: &Context<'_>) -> Result<Vec<ElectionResult>, Error> {
+        let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
         let token = ctx.data::<Option<TokenData<Claims>>>();
 
         if let Some(token_data) = token.unwrap() {
-            let users_address = sqlx::query!(
+            let user_address_result = sqlx::query!(
                 r#"
                 SELECT
                     a.state AS "state:State",
@@ -41,7 +44,15 @@ impl ElectionQuery {
                 token_data.claims.sub
             )
             .fetch_one(&db_pool)
-            .await?;
+            .await;
+
+            let user_address = match user_address_result {
+                Ok(user_address) => user_address,
+                Err(_) => {
+                    tracing::debug!("No address found for user");
+                    return Err(Error::UserAddressNotFound);
+                }
+            };
 
             let records = sqlx::query_as!(
                 Election,
@@ -62,8 +73,8 @@ impl ElectionQuery {
                 ORDER BY
                     election_date ASC
                 "#,
-                users_address.state as State,
-                users_address.city
+                user_address.state as State,
+                user_address.city
             )
             .fetch_all(&db_pool)
             .await?;
@@ -71,7 +82,7 @@ impl ElectionQuery {
             Ok(records.into_iter().map(ElectionResult::from).collect())
         } else {
             tracing::debug!("No elections found with user address data");
-            Err("No user address data found".into())
+            Err(Error::UserAddressNotFound)
         }
     }
 

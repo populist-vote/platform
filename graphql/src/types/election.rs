@@ -1,5 +1,5 @@
 use super::RaceResult;
-use crate::context::ApiContext;
+use crate::{context::ApiContext, Error};
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use auth::Claims;
 use db::{
@@ -62,7 +62,7 @@ impl ElectionResult {
     }
 
     /// Show races relevant to the user based on their address
-    async fn races_by_user_districts(&self, ctx: &Context<'_>) -> Result<Vec<RaceResult>> {
+    async fn races_by_user_districts(&self, ctx: &Context<'_>) -> Result<Vec<RaceResult>, Error> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
         let token = ctx.data::<Option<TokenData<Claims>>>();
 
@@ -187,7 +187,7 @@ impl ElectionResult {
             Ok(results)
         } else {
             tracing::debug!("No races found with user address data");
-            Err("No user address data found".into())
+            Err(Error::UserAddressNotFound)
         }
     }
 
