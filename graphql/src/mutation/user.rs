@@ -36,7 +36,7 @@ struct UpdateNameResult {
 pub async fn refresh_access_token(ctx: &Context<'_>, user_id: uuid::Uuid) -> Result<bool> {
     let db_pool = ctx.data::<ApiContext>()?.pool.clone();
     let user = User::find_by_id(&db_pool, user_id).await?;
-    let access_token = create_access_token_for_user(user.clone())?;
+    let access_token = create_access_token_for_user(user)?;
     ctx.insert_http_header(SET_COOKIE, format_auth_cookie(&access_token));
     Ok(true)
 }

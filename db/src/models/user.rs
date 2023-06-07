@@ -323,6 +323,11 @@ impl User {
 
         match geocode_result {
             Ok(geocodio_data) => {
+                if geocodio_data.results.is_empty() {
+                    return Err(Error::Custom(
+                        "This is not a valid voting address".to_string(),
+                    ));
+                }
                 let coordinates = geocodio_data.results[0].location.clone();
                 let county = geocodio_data.results[0].address_components.county.clone();
                 let primary_result = geocodio_data.results[0].fields.as_ref().unwrap();
