@@ -9,6 +9,7 @@ mod office;
 mod organization;
 mod politician;
 mod race;
+mod respondent;
 mod user;
 mod voting_guide;
 

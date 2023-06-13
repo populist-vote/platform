@@ -16,6 +16,7 @@ pub struct UpsertRespondentInput {
     pub id: Option<uuid::Uuid>,
     pub name: String,
     pub email: String,
+    pub organization_id: uuid::Uuid,
 }
 
 impl Respondent {
@@ -45,6 +46,22 @@ impl Respondent {
             input.email
         )
         .fetch_one(pool)
+        .await?;
+
+        sqlx::query!(
+            r#"
+            INSERT INTO organization_respondents (
+                organization_id,
+                respondent_id
+            ) VALUES (
+                $1,
+                $2
+            ) ON CONFLICT (organization_id, respondent_id) DO NOTHING
+            "#,
+            input.organization_id,
+            respondent.id
+        )
+        .execute(pool)
         .await?;
 
         Ok(respondent)
