@@ -2,6 +2,7 @@ use async_graphql::{Context, InputObject, Object, Result, SimpleObject};
 use auth::Claims;
 use db::{DateTime, Embed, UpsertEmbedInput};
 use jsonwebtoken::TokenData;
+use url::{Position, Url};
 
 use crate::{
     context::ApiContext,
@@ -69,6 +70,9 @@ impl EmbedMutation {
         ctx: &Context<'_>,
         input: PingEmbedOriginInput,
     ) -> Result<EmbedOriginResult> {
+        let parsed = Url::parse(&input.url).unwrap();
+        let cleaned = &parsed[..Position::AfterPath];
+
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query_as!(
             EmbedOriginResult,
@@ -80,7 +84,7 @@ impl EmbedMutation {
             RETURNING url, last_ping_at as "last_ping_at: DateTime"
         "#,
             input.embed_id,
-            input.url
+            cleaned,
         )
         .fetch_one(&db_pool)
         .await?;
