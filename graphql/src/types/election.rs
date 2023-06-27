@@ -1,7 +1,7 @@
 use super::RaceResult;
 use crate::{context::ApiContext, Error};
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
-use auth::Claims;
+use auth::AccessTokenClaims;
 use db::{
     models::enums::{PoliticalParty, RaceType, State},
     Address, Election, Race,
@@ -64,7 +64,7 @@ impl ElectionResult {
     /// Show races relevant to the user based on their address
     async fn races_by_user_districts(&self, ctx: &Context<'_>) -> Result<Vec<RaceResult>, Error> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
-        let token = ctx.data::<Option<TokenData<Claims>>>();
+        let token = ctx.data::<Option<TokenData<AccessTokenClaims>>>();
 
         if let Some(token_data) = token.unwrap() {
             let user_address_data = sqlx::query!(

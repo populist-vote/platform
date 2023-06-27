@@ -37,12 +37,23 @@ fn truncate(s: &str, max_chars: usize) -> &str {
     }
 }
 
-pub fn format_auth_cookie(token: &str) -> String {
+pub enum TokenType {
+    Access,
+    Refresh,
+}
+
+pub fn format_auth_cookie(token_type: TokenType, token: &str) -> String {
+    let token_type_str = match token_type {
+        TokenType::Access => "access_token",
+        TokenType::Refresh => "refresh_token",
+    };
+
     format!(
-        "access_token={}; HttpOnly; SameSite=None; Secure; Domain={}; Expires={};",
+        "{}={}; HttpOnly; SameSite=None; Secure; Domain={}; Expires={};",
+        token_type_str,
         token,
         config::Config::default().root_domain,
-        (chrono::Utc::now() + chrono::Duration::days(30)).format("%a, %d %b %Y %T GMT")
+        (chrono::Utc::now() + chrono::Duration::days(120)).format("%a, %d %b %Y %T GMT")
     )
 }
 
@@ -58,7 +69,7 @@ fn test_create_temporary_username() {
 #[test]
 fn test_format_auth_cookie() {
     let token = "test";
-    let result = format_auth_cookie(token);
+    let result = format_auth_cookie(TokenType::Access, token);
     assert_eq!(
         result,
         format!(

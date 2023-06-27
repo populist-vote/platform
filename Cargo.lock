@@ -3016,6 +3016,7 @@ dependencies = [
  "env_logger",
  "graphql",
  "http",
+ "jsonwebtoken",
  "legiscan",
  "pretty_assertions",
  "pwhash",

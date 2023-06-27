@@ -1,28 +1,94 @@
 {
-  "query": "\n            INSERT INTO embed_origin (embed_id, url)\n            VALUES ($1, $2)\n            ON CONFLICT (embed_id, url)\n            DO UPDATE SET last_ping_at = CURRENT_TIMESTAMP\n            RETURNING url, last_ping_at as \"last_ping_at: DateTime\"\n        ",
+  "query": "\n            UPDATE populist_user SET email = $1\n            WHERE id = $2\n            RETURNING id, email, username, password, role AS \"role:Role\", organization_id, invited_at, refresh_token, created_at, confirmed_at, updated_at\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "url",
-        "type_info": "Text"
+        "name": "id",
+        "type_info": "Uuid"
       },
       {
         "ordinal": 1,
-        "name": "last_ping_at: DateTime",
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "username",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "password",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "role:Role",
+        "type_info": {
+          "Custom": {
+            "name": "user_role",
+            "kind": {
+              "Enum": [
+                "superuser",
+                "staff",
+                "premium",
+                "basic"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 6,
+        "name": "invited_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "refresh_token",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "confirmed_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "updated_at",
         "type_info": "Timestamptz"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid",
-        "Text"
+        "Text",
+        "Uuid"
       ]
     },
     "nullable": [
       false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
       false
     ]
   },
-  "hash": "77d48aef1e15694c6d6c50a0d241aefd3560b85b7d0459d7545d5865700a5682"
+  "hash": "cdd5b3b3e42ae760270f26de0e8faa9ec3c79a57ca204ef563fbf10b89318117"
 }

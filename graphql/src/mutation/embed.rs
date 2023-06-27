@@ -1,5 +1,5 @@
 use async_graphql::{Context, InputObject, Object, Result, SimpleObject};
-use auth::Claims;
+use auth::AccessTokenClaims;
 use db::{DateTime, Embed, UpsertEmbedInput};
 use jsonwebtoken::TokenData;
 use url::{Position, Url};
@@ -36,7 +36,7 @@ impl EmbedMutation {
     ) -> Result<EmbedResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let user_org_id = ctx
-            .data::<Option<TokenData<Claims>>>()
+            .data::<Option<TokenData<AccessTokenClaims>>>()
             .unwrap()
             .as_ref()
             .unwrap()
@@ -54,7 +54,7 @@ impl EmbedMutation {
             }
         }
         let updated_by = ctx
-            .data::<Option<TokenData<Claims>>>()
+            .data::<Option<TokenData<AccessTokenClaims>>>()
             .unwrap()
             .as_ref()
             .unwrap()
@@ -96,7 +96,7 @@ impl EmbedMutation {
     async fn delete_embed(&self, ctx: &Context<'_>, id: uuid::Uuid) -> Result<DeleteEmbedResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let user_org_id = ctx
-            .data::<Option<TokenData<Claims>>>()
+            .data::<Option<TokenData<AccessTokenClaims>>>()
             .unwrap()
             .as_ref()
             .unwrap()
