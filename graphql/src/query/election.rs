@@ -1,5 +1,5 @@
 use async_graphql::{Context, FieldResult, Object, Result, ID};
-use auth::Claims;
+use auth::AccessTokenClaims;
 use db::{models::enums::State, Election, ElectionSearchInput};
 use jsonwebtoken::TokenData;
 
@@ -26,7 +26,7 @@ impl ElectionQuery {
 
     async fn elections_by_user(&self, ctx: &Context<'_>) -> Result<Vec<ElectionResult>, Error> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
-        let token = ctx.data::<Option<TokenData<Claims>>>();
+        let token = ctx.data::<Option<TokenData<AccessTokenClaims>>>();
 
         if let Some(token_data) = token.unwrap() {
             let user_address_result = sqlx::query!(

@@ -1,6 +1,6 @@
 use crate::{context::ApiContext, is_admin, Error};
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
-use auth::Claims;
+use auth::AccessTokenClaims;
 use db::{Role, User, UserWithProfile};
 use jsonwebtoken::TokenData;
 
@@ -57,8 +57,8 @@ impl AuthTokenResult {
     }
 }
 
-impl From<&TokenData<Claims>> for AuthTokenResult {
-    fn from(user: &TokenData<Claims>) -> Self {
+impl From<&TokenData<AccessTokenClaims>> for AuthTokenResult {
+    fn from(user: &TokenData<AccessTokenClaims>) -> Self {
         Self {
             id: ID::from(user.claims.sub),
             username: user.claims.username.clone(),

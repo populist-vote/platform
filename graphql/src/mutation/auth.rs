@@ -7,8 +7,8 @@ use crate::{
 use ::http::header::SET_COOKIE;
 use async_graphql::{Context, InputObject, Object, Result};
 use auth::{
-    create_access_token_for_user, create_random_token, create_temporary_username,
-    format_auth_cookie, Claims,
+    create_access_token_for_user, create_random_token, create_refresh_token_for_user,
+    create_temporary_username, format_auth_cookie, AccessTokenClaims,
 };
 use db::{AddressInput, Coordinates, CreateUserInput, CreateUserWithProfileInput, Role, User};
 use geocodio::GeocodioProxy;
@@ -192,7 +192,10 @@ impl AuthMutation {
                     println!("Error sending welcome email: {}", err)
                 }
 
-                ctx.insert_http_header(SET_COOKIE, format_auth_cookie(&access_token));
+                ctx.insert_http_header(
+                    SET_COOKIE,
+                    format_auth_cookie(auth::TokenType::Access, &access_token),
+                );
 
                 Ok(LoginResult {
                     user_id: new_user.id.into(),
@@ -243,7 +246,16 @@ impl AuthMutation {
 
             if password_is_valid {
                 let access_token = create_access_token_for_user(user.clone())?;
-                ctx.insert_http_header(SET_COOKIE, format_auth_cookie(&access_token));
+                ctx.insert_http_header(
+                    SET_COOKIE,
+                    format_auth_cookie(auth::TokenType::Access, &access_token),
+                );
+                let refresh_token = create_refresh_token_for_user(user.clone())?;
+                db::User::update_refresh_token(&db_pool, user.id, &refresh_token).await?;
+                ctx.append_http_header(
+                    SET_COOKIE,
+                    format_auth_cookie(auth::TokenType::Refresh, &refresh_token),
+                );
                 User::set_last_login_at(&db_pool, user.id).await?;
                 Ok(LoginResult {
                     user_id: user.id.into(),
@@ -329,7 +341,7 @@ impl AuthMutation {
         ctx: &Context<'_>,
         input: UpdatePasswordInput,
     ) -> Result<bool, Error> {
-        let user = ctx.data::<Option<TokenData<Claims>>>().unwrap();
+        let user = ctx.data::<Option<TokenData<AccessTokenClaims>>>().unwrap();
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
 
         match user {
@@ -380,7 +392,14 @@ impl AuthMutation {
                 config::Config::default().root_domain
             ),
         );
-
+        ctx.append_http_header(
+            SET_COOKIE,
+            format!(
+                "refresh_token=null; expires={}; Max-Age=0; HttpOnly; SameSite=None; Secure; Domain={}; Path=/",
+                (chrono::Utc::now() - chrono::Duration::hours(1)).format("%a, %d %b %Y %T GMT"),
+                config::Config::default().root_domain
+            ),
+        );
         Ok(true)
     }
 }

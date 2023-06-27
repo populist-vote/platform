@@ -4,7 +4,7 @@ use crate::{
     types::{AuthTokenResult, Error},
 };
 use async_graphql::{Context, Object, Result, SimpleObject};
-use auth::Claims;
+use auth::AccessTokenClaims;
 use jsonwebtoken::TokenData;
 use zxcvbn::zxcvbn;
 
@@ -70,7 +70,7 @@ impl AuthQuery {
     /// Provides current user based on JWT found in client's access_token cookie
     #[graphql(visible = "is_admin")]
     async fn current_user(&self, ctx: &Context<'_>) -> Result<Option<AuthTokenResult>, Error> {
-        let user = ctx.data::<Option<TokenData<Claims>>>().unwrap();
+        let user = ctx.data::<Option<TokenData<AccessTokenClaims>>>().unwrap();
 
         match user {
             Some(user) => Ok(Some(AuthTokenResult::from(user))),

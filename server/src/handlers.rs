@@ -8,7 +8,7 @@ use axum::{
 };
 use db::Role;
 use graphql::PopulistSchema;
-use tower_cookies::Cookies;
+use tower_cookies::{Cookie, Cookies};
 
 pub async fn internal_graphql_handler(
     headers: HeaderMap,
@@ -22,7 +22,7 @@ pub async fn internal_graphql_handler(
         .and_then(|header| header.split_whitespace().nth(1));
 
     let bearer_token_data = if let Some(token) = bearer_token {
-        let token_data = jwt::validate_token(token);
+        let token_data = jwt::validate_access_token(token);
         if let Ok(token_data) = token_data {
             Some(token_data)
         } else {
@@ -32,13 +32,37 @@ pub async fn internal_graphql_handler(
         None
     };
 
-    let cookie = cookies.get("access_token");
-    let cookie_token_data = if let Some(cookie) = cookie {
-        let token_data = jwt::validate_token(cookie.value());
-        if let Ok(token_data) = token_data {
+    let cookie_token_data = if let Some(access_cookie) = cookies.get("access_token") {
+        if let Ok(token_data) = jwt::validate_access_token(access_cookie.value()) {
             Some(token_data)
         } else {
-            None
+            let refresh_cookie = cookies.get("refresh_token").unwrap();
+
+            match jwt::validate_refresh_token(refresh_cookie.value()) {
+                Ok(token_data) => {
+                    let db_pool = db::pool().await;
+                    let user = db::User::find_by_id(&db_pool.connection, token_data.claims.sub)
+                        .await
+                        .unwrap();
+                    if user.clone().refresh_token.unwrap() != refresh_cookie.value() {
+                        cookies.to_owned().remove(Cookie::named("access_token"));
+                        cookies.to_owned().remove(Cookie::named("refresh_token"));
+                        return GraphQLResponse::from(async_graphql::Response::from_errors(vec![
+                            async_graphql::ServerError::new("Unauthorized", None),
+                        ]));
+                    }
+                    let access_token = jwt::create_access_token_for_user(user).unwrap();
+                    // Set the new access token in the cookie
+                    let cookie = tower_cookies::Cookie::new("access_token", access_token.clone());
+                    cookies.add(cookie);
+                    Some(jwt::validate_access_token(&access_token).unwrap())
+                }
+                Err(_) => {
+                    cookies.to_owned().remove(Cookie::named("access_token"));
+                    cookies.to_owned().remove(Cookie::named("refresh_token"));
+                    None
+                }
+            }
         }
     } else {
         None
@@ -68,7 +92,7 @@ pub async fn external_graphql_handler(
         .and_then(|header| header.split_whitespace().nth(1));
 
     let bearer_token_data = if let Some(token) = bearer_token {
-        let token_data = jwt::validate_token(token);
+        let token_data = jwt::validate_access_token(token);
         if let Ok(token_data) = token_data {
             Some(token_data)
         } else {

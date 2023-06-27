@@ -5,7 +5,7 @@ use crate::{
     upload_to_s3, File,
 };
 use async_graphql::{Context, Object, Result, SimpleObject, Upload, ID};
-use auth::{create_access_token_for_user, format_auth_cookie, Claims};
+use auth::{create_access_token_for_user, format_auth_cookie, AccessTokenClaims, TokenType};
 use db::{AddressInput, Role, User};
 use http::header::SET_COOKIE;
 use jsonwebtoken::TokenData;
@@ -37,7 +37,10 @@ pub async fn refresh_access_token(ctx: &Context<'_>, user_id: uuid::Uuid) -> Res
     let db_pool = ctx.data::<ApiContext>()?.pool.clone();
     let user = User::find_by_id(&db_pool, user_id).await?;
     let access_token = create_access_token_for_user(user)?;
-    ctx.insert_http_header(SET_COOKIE, format_auth_cookie(&access_token));
+    ctx.insert_http_header(
+        SET_COOKIE,
+        format_auth_cookie(auth::TokenType::Access, &access_token),
+    );
     Ok(true)
 }
 
@@ -46,7 +49,7 @@ impl UserMutation {
     #[graphql(visible = "is_admin")]
     async fn upload_profile_picture(&self, ctx: &Context<'_>, file: Upload) -> Result<String> {
         let user_id = ctx
-            .data::<Option<TokenData<Claims>>>()
+            .data::<Option<TokenData<AccessTokenClaims>>>()
             .unwrap()
             .as_ref()
             .unwrap()
@@ -86,7 +89,7 @@ impl UserMutation {
 
     async fn delete_profile_picture(&self, ctx: &Context<'_>) -> Result<bool> {
         let user_id = ctx
-            .data::<Option<TokenData<Claims>>>()
+            .data::<Option<TokenData<AccessTokenClaims>>>()
             .unwrap()
             .as_ref()
             .unwrap()
@@ -132,7 +135,7 @@ impl UserMutation {
     ) -> Result<UpdateUsernameResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let user_id = ctx
-            .data::<Option<TokenData<Claims>>>()
+            .data::<Option<TokenData<AccessTokenClaims>>>()
             .unwrap()
             .as_ref()
             .unwrap()
@@ -143,7 +146,7 @@ impl UserMutation {
             r#"
             UPDATE populist_user SET username = $1
             WHERE id = $2
-            RETURNING id, email, username, password, role AS "role:Role", organization_id, created_at, confirmed_at, updated_at
+            RETURNING id, email, username, password, role AS "role:Role", organization_id, invited_at, refresh_token, created_at, confirmed_at, updated_at
         "#,
             username,
             user_id,
@@ -154,7 +157,10 @@ impl UserMutation {
         match updated_record {
             Ok(user) => {
                 let access_token = create_access_token_for_user(user.clone())?;
-                ctx.insert_http_header(SET_COOKIE, format_auth_cookie(&access_token));
+                ctx.insert_http_header(
+                    SET_COOKIE,
+                    format_auth_cookie(auth::TokenType::Access, &access_token),
+                );
                 Ok(UpdateUsernameResult {
                     username: user.username,
                 })
@@ -179,7 +185,7 @@ impl UserMutation {
     ) -> Result<UpdateEmailResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let user_id = ctx
-            .data::<Option<TokenData<Claims>>>()
+            .data::<Option<TokenData<AccessTokenClaims>>>()
             .unwrap()
             .as_ref()
             .unwrap()
@@ -190,7 +196,7 @@ impl UserMutation {
             r#"
             UPDATE populist_user SET email = $1
             WHERE id = $2
-            RETURNING id, email, username, password, role AS "role:Role", organization_id, created_at, confirmed_at, updated_at
+            RETURNING id, email, username, password, role AS "role:Role", organization_id, invited_at, refresh_token, created_at, confirmed_at, updated_at
         "#,
             email,
             user_id,
@@ -201,7 +207,10 @@ impl UserMutation {
         match updated_record {
             Ok(user) => {
                 let access_token = create_access_token_for_user(user.clone())?;
-                ctx.insert_http_header(SET_COOKIE, format_auth_cookie(&access_token));
+                ctx.insert_http_header(
+                    SET_COOKIE,
+                    format_auth_cookie(auth::TokenType::Access, &access_token),
+                );
                 Ok(UpdateEmailResult { email: user.email })
             }
             Err(err) => match err {
@@ -225,7 +234,7 @@ impl UserMutation {
     ) -> Result<UpdateNameResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let user_id = ctx
-            .data::<Option<TokenData<Claims>>>()
+            .data::<Option<TokenData<AccessTokenClaims>>>()
             .unwrap()
             .as_ref()
             .unwrap()
@@ -264,7 +273,7 @@ impl UserMutation {
     ) -> Result<AddressResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let user_id = ctx
-            .data::<Option<TokenData<Claims>>>()
+            .data::<Option<TokenData<AccessTokenClaims>>>()
             .unwrap()
             .as_ref()
             .unwrap()
@@ -282,7 +291,7 @@ impl UserMutation {
     async fn delete_account(&self, ctx: &Context<'_>) -> Result<ID> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let user_id = ctx
-            .data::<Option<TokenData<Claims>>>()
+            .data::<Option<TokenData<AccessTokenClaims>>>()
             .unwrap()
             .as_ref()
             .unwrap()
@@ -299,7 +308,8 @@ impl UserMutation {
         .fetch_one(&db_pool)
         .await?;
 
-        ctx.insert_http_header(SET_COOKIE, format_auth_cookie("null"));
+        ctx.insert_http_header(SET_COOKIE, format_auth_cookie(TokenType::Access, "null"));
+        ctx.insert_http_header(SET_COOKIE, format_auth_cookie(TokenType::Refresh, "null"));
 
         Ok(result.id.into())
     }

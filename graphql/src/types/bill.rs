@@ -1,6 +1,6 @@
 use crate::{context::ApiContext, types::ArgumentResult};
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
-use auth::Claims;
+use auth::AccessTokenClaims;
 use db::{
     models::{
         bill::Bill,
@@ -123,7 +123,10 @@ impl BillResult {
 
     async fn users_vote(&self, ctx: &Context<'_>) -> Result<Option<ArgumentPosition>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let token = ctx.data::<Option<TokenData<Claims>>>().unwrap().as_ref();
+        let token = ctx
+            .data::<Option<TokenData<AccessTokenClaims>>>()
+            .unwrap()
+            .as_ref();
 
         match token {
             Some(token) => {

@@ -7,7 +7,7 @@ use crate::{
     },
 };
 use async_graphql::{Context, Object, Result, SimpleObject, ID};
-use auth::Claims;
+use auth::AccessTokenClaims;
 use db::models::voting_guide::VotingGuide;
 use jsonwebtoken::TokenData;
 use uuid::Uuid;
@@ -31,7 +31,7 @@ impl VotingGuideMutation {
     ) -> Result<VotingGuideResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let user_id = ctx
-            .data::<Option<TokenData<Claims>>>()
+            .data::<Option<TokenData<AccessTokenClaims>>>()
             .unwrap()
             .as_ref()
             .unwrap()
@@ -76,7 +76,7 @@ impl VotingGuideMutation {
     ) -> Result<VotingGuideCandidateResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let user_id = ctx
-            .data::<Option<TokenData<Claims>>>()
+            .data::<Option<TokenData<AccessTokenClaims>>>()
             .unwrap()
             .as_ref()
             .unwrap()

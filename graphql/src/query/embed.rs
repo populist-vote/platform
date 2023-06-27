@@ -1,5 +1,5 @@
 use async_graphql::{Context, Object, Result, ID};
-use auth::Claims;
+use auth::AccessTokenClaims;
 use db::{Embed, EmbedFilter};
 use jsonwebtoken::TokenData;
 
@@ -34,7 +34,7 @@ impl EmbedQuery {
     async fn embed_by_id(&self, ctx: &Context<'_>, id: ID) -> Result<EmbedResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = Embed::find_by_id(&db_pool, uuid::Uuid::parse_str(&id)?).await?;
-        if let Some(token_data) = ctx.data_unchecked::<Option<TokenData<Claims>>>() {
+        if let Some(token_data) = ctx.data_unchecked::<Option<TokenData<AccessTokenClaims>>>() {
             if token_data.claims.organization_id.unwrap_or_default() != record.organization_id {
                 return Err("Unauthorized".into());
             }
