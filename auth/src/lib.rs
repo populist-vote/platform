@@ -47,16 +47,13 @@ pub fn format_auth_cookie(token_type: TokenType, token: &str) -> String {
         TokenType::Access => "access_token",
         TokenType::Refresh => "refresh_token",
     };
-    let exp = match token_type {
-        TokenType::Access => chrono::Duration::days(120),
-        TokenType::Refresh => chrono::Duration::days(120),
-    };
+
     format!(
         "{}={}; HttpOnly; SameSite=None; Secure; Domain={}; Expires={};",
         token_type_str,
         token,
         config::Config::default().root_domain,
-        (chrono::Utc::now() + exp).format("%a, %d %b %Y %T GMT")
+        (chrono::Utc::now() + chrono::Duration::days(120)).format("%a, %d %b %Y %T GMT")
     )
 }
 
