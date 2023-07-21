@@ -15,7 +15,7 @@ uuid = { version = "1.1.2", features = ["serde", "v4"] }
 lazy_static = "*"
 serde = "1.0.130"
 serde_with = { version = "2.0.1", features = ["json"] }
-async-graphql = { version = "5.0.5", features = ["chrono", "uuid", "dataloader"] }
+async-graphql = { version = "5.0.10", features = ["chrono", "uuid", "dataloader"] }
 dotenv = "*"
 anyhow = "1.0.45"
 strum = "0.22.0"

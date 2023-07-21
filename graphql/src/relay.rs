@@ -126,7 +126,7 @@ pub async fn query<T: async_graphql::OutputType, I: ExactSizeIterator<Item = T>>
     p: Params,
     default_page_size: usize,
 ) -> ConnectionResult<T> {
-    connection::query::<_, _, Base64Cursor, T, ConnectionFields, _, _, _, Infallible>(
+    connection::query::<_, _, Base64Cursor, T, _, ConnectionFields, _, _, _, Infallible>(
         p.after,
         p.before,
         p.first,

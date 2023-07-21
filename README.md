@@ -8,21 +8,18 @@ To clone this repository, run `git clone --recurse-submodules -j8`
 Make sure you have [Rust installed] on your machine. Next, you'll need the [sqlx-cli] installed to manage the database connection and run migrations. To do so, run `cargo install sqlx-cli --features postgres`
 
 First copy the `.env.example` file to `.env` which is .gitignored.  
-`cp .env.example .env` For local development, you can then run `sqlx db create` to create a new Postgres database at the url defined in your new `.env`
-
-Next, you'll need to run the migrations with `sqlx migrate run`
+```bash
+cp .env.example .env
+```
+For local development, its best to create a local copy of our staging database on Heroku. Once you have access to our Heroku account and have logged in with the Heroku CLI, you can do so by running 
+```bash
+./scripts/refresh_local_db.sh populist-api-staging
+``` 
+from the root of the project. This will download the latest backup from Heroku and restore it locally in a database called populist-platform-dev. You can then run `cargo sqlx prepare` to generate the sqlx-data.json file which is used to validate SQL queries at compile time.
 
 ## Database
 
 [sqlx] is used for managing asynchronous database operations. This project relies heavily on compile-time query verification using `sqlx` macros, namely `query_as!` If you do not have a DATABASE_URL specified in your .env file, you will not be able to compile the binary for this crate. You can run sqlx in offline mode by setting SQLX_OFFLINE=true. You can enable "offline mode" to cache the results of the SQL query analysis using the sqlx-cli. If you make schema alterations, run the command `cargo sqlx prepare` which will write your query data to `sqlx-data.json` at the `/db` root.
-
-There is a shell script that runs on Ubuntu to download a Heroku database and restore it locally in a database called populist-platform-dev.
-
-```bash
-$ ./scripts/refresh_local_db.sh appname
-```
-
-where appname is populist-api-staging or populist-api-production.
 
 ### Running Migrations
 We can easily create SQL migration files using the sqlx-cli.  From the /db directory, you can run `sqlx migrate add -r DescriptiveMigrationName` to create up and down migration files in the /migrations folder.  You can write SQL in these files and use `sqlx migrate run` and `sqlx migrate revert` respectively.

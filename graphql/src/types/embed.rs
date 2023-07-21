@@ -4,7 +4,7 @@ use db::{DateTime, Embed, EmbedType, UserWithProfile};
 use serde_json::Value as JSON;
 use tracing::log::warn;
 
-use crate::context::ApiContext;
+use crate::{context::ApiContext, guard::StaffOnly};
 
 use super::{BillResult, Error, PoliticianResult, PollResult, QuestionResult, UserResult};
 
@@ -25,7 +25,7 @@ pub struct EmbedResult {
 }
 
 #[derive(SimpleObject)]
-#[graphql(visible = "is_admin")]
+#[graphql(guard = "StaffOnly", visible = "is_admin")]
 pub struct EmbedOriginResult {
     pub url: String,
     pub last_ping_at: DateTime,
