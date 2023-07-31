@@ -35,9 +35,7 @@ pub async fn internal_graphql_handler(
     let cookie_token_data = if let Some(access_cookie) = cookies.get("access_token") {
         if let Ok(token_data) = jwt::validate_access_token(access_cookie.value()) {
             Some(token_data)
-        } else {
-            let refresh_cookie = cookies.get("refresh_token").unwrap();
-
+        } else if let Some(refresh_cookie) = cookies.get("refresh_token") {
             match jwt::validate_refresh_token(refresh_cookie.value()) {
                 Ok(token_data) => {
                     let db_pool = db::pool().await;
@@ -63,6 +61,8 @@ pub async fn internal_graphql_handler(
                     None
                 }
             }
+        } else {
+            None
         }
     } else {
         None
