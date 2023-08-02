@@ -39,13 +39,15 @@ pub async fn internal_graphql_handler(
                 let user = db::User::find_by_id(&db_pool.connection, token_data.claims.sub)
                     .await
                     .unwrap();
+                // Ensure the refresh token in the cookie matches the one associated with the user in the database
                 if user.clone().refresh_token.unwrap() != refresh_cookie.value() {
+                    // If not, remove the cookies and return None
                     cookies.to_owned().remove(Cookie::named("access_token"));
                     cookies.to_owned().remove(Cookie::named("refresh_token"));
                     None
                 } else {
+                    // If so, create a new access token, set it in the cookie, and return it
                     let access_token = jwt::create_access_token_for_user(user).unwrap();
-                    // Set the new access token in the cookie
                     let cookie = tower_cookies::Cookie::new("access_token", access_token.clone());
                     cookies.add(cookie);
                     Some(jwt::validate_access_token(&access_token).unwrap())
