@@ -16,6 +16,7 @@ async-graphql = { version = "5.0.10", features = ["apollo_tracing"] }
 serde_json = "1.0.68"
 jsonwebtoken = "7.2.0"
 slab = "0.4.5"
+time = "0.3.25"
 dotenv = "*"
 anyhow = "1.0.45"
 sqlx = { version = "0.6.2", features = ["postgres", "offline"] }
@@ -24,7 +25,7 @@ thiserror = "1.0.30"
 pwhash = "1.0.0"
 regex = "1.5.4"
 tracing = "0.1.35"
-tracing-subscriber = {version = "0.3.11", features = ["fmt", "env-filter"]}
+tracing-subscriber = { version = "0.3.11", features = ["fmt", "env-filter"] }
 env_logger = "*"
 axum = { version = "0.6.1", features = ["ws", "headers", "macros"] }
 async-graphql-axum = "5.0.5"
