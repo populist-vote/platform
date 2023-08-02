@@ -32,40 +32,41 @@ pub async fn internal_graphql_handler(
         None
     };
 
-    let cookie_token_data = if let Some(access_cookie) = cookies.get("access_token") {
-        if let Ok(token_data) = jwt::validate_access_token(access_cookie.value()) {
-            Some(token_data)
-        } else if let Some(refresh_cookie) = cookies.get("refresh_token") {
-            match jwt::validate_refresh_token(refresh_cookie.value()) {
-                Ok(token_data) => {
-                    let db_pool = db::pool().await;
-                    let user = db::User::find_by_id(&db_pool.connection, token_data.claims.sub)
-                        .await
-                        .unwrap();
-                    if user.clone().refresh_token.unwrap() != refresh_cookie.value() {
-                        cookies.to_owned().remove(Cookie::named("access_token"));
-                        cookies.to_owned().remove(Cookie::named("refresh_token"));
-                        None
-                    } else {
-                        let access_token = jwt::create_access_token_for_user(user).unwrap();
-                        // Set the new access token in the cookie
-                        let cookie =
-                            tower_cookies::Cookie::new("access_token", access_token.clone());
-                        cookies.add(cookie);
-                        Some(jwt::validate_access_token(&access_token).unwrap())
-                    }
-                }
-                Err(_) => {
+    let refresh_token_check = if let Some(refresh_cookie) = cookies.get("refresh_token") {
+        match jwt::validate_refresh_token(refresh_cookie.value()) {
+            Ok(token_data) => {
+                let db_pool = db::pool().await;
+                let user = db::User::find_by_id(&db_pool.connection, token_data.claims.sub)
+                    .await
+                    .unwrap();
+                if user.clone().refresh_token.unwrap() != refresh_cookie.value() {
                     cookies.to_owned().remove(Cookie::named("access_token"));
                     cookies.to_owned().remove(Cookie::named("refresh_token"));
                     None
+                } else {
+                    let access_token = jwt::create_access_token_for_user(user).unwrap();
+                    // Set the new access token in the cookie
+                    let cookie = tower_cookies::Cookie::new("access_token", access_token.clone());
+                    cookies.add(cookie);
+                    Some(jwt::validate_access_token(&access_token).unwrap())
                 }
             }
-        } else {
-            None
+            Err(_) => {
+                cookies.to_owned().remove(Cookie::named("access_token"));
+                cookies.to_owned().remove(Cookie::named("refresh_token"));
+                None
+            }
         }
     } else {
         None
+    };
+
+    let cookie_token_data = match cookies.get("access_token") {
+        Some(access_cookie) => match jwt::validate_access_token(access_cookie.value()) {
+            Ok(token_data) => Some(token_data),
+            Err(_) => refresh_token_check,
+        },
+        None => refresh_token_check,
     };
 
     // Use the bearer token if it's present, otherwise use the cookie
