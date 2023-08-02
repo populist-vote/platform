@@ -45,15 +45,15 @@ pub async fn internal_graphql_handler(
                     if user.clone().refresh_token.unwrap() != refresh_cookie.value() {
                         cookies.to_owned().remove(Cookie::named("access_token"));
                         cookies.to_owned().remove(Cookie::named("refresh_token"));
-                        return GraphQLResponse::from(async_graphql::Response::from_errors(vec![
-                            async_graphql::ServerError::new("Unauthorized", None),
-                        ]));
+                        None
+                    } else {
+                        let access_token = jwt::create_access_token_for_user(user).unwrap();
+                        // Set the new access token in the cookie
+                        let cookie =
+                            tower_cookies::Cookie::new("access_token", access_token.clone());
+                        cookies.add(cookie);
+                        Some(jwt::validate_access_token(&access_token).unwrap())
                     }
-                    let access_token = jwt::create_access_token_for_user(user).unwrap();
-                    // Set the new access token in the cookie
-                    let cookie = tower_cookies::Cookie::new("access_token", access_token.clone());
-                    cookies.add(cookie);
-                    Some(jwt::validate_access_token(&access_token).unwrap())
                 }
                 Err(_) => {
                     cookies.to_owned().remove(Cookie::named("access_token"));

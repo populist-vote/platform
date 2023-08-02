@@ -178,6 +178,8 @@ impl AuthMutation {
         match new_user_result {
             Ok(new_user) => {
                 let access_token = create_access_token_for_user(new_user.clone())?;
+                let refresh_token = create_refresh_token_for_user(new_user.clone())?;
+                db::User::update_refresh_token(&db_pool, new_user.id, &refresh_token).await?;
 
                 let account_confirmation_url = format!(
                     "{}auth/confirm?token={}",
@@ -195,6 +197,10 @@ impl AuthMutation {
                 ctx.insert_http_header(
                     SET_COOKIE,
                     format_auth_cookie(auth::TokenType::Access, &access_token),
+                );
+                ctx.insert_http_header(
+                    SET_COOKIE,
+                    format_auth_cookie(auth::TokenType::Refresh, &refresh_token),
                 );
 
                 Ok(LoginResult {
