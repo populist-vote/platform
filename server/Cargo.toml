@@ -19,7 +19,7 @@ slab = "0.4.5"
 time = "0.3.25"
 dotenv = "*"
 anyhow = "1.0.45"
-sqlx = { version = "0.6.2", features = ["postgres", "offline"] }
+sqlx = { version = "0.7.1", features = ["postgres"] }
 uuid = "1.1.2"
 thiserror = "1.0.30"
 pwhash = "1.0.0"

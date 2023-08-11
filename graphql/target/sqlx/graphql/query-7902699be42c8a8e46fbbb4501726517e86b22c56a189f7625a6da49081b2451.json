@@ -1,5 +1,5 @@
 {
-  "query": "\n            UPDATE populist_user SET email = $1\n            WHERE id = $2\n            RETURNING id, email, username, password, role AS \"role:Role\", organization_id, invited_at, refresh_token, created_at, confirmed_at, updated_at\n        ",
+  "query": "\n            SELECT\n                r.id,\n                r.slug,\n                r.title,\n                r.office_id,\n                r.race_type AS \"race_type:RaceType\",\n                r.party AS \"party:PoliticalParty\",\n                r.state AS \"state:State\",\n                r.description,\n                r.ballotpedia_link,\n                r.early_voting_begins_date,\n                r.winner_ids,\n                r.total_votes,\n                r.official_website,\n                r.election_id,\n                r.is_special_election,\n                r.num_elect,\n                r.created_at,\n                r.updated_at\n            FROM\n                race r\n                JOIN office o ON office_id = o.id\n            WHERE\n                r.election_id = $1 AND (\n                    o.election_scope = 'national'\n                    OR (o.state = $2 AND o.election_scope = 'state')\n                    OR (o.state = $2 AND (  \n                       (o.election_scope = 'city' AND o.municipality = $3) OR\n                       (o.election_scope = 'county' AND o.county = $4) OR\n                       (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR\n                       (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR\n                       (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR\n                       (o.election_scope = 'district' AND o.district_type = 'county' AND county = $3 AND o.district = $8) OR\n                       (CASE \n                         WHEN $10 = '01' THEN\n                          (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'ISD #', '') = $9) AND\n                          (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)\n                         WHEN $10 = '03' THEN\n                           (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'SSD #', '') = $9) AND\n                           (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)\n                        END)\n                    )))\n            ORDER BY o.priority ASC, title DESC\n                ",
   "describe": {
     "columns": [
       {
@@ -9,31 +9,29 @@
       },
       {
         "ordinal": 1,
-        "name": "email",
+        "name": "slug",
         "type_info": "Text"
       },
       {
         "ordinal": 2,
-        "name": "username",
+        "name": "title",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "password",
-        "type_info": "Text"
+        "name": "office_id",
+        "type_info": "Uuid"
       },
       {
         "ordinal": 4,
-        "name": "role:Role",
+        "name": "race_type:RaceType",
         "type_info": {
           "Custom": {
-            "name": "user_role",
+            "name": "race_type",
             "kind": {
               "Enum": [
-                "superuser",
-                "staff",
-                "premium",
-                "basic"
+                "primary",
+                "general"
               ]
             }
           }
@@ -41,39 +39,227 @@
       },
       {
         "ordinal": 5,
-        "name": "organization_id",
-        "type_info": "Uuid"
+        "name": "party:PoliticalParty",
+        "type_info": {
+          "Custom": {
+            "name": "political_party",
+            "kind": {
+              "Enum": [
+                "democratic",
+                "republican",
+                "libertarian",
+                "green",
+                "constitution",
+                "unknown",
+                "independent",
+                "freedom",
+                "unity",
+                "approval_voting",
+                "unaffiliated",
+                "democratic_farmer_labor",
+                "grassroots_legalize_cannabis",
+                "legal_marijuana_now",
+                "socialist_workers_party",
+                "socialist_workers",
+                "colorado_center",
+                "american_constitution"
+              ]
+            }
+          }
+        }
       },
       {
         "ordinal": 6,
-        "name": "invited_at",
-        "type_info": "Timestamptz"
+        "name": "state:State",
+        "type_info": {
+          "Custom": {
+            "name": "state",
+            "kind": {
+              "Enum": [
+                "AL",
+                "AK",
+                "AZ",
+                "AR",
+                "CA",
+                "CO",
+                "CT",
+                "DC",
+                "DE",
+                "FL",
+                "GA",
+                "HI",
+                "ID",
+                "IL",
+                "IN",
+                "IA",
+                "KS",
+                "KY",
+                "LA",
+                "ME",
+                "MD",
+                "MA",
+                "MI",
+                "MN",
+                "MS",
+                "MO",
+                "MT",
+                "NE",
+                "NV",
+                "NH",
+                "NJ",
+                "NM",
+                "NY",
+                "NC",
+                "ND",
+                "OH",
+                "OK",
+                "OR",
+                "PA",
+                "RI",
+                "SC",
+                "SD",
+                "TN",
+                "TX",
+                "UT",
+                "VT",
+                "VA",
+                "WA",
+                "WV",
+                "WI",
+                "WY"
+              ]
+            }
+          }
+        }
       },
       {
         "ordinal": 7,
-        "name": "refresh_token",
+        "name": "description",
         "type_info": "Text"
       },
       {
         "ordinal": 8,
+        "name": "ballotpedia_link",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "early_voting_begins_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 10,
+        "name": "winner_ids",
+        "type_info": "UuidArray"
+      },
+      {
+        "ordinal": 11,
+        "name": "total_votes",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 12,
+        "name": "official_website",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "election_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 14,
+        "name": "is_special_election",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 15,
+        "name": "num_elect",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 16,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 9,
-        "name": "confirmed_at",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 10,
+        "ordinal": 17,
         "name": "updated_at",
         "type_info": "Timestamptz"
       }
     ],
     "parameters": {
       "Left": [
+        "Uuid",
+        {
+          "Custom": {
+            "name": "state",
+            "kind": {
+              "Enum": [
+                "AL",
+                "AK",
+                "AZ",
+                "AR",
+                "CA",
+                "CO",
+                "CT",
+                "DC",
+                "DE",
+                "FL",
+                "GA",
+                "HI",
+                "ID",
+                "IL",
+                "IN",
+                "IA",
+                "KS",
+                "KY",
+                "LA",
+                "ME",
+                "MD",
+                "MA",
+                "MI",
+                "MN",
+                "MS",
+                "MO",
+                "MT",
+                "NE",
+                "NV",
+                "NH",
+                "NJ",
+                "NM",
+                "NY",
+                "NC",
+                "ND",
+                "OH",
+                "OK",
+                "OR",
+                "PA",
+                "RI",
+                "SC",
+                "SD",
+                "TN",
+                "TX",
+                "UT",
+                "VT",
+                "VA",
+                "WA",
+                "WV",
+                "WI",
+                "WY"
+              ]
+            }
+          }
+        },
         "Text",
-        "Uuid"
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text"
       ]
     },
     "nullable": [
@@ -85,10 +271,17 @@
       true,
       true,
       true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
       false,
       true,
+      false,
       false
     ]
   },
-  "hash": "cdd5b3b3e42ae760270f26de0e8faa9ec3c79a57ca204ef563fbf10b89318117"
+  "hash": "99728ea8f582a2e25a21a4dd87ddd45ad69bdbd1ff5c6996b90593abf257982c"
 }

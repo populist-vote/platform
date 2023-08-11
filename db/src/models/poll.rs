@@ -1,7 +1,7 @@
 use async_graphql::InputObject;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
-use tracing::log::warn;
+use tracing::warn;
 
 use crate::{DateTime, Error};
 
@@ -100,7 +100,7 @@ impl Poll {
             input.allow_anonymous_responses,
             input.allow_write_in_responses,
         )
-        .fetch_one(&mut tx)
+        .fetch_one(&mut *tx)
         .await?;
 
         warn!("input options: {:?}", input.options);
@@ -120,7 +120,7 @@ impl Poll {
                 .filter_map(|option| option.id)
                 .collect::<Vec<uuid::Uuid>>()
         )
-        .execute(&mut tx)
+        .execute(&mut *tx)
         .await?;
 
         for option in input.options.iter() {
@@ -150,7 +150,7 @@ impl Poll {
                 option.option_text,
                 is_write_in,
             )
-            .execute(&mut tx)
+            .execute(&mut *tx)
             .await?;
         }
 

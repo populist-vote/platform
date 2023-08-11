@@ -12,7 +12,13 @@ mailers = { path = "../mailers" }
 open-secrets = { path = "../open-secrets" }
 
 anyhow = "1.0.45"
-async-graphql = { version = "5.0.10", features = ["uuid", "chrono", "unblock", "dataloader", "tracing"] }
+async-graphql = { version = "5.0.10", features = [
+    "uuid",
+    "chrono",
+    "unblock",
+    "dataloader",
+    "tracing",
+] }
 async-graphql-axum = "5.0.10"
 async-openai = "0.10.3"
 bytes = "1.1.0"
@@ -26,7 +32,7 @@ pwhash = "1.0.0"
 rust-s3 = "0.28.0"
 serde = "1.0.130"
 serde_json = "1.0.71"
-sqlx = { version = "0.6.2", features = ["postgres", "bigdecimal", "uuid"] }
+sqlx = { version = "0.7.1", features = ["postgres", "bigdecimal", "uuid"] }
 thiserror = "1.0.30"
 uuid = "1.1.2"
 http = "0.2.5"

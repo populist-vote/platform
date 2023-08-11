@@ -7,6 +7,7 @@ members = [
     "graphql",
     "mailers",
     "scripts",
+    "scrapers",
     "server",
     "geocodio",
     "votesmart",
