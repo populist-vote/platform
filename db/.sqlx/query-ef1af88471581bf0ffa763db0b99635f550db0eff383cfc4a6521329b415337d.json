@@ -1,0 +1,118 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT * FROM organization\n                WHERE slug = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "thumbnail_image_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "website_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "facebook_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "twitter_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "instagram_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "headquarters_phone",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "tax_classification",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 13,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 14,
+        "name": "votesmart_sig_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 15,
+        "name": "headquarters_address_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 16,
+        "name": "assets",
+        "type_info": "Jsonb"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "ef1af88471581bf0ffa763db0b99635f550db0eff383cfc4a6521329b415337d"
+}

@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT gid, sdnumber, sdtype\n            FROM p6t_state_mn.school_district_boundaries AS sd\n            JOIN user_profile up ON up.user_id = $1\n            JOIN address a ON up.address_id = a.id\n            WHERE ST_Contains(ST_SetSRID(sd.geom, 26915), ST_Transform(a.geom, 26915))\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "gid",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "sdnumber",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "sdtype",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "372a33de6459e768fa5c4da1b8d7ce8600ff9fbaf1e451532cc97e9a1b959215"
+}

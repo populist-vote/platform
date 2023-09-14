@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            DELETE FROM poll_option\n            WHERE poll_id = $1\n            AND id NOT IN (\n                SELECT id FROM UNNEST($2::uuid[])\n            )\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "UuidArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "04a241b4207ae983fccaacbe7646ae63e662a1ea278f657e6d79e7a0a97fb6af"
+}

@@ -1,0 +1,61 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO poll_submission (\n                id,\n                poll_id,\n                poll_option_id,\n                respondent_id\n            ) VALUES (\n                $1,\n                $2,\n                $3,\n                $4\n            ) ON CONFLICT (id) DO UPDATE SET\n                poll_option_id = EXCLUDED.poll_option_id\n            RETURNING *\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "poll_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "poll_option_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "respondent_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "write_in_response",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "70e51ac0e09b40cf4a08cd4853c939e80c1c9bfa020f2813cb268a865f3aa83f"
+}

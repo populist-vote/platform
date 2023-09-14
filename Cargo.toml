@@ -14,3 +14,4 @@ members = [
     "legiscan",
     "open-secrets",
 ]
+resolver = "2"

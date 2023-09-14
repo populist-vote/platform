@@ -1,0 +1,82 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT\n            a.id,\n            a.line_1,\n            a.line_2,\n            a.city,\n            a.county,\n            a.state AS \"state:State\",\n            a.postal_code,\n            a.country,\n            a.congressional_district,\n            a.state_senate_district,\n            a.state_house_district\n        FROM\n            address AS a\n            JOIN user_profile up ON user_id = $1\n            JOIN address ON up.address_id = a.id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "line_1",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "line_2",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "city",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "county",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "state:State",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "postal_code",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "country",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "congressional_district",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "state_senate_district",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "state_house_district",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "4b2cd272d206c2b04633256ee70655735d116358a0245fedb2f6002f5cdaffe3"
+}

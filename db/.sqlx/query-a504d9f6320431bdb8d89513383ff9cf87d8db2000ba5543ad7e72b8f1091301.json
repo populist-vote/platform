@@ -1,0 +1,95 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                        SELECT vd.gid,\n                            vd.vtdid AS voting_tabulation_district_id,\n                            vd.countycode AS county_code,\n                            vd.countyname AS county_name,\n                            vd.pctcode AS precinct_code,\n                            vd.pctname AS precinct_name,\n                            vd.ctycomdist AS county_commissioner_district,\n                            vd.juddist AS judicial_district,\n                            sd.sdnumber AS school_district_number,\n                            sd.shortname AS school_district_name,\n                            sd.sdtype AS school_district_type,\n                            isd.id::varchar(4) AS school_subdistrict_code,\n                            isd.schsubdist AS school_subdistrict_name\n                        FROM p6t_state_mn.bdry_votingdistricts AS vd\n                        JOIN user_profile up ON up.user_id = $1\n                        JOIN address a ON up.address_id = a.id\n                        JOIN p6t_state_mn.school_district_boundaries sd ON sd.gid = $2\n                        LEFT JOIN (\n                            SELECT isd2.id as id, schsubdist, sdnumber FROM p6t_state_mn.isd2180 as isd2\n                            JOIN user_profile up2 ON up2.user_id = $1\n                            JOIN address a2 ON up2.address_id = a2.id\n                            WHERE ST_Contains(ST_SetSRID(isd2.geom, 26915), ST_Transform(a2.geom, 26915))\n                            ) AS isd ON isd.sdnumber = sd.sdnumber\n                        WHERE ST_Contains(ST_SetSRID(vd.geom, 26915), ST_Transform(a.geom, 26915))\n                    ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "gid",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "voting_tabulation_district_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "county_code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "county_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "precinct_code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "precinct_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "county_commissioner_district",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "judicial_district",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "school_district_number",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "school_district_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "school_district_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "school_subdistrict_code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 12,
+        "name": "school_subdistrict_name",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      null,
+      true
+    ]
+  },
+  "hash": "a504d9f6320431bdb8d89513383ff9cf87d8db2000ba5543ad7e72b8f1091301"
+}

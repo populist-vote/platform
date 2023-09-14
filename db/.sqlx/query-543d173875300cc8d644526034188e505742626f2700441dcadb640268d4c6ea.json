@@ -1,0 +1,100 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                WITH ins_argument AS (\n                    INSERT INTO argument (author_id, title, position, body) \n                    VALUES ($2, $3, $4, $5) \n                    RETURNING id, author_id, title, position, body, created_at, updated_at\n                ),\n                ins_bill_argument AS (\n                    INSERT INTO bill_arguments (bill_id, argument_id) \n                    VALUES ($1, (SELECT id FROM ins_argument))\n                )\n                SELECT ins_argument.id, ins_argument.author_id, a.author_type AS \"author_type:AuthorType\", ins_argument.title, ins_argument.position AS \"position:ArgumentPosition\", ins_argument.body, ins_argument.created_at, ins_argument.updated_at\n                FROM ins_argument JOIN author AS a ON a.id = ins_argument.author_id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "author_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "author_type:AuthorType",
+        "type_info": {
+          "Custom": {
+            "name": "author_type",
+            "kind": {
+              "Enum": [
+                "politician",
+                "organization"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "position:ArgumentPosition",
+        "type_info": {
+          "Custom": {
+            "name": "argument_position",
+            "kind": {
+              "Enum": [
+                "support",
+                "neutral",
+                "oppose"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "body",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        {
+          "Custom": {
+            "name": "argument_position",
+            "kind": {
+              "Enum": [
+                "support",
+                "neutral",
+                "oppose"
+              ]
+            }
+          }
+        },
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "543d173875300cc8d644526034188e505742626f2700441dcadb640268d4c6ea"
+}

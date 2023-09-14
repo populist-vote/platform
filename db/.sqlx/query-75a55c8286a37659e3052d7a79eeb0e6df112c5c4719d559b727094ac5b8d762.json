@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT * FROM question WHERE id = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "prompt",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "response_char_limit",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "response_placeholder_text",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "allow_anonymous_responses",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "embed_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "75a55c8286a37659e3052d7a79eeb0e6df112c5c4719d559b727094ac5b8d762"
+}

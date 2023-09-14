@@ -1,0 +1,107 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id,\n                organization_id,\n                name,\n                description,\n                populist_url,\n                embed_type AS \"embed_type:EmbedType\",\n                attributes,\n                created_by,\n                updated_by,\n                created_at,\n                updated_at\n            FROM embed\n            WHERE organization_id = $1\n            AND ($2::embed_type IS NULL OR embed_type = $2)\n            ORDER BY updated_at DESC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "populist_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "embed_type:EmbedType",
+        "type_info": {
+          "Custom": {
+            "name": "embed_type",
+            "kind": {
+              "Enum": [
+                "legislation",
+                "politician",
+                "poll",
+                "question"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "attributes",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        {
+          "Custom": {
+            "name": "embed_type",
+            "kind": {
+              "Enum": [
+                "legislation",
+                "politician",
+                "poll",
+                "question"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "6528b177deacbea14932f54aa9bb95ec6a6e8c9c4ece76eb4d71bc1c3d96e60b"
+}

@@ -1,0 +1,95 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                    INSERT INTO address (id, line_1, line_2, city, county, state, postal_code, country, lon, lat, geog, geom, congressional_district, state_house_district, state_senate_district)\n                    VALUES(\n                        COALESCE((SELECT address_id FROM user_profile WHERE user_id = $1), gen_random_uuid()), \n                        $2, $3, $4, $6, $5, $7, $8, $9, $10, ST_SetSRID (ST_MakePoint ($9, $10), 4326), ST_GeomFromText($11, 4326), $12, $13, $14) ON CONFLICT (id)\n                    DO UPDATE SET\n                        line_1 = EXCLUDED.line_1,\n                        line_2 = EXCLUDED.line_2,\n                        city = EXCLUDED.city,\n                        county = EXCLUDED.county,\n                        state = EXCLUDED.state,\n                        postal_code = EXCLUDED.postal_code,\n                        country = EXCLUDED.country,\n                        lon = EXCLUDED.lon,\n                        lat = EXCLUDED.lat,\n                        geog = EXCLUDED.geog,\n                        geom = EXCLUDED.geom,\n                        congressional_district = EXCLUDED.congressional_district,\n                        state_house_district = EXCLUDED.state_house_district,\n                        state_senate_district = EXCLUDED.state_senate_district\n                    RETURNING\n                        id,\n                        line_1,\n                        line_2,\n                        city,\n                        state AS \"state:State\",\n                        postal_code,\n                        country,\n                        county,\n                        congressional_district,\n                        state_senate_district,\n                        state_house_district\n                ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "line_1",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "line_2",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "city",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "state:State",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "postal_code",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "country",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "county",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "congressional_district",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "state_senate_district",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "state_house_district",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Float8",
+        "Float8",
+        "Text",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "f12b3b6c02c7e132f07ade3e676f33db2818e0046ec3b62c351039bfe7079dd0"
+}

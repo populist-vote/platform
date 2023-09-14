@@ -1,0 +1,132 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO organization (id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, assets)\n                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) \n                ON CONFLICT (id) DO UPDATE SET\n                    slug = COALESCE($2, organization.slug),\n                    name = COALESCE($3, organization.name),\n                    description = COALESCE($4, organization.description),\n                    thumbnail_image_url = COALESCE($5, organization.thumbnail_image_url),\n                    website_url = COALESCE($6, organization.website_url),\n                    facebook_url = COALESCE($7, organization.facebook_url),\n                    twitter_url = COALESCE($8, organization.twitter_url),\n                    instagram_url = COALESCE($9, organization.instagram_url),\n                    email = COALESCE($10, organization.email),\n                    votesmart_sig_id = COALESCE($11, organization.votesmart_sig_id),\n                    headquarters_address_id = COALESCE($12, organization.headquarters_address_id),\n                    headquarters_phone = COALESCE($13, organization.headquarters_phone),\n                    tax_classification = COALESCE($14, organization.tax_classification),\n                    assets = COALESCE($15, organization.assets)\n                RETURNING\n                    id,\n                    slug,\n                    name,\n                    description,\n                    thumbnail_image_url,\n                    website_url,\n                    facebook_url,\n                    twitter_url,\n                    instagram_url,\n                    email,\n                    votesmart_sig_id,\n                    headquarters_address_id,\n                    headquarters_phone,\n                    tax_classification,\n                    assets,\n                    created_at,\n                    updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "thumbnail_image_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "website_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "facebook_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "twitter_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "instagram_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "votesmart_sig_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 11,
+        "name": "headquarters_address_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 12,
+        "name": "headquarters_phone",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "tax_classification",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 14,
+        "name": "assets",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 15,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 16,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Int4",
+        "Uuid",
+        "Text",
+        "Text",
+        "Jsonb"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "74eeb34569c9ec6669652ed683a0dc7b2897614b400486cd2d9d8ea048d614d8"
+}

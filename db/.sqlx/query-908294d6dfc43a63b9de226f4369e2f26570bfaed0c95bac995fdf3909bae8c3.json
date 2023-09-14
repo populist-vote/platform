@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO bill_public_votes (bill_id, user_id, position) \n                VALUES ($1, $2, $3) \n                ON CONFLICT (bill_id, user_id) DO UPDATE SET position = $3\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        {
+          "Custom": {
+            "name": "argument_position",
+            "kind": {
+              "Enum": [
+                "support",
+                "neutral",
+                "oppose"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "908294d6dfc43a63b9de226f4369e2f26570bfaed0c95bac995fdf3909bae8c3"
+}

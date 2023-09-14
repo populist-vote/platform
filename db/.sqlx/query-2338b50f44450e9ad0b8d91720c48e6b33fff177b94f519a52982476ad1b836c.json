@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                        INSERT INTO organization_issue_tags (organization_id, issue_tag_id) \n                        VALUES ($1, $2)\n                    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2338b50f44450e9ad0b8d91720c48e6b33fff177b94f519a52982476ad1b836c"
+}

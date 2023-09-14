@@ -1,0 +1,114 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO embed (\n                id,\n                organization_id,\n                name,\n                description,\n                populist_url,\n                embed_type,\n                attributes,\n                created_by,\n                updated_by\n            ) VALUES (\n                $1,\n                $2,\n                $3,\n                $4,\n                $5,\n                $6,\n                $7,\n                $8,\n                $9\n            )\n            ON CONFLICT (id) DO UPDATE SET\n                organization_id = $2,\n                name = $3,\n                description = $4,\n                populist_url = $5,\n                embed_type = $6,\n                attributes = $7,\n                updated_by = $9\n            RETURNING id,\n                organization_id,\n                name,\n                description,\n                populist_url,\n                embed_type AS \"embed_type:EmbedType\",\n                attributes,\n                created_by,\n                updated_by,\n                created_at,\n                updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "populist_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "embed_type:EmbedType",
+        "type_info": {
+          "Custom": {
+            "name": "embed_type",
+            "kind": {
+              "Enum": [
+                "legislation",
+                "politician",
+                "poll",
+                "question"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 6,
+        "name": "attributes",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        {
+          "Custom": {
+            "name": "embed_type",
+            "kind": {
+              "Enum": [
+                "legislation",
+                "politician",
+                "poll",
+                "question"
+              ]
+            }
+          }
+        },
+        "Jsonb",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "e098936dde9cc6087882f6dc4c0b8ece9cbab9264b370fabd63380654628fa7f"
+}

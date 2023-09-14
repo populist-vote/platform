@@ -1,0 +1,123 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                WITH ins_user AS (\n                    INSERT INTO populist_user (email, username, password, role, confirmation_token)\n                    VALUES (LOWER($1), LOWER($2), $3, $4, $5)\n                    RETURNING id, email, username, password, role AS \"role:Role\", organization_id, invited_at, refresh_token, created_at, confirmed_at, updated_at\n                ),\n                ins_address AS (\n                    INSERT INTO address (line_1, line_2, city, state, county, country, postal_code, lon, lat, geog, geom, congressional_district, state_senate_district, state_house_district)\n                    VALUES ($6, $7, $8, $9, $10, $11, $12, $13, $14, ST_SetSRID(ST_MakePoint($13, $14), 4326), ST_GeomFromText($15, 4326), $16, $17, $18)\n                    RETURNING id\n                ),\n                ins_profile AS (\n                    INSERT INTO user_profile (address_id, user_id)\n                    VALUES ((SELECT id FROM ins_address), (SELECT id FROM ins_user))\n                )\n                SELECT ins_user.* FROM ins_user\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "username",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "password",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "role:Role",
+        "type_info": {
+          "Custom": {
+            "name": "user_role",
+            "kind": {
+              "Enum": [
+                "superuser",
+                "staff",
+                "premium",
+                "basic"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 6,
+        "name": "invited_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "refresh_token",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "confirmed_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        {
+          "Custom": {
+            "name": "user_role",
+            "kind": {
+              "Enum": [
+                "superuser",
+                "staff",
+                "premium",
+                "basic"
+              ]
+            }
+          }
+        },
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Float8",
+        "Float8",
+        "Text",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "dbc17a21b88d0a9c7b44eec4973b113c22f689fd0be2c55a777f4c6fd2e3c756"
+}

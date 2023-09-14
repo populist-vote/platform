@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                        INSERT INTO politician_organization_endorsements (politician_id, organization_id)\n                        VALUES ($1, $2)\n                    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c0c2bf07222f1869197d0139501f9d59e344df1d8f5df99e3d5ead56e719596d"
+}
