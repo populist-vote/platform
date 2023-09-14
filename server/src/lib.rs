@@ -10,7 +10,7 @@ use tracing_subscriber::EnvFilter;
 mod cron;
 pub use cron::init_job_schedule;
 mod handlers;
-pub use handlers::{external_graphql_handler, graphql_playground, internal_graphql_handler};
+pub use handlers::{graphql_handler, graphql_playground};
 
 pub async fn app() -> Router {
     dotenv().ok();
@@ -38,11 +38,7 @@ pub async fn app() -> Router {
     let schema = new_schema().data(context).extension(ApolloTracing).finish();
 
     axum::Router::new()
-        .route(
-            "/graphql",
-            get(graphql_playground).post(external_graphql_handler),
-        )
-        .route("/", get(graphql_playground).post(internal_graphql_handler))
+        .route("/", get(graphql_playground).post(graphql_handler))
         .route_layer(CorsLayer::very_permissive())
         .layer(Extension(schema))
         .layer(CookieManagerLayer::new())
