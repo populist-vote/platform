@@ -53,6 +53,7 @@ pub struct UpsertRaceInput {
 
 #[derive(Debug, Default, Serialize, Deserialize, InputObject)]
 pub struct RaceFilter {
+    query: Option<String>,
     state: Option<State>,
     political_scope: Option<PoliticalScope>,
     election_scope: Option<ElectionScope>,
@@ -194,20 +195,49 @@ impl Race {
                     is_special_election,
                     num_elect,
                     race.created_at,
-                    race.updated_at
+                    race.updated_at,
+                    o.title,
+                    o.state,
+                    o.county,
+                    o.municipality,
+                    o.district,
+                    o.school_district,
+                    o.hospital_district
                 FROM
                     race
-                    JOIN office ON race.office_id = office.id
-                WHERE ({state} IS NULL
+                LEFT JOIN office o ON office_id = o.id,
+                to_tsvector(
+                    COALESCE(o.title, '') || ' ' ||
+                    COALESCE(o.state::text, '') || ' ' ||
+                    COALESCE(o.county, '') || ' ' ||
+                    COALESCE(o.municipality, '') || ' ' ||
+                    COALESCE(o.district, '') || ' ' ||
+                    COALESCE(o.school_district, '') || ' ' ||
+                    COALESCE(o.hospital_district, '')
+                ) document,
+                websearch_to_tsquery({query}::text) query,
+                NULLIF(ts_rank(to_tsvector(o.title), query), 0) AS rank_office_title,
+                NULLIF(ts_rank(to_tsvector(o.state::text), query), 0) AS rank_office_state,
+                NULLIF(ts_rank(to_tsvector(o.county), query), 0) AS rank_office_county,
+                NULLIF(ts_rank(to_tsvector(o.municipality), query), 0) AS rank_office_municipality,
+                NULLIF(ts_rank(to_tsvector(o.district), query), 0) AS rank_office_district,
+                NULLIF(ts_rank(to_tsvector(o.school_district), query), 0) AS rank_office_school_district,
+                NULLIF(ts_rank(to_tsvector(o.hospital_district), query), 0) AS rank_office_hospital_district
+                WHERE (({query}::text = '') IS NOT FALSE OR query @@ document)
+                AND ({state} IS NULL
                     OR race.state = {state})
                 AND({political_scope} IS NULL
-                    OR office.political_scope = {political_scope})
+                    OR o.political_scope = {political_scope})
                 AND({election_scope} IS NULL
-                    OR office.election_scope = {election_scope})
+                    OR o.election_scope = {election_scope})
                 AND(({office_titles}) IS NULL
-                    OR office.title IN ({office_titles}))
-                ORDER BY office.priority ASC, office.district ASC, office.title DESC
+                    OR o.title IN ({office_titles}))
+                ORDER BY o.priority ASC, o.district ASC, o.title DESC
                 "#,
+            query = input
+                .query
+                .map(|s| format!("'{}'", s))
+                .unwrap_or_else(|| "NULL".to_string()),
             state = input
                 .state
                 .map(|s| format!("'{}'", s))
