@@ -10,6 +10,7 @@ pub enum EmbedType {
     Politician,
     Question,
     Poll,
+    Race,
 }
 
 #[derive(FromRow, Debug, Clone)]

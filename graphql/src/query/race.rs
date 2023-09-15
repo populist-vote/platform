@@ -1,7 +1,7 @@
 use async_graphql::{Context, FieldResult, Object};
 use db::{Race, RaceFilter};
 
-use crate::{context::ApiContext, types::RaceResult};
+use crate::{context::ApiContext, relay, types::RaceResult};
 
 #[derive(Default)]
 pub struct RaceQuery;
@@ -12,12 +12,21 @@ impl RaceQuery {
         &self,
         ctx: &Context<'_>,
         filter: Option<RaceFilter>,
-    ) -> FieldResult<Vec<RaceResult>> {
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+    ) -> relay::ConnectionResult<RaceResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let records = Race::filter(&db_pool, filter.unwrap_or_default()).await?;
-        let results = records.into_iter().map(RaceResult::from).collect();
+        let results: Vec<RaceResult> = records.into_iter().map(RaceResult::from).collect();
 
-        Ok(results)
+        relay::query(
+            results.into_iter(),
+            relay::Params::new(after, before, first, last),
+            10,
+        )
+        .await
     }
 
     async fn race_by_id(&self, ctx: &Context<'_>, id: String) -> FieldResult<RaceResult> {
