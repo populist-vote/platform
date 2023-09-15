@@ -13,4 +13,4 @@ scraper = "0.17.1"
 serde = "1.0.183"
 thirtyfour = "0.31.0"
 tokio = { version = "1.30.0", features = ["full"] }
-sqlx = { version = "0.7.1", features = ["postgres", "macros"] }
+sqlx = { version = "0.6.2", features = ["postgres", "macros"] }
