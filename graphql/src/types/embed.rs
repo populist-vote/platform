@@ -6,7 +6,9 @@ use tracing::log::warn;
 
 use crate::{context::ApiContext, guard::StaffOnly};
 
-use super::{BillResult, Error, PoliticianResult, PollResult, QuestionResult, UserResult};
+use super::{
+    BillResult, Error, PoliticianResult, PollResult, QuestionResult, RaceResult, UserResult,
+};
 
 #[derive(SimpleObject, Clone, Debug)]
 #[graphql(complex)]
@@ -104,6 +106,18 @@ impl EmbedResult {
             let politician_id = uuid::Uuid::parse_str(politician_id)?;
             let db_pool = ctx.data::<ApiContext>()?.pool.clone();
             let record = db::Politician::find_by_id(&db_pool, politician_id).await?;
+            Ok(Some(record.into()))
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn race(&self, ctx: &Context<'_>) -> Result<Option<RaceResult>> {
+        let race_id = self.attributes["raceId"].as_str();
+        if let Some(race_id) = race_id {
+            let race_id = uuid::Uuid::parse_str(race_id)?;
+            let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+            let record = db::Race::find_by_id(&db_pool, race_id).await?;
             Ok(Some(record.into()))
         } else {
             Ok(None)
