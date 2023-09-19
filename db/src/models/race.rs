@@ -205,10 +205,12 @@ impl Race {
                     o.hospital_district
                 FROM
                     race
-                LEFT JOIN office o ON office_id = o.id,
+                LEFT JOIN office o ON office_id = o.id
+                JOIN us_states s ON race.state = s.code,
                 to_tsvector(
                     COALESCE(o.title, '') || ' ' ||
                     COALESCE(o.state::text, '') || ' ' ||
+                    COALESCE(s.name::text, '') || ' ' ||
                     COALESCE(o.county, '') || ' ' ||
                     COALESCE(o.municipality, '') || ' ' ||
                     COALESCE(o.district, '') || ' ' ||
@@ -217,7 +219,8 @@ impl Race {
                 ) document,
                 websearch_to_tsquery({query}::text) query,
                 NULLIF(ts_rank(to_tsvector(o.title), query), 0) AS rank_office_title,
-                NULLIF(ts_rank(to_tsvector(o.state::text), query), 0) AS rank_office_state,
+                NULLIF(ts_rank(to_tsvector(o.state::text), query), 0) AS rank_office_state_code,
+                NULLIF(ts_rank(to_tsvector(s.name::text), query), 0) AS rank_office_state_full,
                 NULLIF(ts_rank(to_tsvector(o.county), query), 0) AS rank_office_county,
                 NULLIF(ts_rank(to_tsvector(o.municipality), query), 0) AS rank_office_municipality,
                 NULLIF(ts_rank(to_tsvector(o.district), query), 0) AS rank_office_district,
