@@ -12,14 +12,14 @@ mailers = { path = "../mailers" }
 open-secrets = { path = "../open-secrets" }
 
 anyhow = "1.0.45"
-async-graphql = { version = "5.0.10", features = [
+async-graphql = { version = "6.0.7", features = [
     "uuid",
     "chrono",
     "unblock",
     "dataloader",
     "tracing",
 ] }
-async-graphql-axum = "5.0.10"
+async-graphql-axum = "6.0.7"
 async-openai = "0.10.3"
 bytes = "1.1.0"
 chrono = "0.4.19"
