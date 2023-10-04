@@ -55,6 +55,11 @@ async fn get_mn_sos_candidate_filings() -> Result<(), Box<dyn Error>> {
         }
         wtr.flush()?;
     }
+
+    // Write CSV to Populist Data Lake, with timestamp of last scrape
+
+    // Write CSV data to Postgres table in p6t_state_mn schema
+
     let csv_data_as_string = String::from_utf8(csv_string)?;
 
     let copy_query =

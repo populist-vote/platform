@@ -14,16 +14,22 @@ use db::{
 pub struct OfficeResult {
     id: ID,
     slug: String,
+    /// What the person in office would be called, e.g. "Senator", "Governor"
     title: String,
+    /// Name of the office, e.g. "U.S. Senate"
+    name: Option<String>,
     subtitle: Option<String>,
     subtitle_short: Option<String>,
-    name: Option<String>,
     office_type: Option<String>,
+    /// The district name, e.g. "2, 3B, Ward 5"
     district: Option<String>,
+    /// The type of district, used to determine which field is referenced for the district
     district_type: Option<District>,
     hospital_district: Option<String>,
     school_district: Option<String>,
+    /// Local, State, or Federal
     political_scope: PoliticalScope,
+    /// National, State, County, City, or District
     election_scope: ElectionScope,
     chamber: Option<Chamber>,
     state: Option<State>,
@@ -31,112 +37,84 @@ pub struct OfficeResult {
     municipality: Option<String>,
     term_length: Option<i32>,
     seat: Option<String>,
+    /// Used to determine order of offices in a list
     priority: Option<i32>,
 }
 
+//    Office subtitle rules
+//    if (election_scope == state)
+//      subtitle = state (full, e.g. "Minnesota")
+//    if (political_scope == federal && election_scope == district)
+//      subtitle = state abbv + " - District " + district (e.g. "MN - District 6")
+//    if (political_scope == state && election_scope == district && district_type == state_house)
+//      subtitle = state abbv + " - House District " + district (e.g. "MN - House District 3B")
+//    if (political_scope == state && election_scope == district && district_type == state_senate)
+//      subtitle = state abbv + " - Senate District " + district (e.g. "MN - Senate District 30")
+//    if (political_scope == local && election_scope == city)
+//      subtitle = municipality + ", " + state abbv (e.g. "St. Louis, MN")
+//    if (political_scope == local && election_scope == district && district_type == city)
+//      subtitle = municipality + ", " + state abbv + " - " + district (e.g. "St. Louis, MN - Ward 3")
+
 fn compute_office_subtitle(office: &Office, use_short: bool) -> Option<String> {
-    match office.election_scope {
-        ElectionScope::National => None,
-        ElectionScope::State => office
+    match (
+        office.election_scope,
+        office.political_scope,
+        office.district_type,
+    ) {
+        (ElectionScope::National, _, _) => None,
+        (ElectionScope::State, _, _) => office
             .state
             .as_ref()
             .map(|state| state.full_state().to_string()),
-        ElectionScope::District => {
-            if let Some(district_type) = office.district_type {
-                match district_type {
-                    District::UsCongressional => {
-                        if let (Some(state), Some(district)) = (&office.state, &office.district) {
-                            Some(format!("{} District {}", state.full_state(), district))
-                        } else {
-                            None
-                        }
-                    }
-                    District::StateSenate => {
-                        if let (Some(state), Some(district)) = (&office.state, &office.district) {
-                            Some(format!(
-                                "{} {} {}",
-                                state.full_state(),
-                                if use_short { "SD" } else { "Senate District" },
-                                district
-                            ))
-                        } else {
-                            None
-                        }
-                    }
-                    District::StateHouse => {
-                        if let (Some(state), Some(district)) = (&office.state, &office.district) {
-                            Some(format!(
-                                "{} {} {}",
-                                state.full_state(),
-                                if use_short { "HD" } else { "House District" },
-                                district
-                            ))
-                        } else {
-                            None
-                        }
-                    }
-                    District::County => {
-                        if let (Some(county), Some(district)) = (&office.county, &office.district) {
-                            Some(format!("{} County District {}", county, district))
-                        } else {
-                            None
-                        }
-                    }
-                    District::City => {
-                        if let (Some(muni), Some(district)) =
-                            (&office.municipality, &office.district)
-                        {
-                            Some(format!("{} District {}", muni, district))
-                        } else {
-                            None
-                        }
-                    }
-                    District::School => {
-                        if let (Some(muni), Some(district)) =
-                            (&office.municipality, &office.district)
-                        {
-                            Some(format!("{} School District {}", muni, district))
-                        } else {
-                            None
-                        }
-                    }
-                    District::Hospital => {
-                        if let (Some(muni), Some(district)) =
-                            (&office.municipality, &office.district)
-                        {
-                            Some(format!("{} Hospital District {}", muni, district))
-                        } else {
-                            None
-                        }
-                    }
-                    District::Judicial => {
-                        if let (Some(muni), Some(district)) =
-                            (&office.municipality, &office.district)
-                        {
-                            Some(format!("{} Judicial District {}", muni, district))
-                        } else {
-                            None
-                        }
-                    }
-                    District::SoilAndWater => {
-                        if let (Some(muni), Some(district)) =
-                            (&office.municipality, &office.district)
-                        {
-                            Some(format!("{} Soil and Water District {}", muni, district))
-                        } else {
-                            None
-                        }
-                    }
-                }
+        (ElectionScope::District, PoliticalScope::Federal, Some(District::UsCongressional)) => {
+            if let (Some(state), Some(district)) = (&office.state, &office.district) {
+                Some(format!("{} - District {}", state, district))
             } else {
                 None
             }
         }
-        ElectionScope::County => office
+        (ElectionScope::District, PoliticalScope::State, Some(District::StateHouse)) => {
+            if let (Some(state), Some(district)) = (&office.state, &office.district) {
+                Some(format!(
+                    "{} - {} {}",
+                    state,
+                    if use_short { "HD" } else { "House District" },
+                    district
+                ))
+            } else {
+                None
+            }
+        }
+        (ElectionScope::District, PoliticalScope::State, Some(District::StateSenate)) => {
+            if let (Some(state), Some(district)) = (&office.state, &office.district) {
+                Some(format!(
+                    "{} - {} {}",
+                    state,
+                    if use_short { "SD" } else { "Senate District" },
+                    district
+                ))
+            } else {
+                None
+            }
+        }
+        (ElectionScope::District, PoliticalScope::Local, Some(District::City)) => {
+            if let (Some(muni), Some(state), Some(district)) =
+                (&office.municipality, &office.state, &office.district)
+            {
+                Some(format!("{}, {} - {}", muni, state, district))
+            } else {
+                None
+            }
+        }
+        (ElectionScope::County, _, _) => office
             .county
             .as_ref()
             .map(|county| format!("{} County", county)),
-        ElectionScope::City => office.municipality.as_ref().map(|muni| muni.to_string()),
+        (ElectionScope::City, PoliticalScope::Local, _) => office
+            .municipality
+            .as_ref()
+            .map(|muni| format!("{}, {}", muni, office.state.map(|s| s.to_string()).unwrap())),
+        _ => None,
     }
 }
 
@@ -220,10 +198,38 @@ async fn test_compute_office_title() {
 
     assert_eq!(
         compute_office_subtitle(&office, false),
-        Some("Alabama Senate District 1".to_string())
+        Some("AL - Senate District 1".to_string())
     );
     assert_eq!(
         compute_office_subtitle(&office, true),
-        Some("Alabama SD 1".to_string())
+        Some("AL - SD 1".to_string())
     );
+
+    let office = Office {
+        id: uuid::Uuid::new_v4(),
+        slug: "test-state-senator".to_string(),
+        title: "State Senator".to_string(),
+        subtitle: None,
+        subtitle_short: None,
+        name: None,
+        office_type: None,
+        district: Some("Ward 3".to_string()),
+        district_type: Some(District::City),
+        hospital_district: None,
+        school_district: None,
+        chamber: Some(Chamber::Senate),
+        political_scope: PoliticalScope::Local,
+        election_scope: ElectionScope::District,
+        state: Some(State::AL),
+        county: None,
+        municipality: Some("Buckwild City".to_string()),
+        term_length: None,
+        seat: None,
+        ..Default::default()
+    };
+
+    assert_eq!(
+        compute_office_subtitle(&office, false),
+        Some("Buckwild City, AL - Ward 3".to_string())
+    )
 }
