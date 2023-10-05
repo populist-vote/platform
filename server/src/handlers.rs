@@ -15,23 +15,30 @@ async fn refresh_token_check(cookies: Cookies) -> Option<TokenData<AccessTokenCl
         match jwt::validate_refresh_token(refresh_cookie.value()) {
             Ok(token_data) => {
                 let db_pool = db::pool().await;
-                let user = db::User::find_by_id(&db_pool.connection, token_data.claims.sub)
-                    .await
-                    .unwrap();
-                // Ensure the refresh token in the cookie matches the one associated with the user in the database
-                if user.clone().refresh_token.unwrap() != refresh_cookie.value() {
-                    // If not, remove the cookies and return None
+                let user = db::User::find_by_id(&db_pool.connection, token_data.claims.sub).await;
+
+                if let Ok(user) = user {
+                    // Ensure the refresh token in the cookie matches the one associated with the user in the database
+                    if user.clone().refresh_token.unwrap() != refresh_cookie.value() {
+                        // If not, remove the cookies and return None
+                        cookies.to_owned().remove(Cookie::named("access_token"));
+                        cookies.to_owned().remove(Cookie::named("refresh_token"));
+                        None
+                    } else {
+                        // If so, create a new access token, set it in the cookie, and return it
+                        let access_token = jwt::create_access_token_for_user(user).unwrap();
+                        let mut cookie =
+                            tower_cookies::Cookie::new("access_token", access_token.clone());
+                        cookie.set_expires(
+                            time::OffsetDateTime::now_utc() + time::Duration::hours(24),
+                        );
+                        cookies.add(cookie);
+                        Some(jwt::validate_access_token(&access_token).unwrap())
+                    }
+                } else {
                     cookies.to_owned().remove(Cookie::named("access_token"));
                     cookies.to_owned().remove(Cookie::named("refresh_token"));
                     None
-                } else {
-                    // If so, create a new access token, set it in the cookie, and return it
-                    let access_token = jwt::create_access_token_for_user(user).unwrap();
-                    let mut cookie =
-                        tower_cookies::Cookie::new("access_token", access_token.clone());
-                    cookie.set_expires(time::OffsetDateTime::now_utc() + time::Duration::hours(24));
-                    cookies.add(cookie);
-                    Some(jwt::validate_access_token(&access_token).unwrap())
                 }
             }
             Err(_) => {
