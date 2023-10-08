@@ -1,0 +1,18 @@
+State,County ID,Precinct name,Office ID,Office name,District,Candidate order code,Candidate name,Suffix,Incumbent code,Party abbreviation,Number of precincts reporting,Total number of precincts voting for the office,Votes for candidate,Percentage of votes for candidate out of total votes for Office,Total number of votes for Office in area
+MN,04,,0421,COUNTY QUESTION 1,,9001,YES,,,NP,0,61,0,0.00,0
+MN,04,,0421,COUNTY QUESTION 1,,9002,NO,,,NP,0,61,0,0.00,0
+MN,36,,0395,Special Election for County Commissioner District 5,05,9001,Dale N. Erickson,,,NP,0,10,0,0.00,0
+MN,36,,0395,Special Election for County Commissioner District 5,05,9002,Rich Mastin,,,NP,0,10,0,0.00,0
+MN,36,,0395,Special Election for County Commissioner District 5,05,9901,WRITE-IN,,,WI,0,10,0,0.00,0
+MN,38,,0391,Special Election for County Commissioner District 1,01,9003,Jack Nelson,,,NP,0,5,0,0.00,0
+MN,38,,0391,Special Election for County Commissioner District 1,01,9005,Joe Baltich,,,NP,0,5,0,0.00,0
+MN,38,,0391,Special Election for County Commissioner District 1,01,9901,WRITE-IN,,,WI,0,5,0,0.00,0
+MN,77,,0393,Special Election for County Commissioner District 3,03,9001,Bob Byers,,,NP,0,3,0,0.00,0
+MN,77,,0393,Special Election for County Commissioner District 3,03,9002,Bob Kunz,,,NP,0,3,0,0.00,0
+MN,77,,0393,Special Election for County Commissioner District 3,03,9901,WRITE-IN,,,WI,0,3,0,0.00,0
+MN,81,,0393,Special Election for County Commissioner District 3 (Special Primary),03,9001,Larry M Johnson,,,NP,0,2,0,0.00,0
+MN,81,,0393,Special Election for County Commissioner District 3 (Special Primary),03,9002,Brad Milbrath,,,NP,0,2,0,0.00,0
+MN,81,,0393,Special Election for County Commissioner District 3 (Special Primary),03,9003,Ann Fitch,,,NP,0,2,0,0.00,0
+MN,84,,0393,Special Election for County Commissioner District 3 (Special Primary),03,9001,Jon Braton Sr.,,,NP,0,11,0,0.00,0
+MN,84,,0393,Special Election for County Commissioner District 3 (Special Primary),03,9002,"William ""Bill"" Nichol",,,NP,0,11,0,0.00,0
+MN,84,,0393,Special Election for County Commissioner District 3 (Special Primary),03,9003,Jared Miller,,,NP,0,11,0,0.00,0

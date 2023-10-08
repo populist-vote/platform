@@ -1,0 +1,481 @@
+State,County ID,Precinct name,Office ID,Office name,District,Candidate order code,Candidate name,Suffix,Incumbent code,Party abbreviation,Number of precincts reporting,Total number of precincts voting for the office,Votes for candidate,Percentage of votes for candidate out of total votes for Office,Total number of votes for Office in area
+MN,,,1012,Special Election for Council Member At Large (Appleton),01864,9001,Stacey Raddatz,,,NP,0,1,0,0.00,0
+MN,,,1012,Special Election for Council Member At Large (Appleton),01864,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (Apple Valley),01900,9001,YES,,,NP,0,16,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (Apple Valley),01900,9002,NO,,,NP,0,16,0,0.00,0
+MN,,,1132,CITY QUESTION 2 (Apple Valley),01900,9001,YES,,,NP,0,16,0,0.00,0
+MN,,,1132,CITY QUESTION 2 (Apple Valley),01900,9002,NO,,,NP,0,16,0,0.00,0
+MN,,,1001,Mayor (Aurora),02872,9001,Richard Hess,,,NP,0,1,0,0.00,0
+MN,,,1001,Mayor (Aurora),02872,9002,Doug Gregor,,,NP,0,1,0,0.00,0
+MN,,,1001,Mayor (Aurora),02872,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,1010,Council Member (Aurora) (Elect 2),02872,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (Bloomington),06616,9001,YES,,,NP,0,31,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (Bloomington),06616,9002,NO,,,NP,0,31,0,0.00,0
+MN,,,1132,CITY QUESTION 2 (Bloomington),06616,9001,YES,,,NP,0,31,0,0.00,0
+MN,,,1132,CITY QUESTION 2 (Bloomington),06616,9002,NO,,,NP,0,31,0,0.00,0
+MN,,,1133,CITY QUESTION 3 (Bloomington),06616,9001,YES,,,NP,0,31,0,0.00,0
+MN,,,1133,CITY QUESTION 3 (Bloomington),06616,9002,NO,,,NP,0,31,0,0.00,0
+MN,,,2001,Mayor First Choice (Bloomington),06616,9001,David Clark,,,NP,0,31,0,0.00,0
+MN,,,2001,Mayor First Choice (Bloomington),06616,9002,Tim Busse,,,NP,0,31,0,0.00,0
+MN,,,2001,Mayor First Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,31,0,0.00,0
+MN,,,2002,Mayor Second Choice (Bloomington),06616,9001,David Clark,,,NP,0,31,0,0.00,0
+MN,,,2002,Mayor Second Choice (Bloomington),06616,9002,Tim Busse,,,NP,0,31,0,0.00,0
+MN,,,2002,Mayor Second Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,31,0,0.00,0
+MN,,,2003,Mayor Third Choice (Bloomington),06616,9001,David Clark,,,NP,0,31,0,0.00,0
+MN,,,2003,Mayor Third Choice (Bloomington),06616,9002,Tim Busse,,,NP,0,31,0,0.00,0
+MN,,,2003,Mayor Third Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,31,0,0.00,0
+MN,,,2041,Council Member at Large First Choice (Bloomington),06616,9001,Bruce Colton,,,NP,0,31,0,0.00,0
+MN,,,2041,Council Member at Large First Choice (Bloomington),06616,9002,Jenna Carter,,,NP,0,31,0,0.00,0
+MN,,,2041,Council Member at Large First Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,31,0,0.00,0
+MN,,,2042,Council Member at Large Second Choice (Bloomington),06616,9001,Bruce Colton,,,NP,0,31,0,0.00,0
+MN,,,2042,Council Member at Large Second Choice (Bloomington),06616,9002,Jenna Carter,,,NP,0,31,0,0.00,0
+MN,,,2042,Council Member at Large Second Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,31,0,0.00,0
+MN,,,2043,Council Member at Large Third Choice (Bloomington),06616,9001,Bruce Colton,,,NP,0,31,0,0.00,0
+MN,,,2043,Council Member at Large Third Choice (Bloomington),06616,9002,Jenna Carter,,,NP,0,31,0,0.00,0
+MN,,,2043,Council Member at Large Third Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,31,0,0.00,0
+MN,,,2044,Special Election for Council Member at Large First Choice (Bloomington),06616,9001,Chao Moua,,,NP,0,31,0,0.00,0
+MN,,,2044,Special Election for Council Member at Large First Choice (Bloomington),06616,9002,Jonathan A. Minks,,,NP,0,31,0,0.00,0
+MN,,,2044,Special Election for Council Member at Large First Choice (Bloomington),06616,9003,Maxwell Collins,,,NP,0,31,0,0.00,0
+MN,,,2044,Special Election for Council Member at Large First Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,31,0,0.00,0
+MN,,,2045,Special Election for Council Member at Large Second Choice (Bloomington),06616,9001,Chao Moua,,,NP,0,31,0,0.00,0
+MN,,,2045,Special Election for Council Member at Large Second Choice (Bloomington),06616,9002,Jonathan A. Minks,,,NP,0,31,0,0.00,0
+MN,,,2045,Special Election for Council Member at Large Second Choice (Bloomington),06616,9003,Maxwell Collins,,,NP,0,31,0,0.00,0
+MN,,,2045,Special Election for Council Member at Large Second Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,31,0,0.00,0
+MN,,,2046,Special Election for Council Member at Large Third Choice (Bloomington),06616,9001,Chao Moua,,,NP,0,31,0,0.00,0
+MN,,,2046,Special Election for Council Member at Large Third Choice (Bloomington),06616,9002,Jonathan A. Minks,,,NP,0,31,0,0.00,0
+MN,,,2046,Special Election for Council Member at Large Third Choice (Bloomington),06616,9003,Maxwell Collins,,,NP,0,31,0,0.00,0
+MN,,,2046,Special Election for Council Member at Large Third Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,31,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (Bloomington),06616,9001,Dwayne A. Lowman,,,NP,0,7,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (Bloomington),06616,9002,Al Noard,,,NP,0,7,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,7,0,0.00,0
+MN,,,2102,Council Member Ward 1 Second Choice (Bloomington),06616,9001,Dwayne A. Lowman,,,NP,0,7,0,0.00,0
+MN,,,2102,Council Member Ward 1 Second Choice (Bloomington),06616,9002,Al Noard,,,NP,0,7,0,0.00,0
+MN,,,2102,Council Member Ward 1 Second Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,7,0,0.00,0
+MN,,,2103,Council Member Ward 1 Third Choice (Bloomington),06616,9001,Dwayne A. Lowman,,,NP,0,7,0,0.00,0
+MN,,,2103,Council Member Ward 1 Third Choice (Bloomington),06616,9002,Al Noard,,,NP,0,7,0,0.00,0
+MN,,,2103,Council Member Ward 1 Third Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,7,0,0.00,0
+MN,,,2111,Council Member Ward 2 First Choice (Bloomington),06616,9001,Shawn Nelson,,,NP,0,8,0,0.00,0
+MN,,,2111,Council Member Ward 2 First Choice (Bloomington),06616,9002,Paul King,,,NP,0,8,0,0.00,0
+MN,,,2111,Council Member Ward 2 First Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,8,0,0.00,0
+MN,,,2112,Council Member Ward 2 Second Choice (Bloomington),06616,9001,Shawn Nelson,,,NP,0,8,0,0.00,0
+MN,,,2112,Council Member Ward 2 Second Choice (Bloomington),06616,9002,Paul King,,,NP,0,8,0,0.00,0
+MN,,,2112,Council Member Ward 2 Second Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,8,0,0.00,0
+MN,,,2113,Council Member Ward 2 Third Choice (Bloomington),06616,9001,Shawn Nelson,,,NP,0,8,0,0.00,0
+MN,,,2113,Council Member Ward 2 Third Choice (Bloomington),06616,9002,Paul King,,,NP,0,8,0,0.00,0
+MN,,,2113,Council Member Ward 2 Third Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,8,0,0.00,0
+MN,,,2121,Council Member Ward 3 First Choice (Bloomington),06616,9001,Lona Dallessandro,,,NP,0,9,0,0.00,0
+MN,,,2121,Council Member Ward 3 First Choice (Bloomington),06616,9002,Mike Hartley,,,NP,0,9,0,0.00,0
+MN,,,2121,Council Member Ward 3 First Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2122,Council Member Ward 3 Second Choice (Bloomington),06616,9001,Lona Dallessandro,,,NP,0,9,0,0.00,0
+MN,,,2122,Council Member Ward 3 Second Choice (Bloomington),06616,9002,Mike Hartley,,,NP,0,9,0,0.00,0
+MN,,,2122,Council Member Ward 3 Second Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2123,Council Member Ward 3 Third Choice (Bloomington),06616,9001,Lona Dallessandro,,,NP,0,9,0,0.00,0
+MN,,,2123,Council Member Ward 3 Third Choice (Bloomington),06616,9002,Mike Hartley,,,NP,0,9,0,0.00,0
+MN,,,2123,Council Member Ward 3 Third Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2131,Council Member Ward 4 First Choice (Bloomington),06616,9001,Luqman Abdi,,,NP,0,7,0,0.00,0
+MN,,,2131,Council Member Ward 4 First Choice (Bloomington),06616,9002,Isaak Rooble,,,NP,0,7,0,0.00,0
+MN,,,2131,Council Member Ward 4 First Choice (Bloomington),06616,9003,Victor Rivas,,,NP,0,7,0,0.00,0
+MN,,,2131,Council Member Ward 4 First Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,7,0,0.00,0
+MN,,,2132,Council Member Ward 4 Second Choice (Bloomington),06616,9001,Luqman Abdi,,,NP,0,7,0,0.00,0
+MN,,,2132,Council Member Ward 4 Second Choice (Bloomington),06616,9002,Isaak Rooble,,,NP,0,7,0,0.00,0
+MN,,,2132,Council Member Ward 4 Second Choice (Bloomington),06616,9003,Victor Rivas,,,NP,0,7,0,0.00,0
+MN,,,2132,Council Member Ward 4 Second Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,7,0,0.00,0
+MN,,,2133,Council Member Ward 4 Third Choice (Bloomington),06616,9001,Luqman Abdi,,,NP,0,7,0,0.00,0
+MN,,,2133,Council Member Ward 4 Third Choice (Bloomington),06616,9002,Isaak Rooble,,,NP,0,7,0,0.00,0
+MN,,,2133,Council Member Ward 4 Third Choice (Bloomington),06616,9003,Victor Rivas,,,NP,0,7,0,0.00,0
+MN,,,2133,Council Member Ward 4 Third Choice (Bloomington),06616,9901,WRITE-IN,,,WI,0,7,0,0.00,0
+MN,,,1001,Mayor (Circle Pines),11494,9001,Dave Bartholomay,,,NP,0,2,0,0.00,0
+MN,,,1001,Mayor (Circle Pines),11494,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,1010,Council Member (Circle Pines) (Elect 2),11494,9001,Matt Percy,,,NP,0,2,0,0.00,0
+MN,,,1010,Council Member (Circle Pines) (Elect 2),11494,9002,Steve McChesney,,,NP,0,2,0,0.00,0
+MN,,,1010,Council Member (Circle Pines) (Elect 2),11494,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,1012,Special Election for Council Member (Circle Pines),11494,9001,Nici Dorner,,,NP,0,2,0,0.00,0
+MN,,,1012,Special Election for Council Member (Circle Pines),11494,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,1001,Mayor (Duluth),17000,9003,Emily Larson,,,NP,0,34,0,0.00,0
+MN,,,1001,Mayor (Duluth),17000,9004,Roger J Reinert,,,NP,0,34,0,0.00,0
+MN,,,1001,Mayor (Duluth),17000,9901,WRITE-IN,,,WI,0,34,0,0.00,0
+MN,,,1010,Council Member at Large (Duluth) (Elect 2),17000,9001,Jenna Yeakle,,,NP,0,34,0,0.00,0
+MN,,,1010,Council Member at Large (Duluth) (Elect 2),17000,9002,Lynn Marie Nephew,,,NP,0,34,0,0.00,0
+MN,,,1010,Council Member at Large (Duluth) (Elect 2),17000,9005,Arik Forsman,,,NP,0,34,0,0.00,0
+MN,,,1010,Council Member at Large (Duluth) (Elect 2),17000,9007,Miranda Pacheco,,,NP,0,34,0,0.00,0
+MN,,,1010,Council Member at Large (Duluth) (Elect 2),17000,9901,WRITE-IN,,,WI,0,34,0,0.00,0
+MN,,,1020,Council Member District 1 (Duluth),17000,9001,Timothy L. Meyer,,,NP,0,7,0,0.00,0
+MN,,,1020,Council Member District 1 (Duluth),17000,9002,Wendy Durrwachter,,,NP,0,7,0,0.00,0
+MN,,,1020,Council Member District 1 (Duluth),17000,9901,WRITE-IN,,,WI,0,7,0,0.00,0
+MN,,,1024,Council Member District 3 (Duluth),17000,9001,Roz Randorf,,,NP,0,6,0,0.00,0
+MN,,,1024,Council Member District 3 (Duluth),17000,9901,WRITE-IN,,,WI,0,6,0,0.00,0
+MN,,,1026,Council Member District 4 (Duluth),17000,9002,Tara Swenson,,,NP,0,7,0,0.00,0
+MN,,,1026,Council Member District 4 (Duluth),17000,9004,Howie Hanson,,,NP,0,7,0,0.00,0
+MN,,,1026,Council Member District 4 (Duluth),17000,9901,WRITE-IN,,,WI,0,7,0,0.00,0
+MN,,,1028,Council Member District 5 (Duluth),17000,9001,Ginka Tarnowski,,,NP,0,8,0,0.00,0
+MN,,,1028,Council Member District 5 (Duluth),17000,9002,Janet Kennedy,,,NP,0,8,0,0.00,0
+MN,,,1028,Council Member District 5 (Duluth),17000,9901,WRITE-IN,,,WI,0,8,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (Edina),18188,9001,YES,,,NP,0,16,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (Edina),18188,9002,NO,,,NP,0,16,0,0.00,0
+MN,,,1001,Mayor (Falcon Heights),20420,9001,Randy Gustafson,,,NP,0,2,0,0.00,0
+MN,,,1001,Mayor (Falcon Heights),20420,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,1010,Council Member at Large (Falcon Heights) (Elect 2),20420,9001,Jim Wassenberg,,,NP,0,2,0,0.00,0
+MN,,,1010,Council Member at Large (Falcon Heights) (Elect 2),20420,9002,Paula Mielke,,,NP,0,2,0,0.00,0
+MN,,,1010,Council Member at Large (Falcon Heights) (Elect 2),20420,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,1001,Mayor (Golden Valley),24308,9001,Roslyn Harmon,,,NP,0,8,0,0.00,0
+MN,,,1001,Mayor (Golden Valley),24308,9002,Gillian Rosenquist,,,NP,0,8,0,0.00,0
+MN,,,1001,Mayor (Golden Valley),24308,9901,WRITE-IN,,,WI,0,8,0,0.00,0
+MN,,,1010,Council Member (Golden Valley) (Elect 2),24308,9001,Maurice Harris,,,NP,0,8,0,0.00,0
+MN,,,1010,Council Member (Golden Valley) (Elect 2),24308,9002,Sophia Ginis,,,NP,0,8,0,0.00,0
+MN,,,1010,Council Member (Golden Valley) (Elect 2),24308,9003,Jean Kidd,,,NP,0,8,0,0.00,0
+MN,,,1010,Council Member (Golden Valley) (Elect 2),24308,9901,WRITE-IN,,,WI,0,8,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (Golden Valley),24308,9001,YES,,,NP,0,8,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (Golden Valley),24308,9002,NO,,,NP,0,8,0,0.00,0
+MN,,,1132,CITY QUESTION 2 (Golden Valley),24308,9001,YES,,,NP,0,8,0,0.00,0
+MN,,,1132,CITY QUESTION 2 (Golden Valley),24308,9002,NO,,,NP,0,8,0,0.00,0
+MN,,,1133,CITY QUESTION 3 (Golden Valley),24308,9001,YES,,,NP,0,8,0,0.00,0
+MN,,,1133,CITY QUESTION 3 (Golden Valley),24308,9002,NO,,,NP,0,8,0,0.00,0
+MN,,,1001,Mayor (Hopkins),30140,9001,Patrick Hanlon,,,NP,0,5,0,0.00,0
+MN,,,1001,Mayor (Hopkins),30140,9901,WRITE-IN,,,WI,0,5,0,0.00,0
+MN,,,1010,Council Member (Hopkins) (Elect 2),30140,9001,Aaron Kuznia,,,NP,0,5,0,0.00,0
+MN,,,1010,Council Member (Hopkins) (Elect 2),30140,9002,Brian Hunke,,,NP,0,5,0,0.00,0
+MN,,,1010,Council Member (Hopkins) (Elect 2),30140,9003,Ben Goodlund,,,NP,0,5,0,0.00,0
+MN,,,1010,Council Member (Hopkins) (Elect 2),30140,9004,Alan Beck,,,NP,0,5,0,0.00,0
+MN,,,1010,Council Member (Hopkins) (Elect 2),30140,9901,WRITE-IN,,,WI,0,5,0,0.00,0
+MN,,,1001,Mayor (Lino Lakes),37322,9001,Rob Rafferty,,,NP,0,7,0,0.00,0
+MN,,,1001,Mayor (Lino Lakes),37322,9901,WRITE-IN,,,WI,0,7,0,0.00,0
+MN,,,1010,Council Member (Lino Lakes) (Elect 2),37322,9001,Chris Lyden,,,NP,0,7,0,0.00,0
+MN,,,1010,Council Member (Lino Lakes) (Elect 2),37322,9002,Christopher Stowe,,,NP,0,7,0,0.00,0
+MN,,,1010,Council Member (Lino Lakes) (Elect 2),37322,9003,Michael S. Ruhland,,,NP,0,7,0,0.00,0
+MN,,,1010,Council Member (Lino Lakes) (Elect 2),37322,9004,Catherine Decker,,,NP,0,7,0,0.00,0
+MN,,,1010,Council Member (Lino Lakes) (Elect 2),37322,9901,WRITE-IN,,,WI,0,7,0,0.00,0
+MN,,,1012,Special Election for Council Member (Lonsdale),38150,9001,Brian Wermerskirchen,,,NP,0,1,0,0.00,0
+MN,,,1012,Special Election for Council Member (Lonsdale),38150,9002,Kari Miller,,,NP,0,1,0,0.00,0
+MN,,,1012,Special Election for Council Member (Lonsdale),38150,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,1001,Mayor (Mahtomedi),39428,9001,Richard Brainerd,,,NP,0,2,0,0.00,0
+MN,,,1001,Mayor (Mahtomedi),39428,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,1010,Council Member at Large (Mahtomedi) (Elect 2),39428,9001,Jane Schneeweis,,,NP,0,2,0,0.00,0
+MN,,,1010,Council Member at Large (Mahtomedi) (Elect 2),39428,9002,Jeff Charlesworth,,,NP,0,2,0,0.00,0
+MN,,,1010,Council Member at Large (Mahtomedi) (Elect 2),39428,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (Marshall),40688,9001,YES,,,NP,0,3,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (Marshall),40688,9002,NO,,,NP,0,3,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (Minneapolis),43000,9001,Elliott Payne,,,N P,0,11,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (Minneapolis),43000,9002,Edwin B. Fruit,,,N P,0,11,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,11,0,0.00,0
+MN,,,2102,Council Member Ward 1 Second Choice (Minneapolis),43000,9001,Elliott Payne,,,N P,0,11,0,0.00,0
+MN,,,2102,Council Member Ward 1 Second Choice (Minneapolis),43000,9002,Edwin B. Fruit,,,N P,0,11,0,0.00,0
+MN,,,2102,Council Member Ward 1 Second Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,11,0,0.00,0
+MN,,,2103,Council Member Ward 1 Third Choice (Minneapolis),43000,9001,Elliott Payne,,,N P,0,11,0,0.00,0
+MN,,,2103,Council Member Ward 1 Third Choice (Minneapolis),43000,9002,Edwin B. Fruit,,,N P,0,11,0,0.00,0
+MN,,,2103,Council Member Ward 1 Third Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,11,0,0.00,0
+MN,,,2111,Council Member Ward 2 First Choice (Minneapolis),43000,9001,Robin Wonsley,,,N P,0,9,0,0.00,0
+MN,,,2111,Council Member Ward 2 First Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2112,Council Member Ward 2 Second Choice (Minneapolis),43000,9001,Robin Wonsley,,,N P,0,9,0,0.00,0
+MN,,,2112,Council Member Ward 2 Second Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2113,Council Member Ward 2 Third Choice (Minneapolis),43000,9001,Robin Wonsley,,,N P,0,9,0,0.00,0
+MN,,,2113,Council Member Ward 2 Third Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2121,Council Member Ward 3 First Choice (Minneapolis),43000,9001,Marcus Mills,,,N P,0,12,0,0.00,0
+MN,,,2121,Council Member Ward 3 First Choice (Minneapolis),43000,9002,Michael Rainville,,,N P,0,12,0,0.00,0
+MN,,,2121,Council Member Ward 3 First Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2122,Council Member Ward 3 Second Choice (Minneapolis),43000,9001,Marcus Mills,,,N P,0,12,0,0.00,0
+MN,,,2122,Council Member Ward 3 Second Choice (Minneapolis),43000,9002,Michael Rainville,,,N P,0,12,0,0.00,0
+MN,,,2122,Council Member Ward 3 Second Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2123,Council Member Ward 3 Third Choice (Minneapolis),43000,9001,Marcus Mills,,,N P,0,12,0,0.00,0
+MN,,,2123,Council Member Ward 3 Third Choice (Minneapolis),43000,9002,Michael Rainville,,,N P,0,12,0,0.00,0
+MN,,,2123,Council Member Ward 3 Third Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2131,Council Member Ward 4 First Choice (Minneapolis),43000,9001,Leslie Davis,,,N P,0,9,0,0.00,0
+MN,,,2131,Council Member Ward 4 First Choice (Minneapolis),43000,9002,Angela Williams,,,N P,0,9,0,0.00,0
+MN,,,2131,Council Member Ward 4 First Choice (Minneapolis),43000,9003,Marvina Haynes,,,N P,0,9,0,0.00,0
+MN,,,2131,Council Member Ward 4 First Choice (Minneapolis),43000,9004,LaTrisha M. Vetaw,,,N P,0,9,0,0.00,0
+MN,,,2131,Council Member Ward 4 First Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2132,Council Member Ward 4 Second Choice (Minneapolis),43000,9001,Leslie Davis,,,N P,0,9,0,0.00,0
+MN,,,2132,Council Member Ward 4 Second Choice (Minneapolis),43000,9002,Angela Williams,,,N P,0,9,0,0.00,0
+MN,,,2132,Council Member Ward 4 Second Choice (Minneapolis),43000,9003,Marvina Haynes,,,N P,0,9,0,0.00,0
+MN,,,2132,Council Member Ward 4 Second Choice (Minneapolis),43000,9004,LaTrisha M. Vetaw,,,N P,0,9,0,0.00,0
+MN,,,2132,Council Member Ward 4 Second Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2133,Council Member Ward 4 Third Choice (Minneapolis),43000,9001,Leslie Davis,,,N P,0,9,0,0.00,0
+MN,,,2133,Council Member Ward 4 Third Choice (Minneapolis),43000,9002,Angela Williams,,,N P,0,9,0,0.00,0
+MN,,,2133,Council Member Ward 4 Third Choice (Minneapolis),43000,9003,Marvina Haynes,,,N P,0,9,0,0.00,0
+MN,,,2133,Council Member Ward 4 Third Choice (Minneapolis),43000,9004,LaTrisha M. Vetaw,,,N P,0,9,0,0.00,0
+MN,,,2133,Council Member Ward 4 Third Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2141,Council Member Ward 5 First Choice (Minneapolis),43000,9001,Victor Martinez,,,N P,0,9,0,0.00,0
+MN,,,2141,Council Member Ward 5 First Choice (Minneapolis),43000,9002,Jeremiah Bey Ellison,,,N P,0,9,0,0.00,0
+MN,,,2141,Council Member Ward 5 First Choice (Minneapolis),43000,9003,"Phillip ""OMac"" Peterson",,,N P,0,9,0,0.00,0
+MN,,,2141,Council Member Ward 5 First Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2142,Council Member Ward 5 Second Choice (Minneapolis),43000,9001,Victor Martinez,,,N P,0,9,0,0.00,0
+MN,,,2142,Council Member Ward 5 Second Choice (Minneapolis),43000,9002,Jeremiah Bey Ellison,,,N P,0,9,0,0.00,0
+MN,,,2142,Council Member Ward 5 Second Choice (Minneapolis),43000,9003,"Phillip ""OMac"" Peterson",,,N P,0,9,0,0.00,0
+MN,,,2142,Council Member Ward 5 Second Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2143,Council Member Ward 5 Third Choice (Minneapolis),43000,9001,Victor Martinez,,,N P,0,9,0,0.00,0
+MN,,,2143,Council Member Ward 5 Third Choice (Minneapolis),43000,9002,Jeremiah Bey Ellison,,,N P,0,9,0,0.00,0
+MN,,,2143,Council Member Ward 5 Third Choice (Minneapolis),43000,9003,"Phillip ""OMac"" Peterson",,,N P,0,9,0,0.00,0
+MN,,,2143,Council Member Ward 5 Third Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2151,Council Member Ward 6 First Choice (Minneapolis),43000,9001,Kayseh Magan,,,N P,0,9,0,0.00,0
+MN,,,2151,Council Member Ward 6 First Choice (Minneapolis),43000,9002,Guy T Gaskin,,,N P,0,9,0,0.00,0
+MN,,,2151,Council Member Ward 6 First Choice (Minneapolis),43000,9003,Jamal Osman,,,N P,0,9,0,0.00,0
+MN,,,2151,Council Member Ward 6 First Choice (Minneapolis),43000,9004,Tiger Worku,,,N P,0,9,0,0.00,0
+MN,,,2151,Council Member Ward 6 First Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2152,Council Member Ward 6 Second Choice (Minneapolis),43000,9001,Kayseh Magan,,,N P,0,9,0,0.00,0
+MN,,,2152,Council Member Ward 6 Second Choice (Minneapolis),43000,9002,Guy T Gaskin,,,N P,0,9,0,0.00,0
+MN,,,2152,Council Member Ward 6 Second Choice (Minneapolis),43000,9003,Jamal Osman,,,N P,0,9,0,0.00,0
+MN,,,2152,Council Member Ward 6 Second Choice (Minneapolis),43000,9004,Tiger Worku,,,N P,0,9,0,0.00,0
+MN,,,2152,Council Member Ward 6 Second Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2153,Council Member Ward 6 Third Choice (Minneapolis),43000,9001,Kayseh Magan,,,N P,0,9,0,0.00,0
+MN,,,2153,Council Member Ward 6 Third Choice (Minneapolis),43000,9002,Guy T Gaskin,,,N P,0,9,0,0.00,0
+MN,,,2153,Council Member Ward 6 Third Choice (Minneapolis),43000,9003,Jamal Osman,,,N P,0,9,0,0.00,0
+MN,,,2153,Council Member Ward 6 Third Choice (Minneapolis),43000,9004,Tiger Worku,,,N P,0,9,0,0.00,0
+MN,,,2153,Council Member Ward 6 Third Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2161,Council Member Ward 7 First Choice (Minneapolis),43000,9001,Katie Cashman,,,N P,0,12,0,0.00,0
+MN,,,2161,Council Member Ward 7 First Choice (Minneapolis),43000,9002,Scott Graham,,,N P,0,12,0,0.00,0
+MN,,,2161,Council Member Ward 7 First Choice (Minneapolis),43000,9003,Kenneth C. Foxworth,,,N P,0,12,0,0.00,0
+MN,,,2161,Council Member Ward 7 First Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2162,Council Member Ward 7 Second Choice (Minneapolis),43000,9001,Katie Cashman,,,N P,0,12,0,0.00,0
+MN,,,2162,Council Member Ward 7 Second Choice (Minneapolis),43000,9002,Scott Graham,,,N P,0,12,0,0.00,0
+MN,,,2162,Council Member Ward 7 Second Choice (Minneapolis),43000,9003,Kenneth C. Foxworth,,,N P,0,12,0,0.00,0
+MN,,,2162,Council Member Ward 7 Second Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2163,Council Member Ward 7 Third Choice (Minneapolis),43000,9001,Katie Cashman,,,N P,0,12,0,0.00,0
+MN,,,2163,Council Member Ward 7 Third Choice (Minneapolis),43000,9002,Scott Graham,,,N P,0,12,0,0.00,0
+MN,,,2163,Council Member Ward 7 Third Choice (Minneapolis),43000,9003,Kenneth C. Foxworth,,,N P,0,12,0,0.00,0
+MN,,,2163,Council Member Ward 7 Third Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2171,Council Member Ward 8 First Choice (Minneapolis),43000,9001,Terry White,,,N P,0,11,0,0.00,0
+MN,,,2171,Council Member Ward 8 First Choice (Minneapolis),43000,9002,Bob Sullentrop,,,N P,0,11,0,0.00,0
+MN,,,2171,Council Member Ward 8 First Choice (Minneapolis),43000,9003,Andrea Jenkins,,,N P,0,11,0,0.00,0
+MN,,,2171,Council Member Ward 8 First Choice (Minneapolis),43000,9004,Soren Stevenson,,,N P,0,11,0,0.00,0
+MN,,,2171,Council Member Ward 8 First Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,11,0,0.00,0
+MN,,,2172,Council Member Ward 8 Second Choice (Minneapolis),43000,9001,Terry White,,,N P,0,11,0,0.00,0
+MN,,,2172,Council Member Ward 8 Second Choice (Minneapolis),43000,9002,Bob Sullentrop,,,N P,0,11,0,0.00,0
+MN,,,2172,Council Member Ward 8 Second Choice (Minneapolis),43000,9003,Andrea Jenkins,,,N P,0,11,0,0.00,0
+MN,,,2172,Council Member Ward 8 Second Choice (Minneapolis),43000,9004,Soren Stevenson,,,N P,0,11,0,0.00,0
+MN,,,2172,Council Member Ward 8 Second Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,11,0,0.00,0
+MN,,,2173,Council Member Ward 8 Third Choice (Minneapolis),43000,9001,Terry White,,,N P,0,11,0,0.00,0
+MN,,,2173,Council Member Ward 8 Third Choice (Minneapolis),43000,9002,Bob Sullentrop,,,N P,0,11,0,0.00,0
+MN,,,2173,Council Member Ward 8 Third Choice (Minneapolis),43000,9003,Andrea Jenkins,,,N P,0,11,0,0.00,0
+MN,,,2173,Council Member Ward 8 Third Choice (Minneapolis),43000,9004,Soren Stevenson,,,N P,0,11,0,0.00,0
+MN,,,2173,Council Member Ward 8 Third Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,11,0,0.00,0
+MN,,,2181,Council Member Ward 9 First Choice (Minneapolis),43000,9001,Jason Chavez,,,N P,0,9,0,0.00,0
+MN,,,2181,Council Member Ward 9 First Choice (Minneapolis),43000,9002,Daniel Orban,,,N P,0,9,0,0.00,0
+MN,,,2181,Council Member Ward 9 First Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2182,Council Member Ward 9 Second Choice (Minneapolis),43000,9001,Jason Chavez,,,N P,0,9,0,0.00,0
+MN,,,2182,Council Member Ward 9 Second Choice (Minneapolis),43000,9002,Daniel Orban,,,N P,0,9,0,0.00,0
+MN,,,2182,Council Member Ward 9 Second Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2183,Council Member Ward 9 Third Choice (Minneapolis),43000,9001,Jason Chavez,,,N P,0,9,0,0.00,0
+MN,,,2183,Council Member Ward 9 Third Choice (Minneapolis),43000,9002,Daniel Orban,,,N P,0,9,0,0.00,0
+MN,,,2183,Council Member Ward 9 Third Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2191,Council Member Ward 10 First Choice (Minneapolis),43000,9001,Nasri Warsame,,,N P,0,9,0,0.00,0
+MN,,,2191,Council Member Ward 10 First Choice (Minneapolis),43000,9002,Aisha Chughtai,,,N P,0,9,0,0.00,0
+MN,,,2191,Council Member Ward 10 First Choice (Minneapolis),43000,9003,Greg Kline,,,N P,0,9,0,0.00,0
+MN,,,2191,Council Member Ward 10 First Choice (Minneapolis),43000,9004,Bruce Dachis,,,N P,0,9,0,0.00,0
+MN,,,2191,Council Member Ward 10 First Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2192,Council Member Ward 10 Second Choice (Minneapolis),43000,9001,Nasri Warsame,,,N P,0,9,0,0.00,0
+MN,,,2192,Council Member Ward 10 Second Choice (Minneapolis),43000,9002,Aisha Chughtai,,,N P,0,9,0,0.00,0
+MN,,,2192,Council Member Ward 10 Second Choice (Minneapolis),43000,9003,Greg Kline,,,N P,0,9,0,0.00,0
+MN,,,2192,Council Member Ward 10 Second Choice (Minneapolis),43000,9004,Bruce Dachis,,,N P,0,9,0,0.00,0
+MN,,,2192,Council Member Ward 10 Second Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2193,Council Member Ward 10 Third Choice (Minneapolis),43000,9001,Nasri Warsame,,,N P,0,9,0,0.00,0
+MN,,,2193,Council Member Ward 10 Third Choice (Minneapolis),43000,9002,Aisha Chughtai,,,N P,0,9,0,0.00,0
+MN,,,2193,Council Member Ward 10 Third Choice (Minneapolis),43000,9003,Greg Kline,,,N P,0,9,0,0.00,0
+MN,,,2193,Council Member Ward 10 Third Choice (Minneapolis),43000,9004,Bruce Dachis,,,N P,0,9,0,0.00,0
+MN,,,2193,Council Member Ward 10 Third Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,2201,Council Member Ward 11 First Choice (Minneapolis),43000,9001,Emily Koski,,,N P,0,12,0,0.00,0
+MN,,,2201,Council Member Ward 11 First Choice (Minneapolis),43000,9002,Gabrielle M. Prosser,,,N P,0,12,0,0.00,0
+MN,,,2201,Council Member Ward 11 First Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2202,Council Member Ward 11 Second Choice (Minneapolis),43000,9001,Emily Koski,,,N P,0,12,0,0.00,0
+MN,,,2202,Council Member Ward 11 Second Choice (Minneapolis),43000,9002,Gabrielle M. Prosser,,,N P,0,12,0,0.00,0
+MN,,,2202,Council Member Ward 11 Second Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2203,Council Member Ward 11 Third Choice (Minneapolis),43000,9001,Emily Koski,,,N P,0,12,0,0.00,0
+MN,,,2203,Council Member Ward 11 Third Choice (Minneapolis),43000,9002,Gabrielle M. Prosser,,,N P,0,12,0,0.00,0
+MN,,,2203,Council Member Ward 11 Third Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2211,Council Member Ward 12 First Choice (Minneapolis),43000,9001,Aurin Chowdhury,,,N P,0,12,0,0.00,0
+MN,,,2211,Council Member Ward 12 First Choice (Minneapolis),43000,9002,Luther Ranheim,,,N P,0,12,0,0.00,0
+MN,,,2211,Council Member Ward 12 First Choice (Minneapolis),43000,9003,Nancy Ford,,,N P,0,12,0,0.00,0
+MN,,,2211,Council Member Ward 12 First Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2212,Council Member Ward 12 Second Choice (Minneapolis),43000,9001,Aurin Chowdhury,,,N P,0,12,0,0.00,0
+MN,,,2212,Council Member Ward 12 Second Choice (Minneapolis),43000,9002,Luther Ranheim,,,N P,0,12,0,0.00,0
+MN,,,2212,Council Member Ward 12 Second Choice (Minneapolis),43000,9003,Nancy Ford,,,N P,0,12,0,0.00,0
+MN,,,2212,Council Member Ward 12 Second Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2213,Council Member Ward 12 Third Choice (Minneapolis),43000,9001,Aurin Chowdhury,,,N P,0,12,0,0.00,0
+MN,,,2213,Council Member Ward 12 Third Choice (Minneapolis),43000,9002,Luther Ranheim,,,N P,0,12,0,0.00,0
+MN,,,2213,Council Member Ward 12 Third Choice (Minneapolis),43000,9003,Nancy Ford,,,N P,0,12,0,0.00,0
+MN,,,2213,Council Member Ward 12 Third Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2221,Council Member Ward 13 First Choice (Minneapolis),43000,9001,Linea Palmisano,,,N P,0,13,0,0.00,0
+MN,,,2221,Council Member Ward 13 First Choice (Minneapolis),43000,9002,Kate Mortenson,,,N P,0,13,0,0.00,0
+MN,,,2221,Council Member Ward 13 First Choice (Minneapolis),43000,9003,"Bob ""Again"" Carney Jr.",,,N P,0,13,0,0.00,0
+MN,,,2221,Council Member Ward 13 First Choice (Minneapolis),43000,9004,Zach Metzger,,,N P,0,13,0,0.00,0
+MN,,,2221,Council Member Ward 13 First Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,13,0,0.00,0
+MN,,,2222,Council Member Ward 13 Second Choice (Minneapolis),43000,9001,Linea Palmisano,,,N P,0,13,0,0.00,0
+MN,,,2222,Council Member Ward 13 Second Choice (Minneapolis),43000,9002,Kate Mortenson,,,N P,0,13,0,0.00,0
+MN,,,2222,Council Member Ward 13 Second Choice (Minneapolis),43000,9003,"Bob ""Again"" Carney Jr.",,,N P,0,13,0,0.00,0
+MN,,,2222,Council Member Ward 13 Second Choice (Minneapolis),43000,9004,Zach Metzger,,,N P,0,13,0,0.00,0
+MN,,,2222,Council Member Ward 13 Second Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,13,0,0.00,0
+MN,,,2223,Council Member Ward 13 Third Choice (Minneapolis),43000,9001,Linea Palmisano,,,N P,0,13,0,0.00,0
+MN,,,2223,Council Member Ward 13 Third Choice (Minneapolis),43000,9002,Kate Mortenson,,,N P,0,13,0,0.00,0
+MN,,,2223,Council Member Ward 13 Third Choice (Minneapolis),43000,9003,"Bob ""Again"" Carney Jr.",,,N P,0,13,0,0.00,0
+MN,,,2223,Council Member Ward 13 Third Choice (Minneapolis),43000,9004,Zach Metzger,,,N P,0,13,0,0.00,0
+MN,,,2223,Council Member Ward 13 Third Choice (Minneapolis),43000,9901,WRITE-IN,,,WI,0,13,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (Minnetonka),43252,9001,YES,,,NP,0,21,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (Minnetonka),43252,9002,NO,,,NP,0,21,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (Minnetonka),43252,9001,Reed Gilkey,,,NP,0,6,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (Minnetonka),43252,9002,Patsy Foster-Bolton,,,NP,0,6,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (Minnetonka),43252,9003,Bonnie Burton,,,NP,0,6,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (Minnetonka),43252,9004,Dana Minion,,,NP,0,6,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (Minnetonka),43252,9901,WRITE-IN,,,WI,0,6,0,0.00,0
+MN,,,2102,Council Member Ward 1 Second Choice (Minnetonka),43252,9001,Reed Gilkey,,,NP,0,6,0,0.00,0
+MN,,,2102,Council Member Ward 1 Second Choice (Minnetonka),43252,9002,Patsy Foster-Bolton,,,NP,0,6,0,0.00,0
+MN,,,2102,Council Member Ward 1 Second Choice (Minnetonka),43252,9003,Bonnie Burton,,,NP,0,6,0,0.00,0
+MN,,,2102,Council Member Ward 1 Second Choice (Minnetonka),43252,9004,Dana Minion,,,NP,0,6,0,0.00,0
+MN,,,2102,Council Member Ward 1 Second Choice (Minnetonka),43252,9901,WRITE-IN,,,WI,0,6,0,0.00,0
+MN,,,2103,Council Member Ward 1 Third Choice (Minnetonka),43252,9001,Reed Gilkey,,,NP,0,6,0,0.00,0
+MN,,,2103,Council Member Ward 1 Third Choice (Minnetonka),43252,9002,Patsy Foster-Bolton,,,NP,0,6,0,0.00,0
+MN,,,2103,Council Member Ward 1 Third Choice (Minnetonka),43252,9003,Bonnie Burton,,,NP,0,6,0,0.00,0
+MN,,,2103,Council Member Ward 1 Third Choice (Minnetonka),43252,9004,Dana Minion,,,NP,0,6,0,0.00,0
+MN,,,2103,Council Member Ward 1 Third Choice (Minnetonka),43252,9901,WRITE-IN,,,WI,0,6,0,0.00,0
+MN,,,2111,Council Member Ward 2 First Choice (Minnetonka),43252,9001,Carrie Michels,,,NP,0,5,0,0.00,0
+MN,,,2111,Council Member Ward 2 First Choice (Minnetonka),43252,9002,Rebecca Schack,,,NP,0,5,0,0.00,0
+MN,,,2111,Council Member Ward 2 First Choice (Minnetonka),43252,9901,WRITE-IN,,,WI,0,5,0,0.00,0
+MN,,,2112,Council Member Ward 2 Second Choice (Minnetonka),43252,9001,Carrie Michels,,,NP,0,5,0,0.00,0
+MN,,,2112,Council Member Ward 2 Second Choice (Minnetonka),43252,9002,Rebecca Schack,,,NP,0,5,0,0.00,0
+MN,,,2112,Council Member Ward 2 Second Choice (Minnetonka),43252,9901,WRITE-IN,,,WI,0,5,0,0.00,0
+MN,,,2113,Council Member Ward 2 Third Choice (Minnetonka),43252,9001,Carrie Michels,,,NP,0,5,0,0.00,0
+MN,,,2113,Council Member Ward 2 Third Choice (Minnetonka),43252,9002,Rebecca Schack,,,NP,0,5,0,0.00,0
+MN,,,2113,Council Member Ward 2 Third Choice (Minnetonka),43252,9901,WRITE-IN,,,WI,0,5,0,0.00,0
+MN,,,2121,Council Member Ward 3 First Choice (Minnetonka),43252,9001,Ryan Ness,,,NP,0,5,0,0.00,0
+MN,,,2121,Council Member Ward 3 First Choice (Minnetonka),43252,9002,David Haeg,,,NP,0,5,0,0.00,0
+MN,,,2121,Council Member Ward 3 First Choice (Minnetonka),43252,9003,Paula Ramaley,,,NP,0,5,0,0.00,0
+MN,,,2121,Council Member Ward 3 First Choice (Minnetonka),43252,9901,WRITE-IN,,,WI,0,5,0,0.00,0
+MN,,,2122,Council Member Ward 3 Second Choice (Minnetonka),43252,9001,Ryan Ness,,,NP,0,5,0,0.00,0
+MN,,,2122,Council Member Ward 3 Second Choice (Minnetonka),43252,9002,David Haeg,,,NP,0,5,0,0.00,0
+MN,,,2122,Council Member Ward 3 Second Choice (Minnetonka),43252,9003,Paula Ramaley,,,NP,0,5,0,0.00,0
+MN,,,2122,Council Member Ward 3 Second Choice (Minnetonka),43252,9901,WRITE-IN,,,WI,0,5,0,0.00,0
+MN,,,2123,Council Member Ward 3 Third Choice (Minnetonka),43252,9001,Ryan Ness,,,NP,0,5,0,0.00,0
+MN,,,2123,Council Member Ward 3 Third Choice (Minnetonka),43252,9002,David Haeg,,,NP,0,5,0,0.00,0
+MN,,,2123,Council Member Ward 3 Third Choice (Minnetonka),43252,9003,Paula Ramaley,,,NP,0,5,0,0.00,0
+MN,,,2123,Council Member Ward 3 Third Choice (Minnetonka),43252,9901,WRITE-IN,,,WI,0,5,0,0.00,0
+MN,,,2131,Council Member Ward 4 First Choice (Minnetonka),43252,9001,Kissy C. Coakley,,,NP,0,5,0,0.00,0
+MN,,,2131,Council Member Ward 4 First Choice (Minnetonka),43252,9002,Ted Nearman,,,NP,0,5,0,0.00,0
+MN,,,2131,Council Member Ward 4 First Choice (Minnetonka),43252,9003,David G. Larson,,,NP,0,5,0,0.00,0
+MN,,,2131,Council Member Ward 4 First Choice (Minnetonka),43252,9901,WRITE-IN,,,WI,0,5,0,0.00,0
+MN,,,2132,Council Member Ward 4 Second Choice (Minnetonka),43252,9001,Kissy C. Coakley,,,NP,0,5,0,0.00,0
+MN,,,2132,Council Member Ward 4 Second Choice (Minnetonka),43252,9002,Ted Nearman,,,NP,0,5,0,0.00,0
+MN,,,2132,Council Member Ward 4 Second Choice (Minnetonka),43252,9003,David G. Larson,,,NP,0,5,0,0.00,0
+MN,,,2132,Council Member Ward 4 Second Choice (Minnetonka),43252,9901,WRITE-IN,,,WI,0,5,0,0.00,0
+MN,,,2133,Council Member Ward 4 Third Choice (Minnetonka),43252,9001,Kissy C. Coakley,,,NP,0,5,0,0.00,0
+MN,,,2133,Council Member Ward 4 Third Choice (Minnetonka),43252,9002,Ted Nearman,,,NP,0,5,0,0.00,0
+MN,,,2133,Council Member Ward 4 Third Choice (Minnetonka),43252,9003,David G. Larson,,,NP,0,5,0,0.00,0
+MN,,,2133,Council Member Ward 4 Third Choice (Minnetonka),43252,9901,WRITE-IN,,,WI,0,5,0,0.00,0
+MN,,,1001,Special Election for Mayor (Mounds View),44530,9001,Joe Holl,,,NP,0,4,0,0.00,0
+MN,,,1001,Special Election for Mayor (Mounds View),44530,9002,Zach Lindstrom,,,NP,0,4,0,0.00,0
+MN,,,1001,Special Election for Mayor (Mounds View),44530,9901,WRITE-IN,,,WI,0,4,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (Mounds View),44530,9001,YES,,,NP,0,4,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (Mounds View),44530,9002,NO,,,NP,0,4,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (North Branch),46798,9001,YES,,,NP,0,3,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (North Branch),46798,9002,NO,,,NP,0,3,0,0.00,0
+MN,,,1132,CITY QUESTION 2 (North Branch),46798,9001,YES,,,NP,0,3,0,0.00,0
+MN,,,1132,CITY QUESTION 2 (North Branch),46798,9002,NO,,,NP,0,3,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (Rochester),54880,9001,YES,,,NP,0,80,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (Rochester),54880,9002,NO,,,NP,0,80,0,0.00,0
+MN,,,1012,Special Election for Council Member at Large (Rosemount),55726,9001,Robert Hendel,,,NP,0,8,0,0.00,0
+MN,,,1012,Special Election for Council Member at Large (Rosemount),55726,9002,Tami Klimpel,,,NP,0,8,0,0.00,0
+MN,,,1012,Special Election for Council Member at Large (Rosemount),55726,9003,Al Viall Jr,,,NP,0,8,0,0.00,0
+MN,,,1012,Special Election for Council Member at Large (Rosemount),55726,9901,WRITE-IN,,,WI,0,8,0,0.00,0
+MN,,,1001,Mayor (Rushford),56284,9001,Terri L. Benson,,,NP,0,1,0,0.00,0
+MN,,,1001,Mayor (Rushford),56284,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,1010,Council Member (Rushford) (Elect 2),56284,9001,Leigh Volkman,,,NP,0,1,0,0.00,0
+MN,,,1010,Council Member (Rushford) (Elect 2),56284,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,1001,Mayor (St. Anthony),56680,9001,Wendy Webster,,,NP,0,3,0,0.00,0
+MN,,,1001,Mayor (St. Anthony),56680,9002,Randy Stille,,,NP,0,3,0,0.00,0
+MN,,,1001,Mayor (St. Anthony),56680,9901,WRITE-IN,,,WI,0,3,0,0.00,0
+MN,,,1010,Council Member (St. Anthony) (Elect 2),56680,9001,Hal Gray,,,NP,0,3,0,0.00,0
+MN,,,1010,Council Member (St. Anthony) (Elect 2),56680,9002,Thomas Randle,,,NP,0,3,0,0.00,0
+MN,,,1010,Council Member (St. Anthony) (Elect 2),56680,9003,Dave Colling,,,NP,0,3,0,0.00,0
+MN,,,1010,Council Member (St. Anthony) (Elect 2),56680,9004,Lona Doolan,,,NP,0,3,0,0.00,0
+MN,,,1010,Council Member (St. Anthony) (Elect 2),56680,9901,WRITE-IN,,,WI,0,3,0,0.00,0
+MN,,,2001,Mayor First Choice (St Louis Park),57220,9001,Nadia Mohamed,,,NP,0,12,0,0.00,0
+MN,,,2001,Mayor First Choice (St Louis Park),57220,9002,Dale A. Anderson,,,NP,0,12,0,0.00,0
+MN,,,2001,Mayor First Choice (St Louis Park),57220,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2002,Mayor Second Choice (St Louis Park),57220,9001,Nadia Mohamed,,,NP,0,12,0,0.00,0
+MN,,,2002,Mayor Second Choice (St Louis Park),57220,9002,Dale A. Anderson,,,NP,0,12,0,0.00,0
+MN,,,2002,Mayor Second Choice (St Louis Park),57220,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2003,Mayor Third Choice (St Louis Park),57220,9001,Nadia Mohamed,,,NP,0,12,0,0.00,0
+MN,,,2003,Mayor Third Choice (St Louis Park),57220,9002,Dale A. Anderson,,,NP,0,12,0,0.00,0
+MN,,,2003,Mayor Third Choice (St Louis Park),57220,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2051,Council Member Seat A First Choice (St Louis Park),57220,9001,Yolanda Farris,,,NP,0,12,0,0.00,0
+MN,,,2051,Council Member Seat A First Choice (St Louis Park),57220,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2052,Council Member Seat A Second Choice (St Louis Park),57220,9001,Yolanda Farris,,,NP,0,12,0,0.00,0
+MN,,,2052,Council Member Seat A Second Choice (St Louis Park),57220,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2053,Council Member Seat A Third Choice (St Louis Park),57220,9001,Yolanda Farris,,,NP,0,12,0,0.00,0
+MN,,,2053,Council Member Seat A Third Choice (St Louis Park),57220,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2061,Council Member Seat B First Choice (St Louis Park),57220,9001,Paul Baudhuin,,,NP,0,12,0,0.00,0
+MN,,,2061,Council Member Seat B First Choice (St Louis Park),57220,9002,Moshe Goldberger,,,NP,0,12,0,0.00,0
+MN,,,2061,Council Member Seat B First Choice (St Louis Park),57220,9003,J.W. Starrett,,,NP,0,12,0,0.00,0
+MN,,,2061,Council Member Seat B First Choice (St Louis Park),57220,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2062,Council Member Seat B Second Choice (St Louis Park),57220,9001,Paul Baudhuin,,,NP,0,12,0,0.00,0
+MN,,,2062,Council Member Seat B Second Choice (St Louis Park),57220,9002,Moshe Goldberger,,,NP,0,12,0,0.00,0
+MN,,,2062,Council Member Seat B Second Choice (St Louis Park),57220,9003,J.W. Starrett,,,NP,0,12,0,0.00,0
+MN,,,2062,Council Member Seat B Second Choice (St Louis Park),57220,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,2063,Council Member Seat B Third Choice (St Louis Park),57220,9001,Paul Baudhuin,,,NP,0,12,0,0.00,0
+MN,,,2063,Council Member Seat B Third Choice (St Louis Park),57220,9002,Moshe Goldberger,,,NP,0,12,0,0.00,0
+MN,,,2063,Council Member Seat B Third Choice (St Louis Park),57220,9003,J.W. Starrett,,,NP,0,12,0,0.00,0
+MN,,,2063,Council Member Seat B Third Choice (St Louis Park),57220,9901,WRITE-IN,,,WI,0,12,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (St. Paul),58000,9001,YES,,,NP,0,86,0,0.00,0
+MN,,,1131,CITY QUESTION 1 (St. Paul),58000,9002,NO,,,NP,0,86,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (St. Paul),58000,9001,Yan Chen,,,NP,0,13,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (St. Paul),58000,9002,Suz Woehrle,,,NP,0,13,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (St. Paul),58000,9003,Omar Syed,,,NP,0,13,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (St. Paul),58000,9004,Lucky Tiger Jack Rosenbloom,,,NP,0,13,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (St. Paul),58000,9005,James Lo,,,NP,0,13,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (St. Paul),58000,9006,Travis Helkamp,,,NP,0,13,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (St. Paul),58000,9007,Anika Bowie,,,NP,0,13,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (St. Paul),58000,9008,Jeff Zeitler,,,NP,0,13,0,0.00,0
+MN,,,2101,Council Member Ward 1 First Choice (St. Paul),58000,9901,WRITE-IN,,,WI,0,13,0,0.00,0
+MN,,,2111,Council Member Ward 2 First Choice (St. Paul),58000,9001,Noval Noir,,,NP,0,13,0,0.00,0
+MN,,,2111,Council Member Ward 2 First Choice (St. Paul),58000,9002,Bill Hosko,,,NP,0,13,0,0.00,0
+MN,,,2111,Council Member Ward 2 First Choice (St. Paul),58000,9003,Peter K. Butler,,,NP,0,13,0,0.00,0
+MN,,,2111,Council Member Ward 2 First Choice (St. Paul),58000,9004,Rebecca Noecker,,,NP,0,13,0,0.00,0
+MN,,,2111,Council Member Ward 2 First Choice (St. Paul),58000,9901,WRITE-IN,,,WI,0,13,0,0.00,0
+MN,,,2121,Council Member Ward 3 First Choice (St. Paul),58000,9001,Patty Hartmann,,,NP,0,13,0,0.00,0
+MN,,,2121,Council Member Ward 3 First Choice (St. Paul),58000,9002,Saura Jost,,,NP,0,13,0,0.00,0
+MN,,,2121,Council Member Ward 3 First Choice (St. Paul),58000,9003,Isaac Russell,,,NP,0,13,0,0.00,0
+MN,,,2121,Council Member Ward 3 First Choice (St. Paul),58000,9004,Troy Barksdale,,,NP,0,13,0,0.00,0
+MN,,,2121,Council Member Ward 3 First Choice (St. Paul),58000,9901,WRITE-IN,,,WI,0,13,0,0.00,0
+MN,,,2131,Council Member Ward 4 First Choice (St. Paul),58000,9001,Robert Bushard,,,NP,0,13,0,0.00,0
+MN,,,2131,Council Member Ward 4 First Choice (St. Paul),58000,9002,Mitra Jalali,,,NP,0,13,0,0.00,0
+MN,,,2131,Council Member Ward 4 First Choice (St. Paul),58000,9901,WRITE-IN,,,WI,0,13,0,0.00,0
+MN,,,2141,Council Member Ward 5 First Choice (St. Paul),58000,9001,Hwa Jeong Kim,,,NP,0,10,0,0.00,0
+MN,,,2141,Council Member Ward 5 First Choice (St. Paul),58000,9002,David Greenwood-Sanchez,,,NP,0,10,0,0.00,0
+MN,,,2141,Council Member Ward 5 First Choice (St. Paul),58000,9003,Pam Tollefson,,,NP,0,10,0,0.00,0
+MN,,,2141,Council Member Ward 5 First Choice (St. Paul),58000,9004,Nate Nins,,,NP,0,10,0,0.00,0
+MN,,,2141,Council Member Ward 5 First Choice (St. Paul),58000,9901,WRITE-IN,,,WI,0,10,0,0.00,0
+MN,,,2151,Council Member Ward 6 First Choice (St. Paul),58000,9001,Gary B Unger,,,NP,0,11,0,0.00,0
+MN,,,2151,Council Member Ward 6 First Choice (St. Paul),58000,9002,Nelsie Yang,,,NP,0,11,0,0.00,0
+MN,,,2151,Council Member Ward 6 First Choice (St. Paul),58000,9901,WRITE-IN,,,WI,0,11,0,0.00,0
+MN,,,2161,Council Member Ward 7 First Choice (St. Paul),58000,9001,Dino Guerin,,,NP,0,13,0,0.00,0
+MN,,,2161,Council Member Ward 7 First Choice (St. Paul),58000,9002,Foua-Choua Khang,,,NP,0,13,0,0.00,0
+MN,,,2161,Council Member Ward 7 First Choice (St. Paul),58000,9003,Pa Der Vang,,,NP,0,13,0,0.00,0
+MN,,,2161,Council Member Ward 7 First Choice (St. Paul),58000,9004,Kartumu King,,,NP,0,13,0,0.00,0
+MN,,,2161,Council Member Ward 7 First Choice (St. Paul),58000,9005,Cheniqua Johnson,,,NP,0,13,0,0.00,0
+MN,,,2161,Council Member Ward 7 First Choice (St. Paul),58000,9006,Alexander Bourne,,,NP,0,13,0,0.00,0
+MN,,,2161,Council Member Ward 7 First Choice (St. Paul),58000,9901,WRITE-IN,,,WI,0,13,0,0.00,0
+MN,,,1001,Mayor (St. Paul Park),58018,9001,Keith Franke,,,NP,0,3,0,0.00,0
+MN,,,1001,Mayor (St. Paul Park),58018,9901,WRITE-IN,,,WI,0,3,0,0.00,0
+MN,,,1010,Council Member at Large (St. Paul Park) (Elect 2),58018,9001,Tim Conrad,,,NP,0,3,0,0.00,0
+MN,,,1010,Council Member at Large (St. Paul Park) (Elect 2),58018,9002,Tim Jones,,,NP,0,3,0,0.00,0
+MN,,,1010,Council Member at Large (St. Paul Park) (Elect 2),58018,9003,Tanya Foote,,,NP,0,3,0,0.00,0
+MN,,,1010,Council Member at Large (St. Paul Park) (Elect 2),58018,9004,Charlene Whitbred Hemmingson,,,NP,0,3,0,0.00,0
+MN,,,1010,Council Member at Large (St. Paul Park) (Elect 2),58018,9005,Jeff Haggerty,,,NP,0,3,0,0.00,0
+MN,,,1010,Council Member at Large (St. Paul Park) (Elect 2),58018,9006,Sharon Ornquist,,,NP,0,3,0,0.00,0
+MN,,,1010,Council Member at Large (St. Paul Park) (Elect 2),58018,9007,Kelly Mullan,,,NP,0,3,0,0.00,0
+MN,,,1010,Council Member at Large (St. Paul Park) (Elect 2),58018,9901,WRITE-IN,,,WI,0,3,0,0.00,0
+MN,,,1001,Mayor (St. Peter),58036,9001,Ed Johnson,,,NP,0,2,0,0.00,0
+MN,,,1001,Mayor (St. Peter),58036,9002,Shanon Nowell,,,NP,0,2,0,0.00,0
+MN,,,1001,Mayor (St. Peter),58036,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,1020,Council Member Ward 1 (St. Peter),58036,9001,Keri Johnson,,,NP,0,1,0,0.00,0
+MN,,,1020,Council Member Ward 1 (St. Peter),58036,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,1022,Council Member Ward 2 (St. Peter) (Elect 2),58036,9001,Charlie Rustman,,,NP,0,1,0,0.00,0
+MN,,,1022,Council Member Ward 2 (St. Peter) (Elect 2),58036,9002,Chuck Zieman,,,NP,0,1,0,0.00,0
+MN,,,1022,Council Member Ward 2 (St. Peter) (Elect 2),58036,9003,Brad DeVos,,,NP,0,1,0,0.00,0
+MN,,,1022,Council Member Ward 2 (St. Peter) (Elect 2),58036,9004,Joshua Weisenfeld,,,NP,0,1,0,0.00,0
+MN,,,1022,Council Member Ward 2 (St. Peter) (Elect 2),58036,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,4012,Town Supervisor Seat B (White Township),69898,9001,Jon Skelton,,,NP,0,2,0,0.00,0
+MN,,,4012,Town Supervisor Seat B (White Township),69898,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,1020,Council Member Ward 1 (White Bear Lake),69970,9001,Bill Walsh,,,NP,0,1,0,0.00,0
+MN,,,1020,Council Member Ward 1 (White Bear Lake),69970,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,1024,Council Member Ward 3 (White Bear Lake),69970,9001,John Ficcadenti,,,NP,0,1,0,0.00,0
+MN,,,1024,Council Member Ward 3 (White Bear Lake),69970,9002,Andrea West,,,NP,0,1,0,0.00,0
+MN,,,1024,Council Member Ward 3 (White Bear Lake),69970,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,1028,Council Member Ward 5 (White Bear Lake),69970,9001,Steven Engstran,,,NP,0,1,0,0.00,0
+MN,,,1028,Council Member Ward 5 (White Bear Lake),69970,9901,WRITE-IN,,,WI,0,1,0,0.00,0

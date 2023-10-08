@@ -1,0 +1,295 @@
+State,County ID,Precinct name,Office ID,Office name,District,Candidate order code,Candidate name,Suffix,Incumbent code,Party abbreviation,Number of precincts reporting,Total number of precincts voting for the office,Votes for candidate,Percentage of votes for candidate out of total votes for Office,Total number of votes for Office in area
+MN,,,5001,Special Election for School Board Member at Large (SSD #6),0006,9001,Kim Humann,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member at Large (SSD #6),0006,9002,Beth Johnson,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member at Large (SSD #6),0006,9003,John R. Wilcox,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member at Large (SSD #6),0006,9004,Dan Vick,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member at Large (SSD #6),0006,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,5010,School Board Member District 1 (ISD #11),0011,9001,Linda Hoekman,,,NP,0,5,0,0.00,0
+MN,,,5010,School Board Member District 1 (ISD #11),0011,9002,Erin Heers-McArdle,,,NP,0,5,0,0.00,0
+MN,,,5010,School Board Member District 1 (ISD #11),0011,9901,WRITE-IN,,,WI,0,5,0,0.00,0
+MN,,,5012,School Board Member District 2 (ISD #11),0011,9001,Susan Witt,,,NP,0,5,0,0.00,0
+MN,,,5012,School Board Member District 2 (ISD #11),0011,9002,Zach Arco,,,NP,0,5,0,0.00,0
+MN,,,5012,School Board Member District 2 (ISD #11),0011,9901,WRITE-IN,,,WI,0,5,0,0.00,0
+MN,,,5018,School Board Member District 5 (ISD #11),0011,9001,Scott Simmons,,,NP,0,7,0,0.00,0
+MN,,,5018,School Board Member District 5 (ISD #11),0011,9002,Cyrus Wilson,,,NP,0,7,0,0.00,0
+MN,,,5018,School Board Member District 5 (ISD #11),0011,9003,Michelle Langenfeld,,,NP,0,7,0,0.00,0
+MN,,,5018,School Board Member District 5 (ISD #11),0011,9901,WRITE-IN,,,WI,0,7,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #13),0013,9001,Gregg Westerberg,,,NP,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #13),0013,9002,Michelle Pettway,,,NP,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #13),0013,9003,Cheryl Ekstrand,,,NP,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #13),0013,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #14) (Elect 3),0014,9001,Ibsen Gabriel,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #14) (Elect 3),0014,9002,Jake Karnopp,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #14) (Elect 3),0014,9003,Sara Jones,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #14) (Elect 3),0014,9004,Erik Keeler,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #14) (Elect 3),0014,9005,Roger Ungemach,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #14) (Elect 3),0014,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #16) (Elect 3),0016,9001,Amy Hennen,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #16) (Elect 3),0016,9002,Tony Easter,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #16) (Elect 3),0016,9003,Allie Schmidt,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #16) (Elect 3),0016,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #16),0016,9001,Ryan McLaughlin,,,NP,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #16),0016,9002,Kelly McClellan,,,NP,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #16),0016,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #91),0091,9001,Tony Newman,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #91),0091,9002,Patrick S. Poirier,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #91),0091,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #93),0093,9001,Ryan Leonzal,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #93),0093,9002,Steven Schmidt,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #93),0093,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #129) (Elect 2),0129,9001,Daniel Ohmacht,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #129) (Elect 2),0129,9002,Dustin Shourds,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #129) (Elect 2),0129,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #139) (Elect 3),0139,9001,Aimee Perreault-Smith,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #139) (Elect 3),0139,9002,Adam Cinelli,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #139) (Elect 3),0139,9003,Stacey Sheffield,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #139) (Elect 3),0139,9004,Matthew Meissner,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #139) (Elect 3),0139,9005,Matt Perreault,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #139) (Elect 3),0139,9006,Kellee Peterson,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #139) (Elect 3),0139,9007,Kristin Papke,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #139) (Elect 3),0139,9008,Paul Brian Sandel,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #139) (Elect 3),0139,9009,Rory Roth,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #139) (Elect 3),0139,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #162),0162,9001,Amy Fontaine,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #162),0162,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #173),0173,9001,Carolyn Karschnik,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #173),0173,9002,Chad Pedersen,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #173),0173,9003,Ramont Harder Schrock,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #173),0173,9004,Tom Fast,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #173),0173,9005,John D. Regier,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #173),0173,9006,Julie Brugman,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #173),0173,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #196) (Elect 4),0196,9001,Jackie Magnuson,,,NP,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #196) (Elect 4),0196,9002,Charles McCready,,,NP,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #196) (Elect 4),0196,9003,Leah Gardner,,,NP,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #196) (Elect 4),0196,9004,Cory Johnson,,,NP,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #196) (Elect 4),0196,9005,Gina Swaney,,,NP,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #196) (Elect 4),0196,9006,Kim Bauer,,,NP,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #196) (Elect 4),0196,9007,Sachin Isaacs,,,NP,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #196) (Elect 4),0196,9008,Teressa Schlueter,,,NP,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #196) (Elect 4),0196,9009,Melissa Field,,,NP,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #196) (Elect 4),0196,9010,Anna Williams,,,NP,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #196) (Elect 4),0196,9011,Lori Urkiel,,,NP,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #196) (Elect 4),0196,9012,Craig Angrimson,,,NP,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #196) (Elect 4),0196,9901,WRITE-IN,,,WI,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #197) (Elect 4),0197,9001,Rowen Elsmore,,,NP,0,5,0,0.00,0
+MN,,,5000,School Board Member (ISD #197) (Elect 4),0197,9002,Randi Walz,,,NP,0,5,0,0.00,0
+MN,,,5000,School Board Member (ISD #197) (Elect 4),0197,9003,Morgan Steele,,,NP,0,5,0,0.00,0
+MN,,,5000,School Board Member (ISD #197) (Elect 4),0197,9004,Tim Aune,,,NP,0,5,0,0.00,0
+MN,,,5000,School Board Member (ISD #197) (Elect 4),0197,9005,Barbara Kessler,,,NP,0,5,0,0.00,0
+MN,,,5000,School Board Member (ISD #197) (Elect 4),0197,9006,Byron L. Schwab,,,NP,0,5,0,0.00,0
+MN,,,5000,School Board Member (ISD #197) (Elect 4),0197,9901,WRITE-IN,,,WI,0,5,0,0.00,0
+MN,,,5000,School Board Member (ISD #199) (Elect 4),0199,9001,Liz Niemioja,,,NP,0,4,0,0.00,0
+MN,,,5000,School Board Member (ISD #199) (Elect 4),0199,9002,Darcie Pierson,,,NP,0,4,0,0.00,0
+MN,,,5000,School Board Member (ISD #199) (Elect 4),0199,9003,Jake Klingner,,,NP,0,4,0,0.00,0
+MN,,,5000,School Board Member (ISD #199) (Elect 4),0199,9004,Sherry Warrick,,,NP,0,4,0,0.00,0
+MN,,,5000,School Board Member (ISD #199) (Elect 4),0199,9901,WRITE-IN,,,WI,0,4,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #199),0199,9001,Shana Dukes,,,NP,0,4,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #199),0199,9002,Aaron Brooksby,,,NP,0,4,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #199),0199,9003,Matt Schaefer,,,NP,0,4,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #199),0199,9901,WRITE-IN,,,WI,0,4,0,0.00,0
+MN,,,5000,School Board Member (ISD #200) (Elect 4),0200,9001,Nancy Blanchard,,,NP,0,8,0,0.00,0
+MN,,,5000,School Board Member (ISD #200) (Elect 4),0200,9002,Matt Bruns,,,NP,0,8,0,0.00,0
+MN,,,5000,School Board Member (ISD #200) (Elect 4),0200,9003,Jenny Wiederholt-Pine,,,NP,0,8,0,0.00,0
+MN,,,5000,School Board Member (ISD #200) (Elect 4),0200,9004,Brandy Wentzler,,,NP,0,8,0,0.00,0
+MN,,,5000,School Board Member (ISD #200) (Elect 4),0200,9005,Mariah Ring,,,NP,0,8,0,0.00,0
+MN,,,5000,School Board Member (ISD #200) (Elect 4),0200,9006,Pamela J. Onnen,,,NP,0,8,0,0.00,0
+MN,,,5000,School Board Member (ISD #200) (Elect 4),0200,9007,Matt Seeger,,,NP,0,8,0,0.00,0
+MN,,,5000,School Board Member (ISD #200) (Elect 4),0200,9008,Melissa Millner,,,NP,0,8,0,0.00,0
+MN,,,5000,School Board Member (ISD #200) (Elect 4),0200,9009,Philip Biermaier,,,NP,0,8,0,0.00,0
+MN,,,5000,School Board Member (ISD #200) (Elect 4),0200,9901,WRITE-IN,,,WI,0,8,0,0.00,0
+MN,,,5000,School Board Member (ISD #270) (Elect 4),0270,9001,Zhiming Zhao,,,NP,0,31,0,0.00,0
+MN,,,5000,School Board Member (ISD #270) (Elect 4),0270,9002,Brooke Ann Roper,,,NP,0,31,0,0.00,0
+MN,,,5000,School Board Member (ISD #270) (Elect 4),0270,9003,Shannon Andreson,,,NP,0,31,0,0.00,0
+MN,,,5000,School Board Member (ISD #270) (Elect 4),0270,9004,Kaj Thompson,,,NP,0,31,0,0.00,0
+MN,,,5000,School Board Member (ISD #270) (Elect 4),0270,9901,WRITE-IN,,,WI,0,31,0,0.00,0
+MN,,,5000,School Board Member (ISD #271) (Elect 3),0271,9001,Langa Oriho,,,NP,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #271) (Elect 3),0271,9002,Heather Starks,,,NP,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #271) (Elect 3),0271,9003,Sandra Johnson,,,NP,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #271) (Elect 3),0271,9004,Nelly Korman,,,NP,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #271) (Elect 3),0271,9005,Ricardo Oliva,,,NP,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #271) (Elect 3),0271,9006,Mia Olson,,,NP,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #271) (Elect 3),0271,9901,WRITE-IN,,,WI,0,32,0,0.00,0
+MN,,,5000,School Board Member (ISD #273) (Elect 3),0273,9001,Cheryl Barry,,,NP,0,18,0,0.00,0
+MN,,,5000,School Board Member (ISD #273) (Elect 3),0273,9002,Elliot Mann,,,NP,0,18,0,0.00,0
+MN,,,5000,School Board Member (ISD #273) (Elect 3),0273,9003,Jennifer Huwe,,,NP,0,18,0,0.00,0
+MN,,,5000,School Board Member (ISD #273) (Elect 3),0273,9901,WRITE-IN,,,WI,0,18,0,0.00,0
+MN,,,5000,School Board Member (ISD #276) (Elect 4),0276,9001,Brandon L. Voges,,,NP,0,13,0,0.00,0
+MN,,,5000,School Board Member (ISD #276) (Elect 4),0276,9002,Chris Kratoska,,,NP,0,13,0,0.00,0
+MN,,,5000,School Board Member (ISD #276) (Elect 4),0276,9003,Sally Browne,,,NP,0,13,0,0.00,0
+MN,,,5000,School Board Member (ISD #276) (Elect 4),0276,9004,Kemerie Foss,,,NP,0,13,0,0.00,0
+MN,,,5000,School Board Member (ISD #276) (Elect 4),0276,9005,Karen Jordan,,,NP,0,13,0,0.00,0
+MN,,,5000,School Board Member (ISD #276) (Elect 4),0276,9006,Michael Remucal,,,NP,0,13,0,0.00,0
+MN,,,5000,School Board Member (ISD #276) (Elect 4),0276,9007,Dan Olson,,,NP,0,13,0,0.00,0
+MN,,,5000,School Board Member (ISD #276) (Elect 4),0276,9901,WRITE-IN,,,WI,0,13,0,0.00,0
+MN,,,5000,School Board Member (ISD #277) (Elect 4),0277,9001,Heidi Marty,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #277) (Elect 4),0277,9002,Brian Roath,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #277) (Elect 4),0277,9003,Ralph Harrison,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #277) (Elect 4),0277,9004,David W. Olson,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #277) (Elect 4),0277,9005,John J. Quinn,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #277) (Elect 4),0277,9006,Christopher Reffkin,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #277) (Elect 4),0277,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #280) (Elect 3),0280,9001,Paula Cole,,,NP,0,14,0,0.00,0
+MN,,,5000,School Board Member (ISD #280) (Elect 3),0280,9002,Ken Liss,,,NP,0,14,0,0.00,0
+MN,,,5000,School Board Member (ISD #280) (Elect 3),0280,9003,Kirk R Spencer,,,NP,0,14,0,0.00,0
+MN,,,5000,School Board Member (ISD #280) (Elect 3),0280,9901,WRITE-IN,,,WI,0,14,0,0.00,0
+MN,,,5000,School Board Member (ISD #282) (Elect 3),0282,9001,Ben Phillip,,,NP,0,4,0,0.00,0
+MN,,,5000,School Board Member (ISD #282) (Elect 3),0282,9002,Eric Sonnenberg,,,NP,0,4,0,0.00,0
+MN,,,5000,School Board Member (ISD #282) (Elect 3),0282,9003,Cassandra Palmer,,,NP,0,4,0,0.00,0
+MN,,,5000,School Board Member (ISD #282) (Elect 3),0282,9004,Laurel Hood,,,NP,0,4,0,0.00,0
+MN,,,5000,School Board Member (ISD #282) (Elect 3),0282,9901,WRITE-IN,,,WI,0,4,0,0.00,0
+MN,,,5000,School Board Member (ISD #283) (Elect 4),0283,9001,C. Colin Cox,,,NP,0,15,0,0.00,0
+MN,,,5000,School Board Member (ISD #283) (Elect 4),0283,9002,Virginia Mancini,,,NP,0,15,0,0.00,0
+MN,,,5000,School Board Member (ISD #283) (Elect 4),0283,9003,Saul Eugene,,,NP,0,15,0,0.00,0
+MN,,,5000,School Board Member (ISD #283) (Elect 4),0283,9004,Celia Anderson,,,NP,0,15,0,0.00,0
+MN,,,5000,School Board Member (ISD #283) (Elect 4),0283,9005,Taylor Williams,,,NP,0,15,0,0.00,0
+MN,,,5000,School Board Member (ISD #283) (Elect 4),0283,9901,WRITE-IN,,,WI,0,15,0,0.00,0
+MN,,,5000,School Board Member (ISD #284) (Elect 4),0284,9001,Paras Bhende,,,NP,0,10,0,0.00,0
+MN,,,5000,School Board Member (ISD #284) (Elect 4),0284,9002,Dan Ginestra,,,NP,0,10,0,0.00,0
+MN,,,5000,School Board Member (ISD #284) (Elect 4),0284,9003,Alex Rudich,,,NP,0,10,0,0.00,0
+MN,,,5000,School Board Member (ISD #284) (Elect 4),0284,9004,Sheila Prior,,,NP,0,10,0,0.00,0
+MN,,,5000,School Board Member (ISD #284) (Elect 4),0284,9005,Mariam T. Siddiqui,,,NP,0,10,0,0.00,0
+MN,,,5000,School Board Member (ISD #284) (Elect 4),0284,9006,Valentina Eyres,,,NP,0,10,0,0.00,0
+MN,,,5000,School Board Member (ISD #284) (Elect 4),0284,9901,WRITE-IN,,,WI,0,10,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #286),0286,9001,Janelle Collier,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #286),0286,9002,Mary O'Connor,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #286),0286,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #306),0306,9001,Kyle Sanders,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #306),0306,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #319),0319,9001,Pam Brons,,,NP,0,5,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #319),0319,9002,William Hendricks,,,NP,0,5,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #319),0319,9901,WRITE-IN,,,WI,0,5,0,0.00,0
+MN,,,5000,School Board Member (ISD #333),0333,9001,Josh Smith,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #333),0333,9002,Cory Schroeder,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #333),0333,9003,James Hanna,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #333),0333,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,5002,School Board Member (ISD #333),0333,9001,Dan Wilder,,,NP,0,2,0,0.00,0
+MN,,,5002,School Board Member (ISD #333),0333,9002,Jeremy Voss,,,NP,0,2,0,0.00,0
+MN,,,5002,School Board Member (ISD #333),0333,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #361),0361,9001,Dale Johnson,,,NP,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #361),0361,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #415),0415,9001,Matthew Hoekstra,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #415),0415,9002,Dennis Guza,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #415),0415,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #499),0499,9001,Amanda O'Byrne,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #499),0499,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,5025,Special Election for School Board Member (ISD #499),0499,9001,Angie Olson,,,NP,0,1,0,0.00,0
+MN,,,5025,Special Election for School Board Member (ISD #499),0499,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #508) (Elect 4),0508,9001,Bill Kautt,,,NP,0,4,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #508) (Elect 4),0508,9002,Marty Duncan,,,NP,0,4,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #508) (Elect 4),0508,9003,Amanda Hird,,,NP,0,4,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #508) (Elect 4),0508,9004,Bill Weber,,,NP,0,4,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #508) (Elect 4),0508,9005,Tracy Stuewe,,,NP,0,4,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #508) (Elect 4),0508,9006,Rita Rassbach,,,NP,0,4,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #508) (Elect 4),0508,9007,Michael Spear,,,NP,0,4,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #508) (Elect 4),0508,9008,Krystal Loula,,,NP,0,4,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #508) (Elect 4),0508,9009,Ken Rossow,,,NP,0,4,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #508) (Elect 4),0508,9901,WRITE-IN,,,WI,0,4,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #518),0518,9001,Matthew Widboom,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #518),0518,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #600),0600,9001,Ceara Solheim,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #600),0600,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #621) (Elect 4),0621,9001,Alissa Daire Nelson,,,NP,0,27,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #621) (Elect 4),0621,9002,Heidi Caccamo,,,NP,0,27,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #621) (Elect 4),0621,9003,Heidi Danielson,,,NP,0,27,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #621) (Elect 4),0621,9004,Andre M. Koen,,,NP,0,27,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #621) (Elect 4),0621,9005,Jonathan Weinhagen,,,NP,0,27,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #621) (Elect 4),0621,9006,Jim DeMay,,,NP,0,27,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #621) (Elect 4),0621,9007,Rich Priore,,,NP,0,27,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #621) (Elect 4),0621,9008,Jon VanOeveren,,,NP,0,27,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #621) (Elect 4),0621,9009,Paul Wikstrom,,,NP,0,27,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #621) (Elect 4),0621,9010,Mark Kelliher,,,NP,0,27,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #621) (Elect 4),0621,9011,Art Mills,,,NP,0,27,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #621) (Elect 4),0621,9901,WRITE-IN,,,WI,0,27,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #623) (Elect 3),0623,9001,Adam Maier,,,NP,0,19,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #623) (Elect 3),0623,9002,Karl Crump,,,NP,0,19,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #623) (Elect 3),0623,9003,Rose Wan-Mui Chu,,,NP,0,19,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #623) (Elect 3),0623,9004,Mike Boguszewski,,,NP,0,19,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #623) (Elect 3),0623,9005,Alan Holasek,,,NP,0,19,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #623) (Elect 3),0623,9006,Todd Anderson,,,NP,0,19,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #623) (Elect 3),0623,9007,Vaughn Klingenberg,,,NP,0,19,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #623) (Elect 3),0623,9901,WRITE-IN,,,WI,0,19,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #625) (Elect 4),0625,9001,Carlo Franco,,,NP,0,86,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #625) (Elect 4),0625,9002,Abdi S. Omer,,,NP,0,86,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #625) (Elect 4),0625,9003,Chauntyll Allen,,,NP,0,86,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #625) (Elect 4),0625,9004,Gita Rijal Zeitler,,,NP,0,86,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #625) (Elect 4),0625,9005,Erica Valliant,,,NP,0,86,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #625) (Elect 4),0625,9006,Yusef Carrillo,,,NP,0,86,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #625) (Elect 4),0625,9007,Zuki Ellis,,,NP,0,86,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #625) (Elect 4),0625,9901,WRITE-IN,,,WI,0,86,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #707),0707,9001,Danelle Porter,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #707),0707,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #709),0709,9001,Alanna Oswald,,,NP,0,38,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #709),0709,9002,Stephanie Williams,,,NP,0,38,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #709),0709,9901,WRITE-IN,,,WI,0,38,0,0.00,0
+MN,,,5012,School Board Member District 2 (ISD #709),0709,9001,Sarah Mikesell,,,NP,0,8,0,0.00,0
+MN,,,5012,School Board Member District 2 (ISD #709),0709,9901,WRITE-IN,,,WI,0,8,0,0.00,0
+MN,,,5014,School Board Member District 3 (ISD #709),0709,9001,Henry L. Banks,,,NP,0,9,0,0.00,0
+MN,,,5014,School Board Member District 3 (ISD #709),0709,9002,Loren Martell,,,NP,0,9,0,0.00,0
+MN,,,5014,School Board Member District 3 (ISD #709),0709,9901,WRITE-IN,,,WI,0,9,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #712),0712,9001,Clay Krueger,,,NP,0,3,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #712),0712,9901,WRITE-IN,,,WI,0,3,0,0.00,0
+MN,,,5000,School Board Member (ISD #738),0738,9001,Evelyn Martini,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #738),0738,9002,Nicole Burg,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #738),0738,9003,Robert E. Knettel Jr.,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #738),0738,9004,Lori Opatz,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #738),0738,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #740),0740,9001,Allen Wieling,,,NP,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #740),0740,9002,Keith Fischer,,,NP,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #740),0740,9003,Eric Seanger,,,NP,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #740),0740,9004,Alan Schulzetenberg,,,NP,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #740),0740,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #833) (Elect 3),0833,9001,Melinda Dols,,,NP,0,23,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #833) (Elect 3),0833,9002,Randall J Johnson,,,NP,0,23,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #833) (Elect 3),0833,9003,Fekadu Kassa Ayichew,,,NP,0,23,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #833) (Elect 3),0833,9004,Priscilla Kathryn Dimbo,,,NP,0,23,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #833) (Elect 3),0833,9005,Simi Patnaik,,,NP,0,23,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #833) (Elect 3),0833,9006,Jaime Kokaisel,,,NP,0,23,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #833) (Elect 3),0833,9007,Satonia Moore,,,NP,0,23,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #833) (Elect 3),0833,9008,Molly Schaefer,,,NP,0,23,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #833) (Elect 3),0833,9009,Anthony Mahmood,,,NP,0,23,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #833) (Elect 3),0833,9010,Ryan Clarke,,,NP,0,23,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #833) (Elect 3),0833,9011,Chad Borseth,,,NP,0,23,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #833) (Elect 3),0833,9901,WRITE-IN,,,WI,0,23,0,0.00,0
+MN,,,5001,Special Election for School Board Member at Large (ISD #834),0834,9001,Chris Lauer,,,NP,0,17,0,0.00,0
+MN,,,5001,Special Election for School Board Member at Large (ISD #834),0834,9002,Jessica L Johnson,,,NP,0,17,0,0.00,0
+MN,,,5001,Special Election for School Board Member at Large (ISD #834),0834,9901,WRITE-IN,,,WI,0,17,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #836),0836,9001,Valerie Ommodt,,,NP,0,3,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #836),0836,9901,WRITE-IN,,,WI,0,3,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #850) (Elect 3),0850,9001,Kyle Blanchard,,,NP,0,6,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #850) (Elect 3),0850,9002,Danielle Grunewald,,,NP,0,6,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #850) (Elect 3),0850,9003,Stephanie Olson,,,NP,0,6,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #850) (Elect 3),0850,9004,Justin Phillips,,,NP,0,6,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #850) (Elect 3),0850,9005,David Simmer,,,NP,0,6,0,0.00,0
+MN,,,5000,School Board Member at Large (ISD #850) (Elect 3),0850,9901,WRITE-IN,,,WI,0,6,0,0.00,0
+MN,,,5001,Special Election for School Board Member at Large (ISD #911),0911,9001,Timothy J Hitchings,,,NP,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member at Large (ISD #911),0911,9002,Edna Reichle-Terry,,,NP,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member at Large (ISD #911),0911,9003,Lynnae Bina,,,NP,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member at Large (ISD #911),0911,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,5001,Special Election for School Board Member At Large (ISD #2137),2137,9001,Dan Freeman,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member At Large (ISD #2137),2137,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #2144),2144,9001,Aaron Olson,,,NP,0,4,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #2144),2144,9002,Sarah Aadland,,,NP,0,4,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #2144),2144,9901,WRITE-IN,,,WI,0,4,0,0.00,0
+MN,,,5000,School Board Member (ISD #2165) (Elect 3),2165,9001,Richard McNutt,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #2165) (Elect 3),2165,9002,Leo Irlbeck,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #2165) (Elect 3),2165,9003,Steve Grindsteinner,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #2165) (Elect 3),2165,9004,David Ubl,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #2165) (Elect 3),2165,9005,Terry Clark,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #2165) (Elect 3),2165,9006,Janelle Sowers,,,NP,0,2,0,0.00,0
+MN,,,5000,School Board Member (ISD #2165) (Elect 3),2165,9901,WRITE-IN,,,WI,0,2,0,0.00,0
+MN,,,5011,Special Election for School Board Member Gibbon District (ISD #2365),2365,9001,Casey Prochniak,,,NP,0,5,0,0.00,0
+MN,,,5011,Special Election for School Board Member Gibbon District (ISD #2365),2365,9002,Bernadine Sauter,,,NP,0,5,0,0.00,0
+MN,,,5011,Special Election for School Board Member Gibbon District (ISD #2365),2365,9003,Kathi Gruenhagen,,,NP,0,5,0,0.00,0
+MN,,,5011,Special Election for School Board Member Gibbon District (ISD #2365),2365,9004,Mark J. Turtle,,,NP,0,5,0,0.00,0
+MN,,,5011,Special Election for School Board Member Gibbon District (ISD #2365),2365,9901,WRITE-IN,,,WI,0,5,0,0.00,0
+MN,,,5013,Special Election for School Board Member Fairfax District (ISD #2365),2365,9001,George Grosam,,,NP,0,5,0,0.00,0
+MN,,,5013,Special Election for School Board Member Fairfax District (ISD #2365),2365,9901,WRITE-IN,,,WI,0,5,0,0.00,0
+MN,,,5000,School Board Member (ISD #2580) (Elect 3),2580,9001,Tasha Scullard,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #2580) (Elect 3),2580,9002,Genevieve Swenson,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #2580) (Elect 3),2580,9003,Travis Ludwig,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #2580) (Elect 3),2580,9004,Peter Brown,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #2580) (Elect 3),2580,9005,Amanda Carlin,,,NP,0,1,0,0.00,0
+MN,,,5000,School Board Member (ISD #2580) (Elect 3),2580,9901,WRITE-IN,,,WI,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #2689),2689,9001,Tyler Fruechte,,,NP,0,1,0,0.00,0
+MN,,,5001,Special Election for School Board Member (ISD #2689),2689,9901,WRITE-IN,,,WI,0,1,0,0.00,0
