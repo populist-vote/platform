@@ -28,17 +28,18 @@ static PRECINCT_STATS_HEADER_NAMES: [&str; 12] = [
     "County ID",
     "Precinct ID",
     "Precinct Name",
-    "Has Reported Statistics (1 = yes, 0 = no)",
-    "Number of Voters Registered as of 7:00 a.m. Election Day",
+    "Has Reported Statistics",     // (1 = yes, 0 = no)
+    "Number of Voters Registered", // as of 7:00 a.m. Election Day
     "Number of Voters that Registered on Election Day",
     "Number of Signatures on the Polling Place Roster",
-    "Number of Regular, Military, and Overseas Absentee Ballots",
-    "Number of Federal-Only Absentee Ballots",
-    "Number of President-Only Absentee Ballots",
+    "Number of Regular Military and Overseas Absentee Ballots",
+    "Number of Federal Only Absentee Ballots",
+    "Number of President Only Absentee Ballots",
     "Total Number Voted",
 ];
 
 async fn get_mn_sos_results() -> Result<(), Box<dyn Error>> {
+    db::init_pool().await.unwrap();
     let mut results_file_paths: HashMap<&str, &str> = HashMap::new();
     results_file_paths.insert(
         "County Races",
@@ -85,10 +86,57 @@ async fn get_mn_sos_results() -> Result<(), Box<dyn Error>> {
     for (name, url) in results_file_paths {
         let response = client.get(url).send().await?.text().await?;
         let data = convert_text_to_csv(name, &response);
+        let csv_data_as_string = String::from_utf8(data.clone())?;
+        let table_name = format!(
+            "p6t_state_mn.results_2023_{}",
+            name.replace(" ", "_").to_lowercase()
+        );
+        let copy_query = format!("COPY {} FROM STDIN WITH CSV HEADER;", table_name);
+        let pool = db::pool().await;
+        sqlx::query(format!(r#"DROP TABLE IF EXISTS {} CASCADE;"#, table_name).as_str())
+            .execute(&pool.connection)
+            .await?;
+
+        let create_table_query = get_create_table_query(name, table_name.as_str());
+
+        sqlx::query(&create_table_query)
+            .execute(&pool.connection)
+            .await?;
+        let mut tx = pool.connection.copy_in_raw(&copy_query).await?;
+        tx.send(csv_data_as_string.as_bytes()).await?;
+        tx.finish().await?;
+
         write_to_csv_file(name, &data)?;
     }
 
     Ok(())
+}
+
+fn get_create_table_query(name: &str, table_name: &str) -> String {
+    if name == "Precinct Reporting Statistics" {
+        return format!(
+            "CREATE TABLE {} (
+            {}
+        );",
+            table_name,
+            PRECINCT_STATS_HEADER_NAMES
+                .iter()
+                .map(|&name| format!("{} text", name.replace(" ", "_").to_lowercase()))
+                .collect::<Vec<String>>()
+                .join(", ")
+        );
+    }
+    format!(
+        "CREATE TABLE {} (
+            {}
+        );",
+        table_name,
+        HEADER_NAMES
+            .iter()
+            .map(|&name| format!("{} text", name.replace(" ", "_").to_lowercase()))
+            .collect::<Vec<String>>()
+            .join(", ")
+    )
 }
 
 fn convert_text_to_csv(name: &str, text: &str) -> Vec<u8> {

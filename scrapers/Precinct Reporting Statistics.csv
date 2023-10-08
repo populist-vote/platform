@@ -1,4 +1,4 @@
-State,County ID,Precinct ID,Precinct Name,"Has Reported Statistics (1 = yes, 0 = no)",Number of Voters Registered as of 7:00 a.m. Election Day,Number of Voters that Registered on Election Day,Number of Signatures on the Polling Place Roster,"Number of Regular, Military, and Overseas Absentee Ballots",Number of Federal-Only Absentee Ballots,Number of President-Only Absentee Ballots,Total Number Voted
+State,County ID,Precinct ID,Precinct Name,Has Reported Statistics,Number of Voters Registered,Number of Voters that Registered on Election Day,Number of Signatures on the Polling Place Roster,Number of Regular Military and Overseas Absentee Ballots,Number of Federal Only Absentee Ballots,Number of President Only Absentee Ballots,Total Number Voted
 MN,02,0705,CIRCLE PINES P-1,0,0,0,0,0,0,0,0
 MN,02,0710,CIRCLE PINES P-2,0,0,0,0,0,0,0,0
 MN,02,2205,LINO LAKES P-1,0,0,0,0,0,0,0,0
