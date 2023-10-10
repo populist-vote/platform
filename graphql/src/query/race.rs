@@ -24,7 +24,7 @@ impl RaceQuery {
         relay::query(
             results.into_iter(),
             relay::Params::new(after, before, first, last),
-            10,
+            20,
         )
         .await
     }

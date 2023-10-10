@@ -206,6 +206,7 @@ impl Race {
                 FROM
                     race
                 LEFT JOIN office o ON office_id = o.id
+                JOIN election e ON election_id = e.id
                 JOIN us_states s ON race.state = s.code,
                 to_tsvector(
                     COALESCE(o.title, '') || ' ' ||
@@ -235,7 +236,8 @@ impl Race {
                     OR o.election_scope = {election_scope})
                 AND(({office_titles}) IS NULL
                     OR o.title IN ({office_titles}))
-                ORDER BY o.priority ASC, o.district ASC, o.title DESC
+                ORDER BY e.election_date DESC, o.priority ASC, o.district ASC, o.title DESC
+                LIMIT 50
                 "#,
             query = input
                 .query
