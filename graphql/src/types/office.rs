@@ -101,7 +101,7 @@ fn compute_office_subtitle(office: &Office, use_short: bool) -> Option<String> {
             if let (Some(muni), Some(state), Some(district)) =
                 (&office.municipality, &office.state, &office.district)
             {
-                Some(format!("{}, {} - {}", muni, state, district))
+                Some(format!("{}, {} - District {}", muni, state, district))
             } else {
                 None
             }
@@ -110,7 +110,10 @@ fn compute_office_subtitle(office: &Office, use_short: bool) -> Option<String> {
             if let (Some(school_district), Some(state), Some(district)) =
                 (&office.school_district, &office.state, &office.district)
             {
-                Some(format!("{} - {} - {}", state, school_district, district))
+                Some(format!(
+                    "{} - {} - District {}",
+                    state, school_district, district
+                ))
             } else if let (Some(school_district), Some(state)) =
                 (&office.school_district, &office.state)
             {
