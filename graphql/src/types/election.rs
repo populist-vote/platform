@@ -157,7 +157,7 @@ impl ElectionResult {
                        (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR
                        (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR
                        (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
-                       (o.election_scope = 'district' AND o.district_type = 'county' AND county = $3 AND o.district = $8) OR
+                       (o.election_scope = 'district' AND o.district_type = 'county' AND o.county = $4 AND o.district = $8) OR
                        (CASE 
                          WHEN $10 = '01' THEN
                           (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'ISD #', '') = $9) AND
