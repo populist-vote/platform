@@ -167,6 +167,7 @@ async fn update_public_schema_with_results() {
     let query = r#"
     WITH source AS (
         SELECT
+            md5 ( concat (slugify(candidate_name), slugify(office_title)) ) AS _surrogate_key,
             *
         FROM
             p6t_state_mn.results_2023_county_races
@@ -192,12 +193,10 @@ async fn update_public_schema_with_results() {
             JOIN race_candidates rc ON rc.candidate_id = p.id
             JOIN race r ON r.id = rc.race_id
         WHERE (
-            SELECT
-                slug
-            FROM
-                election
-            WHERE
-                id = r.election_id) = 'general-election-2023'
+            SELECT slug 
+            FROM election
+            WHERE id = r.election_id
+        ) = 'general-election-2023'
     ),
     update_race_candidates AS (
         UPDATE
@@ -236,7 +235,7 @@ async fn update_public_schema_with_results() {
     }
 }
 
-fn write_to_csv_file(name: &str, data: &[u8]) -> Result<(), Box<dyn Error>> {
+fn _write_to_csv_file(name: &str, data: &[u8]) -> Result<(), Box<dyn Error>> {
     let mut file = File::create(format!("{}.csv", name))?;
     std::io::Write::write_all(&mut file, data)?;
     Ok(())

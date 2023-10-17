@@ -217,6 +217,17 @@ pub enum RaceType {
     General,
 }
 
+#[derive(
+    Enum, Debug, Copy, Clone, Eq, PartialEq, EnumString, sqlx::Type, Serialize, Deserialize,
+)]
+#[strum(ascii_case_insensitive)]
+#[sqlx(type_name = "race_type", rename_all = "lowercase")]
+// #[serde(rename_all = "lowercase")]
+pub enum VoteType {
+    Plurality,
+    RankedChoice,
+}
+
 #[derive(Enum, Debug, Display, Copy, Clone, Eq, PartialEq, sqlx::Type)]
 #[sqlx(type_name = "author_type", rename_all = "lowercase")]
 pub enum AuthorType {

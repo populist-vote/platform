@@ -3,7 +3,7 @@ use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use db::{
     loaders::politician::PoliticianId,
     models::{
-        enums::{PoliticalParty, RaceType, State},
+        enums::{PoliticalParty, RaceType, State, VoteType},
         politician::Politician,
         race::Race,
     },
@@ -19,6 +19,7 @@ pub struct RaceResult {
     title: String,
     office_id: ID,
     race_type: RaceType,
+    vote_type: VoteType,
     party: Option<PoliticalParty>,
     state: Option<State>,
     description: Option<String>,
@@ -256,6 +257,7 @@ impl From<Race> for RaceResult {
             title: r.title,
             office_id: ID::from(r.office_id),
             race_type: r.race_type,
+            vote_type: r.vote_type,
             party: r.party,
             state: r.state,
             description: r.description,
