@@ -29,7 +29,25 @@ pub async fn init_job_schedule() {
     })
     .unwrap();
 
+    // Run job every 5 minutes beginning November 7, 2023
+    let update_mn_results_job = Job::new_async("0 0/1 * 6,7,8,9,10 Nov * 2023", |uuid, mut l| {
+        Box::pin(async move {
+            scrapers::mn_sos_results::fetch_results()
+                .await
+                .map_err(|e| warn!("Failed to update Minnesota SoS results: {}", e))
+                .ok();
+
+            let next_tick = l.next_tick_for_job(uuid).await;
+            match next_tick {
+                Ok(Some(ts)) => info!("Next time for update_mn_results is {:?}", ts),
+                _ => warn!("Could not get next tick for update_mn_results job"),
+            }
+        })
+    })
+    .unwrap();
+
     sched.add(update_legiscan_bills_job).await.unwrap();
+    sched.add(update_mn_results_job).await.unwrap();
 
     sched
         .start()

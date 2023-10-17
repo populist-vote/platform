@@ -38,8 +38,7 @@ static PRECINCT_STATS_HEADER_NAMES: [&str; 12] = [
     "Total Number Voted",
 ];
 
-async fn get_mn_sos_results() -> Result<(), Box<dyn Error>> {
-    db::init_pool().await.unwrap();
+pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
     let mut results_file_paths: HashMap<&str, &str> = HashMap::new();
     results_file_paths.insert(
         "County Races",
@@ -105,9 +104,9 @@ async fn get_mn_sos_results() -> Result<(), Box<dyn Error>> {
         let mut tx = pool.connection.copy_in_raw(&copy_query).await?;
         tx.send(csv_data_as_string.as_bytes()).await?;
         tx.finish().await?;
-
-        write_to_csv_file(name, &data)?;
+        // write_to_csv_file(name, &data)?;
     }
+    update_public_schema_with_results().await;
 
     Ok(())
 }
@@ -163,15 +162,82 @@ fn convert_text_to_csv(name: &str, text: &str) -> Vec<u8> {
     csv_string
 }
 
+async fn update_public_schema_with_results() {
+    let db_pool = db::pool().await;
+    let query = r#"
+    WITH source AS (
+        SELECT
+            *
+        FROM
+            p6t_state_mn.results_2023_county_races
+        UNION ALL
+        SELECT
+            *
+        FROM
+            p6t_state_mn.results_2023_school_board_races
+    ),
+    results AS (
+        SELECT
+            candidate_name,
+            votes_for_candidate,
+            total_number_of_votes_for_office_in_area,
+            p.id AS politician_id,
+            rc.race_id AS race_id,
+            r.title AS race_title,
+            rc.votes AS race_candidate_votes,
+            r.total_votes AS race_total_votes
+        FROM
+            source
+            JOIN politician p ON p.slug = SLUGIFY (source.candidate_name)
+            JOIN race_candidates rc ON rc.candidate_id = p.id
+            JOIN race r ON r.id = rc.race_id
+        WHERE (
+            SELECT
+                slug
+            FROM
+                election
+            WHERE
+                id = r.election_id) = 'general-election-2023'
+    ),
+    update_race_candidates AS (
+        UPDATE
+            race_candidates rc
+        SET
+            votes = results.votes_for_candidate::integer
+        FROM
+            results
+        WHERE
+            rc.race_id = results.race_id
+            AND rc.candidate_id = results.politician_id
+    ),
+    update_race AS (
+        UPDATE
+            race
+        SET
+            total_votes = results.total_number_of_votes_for_office_in_area::integer
+        FROM
+            results
+        WHERE
+            race.id = results.race_id
+    )
+    SELECT * FROM results;
+    "#;
+
+    let result = sqlx::query(query)
+        .execute(&db_pool.connection)
+        .await
+        .map_err(|e| {
+            tracing::error!("Error updating public schema with results: {}", e);
+            e
+        });
+
+    if result.is_ok() {
+        tracing::info!("Public schema successfully updated with results");
+    }
+}
+
 fn write_to_csv_file(name: &str, data: &[u8]) -> Result<(), Box<dyn Error>> {
     let mut file = File::create(format!("{}.csv", name))?;
     std::io::Write::write_all(&mut file, data)?;
     Ok(())
-}
-
-#[tokio::main]
-async fn main() {
-    if let Err(err) = get_mn_sos_results().await {
-        println!("error running example: {}", err);
-    }
 }

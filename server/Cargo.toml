@@ -11,6 +11,7 @@ config = { path = "../config" }
 db = { path = "../db" }
 graphql = { path = "../graphql" }
 legiscan = { path = "../legiscan" }
+scrapers = { path = "../scrapers" }
 tokio = { version = "1.21.1", features = ["full"] }
 async-graphql = { version = "6.0.7", features = ["apollo_tracing"] }
 serde_json = "1.0.68"

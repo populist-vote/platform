@@ -25,7 +25,7 @@ static HEADER_NAMES: [&str; 20] = [
     "running_mate_phone",
 ];
 
-async fn get_mn_sos_candidate_filings() -> Result<(), Box<dyn Error>> {
+pub async fn get_mn_sos_candidate_filings_county() -> Result<(), Box<dyn Error>> {
     let caps = DesiredCapabilities::chrome();
     let driver = WebDriver::new("http://localhost:9515", caps).await?;
     driver.goto("https://candidates.sos.mn.gov").await?;
@@ -60,7 +60,6 @@ async fn get_mn_sos_candidate_filings() -> Result<(), Box<dyn Error>> {
 
     let copy_query =
         r#"COPY p6t_state_mn.mn_candidate_filings_county_2023 FROM STDIN WITH CSV HEADER;"#;
-    db::init_pool().await.unwrap();
     let pool = db::pool().await;
     sqlx::query!(r#"DROP TABLE IF EXISTS p6t_state_mn.mn_candidate_filings_county_2023 CASCADE;"#)
         .execute(&pool.connection)
@@ -84,11 +83,4 @@ async fn get_mn_sos_candidate_filings() -> Result<(), Box<dyn Error>> {
     tx.finish().await?;
     driver.quit().await?;
     Ok(())
-}
-
-#[tokio::main]
-async fn main() {
-    if let Err(err) = get_mn_sos_candidate_filings().await {
-        println!("error running example: {}", err);
-    }
 }
