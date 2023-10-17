@@ -88,7 +88,7 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
         let csv_data_as_string = String::from_utf8(data.clone())?;
         let table_name = format!(
             "p6t_state_mn.results_2023_{}",
-            name.replace(" ", "_").to_lowercase()
+            name.replace(' ', "_").to_lowercase()
         );
         let copy_query = format!("COPY {} FROM STDIN WITH CSV HEADER;", table_name);
         let pool = db::pool().await;
@@ -120,7 +120,7 @@ fn get_create_table_query(name: &str, table_name: &str) -> String {
             table_name,
             PRECINCT_STATS_HEADER_NAMES
                 .iter()
-                .map(|&name| format!("{} text", name.replace(" ", "_").to_lowercase()))
+                .map(|&name| format!("{} text", name.replace(' ', "_").to_lowercase()))
                 .collect::<Vec<String>>()
                 .join(", ")
         );
@@ -132,7 +132,7 @@ fn get_create_table_query(name: &str, table_name: &str) -> String {
         table_name,
         HEADER_NAMES
             .iter()
-            .map(|&name| format!("{} text", name.replace(" ", "_").to_lowercase()))
+            .map(|&name| format!("{} text", name.replace(' ', "_").to_lowercase()))
             .collect::<Vec<String>>()
             .join(", ")
     )
@@ -148,9 +148,9 @@ fn convert_text_to_csv(name: &str, text: &str) -> Vec<u8> {
         let mut wtr = csv::Writer::from_writer(&mut csv_string);
         // Write the headers from the above struct
         if name == "Precinct Reporting Statistics" {
-            wtr.write_record(&PRECINCT_STATS_HEADER_NAMES).unwrap();
+            wtr.write_record(PRECINCT_STATS_HEADER_NAMES).unwrap();
         } else {
-            wtr.write_record(&HEADER_NAMES).unwrap();
+            wtr.write_record(HEADER_NAMES).unwrap();
         }
         for result in reader.records() {
             let record = result.unwrap();

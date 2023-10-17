@@ -1,9 +1,13 @@
 use async_graphql::ErrorExtensions;
+use s3::{creds::error::CredentialsError, error::S3Error};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error(transparent)]
-    S3Error(#[from] anyhow::Error),
+    S3Error(#[from] S3Error),
+
+    #[error(transparent)]
+    CredentialsError(#[from] CredentialsError),
 
     #[error(transparent)]
     DatabaseError(#[from] db::Error),

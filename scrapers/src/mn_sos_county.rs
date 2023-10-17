@@ -49,7 +49,7 @@ pub async fn get_mn_sos_candidate_filings_county() -> Result<(), Box<dyn Error>>
     {
         let mut wtr = csv::Writer::from_writer(&mut csv_string);
         // Write the headers from the above struct
-        wtr.write_record(&HEADER_NAMES)?;
+        wtr.write_record(HEADER_NAMES)?;
         for result in reader.records() {
             let record = result?;
             wtr.write_record(&record)?;
@@ -78,7 +78,7 @@ pub async fn get_mn_sos_candidate_filings_county() -> Result<(), Box<dyn Error>>
     sqlx::query(&create_table_query)
         .execute(&pool.connection)
         .await?;
-    let mut tx = pool.connection.copy_in_raw(&copy_query).await?;
+    let mut tx = pool.connection.copy_in_raw(copy_query).await?;
     tx.send(csv_data_as_string.as_bytes()).await?;
     tx.finish().await?;
     driver.quit().await?;

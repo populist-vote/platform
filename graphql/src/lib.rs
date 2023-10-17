@@ -48,7 +48,7 @@ pub async fn upload_to_s3(file: File, directory: String) -> Result<Url, Error> {
     let secret_key = std::env::var("AWS_SECRET_KEY")?;
 
     let bucket_name = "populist-platform";
-    let region = "us-east-2".parse()?;
+    let region = "us-east-2".parse().unwrap();
     let credentials = Credentials::new(
         Some(&accesss_key.to_owned()),
         Some(&secret_key.to_owned()),
@@ -71,7 +71,8 @@ pub async fn upload_to_s3(file: File, directory: String) -> Result<Url, Error> {
             &file.content,
             &file.mimetype.unwrap_or_default(),
         )
-        .await?;
+        .await
+        .unwrap();
 
     let bucket_base_url = std::env::var("S3_BUCKET_BASE_URL").expect("S3_BUCKET_BASE_URL not set");
     let image_url = Url::parse(format!("{}/{}", bucket_base_url, path).as_str()).unwrap();
@@ -86,16 +87,17 @@ pub async fn delete_from_s3(path: String) -> Result<(), Error> {
     let secret_key = std::env::var("AWS_SECRET_KEY")?;
 
     let bucket_name = "populist-platform";
-    let region = "us-east-2".parse()?;
+    let region = "us-east-2".parse().unwrap();
     let credentials = Credentials::new(
         Some(&accesss_key.to_owned()),
         Some(&secret_key.to_owned()),
         None,
         None,
         None,
-    )?;
-    let bucket = Bucket::new(bucket_name, region, credentials)?;
-    bucket.delete_object(path).await?;
+    )
+    .unwrap();
+    let bucket = Bucket::new(bucket_name, region, credentials).unwrap();
+    bucket.delete_object(path).await.unwrap();
     Ok(())
 }
 
