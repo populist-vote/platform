@@ -38,6 +38,7 @@ pub struct PoliticianResult {
     date_of_birth: Option<NaiveDate>,
     office_id: Option<ID>,
     upcoming_race_id: Option<ID>,
+    #[graphql(deprecation = "Use `assets.thumbnailImage160` instead")]
     thumbnail_image_url: Option<String>,
     assets: PoliticianAssets,
     official_website_url: Option<String>,
@@ -490,12 +491,32 @@ impl PoliticianResult {
     }
 
     async fn upcoming_race(&self, ctx: &Context<'_>) -> Result<Option<RaceResult>> {
-        let race = match &self.upcoming_race_id {
-            Some(id) => {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let upcoming_race_id = sqlx::query!(
+            // Find the temporally closest election and return the race associated with it and the politician
+            r#"
+            SELECT
+                race_id as id
+            FROM
+                race_candidates
+                JOIN race r ON r.id = race_id
+                JOIN election e ON e.id = r.election_id
+            WHERE
+                candidate_id = $1
+            ORDER BY
+                ABS(CURRENT_DATE - election_date)
+            LIMIT 1;
+            "#,
+            uuid::Uuid::parse_str(&self.id).unwrap()
+        )
+        .fetch_optional(&db_pool)
+        .await?;
+        let race = match &upcoming_race_id {
+            Some(race) => {
                 ctx.data::<ApiContext>()?
                     .loaders
                     .race_loader
-                    .load_one(uuid::Uuid::parse_str(id).unwrap())
+                    .load_one(race.id)
                     .await?
             }
             None => None,

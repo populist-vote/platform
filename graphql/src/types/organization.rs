@@ -19,6 +19,7 @@ pub struct OrganizationResult {
     slug: String,
     name: String,
     description: Option<String>,
+    #[graphql(deprecation = "Use `assets.thumbnailImage160` instead")]
     thumbnail_image_url: Option<String>,
     website_url: Option<String>,
     facebook_url: Option<String>,
