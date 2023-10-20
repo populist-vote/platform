@@ -10,8 +10,6 @@ config = { path = "../config" }
 db = { path = "../db" }
 mailers = { path = "../mailers" }
 open-secrets = { path = "../open-secrets" }
-
-anyhow = "1.0.45"
 async-graphql = { version = "6.0.7", features = [
     "uuid",
     "chrono",
@@ -19,9 +17,7 @@ async-graphql = { version = "6.0.7", features = [
     "dataloader",
     "tracing",
 ] }
-async-graphql-axum = "6.0.7"
 async-openai = "0.10.3"
-bytes = "1.1.0"
 chrono = "0.4.19"
 tokio = { version = "1.21.1", features = ["full"] }
 legiscan = { path = "../legiscan", features = ["async-graphql"] }
@@ -43,5 +39,3 @@ zxcvbn = { version = "2.2.1", features = ["ser"] }
 url = "2.2.2"
 tracing = "0.1.35"
 tokio-stream = "*"
-strum_macros = "0.24.3"
-strum = "0.24.1"

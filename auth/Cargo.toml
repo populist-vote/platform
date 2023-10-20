@@ -8,13 +8,10 @@ publish = false
 config = { path = "../config" }
 db = { path = "../db" }
 chrono = "0.4.19"
-dotenv = "0.15.0"
 jsonwebtoken = "7.2.0"
-pretty_env_logger = "0.4.0"
 serde = { version = "1.0.130", features = ["derive"] }
 thiserror = "1.0.30"
 uuid = "1.1.2"
 passwords = "3.1.8"
 rand = "0.8.5"
 regex = "1.5.6"
-axum = "0.6.1"

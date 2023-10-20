@@ -8,28 +8,14 @@ edition = "2021"
 [dependencies]
 auth = { path = "../auth" }
 db = { path = "../db" }
-graphql = { path = "../graphql" }
-legiscan = { path = "../legiscan" }
 votesmart = { path = "../votesmart" }
 dotenv = "0.15.0"
-structopt = "0.3.25"
 serde = "1.0.130"
 serde_json = "1.0.71"
 tokio = { version = "1.21.1", features = ["full"] }
 sqlx = { version = "0.6.2", features = ["postgres", "uuid"] }
-async-graphql = { version = "6.0.7" }
-slugify = "0.1.0"
 colored = "2.0.0"
 csv = "1.1"
 uuid = "1.1.2"
 chrono = { version = "0.4.22", features = ["serde"] }
-anyhow = "1.0.45"
-strum = "0.23.0"
-strum_macros = "0.23.0"
-serde_yaml = "0.8.23"
-rand = "*"
 spinners = "4.1.0"
-human_name = "*"
-tracing = "0.1.35"
-tracing-subscriber = "0.3.11"
-regex = "*"
