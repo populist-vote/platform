@@ -187,6 +187,7 @@ impl Race {
                     race.title,
                     office_id,
                     race_type,
+                    vote_type,
                     party,
                     race.state,
                     race.description,
