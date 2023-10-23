@@ -11,7 +11,7 @@ use db::{
 use jsonwebtoken::TokenData;
 use legiscan::Bill as LegiscanBill;
 use std::str::FromStr;
-use tracing::log::warn;
+use tracing::warn;
 use uuid::Uuid;
 
 use super::{IssueTagResult, PoliticianResult};

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use async_graphql::{Context, InputObject, Object, Result, SimpleObject};
 use auth::AccessTokenClaims;
 use db::{DateTime, Embed, UpsertEmbedInput};
@@ -70,9 +72,7 @@ impl EmbedMutation {
         ctx: &Context<'_>,
         input: PingEmbedOriginInput,
     ) -> Result<EmbedOriginResult> {
-        let parsed = Url::parse(&input.url).unwrap();
-        let cleaned = &parsed[..Position::AfterPath];
-
+        let cleaned = parse_url_and_retain_token_param(&input.url).ok_or("Invalid URL")?;
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query_as!(
             EmbedOriginResult,
@@ -111,4 +111,38 @@ impl EmbedMutation {
         Embed::delete(&db_pool, id).await?;
         Ok(DeleteEmbedResult { id: id.to_string() })
     }
+}
+
+fn parse_url_and_retain_token_param(input_url: &str) -> Option<String> {
+    // Parse the URL
+    let parsed = match Url::parse(input_url) {
+        Ok(u) => u,
+        Err(_) => return None,
+    };
+
+    // Retrieve query parameters and convert them to a HashMap
+    let query_params: HashMap<_, _> = parsed.query_pairs().into_owned().collect();
+
+    if let Some(token) = query_params.get("token") {
+        // Create a new URL with only the "token" parameter
+        let new_url =
+            Url::parse_with_params(&parsed[..Position::AfterPath], vec![("token", token)]).ok()?;
+        Some(new_url.to_string())
+    } else {
+        Some(parsed[..Position::AfterPath].to_string())
+    }
+}
+
+#[test]
+fn parse_url_and_retain_token_param_test() {
+    let url = "https://www.youtube.com/watch?v=12345&token=abcde&extra=123";
+    let new_url = parse_url_and_retain_token_param(url);
+    assert_eq!(
+        new_url,
+        Some("https://www.youtube.com/watch?token=abcde".to_string())
+    );
+
+    let url = "https://www.youtube.com/watch";
+    let new_url = parse_url_and_retain_token_param(url);
+    assert_eq!(new_url, Some("https://www.youtube.com/watch".to_string()));
 }
