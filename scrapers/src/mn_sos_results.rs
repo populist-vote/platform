@@ -213,7 +213,7 @@ async fn update_public_schema_with_results() {
         UPDATE
             race
         SET
-            total_votes = results.total_number_of_votes_for_office_in_area::integer
+            total_votes = NULLIF(results.total_number_of_votes_for_office_in_area::integer, 0)
         FROM
             results
         WHERE
