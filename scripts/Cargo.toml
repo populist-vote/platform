@@ -19,3 +19,4 @@ csv = "1.1"
 uuid = "1.1.2"
 chrono = { version = "0.4.22", features = ["serde"] }
 spinners = "4.1.0"
+reqwest = "0.11.22"
