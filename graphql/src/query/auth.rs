@@ -52,19 +52,28 @@ impl AuthQuery {
         &self,
         password: String,
     ) -> Result<PasswordEntropyResult, Error> {
-        let estimate = zxcvbn(&password, &[]).unwrap();
-        if estimate.score() < 2 {
-            return Ok(PasswordEntropyResult {
+        match zxcvbn(&password, &[]) {
+            Ok(estimate) => {
+                if estimate.score() < 2 {
+                    Ok(PasswordEntropyResult {
+                        valid: false,
+                        score: estimate.score(),
+                        message: Some("Your password is not strong enough".to_string()),
+                    })
+                } else {
+                    Ok(PasswordEntropyResult {
+                        valid: true,
+                        score: estimate.score(),
+                        message: None,
+                    })
+                }
+            }
+            Err(_) => Ok(PasswordEntropyResult {
                 valid: false,
-                score: estimate.score(),
+                score: 0,
                 message: Some("Your password is not strong enough".to_string()),
-            });
+            }),
         }
-        Ok(PasswordEntropyResult {
-            valid: true,
-            score: estimate.score(),
-            message: None,
-        })
     }
 
     /// Provides current user based on JWT found in client's access_token cookie

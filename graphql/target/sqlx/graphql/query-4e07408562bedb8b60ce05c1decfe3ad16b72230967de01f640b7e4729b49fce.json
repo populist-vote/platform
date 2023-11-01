@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT\n                race_id as id\n            FROM\n                race_candidates\n                JOIN race r ON r.id = race_id\n                JOIN election e ON e.id = r.election_id\n            WHERE\n                candidate_id = $1\n            ORDER BY\n                ABS(CURRENT_DATE - election_date)\n            LIMIT 1;\n            ",
+  "query": "\n            SELECT id FROM populist_user WHERE email = $1\n        ",
   "describe": {
     "columns": [
       {
@@ -10,12 +10,12 @@
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Text"
       ]
     },
     "nullable": [
       false
     ]
   },
-  "hash": "d28d1c5fd312fe0b4498b45dc7ce74571cfd29e575d36332e5f04b06b770664b"
+  "hash": "7c3de9dc9a7a66c521d2884819f21bde79f41cbb86055b2e8012733795d0f72b"
 }

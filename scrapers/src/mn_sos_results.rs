@@ -104,7 +104,7 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
         let mut tx = pool.connection.copy_in_raw(&copy_query).await?;
         tx.send(csv_data_as_string.as_bytes()).await?;
         tx.finish().await?;
-        // write_to_csv_file(name, &data)?;
+        // _write_to_csv_file(name, &data)?;
     }
     update_public_schema_with_results().await;
 
@@ -165,73 +165,102 @@ fn convert_text_to_csv(name: &str, text: &str) -> Vec<u8> {
 async fn update_public_schema_with_results() {
     let db_pool = db::pool().await;
     let query = r#"
-    WITH source AS (
-        SELECT
-            md5 ( concat (slugify(candidate_name), slugify(office_title)) ) AS _surrogate_key,
-            *
-        FROM
-            p6t_state_mn.results_2023_county_races
-        UNION ALL
-        SELECT
-            *
-        FROM
-            p6t_state_mn.results_2023_school_board_races
-    ),
-    results AS (
-        SELECT
-            candidate_name,
-            votes_for_candidate,
-            total_number_of_votes_for_office_in_area,
-            p.id AS politician_id,
-            rc.race_id AS race_id,
-            r.title AS race_title,
-            rc.votes AS race_candidate_votes,
-            r.total_votes AS race_total_votes
-        FROM
-            source
-            JOIN politician p ON p.slug = SLUGIFY (source.candidate_name)
-            JOIN race_candidates rc ON rc.candidate_id = p.id
-            JOIN race r ON r.id = rc.race_id
-        WHERE (
-            SELECT slug 
-            FROM election
-            WHERE id = r.election_id
-        ) = 'general-election-2023'
-    ),
-    update_race_candidates AS (
-        UPDATE
-            race_candidates rc
-        SET
-            votes = results.votes_for_candidate::integer
-        FROM
-            results
-        WHERE
-            rc.race_id = results.race_id
-            AND rc.candidate_id = results.politician_id
-    ),
-    update_race AS (
-        UPDATE
-            race
-        SET
-            total_votes = NULLIF(results.total_number_of_votes_for_office_in_area::integer, 0)
-        FROM
-            results
-        WHERE
-            race.id = results.race_id
-    )
-    SELECT * FROM results;
+        WITH source AS (
+            SELECT * FROM p6t_state_mn.results_2023_county_races_and_questions
+            UNION ALL 
+            SELECT * FROM p6t_state_mn.results_2023_municipal_races_and_questions	
+            UNION ALL SELECT * FROM p6t_state_mn.results_2023_school_board_races
+        ),
+        results AS (
+            SELECT
+                candidate_name,
+                votes_for_candidate,
+                total_number_of_votes_for_office_in_area,
+                p.id AS politician_id,
+                rc.race_id AS race_id,
+                r.title AS race_title,
+                r.vote_type AS vote_type,
+                rc.votes AS race_candidate_votes,
+                r.total_votes AS race_total_votes,
+                CASE WHEN office_name ILIKE '%first choice%' THEN
+                    json_build_object('votes', votes_for_candidate::int, 'total_votes', total_number_of_votes_for_office_in_area::int)
+                ELSE
+                    NULL
+                END AS first_choice_votes,
+                CASE WHEN office_name ILIKE '%second choice%' THEN
+                    json_build_object('votes', votes_for_candidate::int, 'total_votes', total_number_of_votes_for_office_in_area::int)
+                ELSE
+                    NULL
+                END AS second_choice_votes,
+                CASE WHEN office_name ILIKE '%third choice%' THEN
+                    json_build_object('votes', votes_for_candidate::int, 'total_votes', total_number_of_votes_for_office_in_area::int)
+                ELSE
+                    NULL
+                END AS third_choice_votes,
+                CASE WHEN office_name ILIKE '%fourth choice%' THEN
+                    json_build_object('votes', votes_for_candidate::int, 'total_votes', total_number_of_votes_for_office_in_area::int)
+                ELSE
+                    NULL
+                END AS fourth_choice_votes,
+                CASE WHEN office_name ILIKE '%fifth choice%' THEN
+                    json_build_object('votes', votes_for_candidate::int, 'total_votes', total_number_of_votes_for_office_in_area::int)
+                ELSE
+                    NULL
+                END AS fifth_choice_votes
+            FROM
+                source
+                JOIN politician p ON p.slug = SLUGIFY (source.candidate_name)
+                JOIN race_candidates rc ON rc.candidate_id = p.id
+                JOIN race r ON r.id = rc.race_id
+            WHERE (
+                SELECT slug 
+                FROM election
+                WHERE id = r.election_id
+            ) = 'general-election-2023'
+        ),
+        update_race_candidates AS (
+            UPDATE
+                race_candidates rc
+            SET
+                votes = results.votes_for_candidate::integer,
+                ranked_choice_results = CASE
+                  WHEN first_choice_votes IS NOT NULL
+                        OR second_choice_votes IS NOT NULL
+                        OR third_choice_votes IS NOT NULL
+                        OR fourth_choice_votes IS NOT NULL
+                        OR fifth_choice_votes IS NOT NULL
+                    THEN json_build_object('first_choice', first_choice_votes, 'second_choice', second_choice_votes, 'third_choice', third_choice_votes, 'fourth_choice', fourth_choice_votes, 'fifth_choice', fifth_choice_votes) 
+                    ELSE NULL
+                END
+            FROM
+                results
+            WHERE
+                rc.race_id = results.race_id
+                AND rc.candidate_id = results.politician_id
+        ),
+        update_race AS (
+            UPDATE
+                race
+            SET
+                total_votes = NULLIF(results.total_number_of_votes_for_office_in_area::integer, 0)
+            FROM
+                results
+            WHERE
+                race.id = results.race_id
+        )
+        SELECT * FROM results;
     "#;
 
     let result = sqlx::query(query)
         .execute(&db_pool.connection)
         .await
         .map_err(|e| {
-            tracing::error!("Error updating public schema with results: {}", e);
+            println!("Error updating public schema with results: {}", e);
             e
         });
 
     if result.is_ok() {
-        tracing::info!("Public schema successfully updated with results");
+        println!("Public schema successfully updated with results");
     }
 }
 
