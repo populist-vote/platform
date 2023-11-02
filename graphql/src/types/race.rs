@@ -27,6 +27,7 @@ pub struct RaceResult {
     early_voting_begins_date: Option<chrono::NaiveDate>,
     official_website: Option<String>,
     election_id: Option<ID>,
+    is_special_election: bool,
 }
 
 pub struct RaceCandidate {
@@ -265,6 +266,7 @@ impl From<Race> for RaceResult {
             early_voting_begins_date: r.early_voting_begins_date,
             official_website: r.official_website,
             election_id: r.election_id.map(ID::from),
+            is_special_election: r.is_special_election,
         }
     }
 }
