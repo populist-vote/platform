@@ -215,6 +215,7 @@ impl Race {
                 JOIN us_states s ON race.state = s.code,
                 to_tsvector(
                     COALESCE(race.title, '') || ' ' ||
+                    COALESCE(e.election_date::text, '') || ' ' ||
                     COALESCE(o.title, '') || ' ' ||
                     COALESCE(o.state::text, '') || ' ' ||
                     COALESCE(s.name::text, '') || ' ' ||
@@ -226,6 +227,7 @@ impl Race {
                 ) document,
                 websearch_to_tsquery({query}::text) query,
                 NULLIF(ts_rank(to_tsvector(race.title), query), 0) AS rank_race_title,
+                NULLIF(ts_rank(to_tsvector(e.election_date::text), query), 0) AS rank_election_date,
                 NULLIF(ts_rank(to_tsvector(o.title), query), 0) AS rank_office_title,
                 NULLIF(ts_rank(to_tsvector(o.state::text), query), 0) AS rank_office_state_code,
                 NULLIF(ts_rank(to_tsvector(s.name::text), query), 0) AS rank_office_state_full,
