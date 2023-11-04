@@ -8,7 +8,9 @@ use tracing::info;
 use tracing_subscriber::EnvFilter;
 
 mod cron;
+mod jobs;
 pub use cron::init_job_schedule;
+pub use jobs::*;
 mod handlers;
 pub use handlers::{graphql_handler, graphql_playground};
 
