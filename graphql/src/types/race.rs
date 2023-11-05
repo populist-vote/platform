@@ -28,6 +28,7 @@ pub struct RaceResult {
     official_website: Option<String>,
     election_id: Option<ID>,
     is_special_election: bool,
+    num_elect: Option<i32>,
 }
 
 pub struct RaceCandidate {
@@ -267,6 +268,7 @@ impl From<Race> for RaceResult {
             official_website: r.official_website,
             election_id: r.election_id.map(ID::from),
             is_special_election: r.is_special_election,
+            num_elect: r.num_elect,
         }
     }
 }
