@@ -221,7 +221,7 @@ pub enum RaceType {
     Enum, Debug, Copy, Clone, Eq, PartialEq, EnumString, sqlx::Type, Serialize, Deserialize,
 )]
 #[strum(ascii_case_insensitive)]
-#[sqlx(type_name = "vote_type", rename_all = "lowercase")]
+#[sqlx(type_name = "vote_type", rename_all = "snake_case")]
 // #[serde(rename_all = "lowercase")]
 pub enum VoteType {
     Plurality,
