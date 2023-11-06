@@ -5,7 +5,7 @@ use db::{
     Politician, PoliticianFilter,
 };
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct PoliticianQuery;
 
 #[allow(clippy::too_many_arguments)]

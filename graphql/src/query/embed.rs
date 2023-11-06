@@ -30,8 +30,10 @@ impl EmbedQuery {
         let results = records.into_iter().map(EmbedResult::from).collect();
         Ok(results)
     }
+
     #[graphql(visible = "is_admin")]
     async fn embed_by_id(&self, ctx: &Context<'_>, id: ID) -> Result<EmbedResult> {
+        tracing::debug!("Embed ID: {}", id.to_string());
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = Embed::find_by_id(&db_pool, uuid::Uuid::parse_str(&id)?).await?;
         if let Some(token_data) = ctx.data_unchecked::<Option<TokenData<AccessTokenClaims>>>() {
