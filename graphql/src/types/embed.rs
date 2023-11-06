@@ -2,7 +2,6 @@ use crate::is_admin;
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use db::{DateTime, Embed, EmbedType, UserWithProfile};
 use serde_json::Value as JSON;
-use tracing::warn;
 
 use crate::context::ApiContext;
 
