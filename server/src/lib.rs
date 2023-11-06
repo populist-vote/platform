@@ -25,7 +25,7 @@ pub async fn app() -> Router {
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
 
-    // Run cron jobs in seperate thread
+    // Run cron jobs in separate thread
     tokio::spawn(cron::init_job_schedule());
 
     // Embed migrations into binary

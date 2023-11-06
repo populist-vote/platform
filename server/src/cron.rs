@@ -1,5 +1,5 @@
 use tokio_cron_scheduler::{Job, JobScheduler};
-use tracing::{info, warn};
+use tracing::{error, info, warn};
 
 use crate::update_legiscan_bill_data;
 
@@ -7,18 +7,18 @@ use crate::update_legiscan_bill_data;
 pub async fn init_job_schedule() {
     let environment = config::Config::default().environment;
     if environment != config::Environment::Production {
-        warn!("Not running cron jobs in non-production environment");
+        info!("Not running cron jobs in non-production environment");
         return;
     }
 
     let sched = JobScheduler::new().await.unwrap();
 
     // Update legiscan bills every four hours
-    let update_legiscan_bills_job = Job::new_async("0 0 4,8,12,16,20 * * *", |uuid, mut l| {
+    let update_legiscan_bills_job = Job::new_async("0 0 1/4 * * *", |uuid, mut l| {
         Box::pin(async move {
             update_legiscan_bill_data::run()
                 .await
-                .map_err(|e| warn!("Failed to update bill data: {}", e))
+                .map_err(|e| error!("Failed to update bill data: {}", e))
                 .ok();
 
             let next_tick = l.next_tick_for_job(uuid).await;
@@ -54,7 +54,7 @@ pub async fn init_job_schedule() {
     sched
         .start()
         .await
-        .map_err(|e| warn!("Failed to start scheduler: {}", e))
+        .map_err(|e| error!("Failed to start job scheduler: {}", e))
         .ok();
 
     // Wait a while so that the jobs actually run
