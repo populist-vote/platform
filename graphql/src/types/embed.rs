@@ -138,7 +138,6 @@ impl EmbedResult {
 
     async fn poll(&self, ctx: &Context<'_>) -> Result<Option<PollResult>> {
         let poll_id = self.attributes["pollId"].as_str();
-        warn!("poll_id: {:?}", poll_id);
         if let Some(poll_id) = poll_id {
             let poll_id = uuid::Uuid::parse_str(poll_id)?;
             let db_pool = ctx.data::<ApiContext>()?.pool.clone();
