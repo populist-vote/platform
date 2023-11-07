@@ -224,7 +224,7 @@ impl RaceCandidateResult {
         let record = sqlx::query!(
             r#"
             SELECT
-                ROUND(CAST(CAST(rc.votes AS FLOAT) / CAST(r.total_votes AS FLOAT) * 100 AS NUMERIC), 1)::FLOAT AS "percentage"
+                ROUND(CAST(CAST(rc.votes AS FLOAT) / CAST(NULLIF(r.total_votes, 0) AS FLOAT) * 100 AS NUMERIC), 1)::FLOAT AS "percentage"
             FROM
                 race_candidates rc
                 JOIN race r ON rc.race_id = $2
