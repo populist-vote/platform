@@ -104,7 +104,7 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
         let mut tx = pool.connection.copy_in_raw(&copy_query).await?;
         tx.send(csv_data_as_string.as_bytes()).await?;
         tx.finish().await?;
-        _write_to_csv_file(name, &data)?;
+        // _write_to_csv_file(name, &data)?;
     }
     update_public_schema_with_results().await;
 
@@ -256,7 +256,8 @@ async fn update_public_schema_with_results() {
             FROM
                 results
             WHERE
-                race.id = results.race_id
+                race.id = results.race_id AND 
+                race.vote_type != 'ranked_choice'
         )
         SELECT * FROM results;
     "#;
