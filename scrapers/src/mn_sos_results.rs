@@ -48,38 +48,38 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
         "County Races and Questions",
         "https://electionresultsfiles.sos.state.mn.us/20231107/cntyRaceQuestions.txt",
     );
-    results_file_paths.insert(
-        "City Questions",
-        "https://electionresultsfiles.sos.state.mn.us/20231107/CityQuestions.txt",
-    );
+    // results_file_paths.insert(
+    //     "City Questions",
+    //     "https://electionresultsfiles.sos.state.mn.us/20231107/CityQuestions.txt",
+    // );
     results_file_paths.insert(
         "Municipal Races and Questions",
         "https://electionresultsfiles.sos.state.mn.us/20231107/local.txt",
     );
-    results_file_paths.insert(
-        "Municipal and School District Races and Questions by Precinct",
-        "https://electionresultsfiles.sos.state.mn.us/20231107/localPrct.txt",
-    );
+    // results_file_paths.insert(
+    //     "Municipal and School District Races and Questions by Precinct",
+    //     "https://electionresultsfiles.sos.state.mn.us/20231107/localPrct.txt",
+    // );
     results_file_paths.insert(
         "School Board Races",
         "https://electionresultsfiles.sos.state.mn.us/20231107/sdrace.txt",
     );
-    results_file_paths.insert(
-        "School Referendum and Bond Questions",
-        "https://electionresultsfiles.sos.state.mn.us/20231107/SchoolQuestions.txt",
-    );
-    results_file_paths.insert(
-        "School Board Races and Questions",
-        "https://electionresultsfiles.sos.state.mn.us/20231107/SDRaceQuestions.txt",
-    );
-    results_file_paths.insert(
-        "County Races by Precinct",
-        "https://electionresultsfiles.sos.state.mn.us/20231107/allracesbyprecinct.txt",
-    );
-    results_file_paths.insert(
-        "Precinct Reporting Statistics",
-        "https://electionresultsfiles.sos.state.mn.us/20231107/pctstats.txt",
-    );
+    // results_file_paths.insert(
+    //     "School Referendum and Bond Questions",
+    //     "https://electionresultsfiles.sos.state.mn.us/20231107/SchoolQuestions.txt",
+    // );
+    // results_file_paths.insert(
+    //     "School Board Races and Questions",
+    //     "https://electionresultsfiles.sos.state.mn.us/20231107/SDRaceQuestions.txt",
+    // );
+    // results_file_paths.insert(
+    //     "County Races by Precinct",
+    //     "https://electionresultsfiles.sos.state.mn.us/20231107/allracesbyprecinct.txt",
+    // );
+    // results_file_paths.insert(
+    //     "Precinct Reporting Statistics",
+    //     "https://electionresultsfiles.sos.state.mn.us/20231107/pctstats.txt",
+    // );
 
     let client = Client::new();
     for (name, url) in results_file_paths {
@@ -104,7 +104,7 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
         let mut tx = pool.connection.copy_in_raw(&copy_query).await?;
         tx.send(csv_data_as_string.as_bytes()).await?;
         tx.finish().await?;
-        // _write_to_csv_file(name, &data)?;
+        _write_to_csv_file(name, &data)?;
     }
     update_public_schema_with_results().await;
 
@@ -153,8 +153,18 @@ fn convert_text_to_csv(name: &str, text: &str) -> Vec<u8> {
             wtr.write_record(HEADER_NAMES).unwrap();
         }
         for result in reader.records() {
+            // test that record is valid
+            if result.is_err() {
+                println!("Error reading record: {:?}", result);
+                continue;
+            }
             let record = result.unwrap();
-            wtr.write_record(&record).unwrap();
+            // test to ensure record has 16 parts
+            if record.len() != 16 {
+                continue;
+            }
+            wtr.write_record(&record)
+                .expect(format!("Error writing record: {:?}", record).as_str());
         }
         wtr.flush().unwrap();
     }

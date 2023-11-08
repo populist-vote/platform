@@ -55,6 +55,7 @@ pub struct AddressExtendedMN {
     pub school_subdistrict_code: Option<String>,
     pub school_subdistrict_name: Option<String>,
     pub school_district_type: Option<String>,
+    pub ward: Option<String>,
 }
 
 pub enum SchoolDistrictTypeMN {
@@ -137,6 +138,7 @@ impl Address {
                             vd.pctname AS precinct_name,
                             vd.ctycomdist AS county_commissioner_district,
                             vd.juddist AS judicial_district,
+                            vd.ward,
                             sd.sdnumber AS school_district_number,
                             sd.shortname AS school_district_name,
                             sd.sdtype AS school_district_type,
@@ -171,6 +173,7 @@ impl Address {
                             vd.pctname AS precinct_name,
                             vd.ctycomdist AS county_commissioner_district,
                             vd.juddist AS judicial_district,
+                            vd.ward,
                             sd.sdnumber AS school_district_number,
                             sd.shortname AS school_district_name,
                             sd.sdtype AS school_district_type,
@@ -206,6 +209,7 @@ impl Address {
                             vd.pctname AS precinct_name,
                             vd.ctycomdist AS county_commissioner_district,
                             vd.juddist AS judicial_district,
+                            vd.ward,
                             sd.sdnumber AS school_district_number,
                             sd.shortname AS school_district_name,
                             sd.sdtype AS school_district_type,
@@ -238,6 +242,7 @@ impl Address {
                     pctcode AS precinct_code, pctname AS precinct_name,
                     ctycomdist AS county_commissioner_district,
                     juddist AS judicial_district,
+                    ward,
                     cw.school_district_number,
                     cw.school_district_name,
                     NULL as school_district_type,

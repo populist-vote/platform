@@ -117,8 +117,16 @@ impl ElectionResult {
                 .unwrap_or(None);
 
             let school_subdistrict = user_address_extended_mn_data
+                .clone()
                 .map(|a| {
                     a.school_subdistrict_code
+                        .map(|d| d.as_str().trim_start_matches('0').to_string())
+                })
+                .unwrap_or(None);
+
+            let ward = user_address_extended_mn_data
+                .map(|a| {
+                    a.ward
                         .map(|d| d.as_str().trim_start_matches('0').to_string())
                 })
                 .unwrap_or(None);
@@ -154,12 +162,13 @@ impl ElectionResult {
                     o.election_scope = 'national'
                     OR (o.state = $2 AND o.election_scope = 'state')
                     OR (o.state = $2 AND (  
-                       (o.election_scope = 'city' AND o.municipality = $3) OR
-                       (o.election_scope = 'county' AND o.county = $4) OR
-                       (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR
-                       (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR
-                       (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
-                       (o.election_scope = 'district' AND o.district_type = 'county' AND o.county = $4 AND o.district = $8) OR
+                        (o.election_scope = 'county' AND o.county = $4) OR
+                        (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR
+                        (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR
+                        (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
+                        (o.election_scope = 'district' AND o.district_type = 'county' AND o.county = $4 AND o.district = $8) OR
+                        (o.election_scope = 'city' AND o.municipality = $3) OR
+                        (o.election_scope = 'district' AND o.district_type = 'city' AND o.municipality = $3 AND o.district = $12) OR
                        (CASE 
                          WHEN $10 = '01' THEN
                           (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'ISD #', '') = $9) AND
@@ -181,7 +190,8 @@ impl ElectionResult {
                 county_commissioner_district,
                 school_district,
                 school_district_type,
-                school_subdistrict
+                school_subdistrict,
+                ward
             )
             .fetch_all(&db_pool)
             .await?;
