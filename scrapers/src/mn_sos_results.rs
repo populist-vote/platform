@@ -247,6 +247,7 @@ async fn update_public_schema_with_results() {
             WHERE
                 rc.race_id = results.race_id
                 AND rc.candidate_id = results.politician_id
+                AND (SELECT vote_type FROM race WHERE id = rc.race_id) != 'ranked_choice'
         ),
         update_race AS (
             UPDATE
