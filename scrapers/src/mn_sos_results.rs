@@ -182,7 +182,8 @@ async fn update_public_schema_with_results() {
             UNION ALL SELECT * FROM p6t_state_mn.results_2023_school_board_races
         ),
         results AS (
-            SELECT
+            SELECT DISTINCT ON (candidate_name)
+            office_name,
                 candidate_name,
                 votes_for_candidate,
                 total_number_of_votes_for_office_in_area,
@@ -193,30 +194,15 @@ async fn update_public_schema_with_results() {
                 rc.votes AS race_candidate_votes,
                 r.total_votes AS race_total_votes,
                 CASE WHEN office_name ILIKE '%first choice%' THEN
-                    json_build_object('votes', votes_for_candidate::int, 'total_votes', total_number_of_votes_for_office_in_area::int)
+                    votes_for_candidate::int
                 ELSE
                     NULL
                 END AS first_choice_votes,
-                CASE WHEN office_name ILIKE '%second choice%' THEN
-                    json_build_object('votes', votes_for_candidate::int, 'total_votes', total_number_of_votes_for_office_in_area::int)
+                CASE WHEN office_name ILIKE '%first choice%' THEN
+                total_number_of_votes_for_office_in_area::int
                 ELSE
                     NULL
-                END AS second_choice_votes,
-                CASE WHEN office_name ILIKE '%third choice%' THEN
-                    json_build_object('votes', votes_for_candidate::int, 'total_votes', total_number_of_votes_for_office_in_area::int)
-                ELSE
-                    NULL
-                END AS third_choice_votes,
-                CASE WHEN office_name ILIKE '%fourth choice%' THEN
-                    json_build_object('votes', votes_for_candidate::int, 'total_votes', total_number_of_votes_for_office_in_area::int)
-                ELSE
-                    NULL
-                END AS fourth_choice_votes,
-                CASE WHEN office_name ILIKE '%fifth choice%' THEN
-                    json_build_object('votes', votes_for_candidate::int, 'total_votes', total_number_of_votes_for_office_in_area::int)
-                ELSE
-                    NULL
-                END AS fifth_choice_votes
+                END AS total_first_choice_votes
             FROM
                 source
                 JOIN politician p ON p.slug = SLUGIFY (source.candidate_name)
@@ -227,38 +213,35 @@ async fn update_public_schema_with_results() {
                 FROM election
                 WHERE id = r.election_id
             ) = 'general-election-2023'
+            ORDER BY candidate_name,
+            CASE 
+            WHEN office_name LIKE '%First Choice%' THEN 1
+            WHEN office_name LIKE '%Second Choice%' THEN 2
+            WHEN office_name LIKE '%Third Choice%' THEN 3
+            ELSE 4 -- You can add more conditions if needed
+        END
         ),
         update_race_candidates AS (
             UPDATE
                 race_candidates rc
             SET
-                votes = results.votes_for_candidate::integer,
-                ranked_choice_results = CASE
-                  WHEN first_choice_votes IS NOT NULL
-                        OR second_choice_votes IS NOT NULL
-                        OR third_choice_votes IS NOT NULL
-                        OR fourth_choice_votes IS NOT NULL
-                        OR fifth_choice_votes IS NOT NULL
-                    THEN json_build_object('first_choice', first_choice_votes, 'second_choice', second_choice_votes, 'third_choice', third_choice_votes, 'fourth_choice', fourth_choice_votes, 'fifth_choice', fifth_choice_votes) 
-                    ELSE NULL
-                END
+                votes = COALESCE(first_choice_votes, results.votes_for_candidate::integer)
             FROM
                 results
             WHERE
                 rc.race_id = results.race_id
                 AND rc.candidate_id = results.politician_id
-                AND (SELECT vote_type FROM race WHERE id = rc.race_id) != 'ranked_choice'
+            RETURNING *
         ),
         update_race AS (
             UPDATE
                 race
             SET
-                total_votes = NULLIF(results.total_number_of_votes_for_office_in_area::integer, 0)
+                total_votes = COALESCE(total_first_choice_votes, NULLIF(results.total_number_of_votes_for_office_in_area::integer, 0))
             FROM
                 results
             WHERE
-                race.id = results.race_id AND 
-                race.vote_type != 'ranked_choice'
+                race.id = results.race_id
         )
         SELECT * FROM results;
     "#;
