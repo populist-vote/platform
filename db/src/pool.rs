@@ -3,7 +3,7 @@ use once_cell::sync::OnceCell;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
 pub type DatabaseConnection = sqlx::pool::PoolConnection<Postgres>;
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DatabasePool {
     pub connection: Pool<Postgres>,
 }

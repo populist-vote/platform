@@ -8,8 +8,10 @@ use tracing::info;
 use tracing_subscriber::EnvFilter;
 
 mod cron;
+mod download;
 mod jobs;
 pub use cron::init_job_schedule;
+pub use download::*;
 pub use jobs::*;
 mod handlers;
 pub use handlers::{graphql_handler, graphql_playground};
@@ -23,7 +25,7 @@ pub async fn app() -> Router {
         .init();
 
     db::init_pool().await.unwrap();
-    let pool = db::pool().await;
+    let pool = db::pool().await.to_owned();
 
     // Run cron jobs in separate thread
     tokio::spawn(cron::init_job_schedule());
@@ -39,11 +41,17 @@ pub async fn app() -> Router {
 
     let schema = new_schema().data(context).extension(ApolloTracing).finish();
 
-    axum::Router::new()
+    let graphql_router = axum::Router::new()
         .route("/", get(graphql_playground).post(graphql_handler))
         .route_layer(CorsLayer::very_permissive())
         .layer(Extension(schema))
-        .layer(CookieManagerLayer::new())
+        .layer(CookieManagerLayer::new());
+
+    let rest_router = axum::Router::new()
+        .route("/datasets/:year/:dataset/download", get(dataset_handler))
+        .with_state(pool);
+
+    axum::Router::new().merge(graphql_router).merge(rest_router)
 }
 
 pub async fn run() {
