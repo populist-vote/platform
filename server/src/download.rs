@@ -5,7 +5,7 @@ use axum::{
     extract::{Path, State},
     response::IntoResponse,
 };
-use csv::Writer;
+use csv::WriterBuilder;
 use db::DatabasePool;
 use http::{header, StatusCode};
 use strum_macros::EnumString;
@@ -22,8 +22,6 @@ pub struct Params {
     year: i32,
     dataset: Dataset,
 }
-
-// Deserialize this from kebob case
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 pub struct CandidateFiling {
@@ -59,8 +57,7 @@ pub async fn dataset_handler(
                 year_filter
             )
             .fetch_all(&pool.connection)
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR);
+            .await;
 
             match query_result {
                 Ok(data) => {
@@ -87,7 +84,7 @@ where
     T: serde::Serialize,
 {
     let file = File::create(file_path)?;
-    let mut writer = Writer::from_writer(file);
+    let mut writer = WriterBuilder::new().has_headers(true).from_writer(file);
 
     for record in records {
         writer.serialize(record)?;

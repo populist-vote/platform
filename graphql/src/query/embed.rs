@@ -1,6 +1,6 @@
-use async_graphql::{Context, Object, Result, ID};
+use async_graphql::{Context, Object, Result, SimpleObject, ID};
 use auth::AccessTokenClaims;
-use db::{Embed, EmbedFilter};
+use db::{Embed, EmbedFilter, EmbedType};
 use jsonwebtoken::TokenData;
 
 use crate::{context::ApiContext, guard::OrganizationGuard, is_admin, types::EmbedResult};
@@ -8,8 +8,49 @@ use crate::{context::ApiContext, guard::OrganizationGuard, is_admin, types::Embe
 #[derive(Default)]
 pub struct EmbedQuery;
 
+#[derive(SimpleObject)]
+pub struct EmbedsCountResult {
+    embed_type: EmbedType,
+    embed_count: Option<i64>,
+    unique_origin_count: Option<i64>,
+    total_deployments: Option<i64>,
+}
+
 #[Object]
 impl EmbedQuery {
+    #[graphql(
+        guard = "OrganizationGuard::new(&organization_id)",
+        visible = "is_admin"
+    )]
+    async fn embeds_activity(
+        &self,
+        ctx: &Context<'_>,
+        organization_id: ID,
+    ) -> Result<Vec<EmbedsCountResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let result = sqlx::query_as!(
+            EmbedsCountResult,
+            r#"
+            SELECT
+                e.embed_type AS "embed_type:EmbedType",
+                COUNT(DISTINCT e.*) AS embed_count,
+                COUNT(DISTINCT eo.url) AS unique_origin_count,
+                COUNT(eo.url) AS total_deployments
+            FROM
+                embed e
+                LEFT JOIN embed_origin eo ON e.id = eo.embed_id
+            WHERE
+                e.organization_id = $1
+            GROUP BY
+                e.embed_type;     
+        "#,
+            uuid::Uuid::parse_str(&organization_id)?,
+        )
+        .fetch_all(&db_pool)
+        .await?;
+        Ok(result)
+    }
+
     #[graphql(
         guard = "OrganizationGuard::new(&organization_id)",
         visible = "is_admin"
