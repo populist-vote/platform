@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT DISTINCT\n                r.id,\n                r.slug,\n                r.title,\n                office_id,\n                race_type AS \"race_type:RaceType\",\n                vote_type AS \"vote_type:VoteType\",\n                party AS \"party:PoliticalParty\",\n                r.state AS \"state:State\",\n                r.description,\n                ballotpedia_link,\n                early_voting_begins_date,\n                winner_ids,\n                total_votes,\n                official_website,\n                election_id,\n                is_special_election,\n                num_elect,\n                r.created_at,\n                r.updated_at,\n                o.priority \n            FROM\n                race r\n            JOIN office o ON o.id = r.office_id\n            JOIN race_candidates rc ON rc.race_id = r.id\n            JOIN voting_guide_candidates vgc ON vgc.candidate_id = rc.candidate_id\n            WHERE\n                r.election_id = $1 AND\n                vgc.voting_guide_id = $2 AND \n                (vgc.is_endorsement = true OR vgc.note IS NOT NULL)\n            ORDER BY o.priority ASC, r.title DESC\n            ",
+  "query": "\n        SELECT\n            e.id,\n            e.embed_type AS \"embed_type:EmbedType\",\n            e.name,\n            eo.url,\n            eo.last_ping_at\n        FROM\n            embed_origin eo\n        JOIN\n            embed e ON eo.embed_id = e.id\n        WHERE\n            e.organization_id = $1\n        ORDER BY\n            eo.last_ping_at DESC\n        LIMIT $2;\n        ",
   "describe": {
     "columns": [
       {
@@ -9,208 +9,42 @@
       },
       {
         "ordinal": 1,
-        "name": "slug",
-        "type_info": "Text"
+        "name": "embed_type:EmbedType",
+        "type_info": {
+          "Custom": {
+            "name": "embed_type",
+            "kind": {
+              "Enum": [
+                "legislation",
+                "politician",
+                "poll",
+                "question",
+                "race"
+              ]
+            }
+          }
+        }
       },
       {
         "ordinal": 2,
-        "name": "title",
+        "name": "name",
         "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "office_id",
-        "type_info": "Uuid"
+        "name": "url",
+        "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "race_type:RaceType",
-        "type_info": {
-          "Custom": {
-            "name": "race_type",
-            "kind": {
-              "Enum": [
-                "primary",
-                "general"
-              ]
-            }
-          }
-        }
-      },
-      {
-        "ordinal": 5,
-        "name": "vote_type:VoteType",
-        "type_info": {
-          "Custom": {
-            "name": "vote_type",
-            "kind": {
-              "Enum": [
-                "plurality",
-                "ranked_choice"
-              ]
-            }
-          }
-        }
-      },
-      {
-        "ordinal": 6,
-        "name": "party:PoliticalParty",
-        "type_info": {
-          "Custom": {
-            "name": "political_party",
-            "kind": {
-              "Enum": [
-                "democratic",
-                "republican",
-                "libertarian",
-                "green",
-                "constitution",
-                "unknown",
-                "independent",
-                "freedom",
-                "unity",
-                "approval_voting",
-                "unaffiliated",
-                "democratic_farmer_labor",
-                "grassroots_legalize_cannabis",
-                "legal_marijuana_now",
-                "socialist_workers",
-                "colorado_center",
-                "american_constitution"
-              ]
-            }
-          }
-        }
-      },
-      {
-        "ordinal": 7,
-        "name": "state:State",
-        "type_info": {
-          "Custom": {
-            "name": "state",
-            "kind": {
-              "Enum": [
-                "AL",
-                "AK",
-                "AZ",
-                "AR",
-                "CA",
-                "CO",
-                "CT",
-                "DC",
-                "DE",
-                "FL",
-                "GA",
-                "HI",
-                "ID",
-                "IL",
-                "IN",
-                "IA",
-                "KS",
-                "KY",
-                "LA",
-                "ME",
-                "MD",
-                "MA",
-                "MI",
-                "MN",
-                "MS",
-                "MO",
-                "MT",
-                "NE",
-                "NV",
-                "NH",
-                "NJ",
-                "NM",
-                "NY",
-                "NC",
-                "ND",
-                "OH",
-                "OK",
-                "OR",
-                "PA",
-                "RI",
-                "SC",
-                "SD",
-                "TN",
-                "TX",
-                "UT",
-                "VT",
-                "VA",
-                "WA",
-                "WV",
-                "WI",
-                "WY"
-              ]
-            }
-          }
-        }
-      },
-      {
-        "ordinal": 8,
-        "name": "description",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 9,
-        "name": "ballotpedia_link",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 10,
-        "name": "early_voting_begins_date",
-        "type_info": "Date"
-      },
-      {
-        "ordinal": 11,
-        "name": "winner_ids",
-        "type_info": "UuidArray"
-      },
-      {
-        "ordinal": 12,
-        "name": "total_votes",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 13,
-        "name": "official_website",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 14,
-        "name": "election_id",
-        "type_info": "Uuid"
-      },
-      {
-        "ordinal": 15,
-        "name": "is_special_election",
-        "type_info": "Bool"
-      },
-      {
-        "ordinal": 16,
-        "name": "num_elect",
-        "type_info": "Int4"
-      },
-      {
-        "ordinal": 17,
-        "name": "created_at",
+        "name": "last_ping_at",
         "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 18,
-        "name": "updated_at",
-        "type_info": "Timestamptz"
-      },
-      {
-        "ordinal": 19,
-        "name": "priority",
-        "type_info": "Int4"
       }
     ],
     "parameters": {
       "Left": [
         "Uuid",
-        "Uuid"
+        "Int8"
       ]
     },
     "nullable": [
@@ -218,23 +52,8 @@
       false,
       false,
       false,
-      false,
-      false,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      true,
-      false,
-      true,
-      false,
-      false,
-      true
+      false
     ]
   },
-  "hash": "2d48147ce90429857352b68e1fd2bed73a5bd55a847f1d86c36441faef3d31b8"
+  "hash": "896a569a482dc26d9f0f3b040ef0063556490d41a323b17d6f020a999e63ab61"
 }

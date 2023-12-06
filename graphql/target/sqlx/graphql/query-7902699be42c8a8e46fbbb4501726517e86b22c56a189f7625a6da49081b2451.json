@@ -1,9 +1,14 @@
 {
-  "query": "\n            SELECT\n                e.embed_type AS \"embed_type:EmbedType\",\n                COUNT(DISTINCT e.id) AS embed_count,\n                COUNT(DISTINCT eo.url) AS unique_origin_count,\n                COUNT(eo.url) AS total_deployments,\n                COALESCE(COUNT(DISTINCT ps.id), COUNT(DISTINCT qs.id), 0) AS submissions\n            FROM\n                embed e\n            LEFT JOIN\n                embed_origin eo ON e.id = eo.embed_id\n            LEFT JOIN\n                poll p ON (e.attributes->>'pollId')::uuid = p.id\n            LEFT JOIN\n                poll_submission ps ON p.id = ps.poll_id\n            LEFT JOIN\n                question q ON (e.attributes->>'questionId')::uuid = q.id\n            LEFT JOIN\n                question_submission qs ON q.id = qs.question_id\n            WHERE\n                e.organization_id = $1\n            GROUP BY\n                e.embed_type;     \n        ",
+  "query": "\n        SELECT\n            e.id AS embed_id,\n            e.embed_type AS \"embed_type:EmbedType\",\n            e.name,\n            eo.url,\n            eo.last_ping_at\n        FROM\n            embed_origin eo\n        JOIN\n            embed e ON eo.embed_id = e.id\n        WHERE\n            e.organization_id = $1\n        ORDER BY\n            eo.last_ping_at DESC\n        LIMIT $2;\n        ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
+        "name": "embed_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
         "name": "embed_type:EmbedType",
         "type_info": {
           "Custom": {
@@ -21,38 +26,34 @@
         }
       },
       {
-        "ordinal": 1,
-        "name": "embed_count",
-        "type_info": "Int8"
-      },
-      {
         "ordinal": 2,
-        "name": "unique_origin_count",
-        "type_info": "Int8"
+        "name": "name",
+        "type_info": "Text"
       },
       {
         "ordinal": 3,
-        "name": "total_deployments",
-        "type_info": "Int8"
+        "name": "url",
+        "type_info": "Text"
       },
       {
         "ordinal": 4,
-        "name": "submissions",
-        "type_info": "Int8"
+        "name": "last_ping_at",
+        "type_info": "Timestamptz"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Uuid",
+        "Int8"
       ]
     },
     "nullable": [
       false,
-      null,
-      null,
-      null,
-      null
+      false,
+      false,
+      false,
+      false
     ]
   },
-  "hash": "7c94c8d9c8db01d2823acbabffadc6e383687149133e7adbfa75bad7b4788048"
+  "hash": "b56fc56198249f7059af149d9eb2a7dd5a874f9271295707d877b8d880f8f307"
 }

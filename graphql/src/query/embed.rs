@@ -1,9 +1,9 @@
+use crate::{context::ApiContext, guard::OrganizationGuard, is_admin, types::EmbedResult};
 use async_graphql::{Context, Object, Result, SimpleObject, ID};
 use auth::AccessTokenClaims;
+use chrono::Utc;
 use db::{Embed, EmbedFilter, EmbedType};
 use jsonwebtoken::TokenData;
-
-use crate::{context::ApiContext, guard::OrganizationGuard, is_admin, types::EmbedResult};
 
 #[derive(Default)]
 pub struct EmbedQuery;
@@ -15,6 +15,15 @@ pub struct EmbedsCountResult {
     unique_origin_count: Option<i64>,
     total_deployments: Option<i64>,
     submissions: Option<i64>,
+}
+
+#[derive(SimpleObject)]
+pub struct EnhancedEmbedOriginResult {
+    embed_id: uuid::Uuid,
+    embed_type: EmbedType,
+    name: String,
+    url: String,
+    last_ping_at: chrono::DateTime<Utc>,
 }
 
 #[Object]
@@ -60,6 +69,50 @@ impl EmbedQuery {
         .fetch_all(&db_pool)
         .await?;
         Ok(result)
+    }
+
+    #[graphql(
+        guard = "OrganizationGuard::new(&organization_id)",
+        visible = "is_admin"
+    )]
+    async fn recent_deployments(
+        &self,
+        ctx: &Context<'_>,
+        organization_id: ID,
+        limit: Option<i64>,
+    ) -> Result<Vec<EnhancedEmbedOriginResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records = sqlx::query_as!(
+            EnhancedEmbedOriginResult,
+            r#"
+        SELECT
+            e.id AS embed_id,
+            e.embed_type AS "embed_type:EmbedType",
+            e.name,
+            eo.url,
+            eo.last_ping_at
+        FROM
+            embed_origin eo
+        JOIN
+            embed e ON eo.embed_id = e.id
+        WHERE
+            e.organization_id = $1
+        ORDER BY
+            eo.last_ping_at DESC
+        LIMIT $2;
+        "#,
+            uuid::Uuid::parse_str(&organization_id)?,
+            limit.unwrap_or(6),
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        let results = records
+            .into_iter()
+            .map(EnhancedEmbedOriginResult::from)
+            .collect();
+
+        Ok(results)
     }
 
     #[graphql(
