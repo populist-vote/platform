@@ -14,6 +14,7 @@ pub struct EmbedsCountResult {
     embed_count: Option<i64>,
     unique_origin_count: Option<i64>,
     total_deployments: Option<i64>,
+    submissions: Option<i64>,
 }
 
 #[Object]
@@ -33,12 +34,22 @@ impl EmbedQuery {
             r#"
             SELECT
                 e.embed_type AS "embed_type:EmbedType",
-                COUNT(DISTINCT e.*) AS embed_count,
+                COUNT(DISTINCT e.id) AS embed_count,
                 COUNT(DISTINCT eo.url) AS unique_origin_count,
-                COUNT(eo.url) AS total_deployments
+                COUNT(eo.url) AS total_deployments,
+                COALESCE(COUNT(DISTINCT ps.id), COUNT(DISTINCT qs.id), 0) AS submissions
             FROM
                 embed e
-                LEFT JOIN embed_origin eo ON e.id = eo.embed_id
+            LEFT JOIN
+                embed_origin eo ON e.id = eo.embed_id
+            LEFT JOIN
+                poll p ON (e.attributes->>'pollId')::uuid = p.id
+            LEFT JOIN
+                poll_submission ps ON p.id = ps.poll_id
+            LEFT JOIN
+                question q ON (e.attributes->>'questionId')::uuid = q.id
+            LEFT JOIN
+                question_submission qs ON q.id = qs.question_id
             WHERE
                 e.organization_id = $1
             GROUP BY
