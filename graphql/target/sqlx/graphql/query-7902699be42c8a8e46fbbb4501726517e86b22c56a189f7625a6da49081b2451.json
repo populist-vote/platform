@@ -1,5 +1,5 @@
 {
-  "query": "\n        SELECT\n            e.id AS embed_id,\n            e.embed_type AS \"embed_type:EmbedType\",\n            e.name,\n            eo.url,\n            eo.last_ping_at\n        FROM\n            embed_origin eo\n        JOIN\n            embed e ON eo.embed_id = e.id\n        WHERE\n            e.organization_id = $1\n        ORDER BY\n            eo.last_ping_at DESC\n        LIMIT $2;\n        ",
+  "query": "\n                SELECT\n                    e.id AS embed_id,\n                    e.embed_type AS \"embed_type:EmbedType\",\n                    e.name,\n                    eo.url,\n                    eo.last_ping_at\n                FROM\n                    embed_origin eo\n                JOIN\n                    embed e ON eo.embed_id = e.id\n                WHERE\n                    e.organization_id = $1\n                ORDER BY\n                    eo.last_ping_at DESC\n                LIMIT $2;\n            ",
   "describe": {
     "columns": [
       {
@@ -55,5 +55,5 @@
       false
     ]
   },
-  "hash": "b56fc56198249f7059af149d9eb2a7dd5a874f9271295707d877b8d880f8f307"
+  "hash": "9ac734deaa26b00dfb5545435d08cc0dec2161fd15eca46de91f0c89b8b07741"
 }

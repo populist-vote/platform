@@ -85,22 +85,22 @@ impl EmbedQuery {
         let records = sqlx::query_as!(
             EnhancedEmbedOriginResult,
             r#"
-        SELECT
-            e.id AS embed_id,
-            e.embed_type AS "embed_type:EmbedType",
-            e.name,
-            eo.url,
-            eo.last_ping_at
-        FROM
-            embed_origin eo
-        JOIN
-            embed e ON eo.embed_id = e.id
-        WHERE
-            e.organization_id = $1
-        ORDER BY
-            eo.last_ping_at DESC
-        LIMIT $2;
-        "#,
+                SELECT
+                    e.id AS embed_id,
+                    e.embed_type AS "embed_type:EmbedType",
+                    e.name,
+                    eo.url,
+                    eo.last_ping_at
+                FROM
+                    embed_origin eo
+                JOIN
+                    embed e ON eo.embed_id = e.id
+                WHERE
+                    e.organization_id = $1
+                ORDER BY
+                    eo.last_ping_at DESC
+                LIMIT $2;
+            "#,
             uuid::Uuid::parse_str(&organization_id)?,
             limit.unwrap_or(6),
         )
