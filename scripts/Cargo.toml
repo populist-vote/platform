@@ -9,6 +9,8 @@ edition = "2021"
 auth = { path = "../auth" }
 db = { path = "../db" }
 votesmart = { path = "../votesmart" }
+legiscan = { path = "../legiscan" }
+open-fec = { path = "../open-fec" }
 dotenv = "0.15.0"
 serde = "1.0.130"
 serde_json = "1.0.71"
@@ -20,3 +22,7 @@ uuid = "1.1.2"
 chrono = { version = "0.4.22", features = ["serde"] }
 spinners = "4.1.0"
 reqwest = "0.11.22"
+clap = { version = "4.4.14", features = ["derive"] }
+base64 = "0.21.6"
+zip = "0.6.6"
+slugify = "0.1.0"

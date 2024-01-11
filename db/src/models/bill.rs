@@ -166,6 +166,7 @@ impl Bill {
                 $22
             ) ON CONFLICT (id) DO UPDATE 
             SET
+                id = COALESCE(bill.id, EXCLUDED.id),
                 slug = COALESCE($2, bill.slug),
                 title = COALESCE($3, bill.title),
                 bill_number = COALESCE($4, bill.bill_number),
