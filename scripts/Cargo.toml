@@ -10,7 +10,6 @@ auth = { path = "../auth" }
 db = { path = "../db" }
 votesmart = { path = "../votesmart" }
 legiscan = { path = "../legiscan" }
-open-fec = { path = "../open-fec" }
 dotenv = "0.15.0"
 serde = "1.0.130"
 serde_json = "1.0.71"

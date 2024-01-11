@@ -2206,20 +2206,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 
 [[package]]
-name = "open-fec"
-version = "0.1.0"
-dependencies = [
- "colored",
- "db",
- "dotenv",
- "reqwest",
- "serde",
- "serde_json",
- "spinners",
- "tokio",
-]
-
-[[package]]
 name = "open-secrets"
 version = "0.1.4"
 dependencies = [
@@ -2983,7 +2969,6 @@ dependencies = [
  "db",
  "dotenv",
  "legiscan",
- "open-fec",
  "reqwest",
  "serde",
  "serde_json",
