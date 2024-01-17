@@ -10,8 +10,7 @@ pub struct AccessTokenClaims {
     pub sub: uuid::Uuid,
     pub username: String,
     pub email: String,
-    pub role: Role,
-    pub organization_id: Option<uuid::Uuid>,
+    pub roles: Option<Vec<OrganizationRole>>,
     pub exp: usize,
 }
 
@@ -33,8 +32,7 @@ pub fn create_power_token() -> Result<String, Error> {
         sub: uuid::Uuid::new_v4(),
         username: "superadmin".to_string(),
         email: "info@populist.us".to_string(),
-        role: Role::SUPERUSER,
-        organization_id: None,
+        roles: None,
         exp: expiration as usize,
     };
 
@@ -50,7 +48,16 @@ pub fn create_power_token() -> Result<String, Error> {
     Ok(token)
 }
 
-pub fn create_access_token_for_user(user_record: User) -> Result<String, Error> {
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct OrganizationRole {
+    pub organization_id: uuid::Uuid,
+    pub role: Role,
+}
+
+pub fn create_access_token_for_user(
+    user_record: User,
+    roles: Option<Vec<OrganizationRole>>,
+) -> Result<String, Error> {
     let key = std::env::var("JWT_SECRET")?;
 
     let expiration = chrono::Utc::now()
@@ -62,8 +69,7 @@ pub fn create_access_token_for_user(user_record: User) -> Result<String, Error> 
         sub: user_record.id,
         username: user_record.username,
         email: user_record.email,
-        role: user_record.role,
-        organization_id: user_record.organization_id,
+        roles,
         exp: expiration as usize,
     };
 

@@ -1,59 +1,19 @@
 {
-  "query": "\n        SELECT\n            e.id AS embed_id,\n            e.embed_type AS \"embed_type:EmbedType\",\n            e.name,\n            eo.url,\n            eo.last_ping_at\n        FROM\n            embed_origin eo\n        JOIN\n            embed e ON eo.embed_id = e.id\n        WHERE\n            e.organization_id = $1\n        ORDER BY\n            eo.last_ping_at DESC\n        LIMIT $2;\n        ",
+  "query": "\n                        SELECT id FROM organization WHERE slug = 'populist'\n                    ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "embed_id",
+        "name": "id",
         "type_info": "Uuid"
-      },
-      {
-        "ordinal": 1,
-        "name": "embed_type:EmbedType",
-        "type_info": {
-          "Custom": {
-            "name": "embed_type",
-            "kind": {
-              "Enum": [
-                "legislation",
-                "politician",
-                "poll",
-                "question",
-                "race"
-              ]
-            }
-          }
-        }
-      },
-      {
-        "ordinal": 2,
-        "name": "name",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 3,
-        "name": "url",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 4,
-        "name": "last_ping_at",
-        "type_info": "Timestamptz"
       }
     ],
     "parameters": {
-      "Left": [
-        "Uuid",
-        "Int8"
-      ]
+      "Left": []
     },
     "nullable": [
-      false,
-      false,
-      false,
-      false,
       false
     ]
   },
-  "hash": "b56fc56198249f7059af149d9eb2a7dd5a874f9271295707d877b8d880f8f307"
+  "hash": "d156a986e4558c4f908c3caabfd39c5e0abd076cbde1ad0d2591cf7ca91dd9ec"
 }
