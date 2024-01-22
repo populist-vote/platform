@@ -6,7 +6,7 @@ use db::{
         enums::{FullState, PoliticalScope, State},
         office::Office,
     },
-    Chamber, District, ElectionScope,
+    Chamber, District, ElectionScope, Politician,
 };
 
 #[derive(SimpleObject, Debug, Clone)]
@@ -136,15 +136,22 @@ fn compute_office_subtitle(office: &Office, use_short: bool) -> Option<String> {
 
 #[ComplexObject]
 impl OfficeResult {
-    async fn incumbent(&self, ctx: &Context<'_>) -> Result<Option<PoliticianResult>> {
-        let politician = ctx
+    async fn incumbents(&self, ctx: &Context<'_>) -> Result<Vec<PoliticianResult>> {
+        let politicians = ctx
             .data::<ApiContext>()?
             .loaders
             .politician_loader
-            .load_one(OfficeId(uuid::Uuid::parse_str(&self.id).unwrap()))
+            .load_many(vec![OfficeId(uuid::Uuid::parse_str(&self.id).unwrap())])
             .await?;
+        let politician_results = politicians
+            .values()
+            .cloned()
+            .collect::<Vec<Politician>>()
+            .into_iter()
+            .map(PoliticianResult::from)
+            .collect();
 
-        Ok(politician.map(PoliticianResult::from))
+        Ok(politician_results)
     }
 }
 

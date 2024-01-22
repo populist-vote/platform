@@ -119,7 +119,7 @@ pub enum Chamber {
 }
 
 #[derive(Default, Debug, Serialize, Deserialize, InputObject)]
-pub struct OfficeSearch {
+pub struct OfficeFilter {
     query: Option<String>,
     state: Option<State>,
     political_scope: Option<PoliticalScope>,
@@ -244,17 +244,45 @@ impl Office {
         Ok(record)
     }
 
-    pub async fn search(db_pool: &PgPool, input: &OfficeSearch) -> Result<Vec<Self>, sqlx::Error> {
+    pub async fn filter(db_pool: &PgPool, input: &OfficeFilter) -> Result<Vec<Self>, sqlx::Error> {
         let search_query = input.query.to_owned().unwrap_or_default();
 
         let records = sqlx::query_as!(
             Office,
             r#"
-                SELECT id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:District",  hospital_district, school_district, chamber AS "chamber:Chamber", election_scope as "election_scope:ElectionScope", political_scope AS "political_scope:PoliticalScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at FROM office
-                WHERE (($1::text = '') IS NOT FALSE OR to_tsvector(concat_ws(' ', slug, title)) @@ to_tsquery($1))
-                AND ($2::state IS NULL OR state = $2)
-                AND ($3::political_scope IS NULL OR political_scope = $3)
-                
+            SELECT
+                id,
+                slug,
+                title,
+                subtitle,
+                subtitle_short,
+                name,
+                office_type,
+                district,
+                district_type AS "district_type:District",
+                hospital_district,
+                school_district,
+                chamber AS "chamber:Chamber",
+                election_scope AS "election_scope:ElectionScope",
+                political_scope AS "political_scope:PoliticalScope",
+                state AS "state:State",
+                county,
+                municipality,
+                term_length,
+                seat,
+                priority,
+                created_at,
+                updated_at
+            FROM office,
+            to_tsvector(
+                title || ' ' || name || ' ' || COALESCE(subtitle, '') || ' ' || COALESCE(office_type, '') || ' ' || COALESCE(district, '') || ' ' || COALESCE(hospital_district, '') || ' ' || COALESCE(school_district, '') || ' ' || COALESCE(state::text, '') || ' ' || COALESCE(county, '') || ' ' || COALESCE(municipality, '')
+            ) document,
+            websearch_to_tsquery($1) query
+            WHERE (($1::text = '') IS NOT FALSE OR query @@ document)
+            AND($2::state IS NULL
+                OR state = $2)
+            AND($3::political_scope IS NULL
+                OR political_scope = $3)
             "#,
             search_query,
             input.state as Option<State>,

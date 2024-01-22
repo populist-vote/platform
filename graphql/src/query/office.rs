@@ -1,7 +1,7 @@
 use async_graphql::{Context, FieldResult, Object};
-use db::{Office, OfficeSearch};
+use db::{Office, OfficeFilter};
 
-use crate::{context::ApiContext, types::OfficeResult};
+use crate::{context::ApiContext, relay, types::OfficeResult};
 
 #[derive(Default)]
 pub struct OfficeQuery;
@@ -11,13 +11,22 @@ impl OfficeQuery {
     async fn offices(
         &self,
         ctx: &Context<'_>,
-        #[graphql(desc = "Search by office title or state")] search: Option<OfficeSearch>,
-    ) -> FieldResult<Vec<OfficeResult>> {
+        filter: Option<OfficeFilter>,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+    ) -> relay::ConnectionResult<OfficeResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let records = Office::search(&db_pool, &search.unwrap_or_default()).await?;
-        let results = records.into_iter().map(OfficeResult::from).collect();
+        let records = Office::filter(&db_pool, &filter.unwrap_or_default()).await?;
+        let results = records.into_iter().map(OfficeResult::from);
 
-        Ok(results)
+        relay::query(
+            results.into_iter(),
+            relay::Params::new(after, before, first, last),
+            10,
+        )
+        .await
     }
 
     async fn office_by_id(&self, ctx: &Context<'_>, id: String) -> FieldResult<OfficeResult> {

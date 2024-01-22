@@ -476,7 +476,8 @@ impl Politician {
                         race_wins,
                         race_losses,
                         p.created_at,
-                        p.updated_at FROM politician p
+                        p.updated_at 
+                FROM politician p
                 LEFT JOIN office o ON office_id = o.id,
                 to_tsvector(
                     first_name || ' ' || last_name || ' ' || COALESCE(preferred_name, '') || COALESCE(o.title, '')
