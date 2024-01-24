@@ -24,7 +24,7 @@ impl OfficeQuery {
         relay::query(
             results.into_iter(),
             relay::Params::new(after, before, first, last),
-            10,
+            100,
         )
         .await
     }

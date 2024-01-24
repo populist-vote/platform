@@ -175,7 +175,7 @@ impl FullState for State {
 }
 
 #[derive(
-    Enum, Debug, Copy, Clone, Eq, PartialEq, EnumString, sqlx::Type, Serialize, Deserialize,
+    Display, Enum, Debug, Copy, Clone, Eq, PartialEq, EnumString, sqlx::Type, Serialize, Deserialize,
 )]
 #[strum(ascii_case_insensitive)]
 #[sqlx(type_name = "political_party", rename_all = "snake_case")]

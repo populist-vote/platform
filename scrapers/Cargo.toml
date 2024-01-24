@@ -13,3 +13,4 @@ thirtyfour = "0.31.0"
 tokio = { version = "1.30.0", features = ["full"] }
 sqlx = { version = "0.6.2", features = ["postgres", "macros"] }
 tracing = "0.1.39"
+serde_json = "1.0.111"
