@@ -1,5 +1,5 @@
 -- Add up migration script here
-CREATE EXTENSION unaccent;
+CREATE EXTENSION IF NOT EXISTS unaccent;
 
 CREATE OR REPLACE FUNCTION generate_unique_slug(base_slug text, table_name text)
 RETURNS text AS $$
