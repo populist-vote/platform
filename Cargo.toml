@@ -12,6 +12,7 @@ members = [
     "geocodio",
     "votesmart",
     "legiscan",
+    "open-fec",
     "open-secrets",
 ]
 resolver = "2"

@@ -1,7 +1,8 @@
-use open_fec::candidate::CandidatesQuery;
-use open_fec::OpenFecProxy;
 use std::error::Error;
 use std::process;
+
+use open_fec::candidate::CandidatesQuery;
+use open_fec::OpenFecProxy;
 
 async fn run() -> Result<(), Box<dyn Error>> {
     db::init_pool().await.unwrap();
@@ -39,7 +40,7 @@ async fn run() -> Result<(), Box<dyn Error>> {
             ..CandidatesQuery::default()
         };
         let res = proxy.get_candidates(query).await?;
-        let json: serde_json::Value = res.json().await?;
+        let json: serde_json::Value = res.json().await.expect("Failed to parse json");
         let page_results = json["results"].as_array().unwrap();
         // Add page results to the vector
         results.extend(page_results.to_owned());
@@ -69,7 +70,7 @@ async fn run() -> Result<(), Box<dyn Error>> {
         INSERT INTO p6t_federal.fec_house_candidates_2024
         SELECT * FROM json_populate_recordset(null::p6t_federal.fec_house_candidates_2024, $1::json)
         "#,
-        // Parse vec of json objects into string, then parse string into jsonb
+        // Parse vec of json objects into string, then parse string into jsonb...ick
         serde_json::to_string(&results)?.parse::<serde_json::Value>()?
     )
     .execute(&pool.connection)
