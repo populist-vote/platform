@@ -10,6 +10,7 @@ auth = { path = "../auth" }
 db = { path = "../db" }
 open-fec = { path = "../open-fec" }
 votesmart = { path = "../votesmart" }
+legiscan = { path = "../legiscan" }
 dotenv = "0.15.0"
 serde = "1.0.130"
 serde_json = "1.0.71"
@@ -22,3 +23,7 @@ chrono = { version = "0.4.22", features = ["serde"] }
 spinners = "4.1.0"
 reqwest = "0.11.22"
 tracing = "0.1.40"
+clap = { version = "4.4.14", features = ["derive"] }
+base64 = "0.21.6"
+zip = "0.6.6"
+slugify = "0.1.0"

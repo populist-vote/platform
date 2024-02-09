@@ -166,6 +166,7 @@ impl Bill {
                 $22
             ) ON CONFLICT (id) DO UPDATE 
             SET
+                id = COALESCE(bill.id, EXCLUDED.id),
                 slug = COALESCE($2, bill.slug),
                 title = COALESCE($3, bill.title),
                 bill_number = COALESCE($4, bill.bill_number),
@@ -350,22 +351,6 @@ impl Bill {
             .fetch_all(db_pool)
             .await?;
 
-        Ok(records)
-    }
-
-    pub async fn popular(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
-        let records = sqlx::query_as!(
-            Bill,
-            r#"
-            SELECT bill.id, slug, title, bill_number, status AS "status: BillStatus", bill.description, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, bill.state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", bill.attributes, session_id, bill.created_at, bill.updated_at FROM bill
-            LEFT JOIN bill_public_votes bpv ON bill.id = bpv.bill_id
-            GROUP BY(bill.id)
-            ORDER BY COUNT(bpv.*) DESC NULLS LAST
-            LIMIT 20
-            "#,
-        )
-        .fetch_all(db_pool)
-        .await?;
         Ok(records)
     }
 

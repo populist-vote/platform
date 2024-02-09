@@ -1,5 +1,5 @@
 {
-  "query": "\n            SELECT COUNT(*) FROM populist_user\n            JOIN user_profile ON populist_user.id = user_profile.user_id\n            JOIN address a ON user_profile.address_id = a.id\n            WHERE ($1::text IS NULL OR a.state = $1)\n        ",
+  "query": "\n                SELECT\n                    e.id AS embed_id,\n                    e.embed_type AS \"embed_type:EmbedType\",\n                    e.name,\n                    eo.url,\n                    eo.last_ping_at\n                FROM\n                    embed_origin eo\n                JOIN\n                    embed e ON eo.embed_id = e.id\n                WHERE\n                    e.organization_id = $1\n                ORDER BY\n                    eo.last_ping_at DESC\n                LIMIT $2;\n            ",
   "describe": {
     "columns": [
       {
@@ -17,5 +17,5 @@
       null
     ]
   },
-  "hash": "b6a100808e5bb33bba3bd43585e7712b965d9588138f9775779319ef2fce7320"
+  "hash": "9ac734deaa26b00dfb5545435d08cc0dec2161fd15eca46de91f0c89b8b07741"
 }
