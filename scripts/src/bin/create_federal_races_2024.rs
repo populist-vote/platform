@@ -8,7 +8,7 @@ use std::str::FromStr;
 use std::time::Instant;
 use std::{env, process};
 
-async fn create_federal_primaries_2024() -> Result<(), Box<dyn Error>> {
+async fn create_federal_house_primaries_2024() -> Result<(), Box<dyn Error>> {
     let start = Instant::now();
     let mut sp = Spinner::new(Spinners::Dots5, "Creating races".into());
     db::init_pool().await.unwrap();
@@ -17,7 +17,6 @@ async fn create_federal_primaries_2024() -> Result<(), Box<dyn Error>> {
     let api_key = env::var("OPEN_FEC_API_KEY").unwrap();
     let election_year = 2024;
     let election_type_id = "P";
-    // let election_state = "PR";
     let office_sought = "H";
     let url = format!("https://api.open.fec.gov/v1/election-dates?api_key={}&election_year={}&election_type_id={}&office_sought={}&sort=election_date&per_page=100",
         api_key, election_year, election_type_id, office_sought);
