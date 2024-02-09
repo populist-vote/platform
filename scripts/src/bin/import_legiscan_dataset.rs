@@ -10,7 +10,11 @@ use std::process;
 use std::str::FromStr;
 use std::time::Instant;
 
-async fn import_legiscan_dataset(session_id: i32) -> Result<(), Box<dyn Error>> {
+async fn import_legiscan_dataset(
+    session_id: i32,
+    state: State,
+    year: i32,
+) -> Result<(), Box<dyn Error>> {
     db::init_pool().await.unwrap();
     let db_pool = &db::pool().await.connection;
     let start = Instant::now();
@@ -34,7 +38,10 @@ async fn import_legiscan_dataset(session_id: i32) -> Result<(), Box<dyn Error>> 
     }
 
     let dataset_list = legiscan
-        .get_dataset_list(Some("MN"), Some("2024"))
+        .get_dataset_list(
+            Some(state.to_string().as_str()),
+            Some(year.to_string().as_str()),
+        )
         .await
         .unwrap();
     let access_key = dataset_list[0].access_key.clone();
@@ -133,15 +140,19 @@ async fn import_legiscan_dataset(session_id: i32) -> Result<(), Box<dyn Error>> 
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Name of the person to greet
-    #[arg(short, long)]
+    #[arg(long)]
     session_id: i32,
+    #[arg(long)]
+    state: State,
+    #[arg(long)]
+    year: i32,
 }
 
 #[tokio::main]
 async fn main() {
     let args = Args::parse();
 
-    if let Err(err) = import_legiscan_dataset(args.session_id).await {
+    if let Err(err) = import_legiscan_dataset(args.session_id, args.state, args.year).await {
         println!("Error occurred: {}", err);
         process::exit(1);
     }
