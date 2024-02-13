@@ -38,7 +38,7 @@ pub struct Bill {
     pub updated_at: DateTime,
 }
 
-#[derive(InputObject)]
+#[derive(InputObject, Debug)]
 pub struct UpsertBillInput {
     pub id: Option<uuid::Uuid>,
     pub slug: Option<String>,

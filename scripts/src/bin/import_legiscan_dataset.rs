@@ -139,7 +139,6 @@ async fn import_legiscan_dataset(
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// Name of the person to greet
     #[arg(long)]
     session_id: i32,
     #[arg(long)]

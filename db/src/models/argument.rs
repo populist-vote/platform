@@ -16,7 +16,7 @@ pub struct Argument {
     pub updated_at: DateTime,
 }
 
-#[derive(InputObject)]
+#[derive(InputObject, Debug)]
 pub struct CreateArgumentInput {
     pub title: String,
     pub author_id: String,

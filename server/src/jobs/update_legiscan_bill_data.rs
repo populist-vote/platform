@@ -4,7 +4,15 @@ use tracing::info;
 
 pub async fn run() -> anyhow::Result<()> {
     let legiscan = legiscan::LegiscanProxy::new().unwrap();
-    let masterlist = legiscan.get_master_list_raw_by_session(2116).await.unwrap();
+    let target_session_ids = vec![1986, 2116];
+    let mut masterlist = Vec::new();
+    for session_id in target_session_ids {
+        let session_masterlist = legiscan
+            .get_master_list_raw_by_session(session_id)
+            .await
+            .unwrap();
+        masterlist.extend(session_masterlist);
+    }
 
     // Check the changehash of each bill with a matching session_id to determine
     // which bill's need to be updated by Legiscan
