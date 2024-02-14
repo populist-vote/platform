@@ -58,6 +58,9 @@ pub async fn graphql_handler(
     schema: Extension<PopulistSchema>,
     req: GraphQLRequest,
 ) -> GraphQLResponse {
+    let mut headers = headers.clone();
+    headers.insert("Access-Control-Allow-Credentials", "true".parse().unwrap());
+
     let bearer_token = headers
         .get("authorization")
         .and_then(|header| header.to_str().ok())

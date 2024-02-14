@@ -7,6 +7,7 @@ use strum_macros::Display;
 #[sqlx(type_name = "embed_type", rename_all = "lowercase")]
 pub enum EmbedType {
     Legislation,
+    LegislationTracker,
     Politician,
     Question,
     Poll,
