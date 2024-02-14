@@ -99,6 +99,26 @@ impl EmbedResult {
         }
     }
 
+    async fn bills(&self, ctx: &Context<'_>) -> Result<Option<Vec<BillResult>>> {
+        let bill_ids = self.attributes["billIds"].as_array();
+        if let Some(bill_ids) = bill_ids {
+            let bill_ids = bill_ids
+                .iter()
+                .filter_map(|id| id.as_str().map(|id| uuid::Uuid::parse_str(id).ok()))
+                .collect::<Option<Vec<_>>>()
+                .ok_or(Error::BadInput {
+                    field: "bill_ids".to_string(),
+                    message: "Bill ids we malformed or missing".to_string(),
+                })?;
+
+            let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+            let records = db::Bill::find_by_ids(&db_pool, bill_ids).await?;
+            Ok(Some(records.into_iter().map(|r| r.into()).collect()))
+        } else {
+            Ok(None)
+        }
+    }
+
     async fn politician(&self, ctx: &Context<'_>) -> Result<Option<PoliticianResult>> {
         let politician_id = self.attributes["politicianId"].as_str();
         if let Some(politician_id) = politician_id {

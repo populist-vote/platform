@@ -368,6 +368,23 @@ impl Bill {
         Ok(record)
     }
 
+    pub async fn find_by_ids(
+        db_pool: &PgPool,
+        ids: Vec<uuid::Uuid>,
+    ) -> Result<Vec<Self>, sqlx::Error> {
+        let records = sqlx::query_as!(
+            Bill,
+            r#"
+                SELECT id, slug, title, bill_number, status AS "status: BillStatus", description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill 
+                WHERE id = ANY($1)
+            "#,
+            &ids
+        )
+        .fetch_all(db_pool)
+        .await?;
+        Ok(records)
+    }
+
     pub async fn find_by_slug(db_pool: &PgPool, slug: &str) -> Result<Self, sqlx::Error> {
         let record = sqlx::query_as!(
             Bill,
