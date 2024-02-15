@@ -4,7 +4,7 @@ use sqlx::FromRow;
 use strum_macros::Display;
 
 #[derive(Enum, Copy, Clone, PartialEq, Eq, Debug, Display, sqlx::Type)]
-#[sqlx(type_name = "embed_type", rename_all = "lowercase")]
+#[sqlx(type_name = "embed_type", rename_all = "snake_case")]
 pub enum EmbedType {
     Legislation,
     LegislationTracker,
