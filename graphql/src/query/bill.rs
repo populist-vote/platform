@@ -52,6 +52,19 @@ impl BillQuery {
         Some(BillResult::from(record))
     }
 
+    async fn bills_by_ids(&self, ctx: &Context<'_>, ids: Vec<ID>) -> Vec<BillResult> {
+        let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+        let records = Bill::find_by_ids(
+            &db_pool,
+            ids.iter()
+                .map(|id| uuid::Uuid::parse_str(id).unwrap())
+                .collect(),
+        )
+        .await
+        .unwrap();
+        records.into_iter().map(BillResult::from).collect()
+    }
+
     async fn bill_by_slug(&self, ctx: &Context<'_>, slug: String) -> Option<BillResult> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
         let record = Bill::find_by_slug(&db_pool, &slug).await.unwrap();
