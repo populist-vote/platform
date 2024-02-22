@@ -63,12 +63,18 @@ async fn import_legiscan_dataset(
                     SELECT id
                     FROM bill
                     WHERE legiscan_bill_id = $1
-                    AND is_locked
+                    AND is_locked = false
                 "#,
                 bill.bill_id
             )
             .fetch_optional(db_pool)
             .await?;
+
+            let title = if let Some(existing_bill) = existing_bill {
+                existing_bill.title
+            } else {
+                bill.clone().title
+            };
 
             let mut input = UpsertBillInput {
                 id: None,
@@ -78,7 +84,7 @@ async fn import_legiscan_dataset(
                     &bill.clone().bill_number,
                     "2023-2024" // Need to make this dynamic, fetch session from db
                 ))),
-                title: Some(bill.clone().title),
+                title: Some(title),
                 bill_number: bill.clone().bill_number,
                 status: match bill.clone().status {
                     1 => BillStatus::Introduced,
