@@ -63,6 +63,7 @@ async fn import_legiscan_dataset(
                     SELECT id
                     FROM bill
                     WHERE legiscan_bill_id = $1
+                    AND is_locked
                 "#,
                 bill.bill_id
             )
