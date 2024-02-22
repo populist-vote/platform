@@ -1,6 +1,7 @@
 use crate::{context::ApiContext, types::ArgumentResult};
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use auth::AccessTokenClaims;
+use chrono::NaiveDate;
 use db::{
     models::{
         bill::Bill,
@@ -31,6 +32,8 @@ pub struct BillResult {
     votesmart_bill_id: Option<i32>,
     legiscan_bill_id: Option<i32>,
     legiscan_committee_name: Option<String>,
+    legiscan_last_action: Option<String>,
+    legiscan_last_action_date: Option<NaiveDate>,
     history: serde_json::Value,
     state: Option<State>,
     chamber: Option<Chamber>,
@@ -184,6 +187,8 @@ impl From<Bill> for BillResult {
             votesmart_bill_id: b.votesmart_bill_id,
             legiscan_bill_id: b.legiscan_bill_id,
             legiscan_committee_name: b.legiscan_committee,
+            legiscan_last_action: b.legiscan_last_action,
+            legiscan_last_action_date: b.legiscan_last_action_date,
             history: b.history,
             state: b.state,
             chamber: b.chamber,
