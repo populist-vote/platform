@@ -9,7 +9,7 @@ use tracing_subscriber::EnvFilter;
 
 mod cron;
 mod download;
-mod jobs;
+pub mod jobs;
 pub use cron::init_job_schedule;
 pub use download::*;
 pub use jobs::*;

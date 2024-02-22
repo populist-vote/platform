@@ -2984,6 +2984,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "server",
  "slugify",
  "spinners",
  "sqlx",

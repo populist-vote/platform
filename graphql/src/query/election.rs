@@ -1,6 +1,6 @@
 use async_graphql::{Context, FieldResult, Object, Result, ID};
 use auth::AccessTokenClaims;
-use db::{models::enums::State, Election, ElectionSearchInput};
+use db::{models::enums::State, Election, ElectionFilter};
 use jsonwebtoken::TokenData;
 
 use crate::{
@@ -16,10 +16,10 @@ impl ElectionQuery {
     async fn elections(
         &self,
         ctx: &Context<'_>,
-        #[graphql(desc = "Search by slug or title")] search: Option<ElectionSearchInput>,
+        #[graphql(desc = "Search by slug or title")] search: Option<ElectionFilter>,
     ) -> FieldResult<Vec<ElectionResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let records = Election::search(&db_pool, &search.unwrap_or_default()).await?;
+        let records = Election::filter(&db_pool, &search.unwrap_or_default()).await?;
         let results = records.into_iter().map(ElectionResult::from).collect();
         Ok(results)
     }

@@ -2,7 +2,7 @@ use async_graphql::InputObject;
 use sqlx::postgres::PgPool;
 use sqlx::FromRow;
 
-use super::enums::State;
+use super::enums::{PoliticalScope, State};
 
 #[derive(FromRow, Debug, Clone)]
 pub struct Election {
@@ -27,11 +27,14 @@ pub struct UpsertElectionInput {
     pub election_date: Option<chrono::NaiveDate>,
 }
 
-#[derive(InputObject, Default)]
-pub struct ElectionSearchInput {
+#[derive(InputObject, Default, Debug)]
+pub struct ElectionFilter {
+    pub query: Option<String>,
+    pub state: Option<State>,
+    pub political_scope: Option<PoliticalScope>,
+    pub municipality: Option<String>,
     pub slug: Option<String>,
     pub title: Option<String>,
-    pub state: Option<State>,
 }
 
 impl Election {
@@ -100,22 +103,25 @@ impl Election {
         Ok(records)
     }
 
-    pub async fn search(
+    pub async fn filter(
         db_pool: &PgPool,
-        search: &ElectionSearchInput,
+        filter: &ElectionFilter,
     ) -> Result<Vec<Self>, sqlx::Error> {
         let records = sqlx::query_as!(
             Election,
             r#"
-                SELECT id, slug, title, description, state AS "state:State", municipality, election_date FROM election
-                WHERE ($1::text IS NULL OR slug = $1)
-                AND ($2::text IS NULL OR title = $2)
-                AND ($3::state IS NULL OR state = $3)
+                SELECT id, slug, title, description, state AS "state:State", municipality, election_date FROM election e,
+                to_tsvector(
+                    title || ' ' || COALESCE(description, '') || ' ' || COALESCE(municipality, '') || ' ' || COALESCE(state::text, '')
+                ) document,
+                websearch_to_tsquery($1::text) query,
+                NULLIF(ts_rank(to_tsvector(title), websearch_to_tsquery($1::text)), 0) rank
+                WHERE query @@ document
+                AND ($2::state IS NULL OR e.state = $2)
                 ORDER BY election_date ASC
             "#,
-            search.slug,
-            search.title,
-            search.state as Option<State>,
+            filter.query,
+            filter.state as Option<State>,
         )
         .fetch_all(db_pool)
         .await?;

@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 auth = { path = "../auth" }
 db = { path = "../db" }
+server = { path = "../server" }
 open-fec = { path = "../open-fec" }
 votesmart = { path = "../votesmart" }
 legiscan = { path = "../legiscan" }

@@ -4,7 +4,7 @@ use tracing::info;
 
 pub async fn run() -> anyhow::Result<()> {
     let legiscan = legiscan::LegiscanProxy::new().unwrap();
-    let target_session_ids = vec![1986, 2116];
+    let target_session_ids = vec![1986, 2116, 2041];
     let mut masterlist = Vec::new();
     for session_id in target_session_ids {
         let session_masterlist = legiscan
