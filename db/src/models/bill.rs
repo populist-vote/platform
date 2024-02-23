@@ -15,6 +15,7 @@ pub struct Bill {
     pub id: uuid::Uuid,
     pub slug: String,
     pub title: String,
+    pub populist_title: Option<String>,
     pub bill_number: String,
     pub status: BillStatus,
     pub description: Option<String>,
@@ -44,6 +45,7 @@ pub struct UpsertBillInput {
     pub slug: Option<String>,
     pub title: Option<String>,
     pub bill_number: String,
+    pub populist_title: Option<String>,
     pub status: BillStatus,
     pub description: Option<String>,
     pub session_id: uuid::Uuid,
@@ -122,6 +124,7 @@ impl Bill {
                 id,
                 slug,
                 title,
+                populist_title,
                 bill_number,
                 status,
                 description,
@@ -163,35 +166,38 @@ impl Bill {
                 $19,
                 $20,
                 $21,
-                $22
+                $22,
+                $23
             ) ON CONFLICT (id) DO UPDATE 
             SET
                 id = COALESCE(bill.id, EXCLUDED.id),
                 slug = COALESCE($2, bill.slug),
                 title = COALESCE($3, bill.title),
-                bill_number = COALESCE($4, bill.bill_number),
-                status = COALESCE($5, bill.status),
-                description = COALESCE($6, bill.description),
-                session_id = COALESCE($7, bill.session_id),
-                official_summary = COALESCE($8, bill.official_summary),
-                populist_summary = COALESCE($9, bill.populist_summary),
-                full_text_url = COALESCE($10, bill.full_text_url),
-                legiscan_bill_id = COALESCE($11, bill.legiscan_bill_id),
-                legiscan_committee = COALESCE($12, bill.legiscan_committee),
-                legiscan_last_action = COALESCE($13, bill.legiscan_last_action),
-                legiscan_last_action_date = COALESCE($14, bill.legiscan_last_action_date),
-                legiscan_data = COALESCE($15, bill.legiscan_data),
-                votesmart_bill_id = COALESCE($16, bill.votesmart_bill_id),
-                history = COALESCE($17, bill.history),
-                state = COALESCE($18, bill.state),
-                political_scope = COALESCE($19, bill.political_scope),
-                bill_type = COALESCE($20, bill.bill_type),
-                chamber = COALESCE($21, bill.chamber),
-                attributes = COALESCE($22, bill.attributes)
+                populist_title = COALESCE($4, bill.populist_title),
+                bill_number = COALESCE($5, bill.bill_number),
+                status = COALESCE($6, bill.status),
+                description = COALESCE($7, bill.description),
+                session_id = COALESCE($8, bill.session_id),
+                official_summary = COALESCE($9, bill.official_summary),
+                populist_summary = COALESCE($10, bill.populist_summary),
+                full_text_url = COALESCE($11, bill.full_text_url),
+                legiscan_bill_id = COALESCE($12, bill.legiscan_bill_id),
+                legiscan_committee = COALESCE($13, bill.legiscan_committee),
+                legiscan_last_action = COALESCE($14, bill.legiscan_last_action),
+                legiscan_last_action_date = COALESCE($15, bill.legiscan_last_action_date),
+                legiscan_data = COALESCE($16, bill.legiscan_data),
+                votesmart_bill_id = COALESCE($17, bill.votesmart_bill_id),
+                history = COALESCE($18, bill.history),
+                state = COALESCE($19, bill.state),
+                political_scope = COALESCE($20, bill.political_scope),
+                bill_type = COALESCE($21, bill.bill_type),
+                chamber = COALESCE($22, bill.chamber),
+                attributes = COALESCE($23, bill.attributes)
             RETURNING 
                 id,
                 slug,
                 title,
+                populist_title,
                 bill_number,
                 status AS "status: BillStatus",
                 description,
@@ -217,6 +223,7 @@ impl Bill {
             id,
             slug,
             title,
+            input.populist_title,
             input.bill_number,
             input.status as BillStatus,
             input.description,
@@ -358,7 +365,7 @@ impl Bill {
         let record = sqlx::query_as!(
             Bill,
             r#"
-                SELECT id, slug, title, bill_number, status AS "status: BillStatus", description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill 
+                SELECT id, slug, title, populist_title, bill_number, status AS "status: BillStatus", description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill 
                 WHERE id = $1
             "#,
             id
@@ -375,7 +382,7 @@ impl Bill {
         let records = sqlx::query_as!(
             Bill,
             r#"
-                SELECT id, slug, title, bill_number, status AS "status: BillStatus", description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill 
+                SELECT id, slug, title, populist_title, bill_number, status AS "status: BillStatus", description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill 
                 WHERE id = ANY($1)
             "#,
             &ids
@@ -389,7 +396,7 @@ impl Bill {
         let record = sqlx::query_as!(
             Bill,
             r#"
-                SELECT id, slug, title, bill_number, status AS "status: BillStatus", description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill
+                SELECT id, slug, title, populist_title, bill_number, status AS "status: BillStatus", description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill
                 WHERE slug = $1
             "#,
             slug
