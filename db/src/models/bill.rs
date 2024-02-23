@@ -271,6 +271,7 @@ impl Bill {
                 bill.slug,
                 t.tag_array,
                 title,
+                populist_title,
                 bill_number,
                 status,
                 bill.description,
