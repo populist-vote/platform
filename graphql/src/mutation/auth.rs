@@ -390,20 +390,25 @@ impl AuthMutation {
 
     #[graphql(visible = "is_admin")]
     async fn logout(&self, ctx: &Context<'_>) -> Result<bool, Error> {
-        let cookies = [
-            format!(
-                "access_token=null; expires={}; Max-Age=0; HttpOnly; SameSite=None; Secure; Domain={}; Path=/",
-                (chrono::Utc::now() - chrono::Duration::hours(1)).format("%a, %d %b %Y %T GMT"),
-                config::Config::default().root_domain
-            ),
+        let expiry =
+            (chrono::Utc::now() - chrono::Duration::days(100)).format("%a, %d %b %Y %T GMT");
+        let domain = config::Config::default().root_domain;
+        ctx.insert_http_header(
+            SET_COOKIE,
             format!(
                 "refresh_token=null; expires={}; Max-Age=0; HttpOnly; SameSite=None; Secure; Domain={}; Path=/",
-                (chrono::Utc::now() - chrono::Duration::hours(1)).format("%a, %d %b %Y %T GMT"),
-                config::Config::default().root_domain
+                expiry,
+                domain
             ),
-        ];
-
-        ctx.insert_http_header(SET_COOKIE, cookies.join(", "));
+        );
+        ctx.append_http_header(
+            SET_COOKIE,
+            format!(
+                "access_token=null; expires={}; Max-Age=0; HttpOnly; SameSite=None; Secure; Domain={}; Path=/",
+                expiry,
+                domain
+            ),
+        );
         Ok(true)
     }
 }
