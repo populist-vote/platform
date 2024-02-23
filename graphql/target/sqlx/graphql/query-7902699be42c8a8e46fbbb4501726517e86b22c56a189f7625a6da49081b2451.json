@@ -1,19 +1,21 @@
 {
-  "query": "\n            SELECT DISTINCT\n                EXTRACT(YEAR FROM start_date)::INTEGER AS session_year\n            FROM\n                bill\n            JOIN session ON bill.session_id = session.id \n        ",
+  "query": "\n            SELECT password FROM populist_user \n            WHERE id = $1",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "session_year",
-        "type_info": "Int4"
+        "name": "password",
+        "type_info": "Text"
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Uuid"
+      ]
     },
     "nullable": [
-      null
+      false
     ]
   },
-  "hash": "248b94575c3dfb9725c00cebb76022c785fe21d2b5a88e8a6f34aba105a2fc92"
+  "hash": "b5f8bb777be364f196aa0da547e7527cf58249eb9e172e46e977c9525c8bd508"
 }
