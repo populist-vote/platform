@@ -1,10 +1,15 @@
 {
-  "query": "\n            SELECT password FROM populist_user \n            WHERE id = $1",
+  "query": "\n                SELECT\n                    a.state AS \"state:State\",\n                    a.city\n                FROM\n                    address a\n                    JOIN user_profile up ON user_id = $1\n                WHERE\n                    up.user_id = $1 AND \n                    up.address_id = a.id\n                ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
-        "name": "password",
+        "name": "state:State",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "city",
         "type_info": "Text"
       }
     ],
@@ -14,8 +19,9 @@
       ]
     },
     "nullable": [
+      false,
       false
     ]
   },
-  "hash": "b5f8bb777be364f196aa0da547e7527cf58249eb9e172e46e977c9525c8bd508"
+  "hash": "ec7d7d8795912e11300996e03a8eab218697f4c0e3a1c82a90dc41f38507570e"
 }
