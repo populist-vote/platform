@@ -34,14 +34,14 @@ async fn create_fec_senate_candidates() -> Result<(), Box<dyn Error>> {
 
     // must run dbt in between these queries
 
-    sqlx::query!(
-        r#"
-            INSERT INTO race_candidates (race_id, candidate_id)
-            SELECT race_id, politician_id FROM dbt_models.stg_fec_federal_politicians;
-        "#
-    )
-    .execute(&pool.connection)
-    .await?;
+    // sqlx::query!(
+    //     r#"
+    //         INSERT INTO race_candidates (race_id, candidate_id)
+    //         SELECT race_id, politician_id FROM dbt_models.stg_fec_federal_politicians;
+    //     "#
+    // )
+    // .execute(&pool.connection)
+    // .await?;
 
     sp.stop();
     let duration = start.elapsed();

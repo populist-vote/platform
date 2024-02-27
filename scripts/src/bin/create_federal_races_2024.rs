@@ -226,7 +226,7 @@ async fn create_federal_house_primaries_2024() -> Result<(), Box<dyn Error>> {
 
 #[tokio::main]
 async fn main() {
-    if let Err(err) = create_federal_primaries_2024().await {
+    if let Err(err) = create_federal_house_primaries_2024().await {
         println!("Error occurred: {}", err);
         process::exit(1);
     }

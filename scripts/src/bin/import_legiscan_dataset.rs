@@ -10,6 +10,11 @@ use std::process;
 use std::str::FromStr;
 use std::time::Instant;
 
+struct SimpleBill {
+    id: uuid::Uuid,
+    title: String,
+}
+
 async fn import_legiscan_dataset(
     session_id: i32,
     state: State,
@@ -60,7 +65,7 @@ async fn import_legiscan_dataset(
 
             let existing_bill = sqlx::query!(
                 r#"
-                    SELECT id
+                    SELECT id, title, populist_title
                     FROM bill
                     WHERE legiscan_bill_id = $1
                     AND is_locked = false
@@ -70,21 +75,24 @@ async fn import_legiscan_dataset(
             .fetch_optional(db_pool)
             .await?;
 
-            let title = if let Some(existing_bill) = existing_bill {
-                existing_bill.title
+            let bill_id = existing_bill.as_ref().map(|b| b.id);
+
+            let title = if let Some(bill) = existing_bill {
+                bill.title
             } else {
                 bill.clone().title
             };
 
-            let mut input = UpsertBillInput {
-                id: None,
+            let input = UpsertBillInput {
+                id: bill_id,
                 slug: Some(slugify!(&format!(
                     "{}{}{}",
                     &bill.clone().state,
                     &bill.clone().bill_number,
                     "2023-2024" // Need to make this dynamic, fetch session from db
                 ))),
-                title: Some(title),
+                title: Some(title.clone()),
+                populist_title: Some(title),
                 bill_number: bill.clone().bill_number,
                 status: match bill.clone().status {
                     1 => BillStatus::Introduced,
@@ -120,11 +128,6 @@ async fn import_legiscan_dataset(
                 },
                 attributes: Some(serde_json::to_value("{}").unwrap()),
             };
-
-            if let Some(existing_bill) = existing_bill {
-                input.id = Some(existing_bill.id);
-            }
-
             Bill::upsert(db_pool, &input).await.unwrap();
         }
     }
