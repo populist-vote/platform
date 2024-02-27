@@ -57,7 +57,9 @@ pub async fn run() -> anyhow::Result<()> {
                         json_build_object(1, 'introduced', 2, 'in_consideration', 4, 'became_law')::jsonb)
                         ->> ($1::jsonb->>'status'))::bill_status, 'introduced'),
                     legiscan_committee = $1::jsonb->'committee'->>'name',
-                    legiscan_committee_id = ($1::jsonb->'committee'->>'committee_id')::int
+                    legiscan_committee_id = ($1::jsonb->'committee'->>'committee_id')::int,
+                    legiscan_last_action = $1::jsonb->'history'->-1->>'action',
+                    legiscan_last_action_date = ($1::jsonb->'history'->-1->>'date')::date
                 WHERE id = $2
             "#,
             bill_data_json,
