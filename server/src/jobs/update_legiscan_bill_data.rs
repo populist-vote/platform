@@ -48,7 +48,6 @@ pub async fn run() -> anyhow::Result<()> {
             .await
             .unwrap();
         let bill_data_json = serde_json::to_value(bill_data).unwrap();
-        println!("{}", serde_json::to_string_pretty(&bill_data_json).unwrap());
         sqlx::query!(
             r#"
                 UPDATE bill

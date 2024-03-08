@@ -7,14 +7,20 @@ use std::error::Error;
 use std::process;
 use std::time::Instant;
 
+struct Bill {
+    id: Option<uuid::Uuid>,
+    title: Option<String>,
+}
+
 async fn categorize_bills() -> Result<(), Box<dyn Error>> {
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
     let start = Instant::now();
 
-    let bill_records = sqlx::query!(
+    let bill_records = sqlx::query_as!(
+        Bill,
         r#"
-        SELECT b.id, b.title, issue_tag_id FROM bill b 
+        SELECT b.id, b.title FROM bill b 
         LEFT JOIN bill_issue_tags ON b.id = bill_issue_tags.bill_id
         WHERE (attributes->>'categorized')::boolean IS NOT true
         AND bill_issue_tags.issue_tag_id IS NULL;
@@ -49,7 +55,7 @@ async fn categorize_bills() -> Result<(), Box<dyn Error>> {
                 .map(|tag| tag.slug.clone())
                 .collect::<Vec<_>>()
                 .join(", "),
-            title = bill.title
+            title = bill.title.unwrap()
         );
         let request = CreateChatCompletionRequestArgs::default()
             .max_tokens(512u16)

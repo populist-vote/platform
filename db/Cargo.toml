@@ -7,13 +7,12 @@ publish = false
 [dependencies]
 geocodio = { path = "../geocodio" }
 chrono = { version = "0.4.19", features = ["serde"] }
-sqlx = { version = "0.6.2", features = [
+sqlx = { version = "0.7", features = [
     "runtime-tokio-rustls",
     "postgres",
     "chrono",
     "uuid",
     "json",
-    "offline",
 ] }
 legiscan = { path = "../legiscan" }
 tokio = { version = "1.21.1", features = ["full"] }

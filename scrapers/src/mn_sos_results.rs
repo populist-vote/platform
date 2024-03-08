@@ -101,9 +101,9 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
         sqlx::query(&create_table_query)
             .execute(&pool.connection)
             .await?;
-        let mut tx = pool.connection.copy_in_raw(&copy_query).await?;
-        tx.send(csv_data_as_string.as_bytes()).await?;
-        tx.finish().await?;
+        // let mut tx = pool.connection.copy_in_raw(&copy_query).await?;
+        // tx.send(csv_data_as_string.as_bytes()).await?;
+        // tx.finish().await?;
         // _write_to_csv_file(name, &data)?;
     }
     update_public_schema_with_results().await;
