@@ -8,7 +8,7 @@ use serde_json::Value as JSON;
 use slugify::slugify;
 use sqlx::{postgres::PgPool, FromRow};
 
-use super::enums::{PoliticalParty, PoliticalScope, State};
+use super::enums::{PoliticalScope, State};
 
 #[derive(FromRow, Debug, Clone)]
 pub struct Bill {
@@ -448,6 +448,7 @@ impl Bill {
                         upcoming_race_id,
                         thumbnail_image_url,
                         assets,
+                        party_id,
                         official_website_url,
                         campaign_website_url,
                         facebook_url,
@@ -458,7 +459,6 @@ impl Bill {
                         tiktok_url,
                         email,
                         phone,
-                        party AS "party:PoliticalParty",
                         votesmart_candidate_id,
                         votesmart_candidate_bio,
                         votesmart_candidate_ratings,

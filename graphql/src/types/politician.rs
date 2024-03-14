@@ -1,11 +1,12 @@
 use super::{
-    votesmart::VsRating, BillResult, IssueTagResult, OfficeResult, OrganizationResult, RaceResult,
+    party::PoliticalParty, votesmart::VsRating, BillResult, IssueTagResult, OfficeResult,
+    OrganizationResult, RaceResult,
 };
 use crate::{context::ApiContext, relay};
 use async_graphql::{ComplexObject, Context, Enum, Result, SimpleObject, ID};
 use db::{
     models::{
-        enums::{BillStatus, PoliticalParty, PoliticalScope, State},
+        enums::{BillStatus, PoliticalScope, State},
         politician::Politician,
     },
     Bill, Chamber,
@@ -36,6 +37,7 @@ pub struct PoliticianResult {
     biography_source: Option<String>,
     home_state: Option<State>,
     date_of_birth: Option<NaiveDate>,
+    party_id: Option<ID>,
     office_id: Option<ID>,
     upcoming_race_id: Option<ID>,
     #[graphql(deprecation = "Use `assets.thumbnailImage160` instead")]
@@ -51,7 +53,6 @@ pub struct PoliticianResult {
     tiktok_url: Option<String>,
     email: Option<String>,
     phone: Option<String>,
-    party: Option<PoliticalParty>,
     crp_candidate_id: Option<String>,
     votesmart_candidate_id: Option<i32>,
     votesmart_candidate_bio: Option<GetCandidateBioResponse>,
@@ -276,6 +277,38 @@ impl PoliticianResult {
             Some(dob) => calculate_age(dob).ok(),
             None => None,
         }
+    }
+
+    async fn party(&self, ctx: &Context<'_>) -> Result<Option<PoliticalParty>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let party = match &self.party_id {
+            Some(party_id) => {
+                let record = sqlx::query!(
+                    r#"
+                    SELECT id, fec_code, name, description, notes
+                    FROM party
+                    WHERE id = $1
+                "#,
+                    uuid::Uuid::parse_str(&party_id.to_string()).unwrap()
+                )
+                .fetch_optional(&db_pool)
+                .await?;
+
+                match record {
+                    Some(record) => Some(PoliticalParty {
+                        id: ID::from(record.id),
+                        fec_code: record.fec_code,
+                        name: record.name,
+                        description: record.description,
+                        notes: record.notes,
+                    }),
+                    None => None,
+                }
+            }
+            None => None,
+        };
+
+        Ok(party)
     }
 
     /// Leverages Votesmart ratings data for the time being
@@ -569,6 +602,7 @@ impl From<Politician> for PoliticianResult {
             home_state: p.home_state,
             date_of_birth: p.date_of_birth,
             office_id: p.office_id.map(ID::from),
+            party_id: p.party_id.map(ID::from),
             upcoming_race_id: p.upcoming_race_id.map(ID::from),
             thumbnail_image_url: p.thumbnail_image_url,
             assets: serde_json::from_value(p.assets.to_owned()).unwrap_or_default(),
@@ -582,7 +616,6 @@ impl From<Politician> for PoliticianResult {
             tiktok_url: p.tiktok_url,
             email: p.email,
             phone: p.phone,
-            party: p.party,
             crp_candidate_id: p.crp_candidate_id,
             votesmart_candidate_id: p.votesmart_candidate_id,
             votesmart_candidate_bio: serde_json::from_value(p.votesmart_candidate_bio.to_owned())

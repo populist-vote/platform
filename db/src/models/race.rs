@@ -1,4 +1,4 @@
-use super::enums::{PoliticalParty, PoliticalScope, RaceType, State, VoteType};
+use super::enums::{PoliticalScope, RaceType, State, VoteType};
 use crate::{DateTime, ElectionScope};
 use async_graphql::InputObject;
 use chrono::NaiveDate;
@@ -17,7 +17,7 @@ pub struct Race {
     pub office_id: uuid::Uuid,
     pub race_type: RaceType,
     pub vote_type: VoteType,
-    pub party: Option<PoliticalParty>,
+    pub party_id: Option<uuid::Uuid>,
     pub state: Option<State>,
     pub description: Option<String>,
     pub ballotpedia_link: Option<String>,
@@ -40,7 +40,7 @@ pub struct UpsertRaceInput {
     pub office_id: Option<uuid::Uuid>,
     pub race_type: Option<RaceType>,
     pub vote_type: Option<VoteType>,
-    pub party: Option<PoliticalParty>,
+    pub party_id: Option<uuid::Uuid>,
     pub description: Option<String>,
     pub ballotpedia_link: Option<String>,
     pub early_voting_begins_date: Option<NaiveDate>,
@@ -90,7 +90,7 @@ impl Race {
 
         let record = sqlx::query_as!(Race,
             r#"
-                INSERT INTO race (id, slug, title, office_id, race_type, vote_type, party, state,  description, ballotpedia_link, early_voting_begins_date, winner_ids, official_website, election_id, total_votes, is_special_election, num_elect)
+                INSERT INTO race (id, slug, title, office_id, race_type, vote_type, party_id, state,  description, ballotpedia_link, early_voting_begins_date, winner_ids, official_website, election_id, total_votes, is_special_election, num_elect)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
                 ON CONFLICT (id) DO UPDATE
                 SET
@@ -99,7 +99,7 @@ impl Race {
                     office_id = COALESCE($4, race.office_id),
                     race_type = COALESCE($5, race.race_type),
                     vote_type = COALESCE($6, race.vote_type),
-                    party = COALESCE($7, race.party),
+                    party_id = COALESCE($7, race.party_id),
                     state = COALESCE($8, race.state),
                     description = COALESCE($9, race.description),
                     ballotpedia_link = COALESCE($10, race.ballotpedia_link),
@@ -110,7 +110,7 @@ impl Race {
                     total_votes = COALESCE($15, race.total_votes),
                     is_special_election = COALESCE($16, race.is_special_election),
                     num_elect = COALESCE($17, race.num_elect)
-                RETURNING id, slug, title,  office_id, race_type AS "race_type:RaceType", vote_type AS "vote_type:VoteType", party AS "party:PoliticalParty", state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_ids, official_website, election_id, total_votes, is_special_election, num_elect, created_at, updated_at
+                RETURNING id, slug, title,  office_id, race_type AS "race_type:RaceType", vote_type AS "vote_type:VoteType", party_id, state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_ids, official_website, election_id, total_votes, is_special_election, num_elect, created_at, updated_at
             "#,
             id,
             slug,
@@ -118,7 +118,7 @@ impl Race {
             input.office_id,
             input.race_type as Option<RaceType>,
             input.vote_type as Option<VoteType>,
-            input.party as Option<PoliticalParty>,
+            input.party_id,
             input.state as Option<State>,
             input.description,
             input.ballotpedia_link,
@@ -147,7 +147,7 @@ impl Race {
         let record = sqlx::query_as!(
             Race,
             r#"
-                SELECT id, slug, title, office_id, race_type AS "race_type:RaceType", vote_type AS "vote_type:VoteType", party AS "party:PoliticalParty", state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_ids, total_votes, official_website, election_id,  is_special_election, num_elect, created_at, updated_at FROM race
+                SELECT id, slug, title, office_id, race_type AS "race_type:RaceType", vote_type AS "vote_type:VoteType", party_id, state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_ids, total_votes, official_website, election_id,  is_special_election, num_elect, created_at, updated_at FROM race
                 WHERE id = $1
             "#,
             id
@@ -162,7 +162,7 @@ impl Race {
         let record = sqlx::query_as!(
             Race,
             r#"
-                SELECT id, slug, title, office_id, race_type AS "race_type:RaceType", vote_type AS "vote_type:VoteType", party AS "party:PoliticalParty", state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_ids, total_votes, official_website, election_id, is_special_election, num_elect, created_at, updated_at FROM race
+                SELECT id, slug, title, office_id, race_type AS "race_type:RaceType", vote_type AS "vote_type:VoteType", party_id, state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_ids, total_votes, official_website, election_id, is_special_election, num_elect, created_at, updated_at FROM race
                 WHERE slug = $1
             "#,
             slug

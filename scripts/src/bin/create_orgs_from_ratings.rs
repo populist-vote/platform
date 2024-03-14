@@ -50,7 +50,7 @@ async fn create_organizations() -> Result<(), Box<dyn Error>> {
         .iter()
         .flat_map(|record| {
             let ratings: Vec<serde_json::Value> =
-                serde_json::from_value(record.votesmart_candidate_ratings.to_owned())
+                serde_json::from_value(record.votesmart_candidate_ratings.to_owned().unwrap())
                     .unwrap_or_default();
             ratings
                 .iter()

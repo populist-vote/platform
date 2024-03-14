@@ -175,38 +175,6 @@ impl FullState for State {
 }
 
 #[derive(
-    Display, Enum, Debug, Copy, Clone, Eq, PartialEq, EnumString, sqlx::Type, Serialize, Deserialize,
-)]
-#[strum(ascii_case_insensitive)]
-#[sqlx(type_name = "political_party", rename_all = "snake_case")]
-pub enum PoliticalParty {
-    #[serde(rename = "Colorado Center")]
-    ColoradoCenter,
-    Democratic,
-    #[serde(rename = "Democratic Farmer Labor")]
-    DemocraticFarmerLabor,
-    #[serde(rename = "Grassroots Legalize Cannabis")]
-    GrassrootsLegalizeCannabis,
-    #[serde(rename = "Legal Marijuana Now")]
-    LegalMarijuanaNow,
-    Republican,
-    Libertarian,
-    Freedom,
-    Unity,
-    Green,
-    #[serde(rename = "American Constitution")]
-    AmericanConstitution,
-    Constitution,
-    Independent,
-    #[serde(rename = "Approval Voting")]
-    ApprovalVoting,
-    #[serde(rename = "Socialist Workers")]
-    SocialistWorkers,
-    Unaffiliated,
-    Unknown,
-}
-
-#[derive(
     Enum, Debug, Copy, Clone, Eq, PartialEq, EnumString, sqlx::Type, Serialize, Deserialize,
 )]
 #[strum(ascii_case_insensitive)]

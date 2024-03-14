@@ -3,7 +3,7 @@ use crate::{context::ApiContext, Error};
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use auth::AccessTokenClaims;
 use db::{
-    models::enums::{PoliticalParty, RaceType, State, VoteType},
+    models::enums::{RaceType, State, VoteType},
     Address, Election, Race,
 };
 use jsonwebtoken::TokenData;
@@ -33,7 +33,7 @@ impl ElectionResult {
                 office_id,
                 race_type AS "race_type:RaceType",
                 vote_type AS "vote_type:VoteType",
-                party AS "party:PoliticalParty",
+                party_id,
                 state AS "state:State",
                 description,
                 ballotpedia_link,
@@ -141,7 +141,7 @@ impl ElectionResult {
                 r.office_id,
                 r.race_type AS "race_type:RaceType",
                 r.vote_type AS "vote_type:VoteType",
-                r.party AS "party:PoliticalParty",
+                r.party_id,
                 r.state AS "state:State",
                 r.description,
                 r.ballotpedia_link,
@@ -222,7 +222,7 @@ impl ElectionResult {
                 office_id,
                 race_type AS "race_type:RaceType",
                 vote_type AS "vote_type:VoteType",
-                party AS "party:PoliticalParty",
+                party_id,
                 r.state AS "state:State",
                 r.description,
                 ballotpedia_link,
@@ -263,7 +263,7 @@ impl ElectionResult {
                 office_id: r.office_id,
                 race_type: r.race_type,
                 vote_type: r.vote_type,
-                party: r.party,
+                party_id: r.party_id,
                 state: r.state,
                 description: r.description,
                 ballotpedia_link: r.ballotpedia_link,

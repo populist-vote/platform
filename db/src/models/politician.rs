@@ -1,11 +1,9 @@
 use crate::{
-    models::enums::{PoliticalParty, State},
-    CreateOrConnectIssueTagInput, CreateOrConnectOrganizationInput, DateTime, IssueTag,
-    Organization, OrganizationIdentifier,
+    models::enums::State, CreateOrConnectIssueTagInput, CreateOrConnectOrganizationInput, DateTime,
+    IssueTag, Organization, OrganizationIdentifier,
 };
 use async_graphql::InputObject;
 use chrono::NaiveDate;
-use rand::Rng;
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JSON;
 use slugify::slugify;
@@ -25,6 +23,7 @@ pub struct Politician {
     pub biography: Option<String>,
     pub biography_source: Option<String>,
     pub home_state: Option<State>,
+    pub party_id: Option<uuid::Uuid>,
     pub date_of_birth: Option<NaiveDate>,
     pub office_id: Option<uuid::Uuid>,
     pub upcoming_race_id: Option<uuid::Uuid>,
@@ -40,7 +39,6 @@ pub struct Politician {
     pub tiktok_url: Option<String>,
     pub email: Option<String>,
     pub phone: Option<String>,
-    pub party: Option<PoliticalParty>,
     pub votesmart_candidate_id: Option<i32>,
     pub votesmart_candidate_bio: JSON,
     pub votesmart_candidate_ratings: JSON,
@@ -82,7 +80,7 @@ pub struct UpsertPoliticianInput {
     pub tiktok_url: Option<String>,
     pub email: Option<String>,
     pub phone: Option<String>,
-    pub party: Option<PoliticalParty>,
+    pub party_id: Option<uuid::Uuid>,
     pub issue_tags: Option<CreateOrConnectIssueTagInput>,
     pub organization_endorsements: Option<CreateOrConnectOrganizationInput>,
     pub politician_endorsements: Option<CreateOrConnectPoliticianInput>,
@@ -111,7 +109,6 @@ pub struct CreateOrConnectPoliticianInput {
 pub struct PoliticianFilter {
     pub query: Option<String>,
     pub home_state: Option<State>,
-    pub party: Option<PoliticalParty>,
     pub political_scope: Option<PoliticalScope>,
     pub chambers: Option<Chambers>,
 }
@@ -122,7 +119,7 @@ impl Politician {
         input: &UpsertPoliticianInput,
     ) -> Result<Self, sqlx::Error> {
         let id = input.id.unwrap_or_else(uuid::Uuid::new_v4);
-        let mut slug = match &input.slug {
+        let slug = match &input.slug {
             Some(slug) => slug.to_owned(),
             None => slugify!(&format!(
                 "{} {} {}",
@@ -135,28 +132,10 @@ impl Politician {
             )),
         };
 
-        let existing_slug = sqlx::query!(
-            r#"
-            SELECT slug
-            FROM politician
-            WHERE slug = $1 AND id != $2
-            "#,
-            slug,
-            input.id
-        )
-        .fetch_optional(db_pool)
-        .await?;
-
-        let rando: i32 = { rand::thread_rng().gen() };
-
-        if let Some(r) = existing_slug {
-            slug = format!("{}-{}", r.slug, rando);
-        }
-
         let record = sqlx::query_as!(
             Politician,
             r#"
-            INSERT INTO politician (id, slug, first_name, middle_name, last_name, suffix, preferred_name, biography, biography_source, home_state, date_of_birth, office_id, upcoming_race_id, thumbnail_image_url, assets, official_website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, phone, party, votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses)
+            INSERT INTO politician (id, slug, first_name, middle_name, last_name, suffix, preferred_name, biography, biography_source, home_state, date_of_birth, office_id, upcoming_race_id, thumbnail_image_url, assets, official_website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, phone, party_id, votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses)
             VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34) 
             ON CONFLICT (id) DO UPDATE
             SET
@@ -184,7 +163,7 @@ impl Politician {
                 tiktok_url = COALESCE($23, politician.tiktok_url),
                 email = COALESCE($24, politician.email),
                 phone = COALESCE($25, politician.phone),
-                party = COALESCE($26, politician.party),
+                party_id = COALESCE($26, politician.party_id),
                 votesmart_candidate_id = COALESCE($27, politician.votesmart_candidate_id),
                 votesmart_candidate_bio = COALESCE($28, politician.votesmart_candidate_bio),
                 votesmart_candidate_ratings = COALESCE($29, politician.votesmart_candidate_ratings),
@@ -219,7 +198,7 @@ impl Politician {
                 tiktok_url,
                 email,
                 phone,
-                party AS "party:PoliticalParty",
+                party_id,
                 votesmart_candidate_id,
                 votesmart_candidate_bio,
                 votesmart_candidate_ratings,
@@ -256,7 +235,7 @@ impl Politician {
             input.tiktok_url,
             input.email,
             input.phone,
-            input.party as Option<PoliticalParty>,
+            input.party_id,
             input.votesmart_candidate_id,
             input.votesmart_candidate_bio,
             input.votesmart_candidate_ratings,
@@ -307,7 +286,7 @@ impl Politician {
                         tiktok_url,
                         email,
                         phone,
-                        party AS "party:PoliticalParty",
+                        party_id,
                         votesmart_candidate_id,
                         votesmart_candidate_bio,
                         votesmart_candidate_ratings,
@@ -353,7 +332,7 @@ impl Politician {
                         tiktok_url,
                         email,
                         phone,
-                        party AS "party:PoliticalParty",
+                        party_id,
                         votesmart_candidate_id,
                         votesmart_candidate_bio,
                         votesmart_candidate_ratings,
@@ -402,7 +381,7 @@ impl Politician {
                         tiktok_url,
                         email,
                         phone,
-                        party AS "party:PoliticalParty",
+                        party_id,
                         votesmart_candidate_id,
                         votesmart_candidate_bio,
                         votesmart_candidate_ratings,
@@ -456,7 +435,7 @@ impl Politician {
                         tiktok_url,
                         email,
                         phone,
-                        party AS "party:PoliticalParty",
+                        party_id,
                         votesmart_candidate_id,
                         votesmart_candidate_bio,
                         votesmart_candidate_ratings,
@@ -479,11 +458,10 @@ impl Politician {
                 NULLIF(ts_rank(to_tsvector(o.title), query), 0) rank_office_title
                 WHERE (($1::text = '') IS NOT FALSE OR query @@ document)
                 AND ($2::state IS NULL OR home_state = $2)
-                AND ($3::political_party IS NULL OR party = $3)
-                AND ($4::political_scope IS NULL OR political_scope = $4)
-                AND ($5::text IS NULL OR $5 = 'All' OR (
-                    ($5 = 'Senate' AND o.title ILIKE '%Senator') OR
-                    ($5 = 'House' AND o.title ILIKE '%Representative')
+                AND ($3::political_scope IS NULL OR political_scope = $3)
+                AND ($4::text IS NULL OR $4 = 'All' OR (
+                    ($4 = 'Senate' AND o.title ILIKE '%Senator') OR
+                    ($4 = 'House' AND o.title ILIKE '%Representative')
                 ))
                 GROUP BY (
                     p.id,
@@ -498,7 +476,6 @@ impl Politician {
             "#,
             search_query,
             filter.home_state as Option<State>,
-            filter.party as Option<PoliticalParty>,
             filter.political_scope as Option<PoliticalScope>,
             filter.chambers.map(|c| c.to_string()) as Option<String>
         )
@@ -555,7 +532,7 @@ impl Politician {
                         tiktok_url,
                         email,
                         phone,
-                        party AS "party:PoliticalParty",
+                        party_id,
                         votesmart_candidate_id,
                         votesmart_candidate_bio,
                         votesmart_candidate_ratings,

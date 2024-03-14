@@ -3,13 +3,13 @@ use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use db::{
     loaders::politician::PoliticianId,
     models::{
-        enums::{PoliticalParty, RaceType, State, VoteType},
+        enums::{RaceType, State, VoteType},
         politician::Politician,
         race::Race,
     },
 };
 
-use super::PoliticianResult;
+use super::{PoliticalParty, PoliticianResult};
 
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
@@ -18,9 +18,9 @@ pub struct RaceResult {
     slug: String,
     title: String,
     office_id: ID,
+    party_id: Option<ID>,
     race_type: RaceType,
     vote_type: VoteType,
-    party: Option<PoliticalParty>,
     state: Option<State>,
     description: Option<String>,
     ballotpedia_link: Option<String>,
@@ -66,6 +66,38 @@ impl RaceResult {
         Ok(OfficeResult::from(office.unwrap()))
     }
 
+    async fn party(&self, ctx: &Context<'_>) -> Result<Option<PoliticalParty>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let party = match &self.party_id {
+            Some(party_id) => {
+                let record = sqlx::query!(
+                    r#"
+                    SELECT id, fec_code, name, description, notes
+                    FROM party
+                    WHERE id = $1
+                "#,
+                    uuid::Uuid::parse_str(&party_id.to_string()).unwrap()
+                )
+                .fetch_optional(&db_pool)
+                .await?;
+
+                match record {
+                    Some(record) => Some(PoliticalParty {
+                        id: ID::from(record.id),
+                        fec_code: record.fec_code,
+                        name: record.name,
+                        description: record.description,
+                        notes: record.notes,
+                    }),
+                    None => None,
+                }
+            }
+            None => None,
+        };
+
+        Ok(party)
+    }
+
     async fn candidates(&self, ctx: &Context<'_>) -> Result<Vec<PoliticianResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
 
@@ -85,6 +117,7 @@ impl RaceResult {
                     home_state AS "home_state:State",
                     date_of_birth,
                     office_id,
+                    party_id,
                     upcoming_race_id,
                     thumbnail_image_url,
                     assets,
@@ -98,7 +131,6 @@ impl RaceResult {
                     tiktok_url,
                     email,
                     phone,
-                    party AS "party:PoliticalParty",
                     votesmart_candidate_id,
                     votesmart_candidate_bio,
                     votesmart_candidate_ratings,
@@ -260,7 +292,7 @@ impl From<Race> for RaceResult {
             office_id: ID::from(r.office_id),
             race_type: r.race_type,
             vote_type: r.vote_type,
-            party: r.party,
+            party_id: r.party_id.map(ID::from),
             state: r.state,
             description: r.description,
             ballotpedia_link: r.ballotpedia_link,

@@ -1,4 +1,8 @@
-use crate::{context::ApiContext, relay, types::PoliticianResult};
+use crate::{
+    context::ApiContext,
+    relay,
+    types::{PoliticalParty, PoliticianResult},
+};
 use async_graphql::{Context, Object, Result, ID};
 use db::{
     loaders::politician::{PoliticianId, PoliticianSlug},
@@ -62,5 +66,13 @@ impl PoliticianQuery {
             10,
         )
         .await
+    }
+
+    async fn political_parties(&self, ctx: &Context<'_>) -> Result<Vec<PoliticalParty>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let parties = sqlx::query_as!(PoliticalParty, "SELECT * FROM party")
+            .fetch_all(&db_pool)
+            .await?;
+        Ok(parties)
     }
 }

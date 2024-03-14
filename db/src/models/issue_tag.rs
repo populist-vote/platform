@@ -1,7 +1,4 @@
-use crate::{
-    models::enums::{PoliticalParty, State},
-    DateTime, Organization, Politician,
-};
+use crate::{models::enums::State, DateTime, Organization, Politician};
 use async_graphql::InputObject;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
@@ -178,7 +175,7 @@ impl IssueTag {
                         tiktok_url,
                         email,
                         phone,
-                        party AS "party:PoliticalParty",
+                        party_id,
                         votesmart_candidate_id,
                         votesmart_candidate_bio,
                         votesmart_candidate_ratings,
