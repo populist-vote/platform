@@ -7,7 +7,7 @@ use async_graphql::InputObject;
 use chrono::NaiveDate;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value as JSON};
+use serde_json::Value as JSON;
 use slugify::slugify;
 use sqlx::{postgres::PgPool, FromRow};
 
@@ -153,16 +153,6 @@ impl Politician {
             slug = format!("{}-{}", r.slug, rando);
         }
 
-        let votesmart_candidate_bio = match input.votesmart_candidate_bio.to_owned() {
-            Some(bio) => bio,
-            None => json!({}),
-        };
-
-        let votesmart_candidate_ratings = match input.votesmart_candidate_ratings.to_owned() {
-            Some(ratings) => ratings,
-            None => json!([]),
-        };
-
         let record = sqlx::query_as!(
             Politician,
             r#"
@@ -268,8 +258,8 @@ impl Politician {
             input.phone,
             input.party as Option<PoliticalParty>,
             input.votesmart_candidate_id,
-            votesmart_candidate_bio,
-            votesmart_candidate_ratings,
+            input.votesmart_candidate_bio,
+            input.votesmart_candidate_ratings,
             input.legiscan_people_id,
             input.crp_candidate_id,
             input.fec_candidate_id,

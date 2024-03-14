@@ -85,12 +85,12 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
     for (name, url) in results_file_paths {
         let response = client.get(url).send().await?.text().await?;
         let data = convert_text_to_csv(name, &response);
-        let csv_data_as_string = String::from_utf8(data.clone())?;
+        let _csv_data_as_string = String::from_utf8(data.clone())?;
         let table_name = format!(
             "p6t_state_mn.results_2023_{}",
             name.replace(' ', "_").to_lowercase()
         );
-        let copy_query = format!("COPY {} FROM STDIN WITH CSV HEADER;", table_name);
+        let _copy_query = format!("COPY {} FROM STDIN WITH CSV HEADER;", table_name);
         let pool = db::pool().await;
         sqlx::query(format!(r#"DROP TABLE IF EXISTS {} CASCADE;"#, table_name).as_str())
             .execute(&pool.connection)
@@ -164,7 +164,7 @@ fn convert_text_to_csv(name: &str, text: &str) -> Vec<u8> {
                 continue;
             }
             wtr.write_record(&record)
-                .expect(format!("Error writing record: {:?}", record).as_str());
+                .unwrap_or_else(|_| panic!("Error writing record: {:?}", record))
         }
         wtr.flush().unwrap();
     }

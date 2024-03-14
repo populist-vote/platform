@@ -60,9 +60,9 @@ pub async fn get_mn_sos_candidate_filings_local() -> Result<(), Box<dyn Error>> 
 
     // Write CSV data to Postgres table in p6t_state_mn schema
 
-    let csv_data_as_string = String::from_utf8(csv_string)?;
+    let _csv_data_as_string = String::from_utf8(csv_string)?;
 
-    let copy_query =
+    let _copy_query =
         r#"COPY p6t_state_mn.mn_candidate_filings_local_2023 FROM STDIN WITH CSV HEADER;"#;
     let pool = db::pool().await;
     sqlx::query!(r#"DROP TABLE IF EXISTS p6t_state_mn.mn_candidate_filings_local_2023 CASCADE;"#)

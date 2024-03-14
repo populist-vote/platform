@@ -50,7 +50,7 @@ async fn import_legiscan_dataset(
     match session {
         Ok(session) => {
             populist_session_id = session.id;
-            if session.legiscan_dataset_hash == Some(hash) {
+            if session.legiscan_dataset_hash == Some(hash.clone()) {
                 println!("\n\n🟢 Dataset already up to date.  No new bills found.\n");
                 process::exit(0);
             } else {
@@ -115,7 +115,7 @@ async fn import_legiscan_dataset(
                 "{}{}{}",
                 &bill.state.clone(),
                 &bill.bill_number,
-                "2023-2024" // Need to make this dynamic, fetch session from db
+                "-2023" // Need to make this dynamic, fetch session from db
             ))),
             title: Some(bill.title.clone()),
             populist_title: Some(bill.title.clone()),
@@ -156,6 +156,19 @@ async fn import_legiscan_dataset(
         };
         Bill::upsert(db_pool, &input).await.unwrap();
     }
+
+    // Update legiscan_dataset_hash for session
+    sqlx::query!(
+        r#"
+            UPDATE session
+            SET legiscan_dataset_hash = $1
+            WHERE id = $2
+        "#,
+        hash.clone(),
+        populist_session_id
+    )
+    .execute(db_pool)
+    .await?;
 
     let duration = start.elapsed();
     eprintln!(
