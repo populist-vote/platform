@@ -1,9 +1,4 @@
-use crate::{
-    context::ApiContext,
-    guard::{StaffOnly, UserGuard},
-    is_admin,
-    types::BillResult,
-};
+use crate::{context::ApiContext, guard::StaffOnly, is_admin, types::BillResult};
 use async_graphql::*;
 use db::{
     models::enums::ArgumentPosition, Bill, CreateArgumentInput, PublicVotes, UpsertBillInput,
@@ -56,22 +51,24 @@ impl BillMutation {
         Ok(DeleteBillResult { id })
     }
 
-    #[graphql(guard = "UserGuard::new(&user_id)", visible = "is_admin")]
+    #[graphql(visible = "is_admin")]
     async fn upsert_bill_public_vote(
         &self,
         ctx: &Context<'_>,
         bill_id: ID,
-        user_id: ID,
+        user_id: Option<ID>,
         position: ArgumentPosition,
     ) -> Result<PublicVotes> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = Bill::upsert_public_vote(
             &db_pool,
             uuid::Uuid::parse_str(&bill_id)?,
-            uuid::Uuid::parse_str(&user_id)?,
+            user_id.map(|id| uuid::Uuid::parse_str(&id)).transpose()?,
             position,
         )
         .await?;
+        // Maybe set a HTTP only cookie here to prevent multiple votes?
+        // Still gameable by clearing cookies but better than nothing
         Ok(record)
     }
 }

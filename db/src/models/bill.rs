@@ -572,7 +572,7 @@ impl Bill {
     pub async fn upsert_public_vote(
         db_pool: &PgPool,
         bill_id: uuid::Uuid,
-        user_id: uuid::Uuid,
+        user_id: Option<uuid::Uuid>,
         position: ArgumentPosition,
     ) -> Result<PublicVotes, sqlx::Error> {
         let _upsert = sqlx::query!(
