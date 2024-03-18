@@ -10,7 +10,7 @@ use graphql::PopulistSchema;
 use jsonwebtoken::TokenData;
 use tower_cookies::{Cookie, Cookies};
 
-async fn refresh_token_check(cookies: Cookies) -> Option<TokenData<AccessTokenClaims>> {
+async fn refresh_token_check(cookies: &Cookies) -> Option<TokenData<AccessTokenClaims>> {
     if let Some(refresh_cookie) = cookies.get("refresh_token") {
         match jwt::validate_refresh_token(refresh_cookie.value()) {
             Ok(token_data) => {
@@ -80,16 +80,29 @@ pub async fn graphql_handler(
     let cookie_token_data = match cookies.get("access_token") {
         Some(access_cookie) => match jwt::validate_access_token(access_cookie.value()) {
             Ok(token_data) => Some(token_data),
-            Err(_) => refresh_token_check(cookies).await,
+            Err(_) => refresh_token_check(&cookies).await,
         },
-        None => refresh_token_check(cookies).await,
+        None => refresh_token_check(&cookies).await,
     };
 
     // Use the bearer token if it's present, otherwise use the cookie
     let token_data = bearer_token_data.or(cookie_token_data);
 
+    let session_id = match cookies.get("session_id") {
+        Some(session_cookie) => session_cookie.value().to_string().to_string(),
+        None => {
+            let session_id = uuid::Uuid::new_v4().to_string();
+            let mut cookie = Cookie::new("session_id", session_id);
+            cookie.set_expires(time::OffsetDateTime::now_utc() + time::Duration::days(7));
+            cookie.set_domain(config::Config::default().root_domain);
+            cookie.http_only();
+            cookies.add(cookie);
+            cookies.get("session_id").unwrap().value().to_string()
+        }
+    };
+
     schema
-        .execute(req.into_inner().data(token_data))
+        .execute(req.into_inner().data(token_data).data(session_id))
         .await
         .into()
 }

@@ -30,6 +30,22 @@ async fn test_graphql_handler() {
         .await
         .unwrap();
 
+    let cookies = response.cookies();
+    let mut has_session_id_cookie = false;
+    let mut session_id_is_valid = false;
+
+    for cookie in cookies {
+        if cookie.name() == "session_id" {
+            has_session_id_cookie = true;
+            session_id_is_valid = uuid::Uuid::parse_str(cookie.value()).is_ok();
+        }
+    }
+
+    assert!(has_session_id_cookie);
+    assert!(session_id_is_valid);
+
+    // Now you can check the cookies as needed
+
     let json = response.json::<Value>().await.unwrap();
     assert_eq!(json["data"], serde_json::json!({"health": true}));
 }
