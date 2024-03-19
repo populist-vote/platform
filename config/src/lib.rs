@@ -9,6 +9,7 @@ pub struct Config {
     pub environment: Environment,
     pub web_app_url: Url,
     pub root_domain: String,
+    pub same_site: String,
 }
 
 impl Default for Config {
@@ -25,10 +26,16 @@ impl Default for Config {
             Environment::Staging => "api.staging.populist.us".to_string(),
             _ => "".to_string(),
         };
+        let same_site = match environment {
+            Environment::Production => "Strict".to_string(),
+            Environment::Staging => "None".to_string(),
+            _ => "None".to_string(),
+        };
         Config {
             environment,
             web_app_url,
             root_domain,
+            same_site,
         }
     }
 }

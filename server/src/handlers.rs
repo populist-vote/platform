@@ -25,6 +25,19 @@ async fn refresh_token_check(cookies: &Cookies) -> Option<TokenData<AccessTokenC
                         cookies.to_owned().remove(Cookie::new("refresh_token", ""));
                         None
                     } else {
+                        let config::Config {
+                            root_domain,
+                            same_site,
+                            ..
+                        } = config::Config::default();
+
+                        let same_site = match same_site.as_str() {
+                            "Strict" => SameSite::Strict,
+                            "Lax" => SameSite::Lax,
+                            "None" => SameSite::None,
+                            _ => SameSite::None,
+                        };
+
                         // If so, create a new access token, set it in the cookie, and return it
                         let access_token = jwt::create_access_token_for_user(user).unwrap();
                         let mut cookie =
@@ -32,8 +45,8 @@ async fn refresh_token_check(cookies: &Cookies) -> Option<TokenData<AccessTokenC
                         cookie.set_expires(
                             time::OffsetDateTime::now_utc() + time::Duration::hours(24),
                         );
-                        cookie.set_domain(config::Config::default().root_domain);
-                        cookie.set_same_site(SameSite::Strict);
+                        cookie.set_domain(root_domain);
+                        cookie.set_same_site(same_site);
                         cookie.set_http_only(true);
                         cookies.add(cookie);
                         Some(jwt::validate_access_token(&access_token).unwrap())

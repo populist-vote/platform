@@ -9,6 +9,7 @@ use auth::{
     create_access_token_for_user, create_random_token, create_refresh_token_for_user,
     create_temporary_username, format_auth_cookie, AccessTokenClaims,
 };
+use config::Environment;
 use db::{AddressInput, Coordinates, CreateUserInput, CreateUserWithProfileInput, Role, User};
 use geocodio::GeocodioProxy;
 use jsonwebtoken::TokenData;
@@ -392,21 +393,28 @@ impl AuthMutation {
     async fn logout(&self, ctx: &Context<'_>) -> Result<bool, Error> {
         let expiry = (chrono::Utc::now() - chrono::Duration::try_days(100).unwrap())
             .format("%a, %d %b %Y %T GMT");
-        let domain = config::Config::default().root_domain;
+        let config::Config {
+            root_domain,
+            same_site,
+            ..
+        } = config::Config::default();
+
         ctx.insert_http_header(
             "Set-Cookie",
             format!(
-                "refresh_token=null; expires={}; Max-Age=0; HttpOnly; SameSite=None; Secure; Domain={}; Path=/",
+                "refresh_token=null; expires={}; Max-Age=0; HttpOnly; SameSite={}; Secure; Domain={}; Path=/",
                 expiry,
-                domain
+                same_site,
+                root_domain
             ),
         );
         ctx.append_http_header(
             "Set-Cookie",
             format!(
-                "access_token=null; expires={}; Max-Age=0; HttpOnly; SameSite=None; Secure; Domain={}; Path=/",
+                "access_token=null; expires={}; Max-Age=0; HttpOnly; SameSite={}; Secure; Domain={}; Path=/",
                 expiry,
-                domain
+                same_site,
+                root_domain
             ),
         );
         Ok(true)
