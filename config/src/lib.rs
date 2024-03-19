@@ -23,7 +23,7 @@ impl Default for Config {
         let root_domain = match environment {
             Environment::Production => "api.populist.us".to_string(),
             Environment::Staging => "api.staging.populist.us".to_string(),
-            _ => "localhost".to_string(),
+            _ => "".to_string(),
         };
         Config {
             environment,
@@ -59,7 +59,6 @@ impl FromStr for Environment {
         } else if e.contains("local") {
             Ok(Environment::Local)
         } else {
-            //no need to crash if we set an arbitrary value for some reason
             println!(
                 "Unable to resolve environment from {}. Setting to unknown",
                 e

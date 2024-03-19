@@ -4,7 +4,6 @@ use crate::{
     is_admin,
     types::{CreateUserResult, Error, LoginResult},
 };
-use ::http::header::SET_COOKIE;
 use async_graphql::{Context, InputObject, Object, Result};
 use auth::{
     create_access_token_for_user, create_random_token, create_refresh_token_for_user,

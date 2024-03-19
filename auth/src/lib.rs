@@ -49,12 +49,12 @@ pub fn format_auth_cookie(token_type: TokenType, token: &str) -> String {
     };
 
     let expiry_duration = match token_type {
-        TokenType::Access => chrono::Duration::hours(24),
-        TokenType::Refresh => chrono::Duration::days(120),
+        TokenType::Access => chrono::Duration::try_hours(24).unwrap(),
+        TokenType::Refresh => chrono::Duration::try_days(120).unwrap(),
     };
 
     format!(
-        "{}={}; HttpOnly; SameSite=Strict; Secure; Domain={}; Expires={};",
+        "{}={}; HttpOnly; SameSite=Lax; Secure; Domain={}; Expires={};",
         token_type_str,
         token,
         config::Config::default().root_domain,
@@ -78,8 +78,9 @@ fn test_format_auth_cookie() {
     assert_eq!(
         result,
         format!(
-            "access_token=test; HttpOnly; SameSite=None; Secure; Domain=localhost; Expires={};",
-            (chrono::Utc::now() + chrono::Duration::days(30)).format("%a, %d %b %Y %T GMT")
+            "access_token=test; HttpOnly; SameSite=Lax; Secure; Domain=localhost; Expires={};",
+            (chrono::Utc::now() + chrono::Duration::try_days(30).unwrap())
+                .format("%a, %d %b %Y %T GMT")
         )
     );
 }
