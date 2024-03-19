@@ -275,7 +275,7 @@ impl Bill {
                 bill_number,
                 status,
                 bill.description,
-                session_id,
+                bill.session_id,
                 official_summary,
                 populist_summary,
                 full_text_url,
