@@ -6,7 +6,7 @@ use axum::{
     http::HeaderMap,
     response::{self, IntoResponse},
 };
-use graphql::PopulistSchema;
+use graphql::{PopulistSchema, SessionID};
 use jsonwebtoken::TokenData;
 use tower_cookies::{cookie::SameSite, Cookie, Cookies};
 
@@ -91,8 +91,8 @@ pub async fn graphql_handler(
     // Use the bearer token if it's present, otherwise use the cookie
     let token_data = bearer_token_data.or(cookie_token_data);
 
-    let session_id = match cookies.get("session_id") {
-        Some(session_cookie) => session_cookie.value().to_string(),
+    let session_id: SessionID = match cookies.get("session_id") {
+        Some(session_cookie) => session_cookie.value().to_string().into(),
         None => {
             let session_id = uuid::Uuid::new_v4().to_string();
             let mut cookie = Cookie::new("session_id", session_id);
@@ -101,7 +101,12 @@ pub async fn graphql_handler(
             cookie.set_http_only(true);
             cookie.set_secure(true);
             cookies.add(cookie);
-            cookies.get("session_id").unwrap().value().to_string()
+            cookies
+                .get("session_id")
+                .unwrap()
+                .value()
+                .to_string()
+                .into()
         }
     };
 

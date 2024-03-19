@@ -1,5 +1,7 @@
 pub mod errors;
 pub mod jwt;
+
+use config::Environment;
 pub use errors::Error;
 pub use jwt::*;
 pub use passwords::PasswordGenerator;
@@ -53,12 +55,21 @@ pub fn format_auth_cookie(token_type: TokenType, token: &str) -> String {
         TokenType::Refresh => chrono::Duration::try_days(120).unwrap(),
     };
 
+    let environment = config::Config::default().environment;
+
+    let same_site = match environment {
+        Environment::Production => "Lax",
+        Environment::Staging => "Lax",
+        _ => "None",
+    };
+
     format!(
-        "{}={}; HttpOnly; SameSite=Lax; Secure; Domain={}; Expires={};",
-        token_type_str,
-        token,
-        config::Config::default().root_domain,
-        (chrono::Utc::now() + expiry_duration).format("%a, %d %b %Y %T GMT")
+        "{token_type}={token}; HttpOnly; SameSite={same_site}; Secure; Domain={root_domain}; Expires={expiry_date};",
+        token_type = token_type_str,
+        token = token,
+        same_site = same_site,
+        root_domain = config::Config::default().root_domain,
+        expiry_date = (chrono::Utc::now() + expiry_duration).format("%a, %d %b %Y %T GMT")
     )
 }
 

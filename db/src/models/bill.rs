@@ -573,20 +573,37 @@ impl Bill {
         db_pool: &PgPool,
         bill_id: uuid::Uuid,
         user_id: Option<uuid::Uuid>,
+        session_id: Option<uuid::Uuid>,
         position: ArgumentPosition,
     ) -> Result<PublicVotes, sqlx::Error> {
-        let _upsert = sqlx::query!(
-            r#"
-                INSERT INTO bill_public_votes (bill_id, user_id, position) 
-                VALUES ($1, $2, $3) 
-                ON CONFLICT (bill_id, user_id) DO UPDATE SET position = $3
+        if user_id.is_some() {
+            let _upsert = sqlx::query!(
+                r#"
+                INSERT INTO bill_public_votes (bill_id, user_id, session_id, position) 
+                VALUES ($1, $2, $3, $4) 
+                ON CONFLICT (bill_id, user_id) DO UPDATE SET position = $4
             "#,
-            bill_id,
-            user_id,
-            position as ArgumentPosition,
-        )
-        .execute(db_pool)
-        .await?;
+                bill_id,
+                user_id,
+                session_id,
+                position as ArgumentPosition,
+            )
+            .execute(db_pool)
+            .await?;
+        } else {
+            let _upsert = sqlx::query!(
+                r#"
+                INSERT INTO bill_public_votes (bill_id, session_id, position) 
+                VALUES ($1, $2, $3) 
+                ON CONFLICT (bill_id, session_id) DO UPDATE SET position = $3
+            "#,
+                bill_id,
+                session_id,
+                position as ArgumentPosition,
+            )
+            .execute(db_pool)
+            .await?;
+        }
 
         let record = Bill::public_votes(db_pool, bill_id).await?;
 

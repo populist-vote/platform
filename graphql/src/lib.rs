@@ -20,6 +20,22 @@ use subscription::Subscription;
 use tracing::info;
 use url::Url;
 
+#[derive(Debug, Clone)]
+// Wrapper type representing a client session ID, used to track anonymous user sessions
+pub struct SessionID(String);
+
+impl From<String> for SessionID {
+    fn from(s: String) -> Self {
+        Self(s)
+    }
+}
+
+impl ToString for SessionID {
+    fn to_string(&self) -> String {
+        self.0.clone()
+    }
+}
+
 pub type PopulistSchema = Schema<Query, Mutation, Subscription>;
 
 pub fn new_schema() -> SchemaBuilder<Query, Mutation, Subscription> {

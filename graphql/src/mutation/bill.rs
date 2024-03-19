@@ -1,8 +1,10 @@
-use crate::{context::ApiContext, guard::StaffOnly, is_admin, types::BillResult};
+use crate::{context::ApiContext, guard::StaffOnly, is_admin, types::BillResult, SessionID};
 use async_graphql::*;
+use auth::AccessTokenClaims;
 use db::{
     models::enums::ArgumentPosition, Bill, CreateArgumentInput, PublicVotes, UpsertBillInput,
 };
+use jsonwebtoken::TokenData;
 use sqlx::{Pool, Postgres};
 #[derive(Default)]
 pub struct BillMutation;
@@ -56,14 +58,17 @@ impl BillMutation {
         &self,
         ctx: &Context<'_>,
         bill_id: ID,
-        user_id: Option<ID>,
         position: ArgumentPosition,
     ) -> Result<PublicVotes> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let user = ctx.data::<Option<TokenData<AccessTokenClaims>>>()?;
+        let user_id = user.as_ref().map(|u| u.claims.sub.to_string());
+        let session_id = ctx.data::<SessionID>()?.clone();
         let record = Bill::upsert_public_vote(
             &db_pool,
             uuid::Uuid::parse_str(&bill_id)?,
             user_id.map(|id| uuid::Uuid::parse_str(&id)).transpose()?,
+            Some(uuid::Uuid::parse_str(&session_id.to_string())?),
             position,
         )
         .await?;
