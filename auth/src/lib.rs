@@ -1,7 +1,5 @@
 pub mod errors;
 pub mod jwt;
-
-use config::Environment;
 pub use errors::Error;
 pub use jwt::*;
 pub use passwords::PasswordGenerator;

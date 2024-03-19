@@ -9,7 +9,6 @@ use auth::{
     create_access_token_for_user, create_random_token, create_refresh_token_for_user,
     create_temporary_username, format_auth_cookie, AccessTokenClaims,
 };
-use config::Environment;
 use db::{AddressInput, Coordinates, CreateUserInput, CreateUserWithProfileInput, Role, User};
 use geocodio::GeocodioProxy;
 use jsonwebtoken::TokenData;
