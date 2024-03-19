@@ -282,7 +282,8 @@ impl AuthMutation {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
         if let Ok(true) = User::validate_email_exists(&db_pool, email.clone()).await {
             let reset_token = create_random_token().unwrap();
-            let reset_token_expires_at = chrono::Utc::now() + chrono::Duration::hours(1);
+            let reset_token_expires_at =
+                chrono::Utc::now() + chrono::Duration::try_hours(1).unwrap();
 
             let _setup_reset_request = sqlx::query!(
                 r#"
@@ -389,8 +390,8 @@ impl AuthMutation {
 
     #[graphql(visible = "is_admin")]
     async fn logout(&self, ctx: &Context<'_>) -> Result<bool, Error> {
-        let expiry =
-            (chrono::Utc::now() - chrono::Duration::days(100)).format("%a, %d %b %Y %T GMT");
+        let expiry = (chrono::Utc::now() - chrono::Duration::try_days(100).unwrap())
+            .format("%a, %d %b %Y %T GMT");
         let domain = config::Config::default().root_domain;
         ctx.insert_http_header(
             "Set-Cookie",

@@ -25,7 +25,7 @@ pub struct RefreshTokenClaims {
 pub fn create_power_token() -> Result<String, Error> {
     let key = std::env::var("JWT_SECRET")?;
     let expiration = chrono::Utc::now()
-        .checked_add_signed(chrono::Duration::days(120))
+        .checked_add_signed(chrono::Duration::try_days(120).unwrap())
         .expect("valid timestamp")
         .timestamp();
 
@@ -54,7 +54,7 @@ pub fn create_access_token_for_user(user_record: User) -> Result<String, Error> 
     let key = std::env::var("JWT_SECRET")?;
 
     let expiration = chrono::Utc::now()
-        .checked_add_signed(chrono::Duration::hours(24))
+        .checked_add_signed(chrono::Duration::try_hours(24).unwrap())
         .expect("valid timestamp")
         .timestamp();
 
@@ -83,7 +83,7 @@ pub fn create_refresh_token_for_user(user_record: User) -> Result<String, Error>
     let key = std::env::var("JWT_SECRET")?;
 
     let expiration = chrono::Utc::now()
-        .checked_add_signed(chrono::Duration::days(120))
+        .checked_add_signed(chrono::Duration::try_days(120).unwrap())
         .expect("valid timestamp")
         .timestamp();
 
