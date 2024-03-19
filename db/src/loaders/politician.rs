@@ -1,4 +1,3 @@
-use async_graphql::async_trait::async_trait;
 use async_graphql::dataloader::Loader;
 use async_graphql::futures_util::TryStreamExt;
 use async_graphql::FieldError;
@@ -24,7 +23,6 @@ impl PoliticianLoader {
     }
 }
 
-#[async_trait]
 impl Loader<PoliticianId> for PoliticianLoader {
     type Value = Politician;
     type Error = FieldError;
@@ -48,7 +46,6 @@ impl Loader<PoliticianId> for PoliticianLoader {
     }
 }
 
-#[async_trait]
 impl Loader<PoliticianSlug> for PoliticianLoader {
     type Value = Politician;
     type Error = FieldError;
@@ -72,7 +69,6 @@ impl Loader<PoliticianSlug> for PoliticianLoader {
     }
 }
 
-#[async_trait]
 impl Loader<OfficeId> for PoliticianLoader {
     type Value = Politician;
     type Error = FieldError;

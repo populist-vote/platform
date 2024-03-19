@@ -2,13 +2,13 @@ use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
 use auth::{jwt, AccessTokenClaims};
 use axum::{
-    extract::Extension,
+    extract::State,
     http::HeaderMap,
     response::{self, IntoResponse},
 };
 use graphql::PopulistSchema;
 use jsonwebtoken::TokenData;
-use tower_cookies::{Cookie, Cookies};
+use tower_cookies::{cookie::SameSite, Cookie, Cookies};
 
 async fn refresh_token_check(cookies: &Cookies) -> Option<TokenData<AccessTokenClaims>> {
     if let Some(refresh_cookie) = cookies.get("refresh_token") {
@@ -21,8 +21,8 @@ async fn refresh_token_check(cookies: &Cookies) -> Option<TokenData<AccessTokenC
                     // Ensure the refresh token in the cookie matches the one associated with the user in the database
                     if user.clone().refresh_token.unwrap() != refresh_cookie.value() {
                         // If not, remove the cookies and return None
-                        cookies.to_owned().remove(Cookie::named("access_token"));
-                        cookies.to_owned().remove(Cookie::named("refresh_token"));
+                        cookies.to_owned().remove(Cookie::new("access_token", ""));
+                        cookies.to_owned().remove(Cookie::new("refresh_token", ""));
                         None
                     } else {
                         // If so, create a new access token, set it in the cookie, and return it
@@ -32,18 +32,21 @@ async fn refresh_token_check(cookies: &Cookies) -> Option<TokenData<AccessTokenC
                         cookie.set_expires(
                             time::OffsetDateTime::now_utc() + time::Duration::hours(24),
                         );
+                        cookie.set_domain(config::Config::default().root_domain);
+                        cookie.set_same_site(SameSite::Strict);
+                        cookie.set_http_only(true);
                         cookies.add(cookie);
                         Some(jwt::validate_access_token(&access_token).unwrap())
                     }
                 } else {
-                    cookies.to_owned().remove(Cookie::named("access_token"));
-                    cookies.to_owned().remove(Cookie::named("refresh_token"));
+                    cookies.to_owned().remove(Cookie::new("access_token", ""));
+                    cookies.to_owned().remove(Cookie::new("refresh_token", ""));
                     None
                 }
             }
             Err(_) => {
-                cookies.to_owned().remove(Cookie::named("access_token"));
-                cookies.to_owned().remove(Cookie::named("refresh_token"));
+                cookies.to_owned().remove(Cookie::new("access_token", ""));
+                cookies.to_owned().remove(Cookie::new("refresh_token", ""));
                 None
             }
         }
@@ -53,9 +56,9 @@ async fn refresh_token_check(cookies: &Cookies) -> Option<TokenData<AccessTokenC
 }
 
 pub async fn graphql_handler(
+    State(schema): State<PopulistSchema>,
     headers: HeaderMap,
     cookies: Cookies,
-    schema: Extension<PopulistSchema>,
     req: GraphQLRequest,
 ) -> GraphQLResponse {
     let mut headers = headers.clone();
@@ -89,20 +92,23 @@ pub async fn graphql_handler(
     let token_data = bearer_token_data.or(cookie_token_data);
 
     let session_id = match cookies.get("session_id") {
-        Some(session_cookie) => session_cookie.value().to_string().to_string(),
+        Some(session_cookie) => session_cookie.value().to_string(),
         None => {
             let session_id = uuid::Uuid::new_v4().to_string();
             let mut cookie = Cookie::new("session_id", session_id);
             cookie.set_expires(time::OffsetDateTime::now_utc() + time::Duration::days(7));
-            cookie.set_domain(config::Config::default().root_domain);
-            cookie.http_only();
+            cookie.set_same_site(SameSite::Strict);
+            cookie.set_http_only(true);
+            cookie.set_secure(true);
             cookies.add(cookie);
             cookies.get("session_id").unwrap().value().to_string()
         }
     };
 
+    let req = req.into_inner();
+
     schema
-        .execute(req.into_inner().data(token_data).data(session_id))
+        .execute(req.data(token_data).data(session_id))
         .await
         .into()
 }

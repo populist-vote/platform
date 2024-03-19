@@ -1,4 +1,3 @@
-use async_graphql::async_trait::async_trait;
 use async_graphql::dataloader::Loader;
 use async_graphql::futures_util::TryStreamExt;
 use async_graphql::FieldError;
@@ -16,14 +15,13 @@ impl IssueTagLoader {
 }
 
 // Load issue tags by id
-#[async_trait]
 impl Loader<uuid::Uuid> for IssueTagLoader {
     type Value = IssueTag;
     type Error = FieldError;
 
-    async fn load(
+    async fn load<'a>(
         &self,
-        keys: &[uuid::Uuid],
+        keys: &'a [uuid::Uuid],
     ) -> Result<HashMap<uuid::Uuid, Self::Value>, Self::Error> {
         let query = format!(
             r#"SELECT * FROM issue_tag WHERE id IN ({})"#,

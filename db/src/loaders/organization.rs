@@ -1,4 +1,3 @@
-use async_graphql::async_trait::async_trait;
 use async_graphql::dataloader::Loader;
 use async_graphql::futures_util::TryStreamExt;
 use async_graphql::FieldError;
@@ -16,7 +15,6 @@ impl OrganizationLoader {
 }
 
 // Currently being used for loading via Votesmart sig ids, but should also implement for org ids
-#[async_trait]
 impl Loader<i32> for OrganizationLoader {
     type Value = Organization;
     type Error = FieldError;

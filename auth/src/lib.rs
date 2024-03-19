@@ -54,7 +54,7 @@ pub fn format_auth_cookie(token_type: TokenType, token: &str) -> String {
     };
 
     format!(
-        "{}={}; HttpOnly; SameSite=None; Secure; Domain={}; Expires={};",
+        "{}={}; HttpOnly; SameSite=Strict; Secure; Domain={}; Expires={};",
         token_type_str,
         token,
         config::Config::default().root_domain,

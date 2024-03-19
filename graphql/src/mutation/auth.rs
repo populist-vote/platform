@@ -195,11 +195,11 @@ impl AuthMutation {
                 }
 
                 ctx.insert_http_header(
-                    SET_COOKIE,
+                    "Set-Cookie",
                     format_auth_cookie(auth::TokenType::Access, &access_token),
                 );
                 ctx.insert_http_header(
-                    SET_COOKIE,
+                    "Set-Cookie",
                     format_auth_cookie(auth::TokenType::Refresh, &refresh_token),
                 );
 
@@ -253,13 +253,13 @@ impl AuthMutation {
             if password_is_valid {
                 let access_token = create_access_token_for_user(user.clone())?;
                 ctx.insert_http_header(
-                    SET_COOKIE,
+                    "Set-Cookie",
                     format_auth_cookie(auth::TokenType::Access, &access_token),
                 );
                 let refresh_token = create_refresh_token_for_user(user.clone())?;
                 db::User::update_refresh_token(&db_pool, user.id, &refresh_token).await?;
                 ctx.append_http_header(
-                    SET_COOKIE,
+                    "Set-Cookie",
                     format_auth_cookie(auth::TokenType::Refresh, &refresh_token),
                 );
                 User::set_last_login_at(&db_pool, user.id).await?;
@@ -394,7 +394,7 @@ impl AuthMutation {
             (chrono::Utc::now() - chrono::Duration::days(100)).format("%a, %d %b %Y %T GMT");
         let domain = config::Config::default().root_domain;
         ctx.insert_http_header(
-            SET_COOKIE,
+            "Set-Cookie",
             format!(
                 "refresh_token=null; expires={}; Max-Age=0; HttpOnly; SameSite=None; Secure; Domain={}; Path=/",
                 expiry,
@@ -402,7 +402,7 @@ impl AuthMutation {
             ),
         );
         ctx.append_http_header(
-            SET_COOKIE,
+            "Set-Cookie",
             format!(
                 "access_token=null; expires={}; Max-Age=0; HttpOnly; SameSite=None; Secure; Domain={}; Path=/",
                 expiry,

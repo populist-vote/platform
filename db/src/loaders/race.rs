@@ -1,4 +1,3 @@
-use async_graphql::async_trait::async_trait;
 use async_graphql::dataloader::Loader;
 use async_graphql::futures_util::TryStreamExt;
 use async_graphql::FieldError;
@@ -17,7 +16,6 @@ impl RaceLoader {
     }
 }
 
-#[async_trait]
 impl Loader<uuid::Uuid> for RaceLoader {
     type Value = Race;
     type Error = FieldError;

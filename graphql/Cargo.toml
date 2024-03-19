@@ -10,7 +10,7 @@ config = { path = "../config" }
 db = { path = "../db" }
 mailers = { path = "../mailers" }
 open-secrets = { path = "../open-secrets" }
-async-graphql = { version = "6.0.7", features = [
+async-graphql = { version = "7.0.3", features = [
     "uuid",
     "chrono",
     "unblock",

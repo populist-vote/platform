@@ -7,7 +7,6 @@ use crate::{
 use async_graphql::{Context, Object, Result, SimpleObject, Upload, ID};
 use auth::{create_access_token_for_user, format_auth_cookie, AccessTokenClaims, TokenType};
 use db::{AddressInput, Role, User};
-use http::header::SET_COOKIE;
 use jsonwebtoken::TokenData;
 use std::io::Read;
 
@@ -38,7 +37,7 @@ pub async fn refresh_access_token(ctx: &Context<'_>, user_id: uuid::Uuid) -> Res
     let user = User::find_by_id(&db_pool, user_id).await?;
     let access_token = create_access_token_for_user(user)?;
     ctx.insert_http_header(
-        SET_COOKIE,
+        "Set-Cookie",
         format_auth_cookie(auth::TokenType::Access, &access_token),
     );
     Ok(true)
@@ -158,7 +157,7 @@ impl UserMutation {
             Ok(user) => {
                 let access_token = create_access_token_for_user(user.clone())?;
                 ctx.insert_http_header(
-                    SET_COOKIE,
+                    "Set-Cookie",
                     format_auth_cookie(auth::TokenType::Access, &access_token),
                 );
                 Ok(UpdateUsernameResult {
@@ -208,7 +207,7 @@ impl UserMutation {
             Ok(user) => {
                 let access_token = create_access_token_for_user(user.clone())?;
                 ctx.insert_http_header(
-                    SET_COOKIE,
+                    "Set-Cookie",
                     format_auth_cookie(auth::TokenType::Access, &access_token),
                 );
                 Ok(UpdateEmailResult { email: user.email })
@@ -308,8 +307,8 @@ impl UserMutation {
         .fetch_one(&db_pool)
         .await?;
 
-        ctx.insert_http_header(SET_COOKIE, format_auth_cookie(TokenType::Access, "null"));
-        ctx.insert_http_header(SET_COOKIE, format_auth_cookie(TokenType::Refresh, "null"));
+        ctx.insert_http_header("Set-Cookie", format_auth_cookie(TokenType::Access, "null"));
+        ctx.insert_http_header("Set-Cookie", format_auth_cookie(TokenType::Refresh, "null"));
 
         Ok(result.id.into())
     }

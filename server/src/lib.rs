@@ -1,22 +1,21 @@
 use async_graphql::extensions::ApolloTracing;
-use axum::{extract::Extension, routing::get, Router, Server};
+use axum::routing::get;
 use dotenv::dotenv;
 use graphql::{context::ApiContext, new_schema};
+use tokio::net::TcpListener;
 use tower_cookies::CookieManagerLayer;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
 mod cron;
-mod download;
 pub mod jobs;
 pub use cron::init_job_schedule;
-pub use download::*;
 pub use jobs::*;
 mod handlers;
 pub use handlers::{graphql_handler, graphql_playground};
 
-pub async fn app() -> Router {
+pub async fn run() {
     dotenv().ok();
 
     tracing_subscriber::fmt()
@@ -41,24 +40,16 @@ pub async fn app() -> Router {
 
     let schema = new_schema().data(context).extension(ApolloTracing).finish();
 
-    let graphql_router = axum::Router::new()
+    let app = axum::Router::new()
         .route("/", get(graphql_playground).post(graphql_handler))
-        .route_layer(CorsLayer::very_permissive())
-        .layer(Extension(schema))
+        .with_state(schema)
+        .layer(CorsLayer::very_permissive())
         .layer(CookieManagerLayer::new());
 
-    let rest_router = axum::Router::new()
-        .route("/datasets/:year/:dataset/download", get(dataset_handler))
-        .with_state(pool);
-
-    axum::Router::new().merge(graphql_router).merge(rest_router)
-}
-
-pub async fn run() {
     let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
     info!("GraphQL Playground live at http://localhost:{}", &port);
-    Server::bind(&format!("0.0.0.0:{}", port).parse().unwrap())
-        .serve(app().await.into_make_service())
+    let address = format!("0.0.0.0:{}", port);
+    axum::serve(TcpListener::bind(address).await.unwrap(), app)
         .await
         .unwrap();
 }

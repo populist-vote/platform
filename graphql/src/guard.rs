@@ -13,7 +13,6 @@ use uuid::Uuid;
 // }
 pub struct StaffOnly;
 
-#[async_trait::async_trait]
 impl Guard for StaffOnly {
     async fn check(&self, ctx: &Context<'_>) -> Result<(), async_graphql::Error> {
         if let Some(token_data) = ctx.data_unchecked::<Option<TokenData<AccessTokenClaims>>>() {
@@ -38,7 +37,6 @@ impl<'a> UserGuard<'a> {
     }
 }
 
-#[async_trait::async_trait]
 impl<'a> Guard for UserGuard<'a> {
     async fn check(&self, ctx: &Context<'_>) -> Result<()> {
         if let Some(token_data) = ctx.data_unchecked::<Option<TokenData<AccessTokenClaims>>>() {
@@ -63,7 +61,6 @@ impl<'a> OrganizationGuard<'a> {
     }
 }
 
-#[async_trait::async_trait]
 impl<'a> Guard for OrganizationGuard<'a> {
     async fn check(&self, ctx: &Context<'_>) -> Result<()> {
         if let Some(token_data) = ctx.data_unchecked::<Option<TokenData<AccessTokenClaims>>>() {

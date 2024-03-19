@@ -19,7 +19,7 @@ tokio = { version = "1.21.1", features = ["full"] }
 uuid = { version = "1.1.2", features = ["serde", "v4"] }
 serde = "1.0.130"
 serde_with = { version = "2.0.1", features = ["json"] }
-async-graphql = { version = "6.0.7", features = [
+async-graphql = { version = "7.0.3", features = [
     "chrono",
     "uuid",
     "dataloader",
