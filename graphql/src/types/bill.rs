@@ -1,4 +1,4 @@
-use crate::{context::ApiContext, types::ArgumentResult};
+use crate::{context::ApiContext, types::ArgumentResult, SessionID};
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use auth::AccessTokenClaims;
 use chrono::NaiveDate;
@@ -132,6 +132,8 @@ impl BillResult {
             .unwrap()
             .as_ref();
 
+        let session_id = ctx.data::<SessionID>();
+
         match token {
             Some(token) => {
                 let user_id = token.claims.sub;
@@ -147,7 +149,22 @@ impl BillResult {
                 let position = results.map(|r| r.position);
                 Ok(position)
             }
-            None => Ok(None),
+            None => match session_id {
+                Ok(session_id) => {
+                    let results = sqlx::query!(
+                            r#"
+                                SELECT position AS "position: ArgumentPosition" FROM bill_public_votes WHERE bill_id = $1 AND session_id = $2
+                            "#,
+                            Uuid::parse_str(&self.id).unwrap(),
+                            Uuid::parse_str(&session_id.to_string()).unwrap(),
+                        )
+                        .fetch_optional(&db_pool)
+                        .await?;
+                    let position = results.map(|r| r.position);
+                    Ok(position)
+                }
+                Err(_) => Ok(None),
+            },
         }
     }
 
