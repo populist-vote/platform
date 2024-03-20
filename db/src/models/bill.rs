@@ -574,32 +574,54 @@ impl Bill {
         bill_id: uuid::Uuid,
         user_id: Option<uuid::Uuid>,
         session_id: Option<uuid::Uuid>,
-        position: ArgumentPosition,
+        position: Option<ArgumentPosition>,
     ) -> Result<PublicVotes, sqlx::Error> {
         if user_id.is_some() {
-            let _upsert = sqlx::query!(
+            if let Some(position) = position {
+                sqlx::query!(
+                    r#"
+                    INSERT INTO bill_public_votes (bill_id, user_id, session_id, position) 
+                    VALUES ($1, $2, $3, $4) 
+                    ON CONFLICT (bill_id, user_id) DO UPDATE SET position = $4
+                "#,
+                    bill_id,
+                    user_id,
+                    session_id,
+                    position as ArgumentPosition,
+                )
+                .execute(db_pool)
+                .await?;
+            } else {
+                sqlx::query!(
+                    r#"
+                    DELETE FROM bill_public_votes WHERE bill_id = $1 AND user_id = $2
+                "#,
+                    bill_id,
+                    user_id
+                )
+                .execute(db_pool)
+                .await?;
+            }
+        } else if let Some(position) = position {
+            sqlx::query!(
                 r#"
-                INSERT INTO bill_public_votes (bill_id, user_id, session_id, position) 
-                VALUES ($1, $2, $3, $4) 
-                ON CONFLICT (bill_id, user_id) DO UPDATE SET position = $4
-            "#,
+                    INSERT INTO bill_public_votes (bill_id, session_id, position) 
+                    VALUES ($1, $2, $3) 
+                    ON CONFLICT (bill_id, session_id) DO UPDATE SET position = $3
+                "#,
                 bill_id,
-                user_id,
                 session_id,
                 position as ArgumentPosition,
             )
             .execute(db_pool)
             .await?;
         } else {
-            let _upsert = sqlx::query!(
+            sqlx::query!(
                 r#"
-                INSERT INTO bill_public_votes (bill_id, session_id, position) 
-                VALUES ($1, $2, $3) 
-                ON CONFLICT (bill_id, session_id) DO UPDATE SET position = $3
-            "#,
+                    DELETE FROM bill_public_votes WHERE bill_id = $1 AND session_id = $2
+                "#,
                 bill_id,
-                session_id,
-                position as ArgumentPosition,
+                session_id
             )
             .execute(db_pool)
             .await?;

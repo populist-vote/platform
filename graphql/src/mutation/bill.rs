@@ -58,7 +58,7 @@ impl BillMutation {
         &self,
         ctx: &Context<'_>,
         bill_id: ID,
-        position: ArgumentPosition,
+        position: Option<ArgumentPosition>,
     ) -> Result<PublicVotes> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let user = ctx.data::<Option<TokenData<AccessTokenClaims>>>()?;
@@ -72,8 +72,6 @@ impl BillMutation {
             position,
         )
         .await?;
-        // Maybe set a HTTP only cookie here to prevent multiple votes?
-        // Still gameable by clearing cookies but better than nothing
         Ok(record)
     }
 }
