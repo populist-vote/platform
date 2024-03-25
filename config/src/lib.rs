@@ -27,7 +27,7 @@ impl Default for Config {
             _ => "".to_string(),
         };
         let same_site = match environment {
-            Environment::Production => "Strict".to_string(),
+            Environment::Production => "None".to_string(),
             Environment::Staging => "None".to_string(),
             _ => "None".to_string(),
         };
