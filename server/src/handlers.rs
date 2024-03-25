@@ -110,7 +110,7 @@ pub async fn graphql_handler(
             let session_id = uuid::Uuid::new_v4().to_string();
             let mut cookie = Cookie::new("session_id", session_id);
             cookie.set_expires(time::OffsetDateTime::now_utc() + time::Duration::days(7));
-            cookie.set_same_site(SameSite::Strict);
+            cookie.set_same_site(SameSite::None);
             cookie.set_http_only(true);
             cookie.set_secure(true);
             cookies.add(cookie);
