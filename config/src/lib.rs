@@ -22,8 +22,8 @@ impl Default for Config {
             _ => Url::parse("http://localhost:3030").unwrap(),
         };
         let root_domain = match environment {
-            Environment::Production => "api.populist.us".to_string(),
-            Environment::Staging => "api.staging.populist.us".to_string(),
+            Environment::Production => "populist.us".to_string(),
+            Environment::Staging => "staging.populist.us".to_string(),
             _ => "".to_string(),
         };
         let same_site = match environment {
