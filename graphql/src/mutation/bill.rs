@@ -15,6 +15,13 @@ struct DeleteBillResult {
     id: String,
 }
 
+#[derive(SimpleObject)]
+struct UpsertBillPublicVoteResult {
+    bill_id: String,
+    position: Option<ArgumentPosition>,
+    public_votes: PublicVotes,
+}
+
 async fn handle_nested_arguments(
     db_pool: &Pool<Postgres>,
     bill_id: uuid::Uuid,
@@ -59,12 +66,12 @@ impl BillMutation {
         ctx: &Context<'_>,
         bill_id: ID,
         position: Option<ArgumentPosition>,
-    ) -> Result<PublicVotes> {
+    ) -> Result<UpsertBillPublicVoteResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let user = ctx.data::<Option<TokenData<AccessTokenClaims>>>()?;
         let user_id = user.as_ref().map(|u| u.claims.sub.to_string());
         let session_id = ctx.data::<SessionID>()?.clone();
-        let record = Bill::upsert_public_vote(
+        let public_votes = Bill::upsert_public_vote(
             &db_pool,
             uuid::Uuid::parse_str(&bill_id)?,
             user_id.map(|id| uuid::Uuid::parse_str(&id)).transpose()?,
@@ -72,6 +79,10 @@ impl BillMutation {
             position,
         )
         .await?;
-        Ok(record)
+        Ok(UpsertBillPublicVoteResult {
+            bill_id: bill_id.to_string(),
+            position,
+            public_votes,
+        })
     }
 }
