@@ -2,12 +2,13 @@ use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
 use auth::{jwt, AccessTokenClaims};
 use axum::{
-    extract::State,
+    extract::{ConnectInfo, State},
     http::HeaderMap,
     response::{self, IntoResponse},
 };
-use graphql::{PopulistSchema, SessionID};
+use graphql::{PopulistSchema, SessionData, SessionID};
 use jsonwebtoken::TokenData;
+use std::net::SocketAddr;
 use tower_cookies::{cookie::SameSite, Cookie, Cookies};
 
 async fn refresh_token_check(cookies: &Cookies) -> Option<TokenData<AccessTokenClaims>> {
@@ -69,6 +70,7 @@ async fn refresh_token_check(cookies: &Cookies) -> Option<TokenData<AccessTokenC
 }
 
 pub async fn graphql_handler(
+    ConnectInfo(ip): ConnectInfo<SocketAddr>,
     State(schema): State<PopulistSchema>,
     headers: HeaderMap,
     cookies: Cookies,
@@ -123,10 +125,12 @@ pub async fn graphql_handler(
         }
     };
 
+    let session_data = SessionData { session_id, ip };
+
     let req = req.into_inner();
 
     schema
-        .execute(req.data(token_data).data(session_id))
+        .execute(req.data(token_data).data(session_data))
         .await
         .into()
 }

@@ -2,6 +2,7 @@ use async_graphql::extensions::ApolloTracing;
 use axum::routing::get;
 use dotenv::dotenv;
 use graphql::{context::ApiContext, new_schema};
+use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tower_cookies::CookieManagerLayer;
 use tower_http::cors::CorsLayer;
@@ -49,7 +50,10 @@ pub async fn run() {
     let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
     info!("GraphQL Playground live at http://localhost:{}", &port);
     let address = format!("0.0.0.0:{}", port);
-    axum::serve(TcpListener::bind(address).await.unwrap(), app)
-        .await
-        .unwrap();
+    axum::serve(
+        TcpListener::bind(address).await.unwrap(),
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await
+    .unwrap();
 }

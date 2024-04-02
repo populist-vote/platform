@@ -1,4 +1,4 @@
-use crate::{context::ApiContext, guard::StaffOnly, is_admin, types::BillResult, SessionID};
+use crate::{context::ApiContext, guard::StaffOnly, is_admin, types::BillResult, SessionData};
 use async_graphql::*;
 use auth::AccessTokenClaims;
 use db::{
@@ -70,7 +70,9 @@ impl BillMutation {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let user = ctx.data::<Option<TokenData<AccessTokenClaims>>>()?;
         let user_id = user.as_ref().map(|u| u.claims.sub.to_string());
-        let session_id = ctx.data::<SessionID>()?.clone();
+        let session_data = ctx.data::<SessionData>()?.clone();
+        let session_id = session_data.session_id;
+
         let public_votes = Bill::upsert_public_vote(
             &db_pool,
             uuid::Uuid::parse_str(&bill_id)?,

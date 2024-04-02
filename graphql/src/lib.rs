@@ -6,6 +6,8 @@ pub mod relay;
 pub mod subscription;
 pub mod types;
 
+use std::net::SocketAddr;
+
 use crate::{mutation::Mutation, query::Query, types::Error};
 use async_graphql::extensions::Tracing;
 use async_graphql::{Context, Schema, SchemaBuilder, ID};
@@ -23,6 +25,11 @@ use url::Url;
 #[derive(Debug, Clone)]
 // Wrapper type representing a client session ID, used to track anonymous user sessions
 pub struct SessionID(String);
+#[derive(Debug, Clone)]
+pub struct SessionData {
+    pub session_id: SessionID,
+    pub ip: SocketAddr,
+}
 
 impl From<String> for SessionID {
     fn from(s: String) -> Self {
