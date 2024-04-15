@@ -168,6 +168,7 @@ impl AuthMutation {
                     password: input.password,
                     role: Some(Role::BASIC),
                     organization_id: None,
+                    confirmation_token: confirmation_token.clone(),
                 };
 
                 Ok(User::create(&db_pool, &new_user_input).await?)
@@ -219,7 +220,7 @@ impl AuthMutation {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
 
         // Look up user in db by ID, set confirmed_at time, nullify confirmation_token
-        let confirmed_user_result = sqlx::query!(
+        match sqlx::query!(
             r#"
             UPDATE populist_user 
             SET confirmed_at = now() AT TIME ZONE 'utc',
@@ -231,12 +232,10 @@ impl AuthMutation {
             confirmation_token
         )
         .fetch_one(&db_pool)
-        .await;
-
-        if let Ok(_confirmed) = confirmed_user_result {
-            Ok(true)
-        } else {
-            Err(Error::ConfirmationError)
+        .await
+        {
+            Ok(_confirmed) => Ok(true),
+            Err(err) => Err(Error::ConfirmationError),
         }
     }
 

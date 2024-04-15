@@ -51,6 +51,7 @@ pub struct CreateUserInput {
     pub password: String,
     pub role: Option<Role>,
     pub organization_id: Option<uuid::Uuid>,
+    pub confirmation_token: String,
 }
 
 #[derive(Serialize, Deserialize, InputObject, Debug)]
@@ -83,8 +84,8 @@ impl User {
             User,
             r#" 
             WITH ins_user AS (
-                INSERT INTO populist_user (email, username, password, role, organization_id)
-                VALUES (LOWER($1), LOWER($2), $3, $4, $5)
+                INSERT INTO populist_user (email, username, password, role, organization_id, confirmation_token)
+                VALUES (LOWER($1), LOWER($2), $3, $4, $5, $6)
                 RETURNING *
             ), 
             ins_profile AS (
@@ -97,7 +98,8 @@ impl User {
             input.username,
             hash,
             role as Role,
-            input.organization_id
+            input.organization_id,
+            input.confirmation_token
         ).fetch_one(db_pool).await?;
 
         Ok(record)
