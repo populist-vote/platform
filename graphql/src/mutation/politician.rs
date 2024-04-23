@@ -3,6 +3,7 @@ use crate::{
     guard::StaffOnly,
     is_admin,
     types::{Error, PoliticianResult},
+    upload_to_s3, File,
 };
 use async_graphql::*;
 use db::{
@@ -11,8 +12,9 @@ use db::{
     UpsertPoliticianInput,
 };
 use sqlx::{Pool, Postgres};
+use std::io::Read;
 
-use std::str::FromStr;
+use std::{fmt::format, str::FromStr};
 #[derive(Default)]
 pub struct PoliticianMutation;
 
@@ -177,5 +179,47 @@ impl PoliticianMutation {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         Politician::delete(&db_pool, uuid::Uuid::parse_str(&id)?).await?;
         Ok(DeletePoliticianResult { id })
+    }
+
+    #[graphql(guard = "StaffOnly", visible = "is_admin")]
+    async fn upload_avatar_picture(
+        &self,
+        ctx: &Context<'_>,
+        slug: String,
+        file: Upload,
+    ) -> Result<String> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+
+        let upload = file.value(ctx).unwrap();
+        let mut content = Vec::new();
+        let filename = format!("{}-400", slug);
+        let mimetype = upload.content_type.clone();
+
+        upload.into_read().read_to_end(&mut content).unwrap();
+        let file_info = File {
+            id: ID::from(uuid::Uuid::new_v4()),
+            filename,
+            content,
+            mimetype,
+        };
+        let url = upload_to_s3(file_info, "web-assets/politician-thumbnails".to_string()).await?;
+        // Append last modified date because s3 path will remain the same and we want browser to cache, but refresh the image
+        let url = format!("{}{}{}", url, "?lastmod=", chrono::Utc::now().timestamp());
+
+        let _query = sqlx::query!(
+            r#"
+            UPDATE politician SET assets = JSONB_SET(
+                JSONB_SET(assets, '{thumbnail_image_160}', $1, true),
+                '{thumbnail_image_400}', $1, true
+            )
+            WHERE slug = $2
+        "#,
+            url.clone() as String,
+            slug
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(url)
     }
 }
