@@ -5,7 +5,7 @@ use crate::{
     types::{Error, PoliticianResult},
     upload_to_s3, File,
 };
-use async_graphql::*;
+use async_graphql::{Error as GraphQLError, *};
 use db::{
     CreateOrConnectIssueTagInput, CreateOrConnectOrganizationInput, CreateOrConnectPoliticianInput,
     IssueTag, Organization, OrganizationIdentifier, Politician, PoliticianIdentifier,
@@ -206,7 +206,7 @@ impl PoliticianMutation {
         // Append last modified date because s3 path will remain the same and we want browser to cache, but refresh the image
         let url = format!("{}{}{}", url, "?lastmod=", chrono::Utc::now().timestamp());
 
-        let _query = sqlx::query!(
+        let result = sqlx::query!(
             r#"
             UPDATE politician SET assets = JSONB_SET(
                 JSONB_SET(assets, '{thumbnail_image_160}', $1, true),
@@ -218,8 +218,14 @@ impl PoliticianMutation {
             slug
         )
         .fetch_one(&db_pool)
-        .await?;
+        .await;
 
-        Ok(url)
+        match result {
+            Ok(_) => Ok(url),
+            Err(err) => {
+                tracing::error!("{}", err.to_string());
+                Err(GraphQLError::from(err))
+            }
+        }
     }
 }
