@@ -70,7 +70,11 @@ pub async fn upload_to_s3(file: File, directory: String) -> Result<Url, Error> {
     let accesss_key = std::env::var("AWS_ACCESS_KEY")?;
     let secret_key = std::env::var("AWS_SECRET_KEY")?;
     let bucket_name = std::env::var("AWS_S3_BUCKET")?;
-    let region = "us-east-2".parse().unwrap();
+    let region = match bucket_name.to_owned().as_str() {
+        "populist-platform" => "us-east-2".parse().unwrap(),
+        "populist-platform-staging" => "us-east-1".parse().unwrap(),
+        _ => "us-east-2".parse().unwrap(),
+    };
     let credentials = Credentials::new(
         Some(&accesss_key.to_owned()),
         Some(&secret_key.to_owned()),
@@ -79,6 +83,7 @@ pub async fn upload_to_s3(file: File, directory: String) -> Result<Url, Error> {
         None,
     )?;
     let bucket = Bucket::new(&bucket_name, region, credentials)?;
+    println!("bucket = {:?}", bucket);
     let mut headers = HeaderMap::new();
     headers.insert(
         HeaderName::from_static("content-type"),
