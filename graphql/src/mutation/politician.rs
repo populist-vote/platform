@@ -182,7 +182,7 @@ impl PoliticianMutation {
     }
 
     #[graphql(guard = "StaffOnly", visible = "is_admin")]
-    async fn upload_avatar_picture(
+    async fn upload_politician_picture(
         &self,
         ctx: &Context<'_>,
         slug: String,
@@ -208,13 +208,11 @@ impl PoliticianMutation {
 
         let result = sqlx::query!(
             r#"
-            UPDATE politician SET assets = JSONB_SET(
-                JSONB_SET(assets, '{thumbnail_image_160}', $1, true),
-                '{thumbnail_image_400}', $1, true
-            )
+            UPDATE politician SET assets = jsonb_set(jsonb_set(assets, '{thumbnailImage160}', $1::jsonb, true), '{thumbnailImage400}', $1::jsonb, true)
             WHERE slug = $2
+            RETURNING assets
         "#,
-            url.clone() as String,
+            serde_json::json!(url), // Convert url to JSON format
             slug
         )
         .fetch_one(&db_pool)
