@@ -1,5 +1,5 @@
 use crate::{
-    context::ApiContext,
+    context::{ApiContext, DataLoaders},
     guard::StaffOnly,
     is_admin,
     types::{Error, PoliticianResult},
@@ -7,14 +7,14 @@ use crate::{
 };
 use async_graphql::{Error as GraphQLError, *};
 use db::{
-    CreateOrConnectIssueTagInput, CreateOrConnectOrganizationInput, CreateOrConnectPoliticianInput,
-    IssueTag, Organization, OrganizationIdentifier, Politician, PoliticianIdentifier,
-    UpsertPoliticianInput,
+    loaders::politician::PoliticianSlug, models::enums::State, CreateOrConnectIssueTagInput,
+    CreateOrConnectOrganizationInput, CreateOrConnectPoliticianInput, IssueTag, Organization,
+    OrganizationIdentifier, Politician, PoliticianIdentifier, UpsertPoliticianInput,
 };
 use sqlx::{Pool, Postgres};
 use std::io::Read;
 
-use std::{fmt::format, str::FromStr};
+use std::str::FromStr;
 #[derive(Default)]
 pub struct PoliticianMutation;
 
@@ -206,11 +206,47 @@ impl PoliticianMutation {
         // Append last modified date because s3 path will remain the same and we want browser to cache, but refresh the image
         let url = format!("{}{}{}", url, "?lastmod=", chrono::Utc::now().timestamp());
 
-        let result = sqlx::query!(
+        let result = sqlx::query_as!(
+            Politician,
             r#"
             UPDATE politician SET assets = jsonb_set(jsonb_set(assets, '{thumbnailImage160}', $1::jsonb, true), '{thumbnailImage400}', $1::jsonb, true)
             WHERE slug = $2
-            RETURNING assets
+            RETURNING id,
+            slug,
+            first_name,
+            middle_name,
+            last_name,
+            suffix,
+            preferred_name,
+            biography,
+            biography_source,
+            home_state AS "home_state:State",
+            date_of_birth,
+            office_id,
+            upcoming_race_id,
+            thumbnail_image_url,
+            assets,
+            official_website_url,
+            campaign_website_url,
+            facebook_url,
+            twitter_url,
+            instagram_url,
+            youtube_url,
+            linkedin_url,
+            tiktok_url,
+            email,
+            phone,
+            party_id,
+            votesmart_candidate_id,
+            votesmart_candidate_bio,
+            votesmart_candidate_ratings,
+            legiscan_people_id,
+            crp_candidate_id,
+            fec_candidate_id,
+            race_wins,
+            race_losses,
+            created_at,
+            updated_at
         "#,
             serde_json::json!(url), // Convert url to JSON format
             slug
@@ -219,7 +255,13 @@ impl PoliticianMutation {
         .await;
 
         match result {
-            Ok(_) => Ok(url),
+            Ok(politician) => {
+                DataLoaders::new(db_pool)
+                    .politician_loader
+                    .feed_one(PoliticianSlug(slug), politician)
+                    .await;
+                Ok(url)
+            }
             Err(err) => {
                 tracing::error!("{}", err.to_string());
                 Err(GraphQLError::from(err))
