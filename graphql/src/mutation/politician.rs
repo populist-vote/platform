@@ -256,6 +256,7 @@ impl PoliticianMutation {
 
         match result {
             Ok(politician) => {
+                tracing::warn!("politician.assets = {:?}", politician.assets);
                 DataLoaders::new(db_pool)
                     .politician_loader
                     .feed_one(PoliticianSlug(slug), politician)

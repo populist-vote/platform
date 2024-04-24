@@ -83,15 +83,12 @@ pub async fn upload_to_s3(file: File, directory: String) -> Result<Url, Error> {
         None,
     )?;
     let bucket = Bucket::new(&bucket_name, region, credentials)?;
-    println!("bucket = {:?}", bucket);
     let mut headers = HeaderMap::new();
     headers.insert(
         HeaderName::from_static("content-type"),
         "multipart/form-data".parse().unwrap(),
     );
-
     let path = format!("{}/{}", directory, &file.filename);
-
     bucket
         .put_object_with_content_type(
             format!("{}/{}", directory, &file.filename),
@@ -100,7 +97,6 @@ pub async fn upload_to_s3(file: File, directory: String) -> Result<Url, Error> {
         )
         .await
         .unwrap();
-
     let bucket_base_url = std::env::var("S3_BUCKET_BASE_URL").expect("S3_BUCKET_BASE_URL not set");
     let image_url = Url::parse(format!("{}/{}", bucket_base_url, path).as_str()).unwrap();
 
