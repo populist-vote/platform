@@ -258,7 +258,8 @@ impl PoliticianMutation {
             Ok(politician) => {
                 DataLoaders::new(db_pool)
                     .politician_loader
-                    .clear::<PoliticianSlug>();
+                    .feed_one(PoliticianSlug(slug), politician)
+                    .await;
                 Ok(url)
             }
             Err(err) => {

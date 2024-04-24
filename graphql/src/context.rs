@@ -1,4 +1,4 @@
-use async_graphql::dataloader::{DataLoader, LruCache};
+use async_graphql::dataloader::{DataLoader, LruCache, NoCache};
 use db::loaders::{
     issue_tag::IssueTagLoader, office::OfficeLoader, organization::OrganizationLoader,
     politician::PoliticianLoader, race::RaceLoader,
@@ -12,7 +12,7 @@ pub struct ApiContext {
 
 pub struct DataLoaders {
     pub organization_loader: DataLoader<OrganizationLoader, LruCache>,
-    pub politician_loader: DataLoader<PoliticianLoader, LruCache>,
+    pub politician_loader: DataLoader<PoliticianLoader, NoCache>,
     pub office_loader: DataLoader<OfficeLoader, LruCache>,
     pub race_loader: DataLoader<RaceLoader, LruCache>,
     pub issue_tag_loader: DataLoader<IssueTagLoader, LruCache>,
@@ -29,7 +29,7 @@ impl DataLoaders {
             politician_loader: DataLoader::with_cache(
                 PoliticianLoader::new(pool.clone()),
                 tokio::task::spawn,
-                LruCache::new(64),
+                NoCache,
             ),
             office_loader: DataLoader::with_cache(
                 OfficeLoader::new(pool.clone()),
