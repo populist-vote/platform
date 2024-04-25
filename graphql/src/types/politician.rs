@@ -54,6 +54,8 @@ pub struct PoliticianResult {
     email: Option<String>,
     phone: Option<String>,
     crp_candidate_id: Option<String>,
+    fec_candidate_id: Option<String>,
+    legiscan_people_id: Option<i32>,
     votesmart_candidate_id: Option<i32>,
     votesmart_candidate_bio: Option<GetCandidateBioResponse>,
     votesmart_candidate_ratings: Vec<VsRating>,
@@ -617,6 +619,8 @@ impl From<Politician> for PoliticianResult {
             email: p.email,
             phone: p.phone,
             crp_candidate_id: p.crp_candidate_id,
+            fec_candidate_id: p.fec_candidate_id,
+            legiscan_people_id: p.legiscan_people_id,
             votesmart_candidate_id: p.votesmart_candidate_id,
             votesmart_candidate_bio: serde_json::from_value(p.votesmart_candidate_bio.to_owned())
                 .unwrap_or_default(),
