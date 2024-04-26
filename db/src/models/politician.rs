@@ -377,6 +377,19 @@ impl Politician {
         Ok(record)
     }
 
+    pub async fn remove_office(
+        db_pool: &PgPool,
+        politician_id: uuid::Uuid,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            "UPDATE politician SET office_id = NULL WHERE id = $1",
+            politician_id
+        )
+        .execute(db_pool)
+        .await?;
+        Ok(())
+    }
+
     pub async fn delete(db_pool: &PgPool, id: uuid::Uuid) -> Result<(), sqlx::Error> {
         sqlx::query!("DELETE FROM politician WHERE id=$1", id)
             .execute(db_pool)

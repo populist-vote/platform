@@ -206,6 +206,13 @@ impl PoliticianMutation {
     }
 
     #[graphql(guard = "StaffOnly", visible = "is_admin")]
+    async fn remove_politician_office(&self, ctx: &Context<'_>, id: ID) -> Result<bool> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        Politician::remove_office(&db_pool, uuid::Uuid::parse_str(&id)?).await?;
+        Ok(true)
+    }
+
+    #[graphql(guard = "StaffOnly", visible = "is_admin")]
     async fn delete_politician(
         &self,
         ctx: &Context<'_>,
