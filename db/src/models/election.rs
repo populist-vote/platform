@@ -118,10 +118,16 @@ impl Election {
                 NULLIF(ts_rank(to_tsvector(title), websearch_to_tsquery($1::text)), 0) rank
                 WHERE query @@ document
                 AND ($2::state IS NULL OR e.state = $2)
+                AND (
+                    ($3::political_scope = 'federal' AND e.state IS NULL) OR
+                    ($3::political_scope = 'state' AND e.state IS NOT NULL) OR
+                    ($3::political_scope = 'local' AND e.municipality IS NOT NULL)
+                  )
                 ORDER BY election_date ASC
             "#,
             filter.query,
             filter.state as Option<State>,
+            filter.political_scope as Option<PoliticalScope>,
         )
         .fetch_all(db_pool)
         .await?;
