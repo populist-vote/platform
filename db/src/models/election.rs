@@ -2,7 +2,7 @@ use async_graphql::InputObject;
 use sqlx::postgres::PgPool;
 use sqlx::FromRow;
 
-use super::enums::{PoliticalScope, State};
+use super::enums::State;
 
 #[derive(FromRow, Debug, Clone)]
 pub struct Election {
@@ -31,7 +31,7 @@ pub struct UpsertElectionInput {
 pub struct ElectionFilter {
     pub query: Option<String>,
     pub state: Option<State>,
-    pub political_scope: Option<PoliticalScope>,
+    pub year: Option<i32>,
     pub municipality: Option<String>,
     pub slug: Option<String>,
     pub title: Option<String>,
@@ -110,24 +110,31 @@ impl Election {
         let records = sqlx::query_as!(
             Election,
             r#"
-                SELECT id, slug, title, description, state AS "state:State", municipality, election_date FROM election e,
-                to_tsvector(
-                    title || ' ' || COALESCE(description, '') || ' ' || COALESCE(municipality, '') || ' ' || COALESCE(state::text, '')
-                ) document,
-                websearch_to_tsquery($1::text) query,
-                NULLIF(ts_rank(to_tsvector(title), websearch_to_tsquery($1::text)), 0) rank
-                WHERE query @@ document
-                AND ($2::state IS NULL OR e.state = $2)
-                AND (
-                    ($3::political_scope = 'federal' AND e.state IS NULL) OR
-                    ($3::political_scope = 'state' AND e.state IS NOT NULL) OR
-                    ($3::political_scope = 'local' AND e.municipality IS NOT NULL)
-                  )
-                ORDER BY election_date ASC
+            SELECT
+                id,
+                slug,
+                title,
+                description,
+                state AS "state:State",
+                municipality,
+                election_date
+            FROM
+                election e,
+                to_tsvector(title || ' ' || COALESCE(description, '') || ' ' || COALESCE(municipality, '') || ' ' || COALESCE(state::text, '')) document,
+                websearch_to_tsquery($1) query,
+                NULLIF(ts_rank(to_tsvector(title), websearch_to_tsquery ($1::text)), 0)
+                rank
+            WHERE ($3::int IS NULL OR EXTRACT(YEAR FROM e.election_date) = $3)
+            AND (
+                (($1::text = '') IS NOT FALSE OR query @@ document)
+                AND (($2::state IS NULL OR e.state = $2)
+                OR (state IS NULL AND municipality IS NULL)) -- Always return national elections
+            )
+            ORDER BY election_date ASC
             "#,
             filter.query,
             filter.state as Option<State>,
-            filter.political_scope as Option<PoliticalScope>,
+            filter.year,
         )
         .fetch_all(db_pool)
         .await?;
