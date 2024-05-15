@@ -2,7 +2,7 @@ use crate::context::ApiContext;
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use db::{DateTime, Question, QuestionSubmission, Respondent, Sentiment};
 
-use super::SubmissionCountByDateResult;
+use super::{PoliticianResult, SubmissionCountByDateResult};
 
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
@@ -21,6 +21,7 @@ pub struct QuestionResult {
 pub struct QuestionSubmissionResult {
     id: ID,
     respondent_id: Option<ID>,
+    candidate_id: Option<ID>,
     response: String,
     sentiment: Option<Sentiment>,
     created_at: DateTime,
@@ -62,6 +63,7 @@ impl QuestionResult {
                   id,
                   question_id,
                   respondent_id,
+                  candidate_id,
                   response,
                   sentiment AS "sentiment: Sentiment",
                   created_at,
@@ -183,6 +185,21 @@ impl QuestionSubmissionResult {
             Ok(None)
         }
     }
+
+    async fn politician(&self, ctx: &Context<'_>) -> Result<Option<PoliticianResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        if let Some(candidate_id) = self.candidate_id.clone() {
+            let politician = db::Politician::find_by_id(
+                &db_pool,
+                uuid::Uuid::parse_str(candidate_id.as_str()).unwrap(),
+            )
+            .await?;
+
+            Ok(Some(politician.into()))
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 impl From<Question> for QuestionResult {
@@ -204,6 +221,7 @@ impl From<QuestionSubmission> for QuestionSubmissionResult {
         Self {
             id: q.id.into(),
             respondent_id: q.respondent_id.map(|id| id.into()),
+            candidate_id: q.candidate_id.map(|id| id.into()),
             response: q.response,
             sentiment: q.sentiment,
             created_at: q.created_at,

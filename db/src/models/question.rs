@@ -21,6 +21,7 @@ pub struct QuestionSubmission {
     pub id: uuid::Uuid,
     pub question_id: uuid::Uuid,
     pub respondent_id: Option<uuid::Uuid>,
+    pub candidate_id: Option<uuid::Uuid>,
     pub response: String,
     pub sentiment: Option<Sentiment>,
     pub created_at: DateTime,
@@ -42,6 +43,7 @@ pub struct UpsertQuestionInput {
 pub struct UpsertQuestionSubmissionInput {
     pub id: Option<uuid::Uuid>,
     pub question_id: uuid::Uuid,
+    pub candidate_id: Option<Uuid>,
     pub respondent_id: Option<Uuid>,
     pub response: String,
     pub sentiment: Option<Sentiment>,
@@ -132,6 +134,7 @@ impl QuestionSubmission {
                     id,
                     question_id,
                     respondent_id,
+                    candidate_id,
                     response,
                     sentiment
                 ) VALUES (
@@ -139,15 +142,17 @@ impl QuestionSubmission {
                     $2,
                     $3,
                     $4,
-                    $5
+                    $5,
+                    $6
                 ) ON CONFLICT (id) DO UPDATE SET
-                    response = $4,
-                    sentiment = $5,
+                    response = $5,
+                    sentiment = $6,
                     updated_at = now()
                 RETURNING 
                     id,
                     question_id,
                     respondent_id,
+                    candidate_id,
                     response,
                     sentiment AS "sentiment:Sentiment",
                     created_at,
@@ -156,6 +161,7 @@ impl QuestionSubmission {
             id,
             input.question_id,
             input.respondent_id,
+            input.candidate_id,
             input.response,
             input.sentiment as Option<Sentiment>
         )
