@@ -37,6 +37,7 @@ pub struct UpsertQuestionInput {
     pub response_placeholder_text: Option<String>,
     pub allow_anonymous_responses: Option<bool>,
     pub embed_id: Option<uuid::Uuid>,
+    pub candidate_guide_id: Option<uuid::Uuid>,
 }
 
 #[derive(FromRow, Debug, Clone, InputObject)]
@@ -100,6 +101,21 @@ impl Question {
         )
         .fetch_one(db_pool)
         .await?;
+
+        if (input.candidate_guide_id).is_some() {
+            sqlx::query!(
+                r#"
+                INSERT INTO candidate_guide_questions (question_id, candidate_guide_id)
+                VALUES ($1, $2)
+                ON CONFLICT (candidate_guide_id, question_id) DO NOTHING
+            "#,
+                id,
+                input.candidate_guide_id
+            )
+            .execute(db_pool)
+            .await?;
+        }
+
         Ok(question)
     }
 
