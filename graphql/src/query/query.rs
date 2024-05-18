@@ -2,9 +2,10 @@ use async_graphql::{MergedObject, Object};
 
 use super::{
     admin::AdminQuery, auth::AuthQuery, ballot_measure::BallotMeasureQuery, bill::BillQuery,
-    election::ElectionQuery, embed::EmbedQuery, issue_tag::IssueTagQuery, office::OfficeQuery,
-    organization::OrganizationQuery, politician::PoliticianQuery, race::RaceQuery,
-    respondent::RespondentQuery, user::UserQuery, voting_guide::VotingGuideQuery,
+    candidate_guide::CandidateGuideQuery, election::ElectionQuery, embed::EmbedQuery,
+    issue_tag::IssueTagQuery, office::OfficeQuery, organization::OrganizationQuery,
+    politician::PoliticianQuery, race::RaceQuery, respondent::RespondentQuery, user::UserQuery,
+    voting_guide::VotingGuideQuery,
 };
 
 #[derive(Default)]
@@ -23,6 +24,7 @@ pub struct Query(
     AdminQuery,
     BallotMeasureQuery,
     BillQuery,
+    CandidateGuideQuery,
     ElectionQuery,
     EmbedQuery,
     IssueTagQuery,
