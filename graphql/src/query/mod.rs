@@ -2,6 +2,7 @@ mod admin;
 mod auth;
 mod ballot_measure;
 mod bill;
+mod candidate_guide;
 mod election;
 mod embed;
 mod issue_tag;

@@ -59,4 +59,27 @@ impl CandidateGuide {
 
         Ok(())
     }
+
+    pub async fn find_by_id(db_pool: &PgPool, id: Uuid) -> Result<Self, sqlx::Error> {
+        let record = sqlx::query_as!(
+            CandidateGuide,
+            r#"
+                SELECT
+                    id,
+                    name,
+                    race_id,
+                    created_at,
+                    created_by,
+                    updated_at,
+                    organization_id
+                FROM candidate_guide
+                WHERE id = $1
+            "#,
+            id,
+        )
+        .fetch_one(db_pool)
+        .await?;
+
+        Ok(record)
+    }
 }
