@@ -189,6 +189,7 @@ impl Race {
                     race_type,
                     vote_type,
                     party,
+                    party_id,
                     race.state,
                     race.description,
                     ballotpedia_link,
