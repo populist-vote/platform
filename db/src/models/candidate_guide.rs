@@ -20,6 +20,7 @@ pub struct UpsertCandidateGuideInput {
     pub id: Option<Uuid>,
     pub name: Option<String>,
     pub organization_id: Option<Uuid>,
+    pub user_id: Option<Uuid>,
 }
 
 impl CandidateGuide {
@@ -33,14 +34,16 @@ impl CandidateGuide {
             CandidateGuide,
             r#"
                 INSERT INTO candidate_guide
-                (id, name)
-                VALUES ($1, $2)
+                (id, name, organization_id, created_by)
+                VALUES ($1, $2, $3, $4)
                 ON CONFLICT (id) DO UPDATE SET
                     name = COALESCE($2, candidate_guide.name)
                 RETURNING id, name, created_at, created_by, updated_at, organization_id, race_id
             "#,
             id,
             input.name,
+            input.organization_id,
+            input.user_id,
         )
         .fetch_one(db_pool)
         .await?;

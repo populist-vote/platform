@@ -19,6 +19,7 @@ impl CandidateGuideMutation {
         let user = ctx.data::<Option<TokenData<AccessTokenClaims>>>().unwrap();
         let organization_id = user.as_ref().unwrap().claims.organization_id.unwrap();
         let input = UpsertCandidateGuideInput {
+            user_id: Some(user.as_ref().unwrap().claims.sub),
             organization_id: Some(organization_id),
             ..input
         };

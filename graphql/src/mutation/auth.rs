@@ -235,7 +235,7 @@ impl AuthMutation {
         .await
         {
             Ok(_confirmed) => Ok(true),
-            Err(err) => Err(Error::ConfirmationError),
+            Err(_err) => Err(Error::ConfirmationError),
         }
     }
 
