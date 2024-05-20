@@ -1,5 +1,7 @@
 use async_graphql::{Context, Object, Result};
+use auth::AccessTokenClaims;
 use db::models::candidate_guide::{CandidateGuide, UpsertCandidateGuideInput};
+use jsonwebtoken::TokenData;
 
 use crate::{context::ApiContext, types::CandidateGuideResult};
 
@@ -14,6 +16,12 @@ impl CandidateGuideMutation {
         input: UpsertCandidateGuideInput,
     ) -> Result<CandidateGuideResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let user = ctx.data::<Option<TokenData<AccessTokenClaims>>>().unwrap();
+        let organization_id = user.as_ref().unwrap().claims.organization_id.unwrap();
+        let input = UpsertCandidateGuideInput {
+            organization_id: Some(organization_id),
+            ..input
+        };
         let upsert = CandidateGuide::upsert(&db_pool, &input).await?;
         Ok(upsert.into())
     }

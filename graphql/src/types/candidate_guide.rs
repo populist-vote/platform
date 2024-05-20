@@ -12,6 +12,8 @@ pub struct CandidateGuideResult {
     race_id: ID,
     organization_id: ID,
     name: Option<String>,
+    created_at: chrono::DateTime<chrono::Utc>,
+    updated_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[ComplexObject]
@@ -69,6 +71,8 @@ impl From<CandidateGuide> for CandidateGuideResult {
             organization_id: ID::from(c.organization_id),
             race_id: c.race_id.map(ID::from).unwrap_or_default(),
             name: c.name,
+            created_at: c.created_at,
+            updated_at: c.updated_at,
         }
     }
 }

@@ -19,6 +19,7 @@ pub struct CandidateGuide {
 pub struct UpsertCandidateGuideInput {
     pub id: Option<Uuid>,
     pub name: Option<String>,
+    pub organization_id: Option<Uuid>,
 }
 
 impl CandidateGuide {
@@ -27,6 +28,7 @@ impl CandidateGuide {
         input: &UpsertCandidateGuideInput,
     ) -> Result<Self, sqlx::Error> {
         let id = input.id.unwrap_or_else(uuid::Uuid::new_v4);
+
         let record = sqlx::query_as!(
             CandidateGuide,
             r#"
