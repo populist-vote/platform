@@ -1,12 +1,13 @@
 use crate::is_admin;
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
-use db::{DateTime, Embed, EmbedType, UserWithProfile};
+use db::{models::candidate_guide::CandidateGuide, DateTime, Embed, EmbedType, UserWithProfile};
 use serde_json::Value as JSON;
 
 use crate::context::ApiContext;
 
 use super::{
-    BillResult, Error, PoliticianResult, PollResult, QuestionResult, RaceResult, UserResult,
+    BillResult, CandidateGuideResult, Error, PoliticianResult, PollResult, QuestionResult,
+    RaceResult, UserResult,
 };
 
 #[derive(SimpleObject, Clone, Debug)]
@@ -161,6 +162,18 @@ impl EmbedResult {
             let poll_id = uuid::Uuid::parse_str(poll_id)?;
             let db_pool = ctx.data::<ApiContext>()?.pool.clone();
             let record = db::Poll::find_by_id(&db_pool, poll_id).await?;
+            Ok(Some(record.into()))
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn candidate_guide(&self, ctx: &Context<'_>) -> Result<Option<CandidateGuideResult>> {
+        let candidate_guide_id = self.attributes["candidateGuideId"].as_str();
+        if let Some(candidate_guide_id) = candidate_guide_id {
+            let candidate_guide_id = uuid::Uuid::parse_str(candidate_guide_id)?;
+            let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+            let record = CandidateGuide::find_by_id(&db_pool, candidate_guide_id).await?;
             Ok(Some(record.into()))
         } else {
             Ok(None)
