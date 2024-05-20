@@ -4,8 +4,8 @@ use super::{
     admin::AdminQuery, auth::AuthQuery, ballot_measure::BallotMeasureQuery, bill::BillQuery,
     candidate_guide::CandidateGuideQuery, election::ElectionQuery, embed::EmbedQuery,
     issue_tag::IssueTagQuery, office::OfficeQuery, organization::OrganizationQuery,
-    politician::PoliticianQuery, race::RaceQuery, respondent::RespondentQuery, user::UserQuery,
-    voting_guide::VotingGuideQuery,
+    politician::PoliticianQuery, question::QuestionQuery, race::RaceQuery,
+    respondent::RespondentQuery, user::UserQuery, voting_guide::VotingGuideQuery,
 };
 
 #[derive(Default)]
@@ -37,4 +37,5 @@ pub struct Query(
     AuthQuery,
     VotingGuideQuery,
     UserQuery,
+    QuestionQuery,
 );

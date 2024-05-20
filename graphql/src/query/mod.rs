@@ -9,6 +9,7 @@ mod issue_tag;
 mod office;
 mod organization;
 mod politician;
+mod question;
 mod race;
 mod respondent;
 mod user;
