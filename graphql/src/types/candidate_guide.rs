@@ -22,7 +22,7 @@ impl CandidateGuideResult {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let race = db::Race::find_by_id(
             &db_pool,
-            uuid::Uuid::parse_str(&self.race_id.as_str()).unwrap(),
+            uuid::Uuid::parse_str(self.race_id.as_str()).unwrap(),
         )
         .await?;
         Ok(race.into())
@@ -32,7 +32,7 @@ impl CandidateGuideResult {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let organization = db::Organization::find_by_id(
             &db_pool,
-            uuid::Uuid::parse_str(&self.organization_id.as_str()).unwrap(),
+            uuid::Uuid::parse_str(self.organization_id.as_str()).unwrap(),
         )
         .await?;
         Ok(organization.into())

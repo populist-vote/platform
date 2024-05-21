@@ -15,7 +15,7 @@ impl CandidateGuideQuery {
     ) -> Result<CandidateGuideResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record =
-            CandidateGuide::find_by_id(&db_pool, uuid::Uuid::parse_str(&id.as_str()).unwrap())
+            CandidateGuide::find_by_id(&db_pool, uuid::Uuid::parse_str(id.as_str()).unwrap())
                 .await?;
         Ok(record.into())
     }
@@ -28,7 +28,7 @@ impl CandidateGuideQuery {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let records = CandidateGuide::find_by_organization(
             &db_pool,
-            uuid::Uuid::parse_str(&organization_id.as_str()).unwrap(),
+            uuid::Uuid::parse_str(organization_id.as_str()).unwrap(),
         )
         .await?;
         Ok(records.into_iter().map(|r| r.into()).collect())
