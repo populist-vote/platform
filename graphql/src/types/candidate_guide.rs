@@ -1,5 +1,12 @@
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
-use db::{models::candidate_guide::CandidateGuide, Question};
+use db::{
+    models::{
+        candidate_guide::CandidateGuide,
+        enums::{RaceType, State, VoteType},
+        race::Race,
+    },
+    Question,
+};
 
 use crate::context::ApiContext;
 
@@ -9,7 +16,6 @@ use super::{OrganizationResult, QuestionResult, RaceResult};
 #[graphql(complex)]
 pub struct CandidateGuideResult {
     id: ID,
-    race_id: ID,
     organization_id: ID,
     name: Option<String>,
     created_at: chrono::DateTime<chrono::Utc>,
@@ -18,14 +24,36 @@ pub struct CandidateGuideResult {
 
 #[ComplexObject]
 impl CandidateGuideResult {
-    async fn race(&self, ctx: &Context<'_>) -> Result<RaceResult> {
+    async fn races(&self, ctx: &Context<'_>) -> Result<Vec<RaceResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let race = db::Race::find_by_id(
-            &db_pool,
-            uuid::Uuid::parse_str(self.race_id.as_str()).unwrap(),
-        )
+        let races = sqlx::query_as!(Race, r#"
+            SELECT 
+            r.id,
+            r.slug,
+            r.title,
+            r.office_id,
+            r.race_type AS "race_type:RaceType", 
+            r.vote_type AS "vote_type:VoteType", 
+            r.party_id, 
+            r.state AS "state:State",
+            r.description,
+            r.ballotpedia_link,
+            r.early_voting_begins_date,
+            r.winner_ids,
+            r.total_votes,
+            r.official_website,
+            r.election_id,
+            r.is_special_election,
+            r.num_elect,
+            r.created_at,
+            r.updated_at 
+            FROM candidate_guide_races JOIN race r ON r.id = candidate_guide_races.race_id WHERE candidate_guide_id = $1
+        "#,
+        uuid::Uuid::parse_str(self.id.as_str()).unwrap())
+        .fetch_all(&db_pool)
         .await?;
-        Ok(race.into())
+
+        Ok(races.into_iter().map(RaceResult::from).collect())
     }
 
     async fn organization(&self, ctx: &Context<'_>) -> Result<OrganizationResult> {
@@ -69,7 +97,6 @@ impl From<CandidateGuide> for CandidateGuideResult {
         Self {
             id: ID::from(c.id),
             organization_id: ID::from(c.organization_id),
-            race_id: c.race_id.map(ID::from).unwrap_or_default(),
             name: c.name,
             created_at: c.created_at,
             updated_at: c.updated_at,

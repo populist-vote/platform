@@ -9,7 +9,6 @@ pub struct CandidateGuide {
     pub id: Uuid,
     pub organization_id: Uuid,
     pub name: Option<String>,
-    pub race_id: Option<Uuid>,
     pub created_by: Uuid,
     pub created_at: DateTime,
     pub updated_at: DateTime,
@@ -21,6 +20,7 @@ pub struct UpsertCandidateGuideInput {
     pub name: Option<String>,
     pub organization_id: Option<Uuid>,
     pub user_id: Option<Uuid>,
+    pub race_ids: Option<Vec<Uuid>>,
 }
 
 impl CandidateGuide {
@@ -38,7 +38,7 @@ impl CandidateGuide {
                 VALUES ($1, $2, $3, $4)
                 ON CONFLICT (id) DO UPDATE SET
                     name = COALESCE($2, candidate_guide.name)
-                RETURNING id, name, created_at, created_by, updated_at, organization_id, race_id
+                RETURNING id, name, created_at, created_by, updated_at, organization_id
             "#,
             id,
             input.name,
@@ -47,6 +47,21 @@ impl CandidateGuide {
         )
         .fetch_one(db_pool)
         .await?;
+
+        if let Some(race_ids) = &input.race_ids {
+            if !race_ids.is_empty() {
+                sqlx::query!(
+                    r#"
+                        INSERT INTO candidate_guide_races (candidate_guide_id, race_id)
+                        SELECT $1, unnest($2::uuid[])
+                    "#,
+                    id,
+                    race_ids,
+                )
+                .execute(db_pool)
+                .await?;
+            }
+        }
 
         Ok(record)
     }
@@ -72,7 +87,6 @@ impl CandidateGuide {
                 SELECT
                     id,
                     name,
-                    race_id,
                     created_at,
                     created_by,
                     updated_at,
@@ -98,7 +112,6 @@ impl CandidateGuide {
                 SELECT
                     id,
                     name,
-                    race_id,
                     created_at,
                     created_by,
                     updated_at,
