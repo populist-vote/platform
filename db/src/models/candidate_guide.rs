@@ -87,4 +87,30 @@ impl CandidateGuide {
 
         Ok(record)
     }
+
+    pub async fn find_by_organization(
+        db_pool: &PgPool,
+        organization_id: Uuid,
+    ) -> Result<Vec<Self>, sqlx::Error> {
+        let records = sqlx::query_as!(
+            CandidateGuide,
+            r#"
+                SELECT
+                    id,
+                    name,
+                    race_id,
+                    created_at,
+                    created_by,
+                    updated_at,
+                    organization_id
+                FROM candidate_guide
+                WHERE organization_id = $1
+            "#,
+            organization_id,
+        )
+        .fetch_all(db_pool)
+        .await?;
+
+        Ok(records)
+    }
 }
