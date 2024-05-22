@@ -45,6 +45,20 @@ impl PoliticianQuery {
         Ok(politician.map(PoliticianResult::from))
     }
 
+    async fn politician_by_intake_token(
+        &self,
+        ctx: &Context<'_>,
+        token: String,
+    ) -> Result<Option<PoliticianResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let politician = Politician::find_by_intake_token(&db_pool, token).await;
+        if let Ok(politician) = politician {
+            Ok(Some(PoliticianResult::from(politician)))
+        } else {
+            Ok(None)
+        }
+    }
+
     #[allow(clippy::needless_collect)]
     async fn politicians(
         &self,

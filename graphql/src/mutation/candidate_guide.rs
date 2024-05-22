@@ -1,9 +1,8 @@
-use async_graphql::{Context, Object, Result};
-use auth::AccessTokenClaims;
+use crate::{context::ApiContext, types::CandidateGuideResult};
+use async_graphql::{Context, Object, Result, ID};
+use auth::{create_random_token, AccessTokenClaims};
 use db::models::candidate_guide::{CandidateGuide, UpsertCandidateGuideInput};
 use jsonwebtoken::TokenData;
-
-use crate::{context::ApiContext, types::CandidateGuideResult};
 
 #[derive(Default)]
 pub struct CandidateGuideMutation;
@@ -25,6 +24,34 @@ impl CandidateGuideMutation {
         };
         let upsert = CandidateGuide::upsert(&db_pool, &input).await?;
         Ok(upsert.into())
+    }
+
+    async fn generate_intake_token_link(
+        &self,
+        ctx: &Context<'_>,
+        candidate_guide_id: ID,
+        politician_id: ID,
+    ) -> Result<String> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let token = create_random_token().unwrap();
+        sqlx::query!(
+            r#"
+            UPDATE politician SET intake_token = $1 WHERE id = $2
+        "#,
+            token,
+            uuid::Uuid::parse_str(&politician_id)?,
+        )
+        .execute(&db_pool)
+        .await?;
+
+        let url = format!(
+            "{}/intakes/candidate-guides/{}?token={}",
+            config::Config::default().web_app_url,
+            candidate_guide_id.to_string(),
+            token
+        );
+
+        Ok(url)
     }
 
     async fn delete_candidate_guide(&self, ctx: &Context<'_>, id: String) -> Result<bool> {

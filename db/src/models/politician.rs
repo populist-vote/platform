@@ -541,6 +541,59 @@ impl Politician {
         Ok(record)
     }
 
+    pub async fn find_by_intake_token(
+        db_pool: &PgPool,
+        token: String,
+    ) -> Result<Self, sqlx::Error> {
+        let record = sqlx::query_as!(
+            Politician,
+            r#"
+                SELECT id,
+                        slug,
+                        first_name,
+                        middle_name,
+                        last_name,
+                        suffix,
+                        preferred_name,
+                        biography,
+                        biography_source,
+                        home_state AS "home_state:State",
+                        date_of_birth,
+                        office_id,
+                        upcoming_race_id,
+                        thumbnail_image_url,
+                        assets,
+                        official_website_url,
+                        campaign_website_url,
+                        facebook_url,
+                        twitter_url,
+                        instagram_url,
+                        youtube_url,
+                        linkedin_url,
+                        tiktok_url,
+                        email,
+                        phone,
+                        party_id,
+                        votesmart_candidate_id,
+                        votesmart_candidate_bio,
+                        votesmart_candidate_ratings,
+                        legiscan_people_id,
+                        crp_candidate_id,
+                        fec_candidate_id,
+                        race_wins,
+                        race_losses,
+                        created_at,
+                        updated_at FROM politician
+                WHERE intake_token = $1
+            "#,
+            token
+        )
+        .fetch_one(db_pool)
+        .await?;
+
+        Ok(record)
+    }
+
     pub async fn filter(
         db_pool: &PgPool,
         filter: &PoliticianFilter,
