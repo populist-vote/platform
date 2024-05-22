@@ -55,7 +55,7 @@ impl QuestionMutation {
             question_submission_input.response
         );
         let request = CreateCompletionRequestArgs::default()
-            .model("text-davinci-003")
+            .model("gpt-3.5-turbo-instruct")
             .prompt(prompt)
             .max_tokens(40_u16)
             .build()?;
