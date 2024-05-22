@@ -26,6 +26,27 @@ impl CandidateGuideMutation {
         Ok(upsert.into())
     }
 
+    async fn remove_candidate_guide_race(
+        &self,
+        ctx: &Context<'_>,
+        candidate_guide_id: ID,
+        race_id: ID,
+    ) -> Result<bool> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let result = sqlx::query!(
+            r#"DELETE FROM candidate_guide_races
+            WHERE candidate_guide_id = $1 AND
+            race_id = $2
+        "#,
+            uuid::Uuid::parse_str(candidate_guide_id.as_str())?,
+            uuid::Uuid::parse_str(race_id.as_str())?,
+        )
+        .execute(&db_pool)
+        .await?;
+
+        Ok(result.rows_affected() == 1)
+    }
+
     async fn generate_intake_token_link(
         &self,
         ctx: &Context<'_>,
