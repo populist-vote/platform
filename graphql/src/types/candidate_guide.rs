@@ -2,10 +2,10 @@ use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use db::{
     models::{
         candidate_guide::CandidateGuide,
-        enums::{EmbedType, RaceType, State, VoteType},
+        enums::{RaceType, State, VoteType},
         race::Race,
     },
-    Embed, Question,
+    Embed, EmbedType, Question,
 };
 
 use crate::context::ApiContext;
