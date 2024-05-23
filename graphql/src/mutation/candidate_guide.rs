@@ -1,7 +1,10 @@
 use crate::{context::ApiContext, types::CandidateGuideResult};
 use async_graphql::{Context, Object, Result, ID};
 use auth::{create_random_token, AccessTokenClaims};
-use db::models::candidate_guide::{CandidateGuide, UpsertCandidateGuideInput};
+use db::{
+    models::candidate_guide::{CandidateGuide, UpsertCandidateGuideInput},
+    EmbedType, UpsertEmbedInput,
+};
 use jsonwebtoken::TokenData;
 
 #[derive(Default)]
@@ -23,6 +26,27 @@ impl CandidateGuideMutation {
             ..input
         };
         let upsert = CandidateGuide::upsert(&db_pool, &input).await?;
+
+        // Created embeds of type candidate_guide for each race associated with the candidate guide
+        if input.race_ids.is_some() {
+            for race_id in input.race_ids.unwrap() {
+                let embed_input = UpsertEmbedInput {
+                    id: Some(upsert.id),
+                    organization_id: Some(organization_id),
+                    name: upsert.name.clone(),
+                    description: None,
+                    populist_url: None,
+                    embed_type: Some(EmbedType::CandidateGuide),
+                    attributes: Some(serde_json::json!({
+                        "candidate_guide_id": upsert.id,
+                        "race_id": race_id
+                    })),
+                };
+                let updated_by = user.as_ref().unwrap().claims.sub;
+                db::models::embed::Embed::upsert(&db_pool, &embed_input, &updated_by).await?;
+            }
+        }
+
         Ok(upsert.into())
     }
 

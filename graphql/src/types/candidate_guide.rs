@@ -2,15 +2,15 @@ use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use db::{
     models::{
         candidate_guide::CandidateGuide,
-        enums::{RaceType, State, VoteType},
+        enums::{EmbedType, RaceType, State, VoteType},
         race::Race,
     },
-    Question,
+    Embed, Question,
 };
 
 use crate::context::ApiContext;
 
-use super::{OrganizationResult, QuestionResult, RaceResult};
+use super::{EmbedResult, OrganizationResult, QuestionResult, RaceResult};
 
 #[derive(SimpleObject)]
 #[graphql(complex)]
@@ -24,9 +24,40 @@ pub struct CandidateGuideResult {
 
 #[ComplexObject]
 impl CandidateGuideResult {
+    async fn embeds(&self, ctx: &Context<'_>) -> Result<Vec<EmbedResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let embeds = sqlx::query_as!(
+            Embed,
+            r#"
+            SELECT 
+                id,
+                organization_id,
+                name,
+                description,
+                populist_url,
+                embed_type AS "embed_type:EmbedType",
+                attributes,
+                created_at,
+                created_by,
+                updated_at,
+                updated_by
+                FROM embed
+            WHERE embed_type = 'candidate_guide' 
+            AND attributes->>'candidate_guide_id' = $1
+        "#,
+            self.id.as_str()
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        Ok(embeds.into_iter().map(EmbedResult::from).collect())
+    }
+
     async fn races(&self, ctx: &Context<'_>) -> Result<Vec<RaceResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let races = sqlx::query_as!(Race, r#"
+        let races = sqlx::query_as!(
+            Race,
+            r#"
             SELECT 
             r.id,
             r.slug,
@@ -47,9 +78,12 @@ impl CandidateGuideResult {
             r.num_elect,
             r.created_at,
             r.updated_at 
-            FROM candidate_guide_races JOIN race r ON r.id = candidate_guide_races.race_id WHERE candidate_guide_id = $1
+            FROM candidate_guide_races 
+            JOIN race r ON r.id = candidate_guide_races.race_id 
+            WHERE candidate_guide_id = $1
         "#,
-        uuid::Uuid::parse_str(self.id.as_str()).unwrap())
+            uuid::Uuid::parse_str(self.id.as_str()).unwrap()
+        )
         .fetch_all(&db_pool)
         .await?;
 
