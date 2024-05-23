@@ -34,7 +34,6 @@ impl CandidateGuideResult {
                 organization_id,
                 name,
                 description,
-                populist_url,
                 embed_type AS "embed_type:EmbedType",
                 attributes,
                 created_at,

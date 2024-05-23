@@ -35,7 +35,6 @@ impl CandidateGuideMutation {
                     organization_id: Some(organization_id),
                     name: upsert.name.clone(),
                     description: None,
-                    populist_url: None,
                     embed_type: Some(EmbedType::CandidateGuide),
                     attributes: Some(serde_json::json!({
                         "candidate_guide_id": upsert.id,

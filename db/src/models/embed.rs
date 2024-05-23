@@ -21,7 +21,6 @@ pub struct Embed {
     pub organization_id: uuid::Uuid,
     pub name: String,
     pub description: Option<String>,
-    pub populist_url: String,
     pub attributes: JSON,
     pub embed_type: EmbedType,
     pub created_at: chrono::DateTime<chrono::Utc>,
@@ -37,7 +36,6 @@ pub struct UpsertEmbedInput {
     pub embed_type: Option<EmbedType>,
     pub name: Option<String>,
     pub description: Option<String>,
-    pub populist_url: Option<String>,
     pub attributes: Option<JSON>,
 }
 
@@ -61,7 +59,6 @@ impl Embed {
                 organization_id,
                 name,
                 description,
-                populist_url,
                 embed_type,
                 attributes,
                 created_by,
@@ -74,22 +71,19 @@ impl Embed {
                 $5,
                 $6,
                 $7,
-                $8,
-                $9
+                $8
             )
             ON CONFLICT (id) DO UPDATE SET
                 organization_id = $2,
                 name = $3,
                 description = $4,
-                populist_url = $5,
-                embed_type = $6,
-                attributes = $7,
-                updated_by = $9
+                embed_type = $5,
+                attributes = $6,
+                updated_by = $7
             RETURNING id,
                 organization_id,
                 name,
                 description,
-                populist_url,
                 embed_type AS "embed_type:EmbedType",
                 attributes,
                 created_by,
@@ -101,7 +95,6 @@ impl Embed {
             input.organization_id,
             input.name,
             input.description,
-            input.populist_url,
             input.embed_type as Option<EmbedType>,
             input.attributes,
             created_by,
@@ -135,7 +128,6 @@ impl Embed {
                 organization_id,
                 name,
                 description,
-                populist_url,
                 embed_type AS "embed_type:EmbedType",
                 attributes,
                 created_by,
@@ -165,7 +157,6 @@ impl Embed {
                 organization_id,
                 name,
                 description,
-                populist_url,
                 embed_type AS "embed_type:EmbedType",
                 attributes,
                 created_by,
