@@ -31,7 +31,7 @@ impl CandidateGuideMutation {
         if input.race_ids.is_some() {
             for race_id in input.race_ids.unwrap() {
                 let embed_input = UpsertEmbedInput {
-                    id: Some(upsert.id),
+                    id: None,
                     organization_id: Some(organization_id),
                     name: upsert.name.clone(),
                     description: None,
