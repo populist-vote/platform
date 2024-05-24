@@ -37,8 +37,8 @@ impl CandidateGuideMutation {
                     description: None,
                     embed_type: Some(EmbedType::CandidateGuide),
                     attributes: Some(serde_json::json!({
-                        "candidate_guide_id": upsert.id,
-                        "race_id": race_id
+                        "candidateGuideId": upsert.id,
+                        "raceId": race_id
                     })),
                 };
                 let updated_by = user.as_ref().unwrap().claims.sub;
@@ -64,8 +64,8 @@ impl CandidateGuideMutation {
                     AND race_id = $2
             ) DELETE FROM embed
             WHERE embed_type = 'candidate_guide'
-                AND attributes ->> 'candidate_guide_id' = $1::text
-                AND attributes ->> 'race_id' = $2::text
+                AND attributes ->> 'candidateGuideId' = $1::text
+                AND attributes ->> 'raceId' = $2::text
         "#,
             uuid::Uuid::parse_str(candidate_guide_id.as_str())?,
             uuid::Uuid::parse_str(race_id.as_str())?,
@@ -73,7 +73,7 @@ impl CandidateGuideMutation {
         .execute(&db_pool)
         .await?;
 
-        Ok(result.rows_affected() == 1)
+        Ok(result.rows_affected() == 2)
     }
 
     async fn generate_intake_token_link(
