@@ -42,12 +42,14 @@ impl CandidateGuideResult {
                 updated_by
                 FROM embed
             WHERE embed_type = 'candidate_guide' 
-            AND attributes->>'candidate_guide_id' = $1
+            AND attributes->>'candidateGuideId' = $1
         "#,
             self.id.as_str()
         )
         .fetch_all(&db_pool)
         .await?;
+
+        tracing::warn!("embeds: {:?}", embeds);
 
         Ok(embeds.into_iter().map(EmbedResult::from).collect())
     }
