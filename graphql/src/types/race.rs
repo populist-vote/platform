@@ -7,9 +7,10 @@ use db::{
         politician::Politician,
         race::Race,
     },
+    Election,
 };
 
-use super::{PoliticalParty, PoliticianResult};
+use super::{ElectionResult, PoliticalParty, PoliticianResult};
 
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
@@ -233,6 +234,9 @@ impl RaceResult {
         })
     }
 
+    #[deprecated(
+        note = "This field is deprecated and will be removed in future versions. Use election.electionDate instead."
+    )]
     async fn election_date(&self, ctx: &Context<'_>) -> Result<Option<chrono::NaiveDate>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query!(
@@ -246,6 +250,21 @@ impl RaceResult {
         .await?;
 
         Ok(record.map(|r| r.election_date))
+    }
+
+    async fn election(&self, ctx: &Context<'_>) -> Result<ElectionResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let record = sqlx::query_as!(
+            Election,
+            r#"
+            SELECT id, slug, title, description, state AS "state:State", municipality, election_date 
+            FROM election WHERE id = $1"#,
+            uuid::Uuid::parse_str(self.election_id.clone().unwrap_or_default().as_str()).unwrap()
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(record.into())
     }
 }
 
