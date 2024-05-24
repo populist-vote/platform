@@ -57,9 +57,15 @@ impl CandidateGuideMutation {
     ) -> Result<bool> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let result = sqlx::query!(
-            r#"DELETE FROM candidate_guide_races
-            WHERE candidate_guide_id = $1 AND
-            race_id = $2
+            r#"
+            WITH deleted_guide_race AS (
+                DELETE FROM candidate_guide_races
+                WHERE candidate_guide_id = $1
+                    AND race_id = $2
+            ) DELETE FROM embed
+            WHERE embed_type = 'candidate_guide'
+                AND attributes ->> 'candidate_guide_id' = $1::text
+                AND attributes ->> 'race_id' = $2::text
         "#,
             uuid::Uuid::parse_str(candidate_guide_id.as_str())?,
             uuid::Uuid::parse_str(race_id.as_str())?,
