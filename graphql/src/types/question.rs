@@ -1,8 +1,8 @@
 use crate::context::ApiContext;
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
-use db::{DateTime, Question, QuestionSubmission, Respondent, Sentiment};
+use db::{DateTime, IssueTag, Question, QuestionSubmission, Respondent, Sentiment};
 
-use super::{PoliticianResult, SubmissionCountByDateResult};
+use super::{IssueTagResult, PoliticianResult, SubmissionCountByDateResult};
 
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
@@ -54,6 +54,23 @@ pub struct SentimentCountResult {
 
 #[ComplexObject]
 impl QuestionResult {
+    async fn issue_tags(&self, ctx: &Context<'_>) -> Result<Vec<IssueTagResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let issue_tags = sqlx::query_as!(IssueTag,
+            r#"
+                SELECT it.id, slug, name, description, category, it.created_at, it.updated_at FROM issue_tag it
+                JOIN question_issue_tags
+                ON question_issue_tags.issue_tag_id = it.id
+                WHERE question_issue_tags.question_id = $1
+            "#,
+            uuid::Uuid::parse_str(self.id.as_str()).unwrap(),
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        Ok(issue_tags.into_iter().map(|it| it.into()).collect())
+    }
+
     async fn submissions(&self, ctx: &Context<'_>) -> Result<Vec<QuestionSubmissionResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let submissions = sqlx::query_as!(
