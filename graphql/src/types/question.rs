@@ -96,6 +96,39 @@ impl QuestionResult {
         Ok(submissions.into_iter().map(|s| s.into()).collect())
     }
 
+    async fn submissions_by_race(
+        &self,
+        ctx: &Context<'_>,
+        race_id: ID,
+    ) -> Result<Vec<QuestionSubmissionResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let submissions = sqlx::query_as!(
+            QuestionSubmission,
+            r#"
+                SELECT
+                  qs.id,
+                  qs.question_id,
+                  qs.respondent_id,
+                  qs.candidate_id,
+                  qs.response,
+                  qs.sentiment AS "sentiment: Sentiment",
+                  qs.created_at,
+                  qs.updated_at
+                FROM question_submission qs
+                JOIN race_candidates rc
+                ON qs.candidate_id = rc.candidate_id
+                WHERE qs.question_id = $1
+                AND rc.race_id = $2
+            "#,
+            uuid::Uuid::parse_str(self.id.as_str()).unwrap(),
+            uuid::Uuid::parse_str(race_id.as_str()).unwrap(),
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        Ok(submissions.into_iter().map(|s| s.into()).collect())
+    }
+
     async fn submission_count_by_date(
         &self,
         ctx: &Context<'_>,
