@@ -104,6 +104,21 @@ impl CandidateGuideMutation {
         Ok(url)
     }
 
+    // async fn download_csv_data_by_race(
+    //     &self,
+    //     ctx: &Context<'_>,
+    //     candidate_guide_id: ID,
+    //     race_id: ID,
+    // ) -> Result<String> {
+    //     let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+    //     let result = sqlx::query!(
+    //         r#"
+    //         "#
+    //     )
+    //     .fetch_all(&db_pool)
+    //     .await?;
+    // }
+
     async fn delete_candidate_guide(&self, ctx: &Context<'_>, id: String) -> Result<bool> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         CandidateGuide::delete(&db_pool, uuid::Uuid::parse_str(id.as_str()).unwrap()).await?;
