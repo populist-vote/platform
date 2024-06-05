@@ -119,7 +119,7 @@ impl CandidateGuideMutation {
     //     .await?;
     // }
 
-    async fn delete_candidate_guide(&self, ctx: &Context<'_>, id: String) -> Result<bool> {
+    async fn delete_candidate_guide(&self, ctx: &Context<'_>, id: ID) -> Result<bool> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         CandidateGuide::delete(&db_pool, uuid::Uuid::parse_str(id.as_str()).unwrap()).await?;
         Ok(true)

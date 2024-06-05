@@ -69,8 +69,12 @@ impl CandidateGuide {
     pub async fn delete(db_pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"
-                DELETE FROM candidate_guide
-                WHERE id = $1
+                WITH deleted_guide AS (
+                    DELETE FROM candidate_guide
+                    WHERE id = $1
+                )
+                DELETE FROM embed
+                WHERE attributes->>'candidate_guide_id' = $1::text
             "#,
             id,
         )
