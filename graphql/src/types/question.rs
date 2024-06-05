@@ -132,7 +132,7 @@ impl QuestionResult {
     async fn submissions_by_candidate_id(
         &self,
         ctx: &Context<'_>,
-        politician_id: ID,
+        candidate_id: ID,
     ) -> Result<Vec<QuestionSubmissionResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let submissions = sqlx::query_as!(
@@ -152,7 +152,7 @@ impl QuestionResult {
                 AND qs.candidate_id = $2
             "#,
             uuid::Uuid::parse_str(self.id.as_str()).unwrap(),
-            uuid::Uuid::parse_str(politician_id.as_str()).unwrap(),
+            uuid::Uuid::parse_str(candidate_id.as_str()).unwrap(),
         )
         .fetch_all(&db_pool)
         .await?;

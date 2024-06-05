@@ -260,11 +260,13 @@ impl Race {
             political_scope = input
                 .political_scope
                 .map(|s| format!("'{}'", s))
-                .unwrap_or_else(|| "NULL".to_string()),
+                .unwrap_or_else(|| "NULL".to_string())
+                .to_lowercase(),
             election_scope = input
                 .election_scope
                 .map(|s| format!("'{}'", s))
-                .unwrap_or_else(|| "NULL".to_string()),
+                .unwrap_or_else(|| "NULL".to_string())
+                .to_lowercase(),
             office_titles = office_titles
         );
 
