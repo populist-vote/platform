@@ -14,7 +14,7 @@ sqlx = { version = "0.7", features = [
     "uuid",
     "json",
 ] }
-legiscan = { path = "../legiscan" }
+legiscan = { path = "../legiscan", features = ["async-graphql"] }
 tokio = { version = "1.21.1", features = ["full"] }
 uuid = { version = "1.1.2", features = ["serde", "v4"] }
 serde = "1.0.130"

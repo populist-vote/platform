@@ -1,4 +1,4 @@
-use scrapers::mn_sos_local::get_mn_sos_candidate_filings_local;
+use scrapers::mn_sos_local_candidate_filings::get_mn_sos_candidate_filings_local;
 
 #[tokio::main]
 async fn main() {
