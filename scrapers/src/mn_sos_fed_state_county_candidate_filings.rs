@@ -91,7 +91,7 @@ static PRIMARY_HEADER_NAMES: [&str; 21] = [
     "office_id_2",
     "office_title",
     "county_id",
-    "unknown",
+    "mn_party_id",
     "party_abbreviation",
     "residence_street_address",
     "residence_city",
