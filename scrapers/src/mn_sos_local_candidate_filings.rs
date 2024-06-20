@@ -60,16 +60,14 @@ pub async fn get_mn_sos_candidate_filings_local() -> Result<(), Box<dyn Error>> 
 
     // Write CSV data to Postgres table in p6t_state_mn schema
 
-    let _csv_data_as_string = String::from_utf8(csv_string)?;
+    let csv_data_as_string = String::from_utf8(csv_string)?;
 
-    let _copy_query =
-        r#"COPY p6t_state_mn.mn_candidate_filings_local_2023 FROM STDIN WITH CSV HEADER;"#;
     let pool = db::pool().await;
-    sqlx::query!(r#"DROP TABLE IF EXISTS p6t_state_mn.mn_candidate_filings_local_2023 CASCADE;"#)
+    sqlx::query!(r#"DROP TABLE IF EXISTS p6t_state_mn.mn_candidate_filings_local_2024 CASCADE;"#)
         .execute(&pool.connection)
         .await?;
     let create_table_query = format!(
-        "CREATE TABLE p6t_state_mn.mn_candidate_filings_local_2023 (
+        "CREATE TABLE p6t_state_mn.mn_candidate_filings_local_2024 (
             {}
         );",
         HEADER_NAMES
@@ -82,9 +80,12 @@ pub async fn get_mn_sos_candidate_filings_local() -> Result<(), Box<dyn Error>> 
     sqlx::query(&create_table_query)
         .execute(&pool.connection)
         .await?;
-    // let mut tx = pool.connection.copy_in_raw(copy_query).await?;
-    // tx.send(csv_data_as_string.as_bytes()).await?;
-    // tx.finish().await?;
+    let mut tx = pool.connection.acquire().await?;
+    let copy_query =
+        r#"COPY p6t_state_mn.mn_candidate_filings_local_2024 FROM STDIN WITH CSV HEADER;"#;
+    let mut tx_copy = tx.copy_in_raw(copy_query).await?;
+    tx_copy.send(csv_data_as_string.as_bytes()).await?;
+    tx_copy.finish().await?;
     driver.quit().await?;
     Ok(())
 }
