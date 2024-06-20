@@ -1,6 +1,6 @@
 use super::RaceResult;
 use crate::{context::ApiContext, Error};
-use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
+use async_graphql::{ComplexObject, Context, InputObject, Result, SimpleObject, ID};
 use auth::AccessTokenClaims;
 use db::{
     models::enums::{RaceType, State, VoteType},
@@ -19,10 +19,20 @@ pub struct ElectionResult {
     election_date: chrono::NaiveDate,
 }
 
+#[derive(InputObject, Default, Debug)]
+pub struct ElectionRaceFilter {
+    state: Option<State>,
+}
+
 #[ComplexObject]
 impl ElectionResult {
-    async fn races(&self, ctx: &Context<'_>) -> Result<Vec<RaceResult>> {
+    async fn races(
+        &self,
+        ctx: &Context<'_>,
+        filter: Option<ElectionRaceFilter>,
+    ) -> Result<Vec<RaceResult>> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+        let filter = filter.unwrap_or_default();
         let records = sqlx::query_as!(
             Race,
             r#"
@@ -50,9 +60,12 @@ impl ElectionResult {
                 race
             WHERE
                 election_id = $1
+                AND ($2::state IS NULL OR state = $2)
             ORDER BY title DESC
+            LIMIT 25
             "#,
-            uuid::Uuid::parse_str(&self.id).unwrap()
+            uuid::Uuid::parse_str(&self.id).unwrap(),
+            filter.state as Option<State>
         )
         .fetch_all(&db_pool)
         .await
