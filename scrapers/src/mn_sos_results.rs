@@ -85,12 +85,12 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
     for (name, url) in results_file_paths {
         let response = client.get(url).send().await?.text().await?;
         let data = convert_text_to_csv(name, &response);
-        let _csv_data_as_string = String::from_utf8(data.clone())?;
+        let csv_data_as_string = String::from_utf8(data.clone())?;
         let table_name = format!(
             "p6t_state_mn.results_2023_{}",
             name.replace(' ', "_").to_lowercase()
         );
-        let _copy_query = format!("COPY {} FROM STDIN WITH CSV HEADER;", table_name);
+        let copy_query = format!("COPY {} FROM STDIN WITH CSV HEADER;", table_name);
         let pool = db::pool().await;
         sqlx::query(format!(r#"DROP TABLE IF EXISTS {} CASCADE;"#, table_name).as_str())
             .execute(&pool.connection)
@@ -101,10 +101,11 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
         sqlx::query(&create_table_query)
             .execute(&pool.connection)
             .await?;
-        // let mut tx = pool.connection.copy_in_raw(&copy_query).await?;
-        // tx.send(csv_data_as_string.as_bytes()).await?;
-        // tx.finish().await?;
-        // _write_to_csv_file(name, &data)?;
+        let mut tx = pool.connection.acquire().await?;
+        let mut tx_copy = tx.copy_in_raw(&copy_query).await?;
+        tx_copy.send(csv_data_as_string.as_bytes()).await?;
+        tx_copy.finish().await?;
+        _write_to_csv_file(name, &data)?;
     }
     update_public_schema_with_results().await;
 
