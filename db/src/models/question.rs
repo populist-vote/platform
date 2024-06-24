@@ -38,6 +38,7 @@ pub struct UpsertQuestionInput {
     pub allow_anonymous_responses: Option<bool>,
     pub embed_id: Option<uuid::Uuid>,
     pub candidate_guide_id: Option<uuid::Uuid>,
+    pub issue_tag_ids: Option<Vec<uuid::Uuid>>,
 }
 
 #[derive(FromRow, Debug, Clone, InputObject)]
@@ -114,6 +115,22 @@ impl Question {
             )
             .execute(db_pool)
             .await?;
+        }
+
+        if (input.issue_tag_ids).is_some() {
+            for issue_tag_id in input.issue_tag_ids.as_ref().unwrap() {
+                sqlx::query!(
+                    r#"
+                    INSERT INTO question_issue_tags (question_id, issue_tag_id)
+                    VALUES ($1, $2)
+                    ON CONFLICT (question_id, issue_tag_id) DO NOTHING
+                "#,
+                    id,
+                    issue_tag_id
+                )
+                .execute(db_pool)
+                .await?;
+            }
         }
 
         Ok(question)
