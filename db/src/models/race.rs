@@ -211,43 +211,35 @@ impl Race {
                     o.hospital_district
                 FROM
                     race
-                LEFT JOIN office o ON office_id = o.id
-                JOIN election e ON election_id = e.id
-                JOIN us_states s ON race.state = s.code,
-                to_tsvector(
-                    COALESCE(race.title, '') || ' ' ||
-                    COALESCE(e.election_date::text, '') || ' ' ||
-                    COALESCE(o.title, '') || ' ' ||
-                    COALESCE(o.state::text, '') || ' ' ||
-                    COALESCE(s.name::text, '') || ' ' ||
-                    COALESCE(o.county, '') || ' ' ||
-                    COALESCE(o.municipality, '') || ' ' ||
-                    COALESCE(o.district, '') || ' ' ||
-                    COALESCE(o.school_district, '') || ' ' ||
-                    COALESCE(o.hospital_district, '')
-                ) document,
-                websearch_to_tsquery({query}::text) query,
-                NULLIF(ts_rank(to_tsvector(race.title), query), 0) AS rank_race_title,
-                NULLIF(ts_rank(to_tsvector(e.election_date::text), query), 0) AS rank_election_date,
-                NULLIF(ts_rank(to_tsvector(o.title), query), 0) AS rank_office_title,
-                NULLIF(ts_rank(to_tsvector(o.state::text), query), 0) AS rank_office_state_code,
-                NULLIF(ts_rank(to_tsvector(s.name::text), query), 0) AS rank_office_state_full,
-                NULLIF(ts_rank(to_tsvector(o.county), query), 0) AS rank_office_county,
-                NULLIF(ts_rank(to_tsvector(o.municipality), query), 0) AS rank_office_municipality,
-                NULLIF(ts_rank(to_tsvector(o.district), query), 0) AS rank_office_district,
-                NULLIF(ts_rank(to_tsvector(o.school_district), query), 0) AS rank_office_school_district,
-                NULLIF(ts_rank(to_tsvector(o.hospital_district), query), 0) AS rank_office_hospital_district
-                WHERE (({query}::text = '') IS NOT FALSE OR query @@ document)
-                AND ({state} IS NULL
-                    OR race.state = {state})
-                AND({political_scope} IS NULL
-                    OR o.political_scope = {political_scope})
-                AND({election_scope} IS NULL
-                    OR o.election_scope = {election_scope})
-                AND(({office_titles}) IS NULL
-                    OR o.title IN ({office_titles}))
-                ORDER BY e.election_date DESC, o.priority ASC, o.district ASC, o.title DESC
-                LIMIT 50
+                LEFT JOIN office o ON race.office_id = o.id
+                LEFT JOIN election e ON race.election_id = e.id
+                LEFT JOIN us_states s ON race.state = s.code
+                WHERE 
+                    (
+                        ({query} = '' OR websearch_to_tsquery({query}) @@ to_tsvector(
+                            COALESCE(race.title, '') || ' ' ||
+                            COALESCE(e.election_date::text, '') || ' ' ||
+                            COALESCE(o.title, '') || ' ' ||
+                            COALESCE(o.state::text, '') || ' ' ||
+                            COALESCE(s.name::text, '') || ' ' ||
+                            COALESCE(o.county, '') || ' ' ||
+                            COALESCE(o.municipality, '') || ' ' ||
+                            COALESCE(o.district, '') || ' ' ||
+                            COALESCE(o.school_district, '') || ' ' ||
+                            COALESCE(o.hospital_district, '')
+                        ))
+                    )
+                    AND ({state} IS NULL OR race.state = {state})
+                    AND ({political_scope} IS NULL OR o.political_scope = {political_scope})
+                    AND ({election_scope} IS NULL OR o.election_scope = {election_scope})
+                    AND ({office_titles} IS NULL OR o.title IN ({office_titles}))
+                ORDER BY 
+                    e.election_date DESC, 
+                    o.priority ASC, 
+                    o.district ASC, 
+                    o.title DESC
+                LIMIT 50;
+
                 "#,
             query = input
                 .query
