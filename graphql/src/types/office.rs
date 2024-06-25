@@ -97,6 +97,18 @@ fn compute_office_subtitle(office: &Office, use_short: bool) -> Option<String> {
                 None
             }
         }
+        (ElectionScope::District, PoliticalScope::Local, Some(District::County)) => {
+            if let (Some(county), Some(state), Some(district)) =
+                (&office.county, &office.state, &office.district)
+            {
+                Some(format!(
+                    "{} County, {} - District {}",
+                    county, state, district
+                ))
+            } else {
+                None
+            }
+        }
         (ElectionScope::District, PoliticalScope::Local, Some(District::City)) => {
             if let (Some(muni), Some(state), Some(district)) =
                 (&office.municipality, &office.state, &office.district)
