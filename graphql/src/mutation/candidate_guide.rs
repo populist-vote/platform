@@ -106,7 +106,8 @@ impl CandidateGuideMutation {
 
     // We should expand this fn to allow clients to download fine grained data for these
     // candidate guides, intakes, etc.
-    async fn download_all_candidate_guide_data_as_csv_string(
+    /// Download all candidate guide data as a CSV string, must be converted to CSV file by client
+    async fn download_all_candidate_guide_data(
         &self,
         ctx: &Context<'_>,
         candidate_guide_id: ID,
@@ -141,19 +142,24 @@ impl CandidateGuideMutation {
                 UPDATE
                     politician
                 SET
-                    intake_token = encode(gen_random_bytes(32),
-                        'hex')
+                    intake_token = encode(gen_random_bytes(32), 'hex')
                 FROM
                     politicians
                 WHERE
                     politician.id = politicians.politician_id
+                RETURNING politician.id, politician.intake_token
             )
             SELECT
-                r.*, p.full_name AS candidate_name, p.id AS politician_id, p.intake_token as intake_token
+                r.*, 
+                p.full_name AS candidate_name, 
+                p.id AS politician_id, 
+                upit.intake_token as intake_token
             FROM
                 races r
                 JOIN race_candidates rc ON rc.race_id = r.populist_race_id
                 JOIN politician p ON rc.candidate_id = p.id
+                JOIN update_politician_intake_tokens upit ON p.id = upit.id;
+
         "#,
             uuid::Uuid::parse_str(&candidate_guide_id)?
         )
