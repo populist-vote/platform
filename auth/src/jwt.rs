@@ -134,7 +134,7 @@ pub fn validate_refresh_token(token: &str) -> Result<TokenData<RefreshTokenClaim
 pub fn create_random_token() -> Result<String, Error> {
     let rand_string: String = thread_rng()
         .sample_iter(&Alphanumeric)
-        .take(30)
+        .take(32)
         .map(char::from)
         .collect();
 

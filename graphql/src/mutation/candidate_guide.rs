@@ -104,20 +104,79 @@ impl CandidateGuideMutation {
         Ok(url)
     }
 
-    // async fn download_csv_data_by_race(
-    //     &self,
-    //     ctx: &Context<'_>,
-    //     candidate_guide_id: ID,
-    //     race_id: ID,
-    // ) -> Result<String> {
-    //     let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-    //     let result = sqlx::query!(
-    //         r#"
-    //         "#
-    //     )
-    //     .fetch_all(&db_pool)
-    //     .await?;
-    // }
+    // We should expand this fn to allow clients to download fine grained data for these
+    // candidate guides, intakes, etc.
+    async fn download_all_candidate_guide_data_as_csv_string(
+        &self,
+        ctx: &Context<'_>,
+        candidate_guide_id: ID,
+        race_id: Option<ID>,
+    ) -> Result<String> {
+        // TODO: use optional race title to filter down records
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records = sqlx::query!(
+            r#"
+            WITH races AS (
+                SELECT
+                    id AS populist_race_id,
+                    title AS race_title
+                FROM
+                    race
+                    JOIN candidate_guide_races cgr ON cgr.race_id = race.id
+                WHERE
+                    cgr.candidate_guide_id = $1
+            ),
+            politicians AS (
+                SELECT
+                    r.*,
+                    p.full_name AS candidate_name,
+                    p.id AS politician_id,
+                    p.intake_token
+                FROM
+                    races r
+                    JOIN race_candidates rc ON rc.race_id = r.populist_race_id
+                    JOIN politician p ON rc.candidate_id = p.id
+            ),
+            update_politician_intake_tokens AS (
+                UPDATE
+                    politician
+                SET
+                    intake_token = encode(gen_random_bytes(32),
+                        'hex')
+                FROM
+                    politicians
+                WHERE
+                    politician.id = politicians.politician_id
+            )
+            SELECT
+                r.*, p.full_name AS candidate_name, p.id AS politician_id, p.intake_token as intake_token
+            FROM
+                races r
+                JOIN race_candidates rc ON rc.race_id = r.populist_race_id
+                JOIN politician p ON rc.candidate_id = p.id
+        "#,
+            uuid::Uuid::parse_str(&candidate_guide_id)?
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        let mut csv_string = Vec::new();
+        {
+            let mut wtr = csv::Writer::from_writer(&mut csv_string);
+            wtr.write_record(&["race_title", "candidate_name", "form_link"])?;
+            for record in records {
+                let form_link = format!(
+                    "{}/intakes/candidate-guides/{}?token={}",
+                    config::Config::default().web_app_url,
+                    candidate_guide_id.to_string(),
+                    record.intake_token.unwrap_or_default()
+                );
+                wtr.write_record(&[record.race_title, record.candidate_name, form_link])?;
+            }
+            wtr.flush()?;
+        }
+        Ok(String::from_utf8(csv_string).unwrap())
+    }
 
     async fn delete_candidate_guide(&self, ctx: &Context<'_>, id: ID) -> Result<bool> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
