@@ -74,11 +74,11 @@ impl Embed {
                 $8
             )
             ON CONFLICT (id) DO UPDATE SET
-                organization_id = COALESCE($2, embed.organization_id),
-                name = COALESCE($3, embed.name),
-                description = COALESCE($4, embed.description),
-                embed_type = COALESCE($5, embed.embed_type),
-                attributes = COALESCE($6, embed.attributes),
+                organization_id = COALESCE($2, EXCLUDED.organization_id),
+                name = COALESCE($3, EXCLUDED.name),
+                description = COALESCE($4, EXCLUDED.description),
+                embed_type = COALESCE($5, EXCLUDED.embed_type),
+                attributes = COALESCE($6, EXCLUDED.attributes),
                 updated_by = $7
             RETURNING id,
                 organization_id,
