@@ -188,6 +188,32 @@ impl CandidateGuideMutation {
         Ok(String::from_utf8(csv_string).unwrap())
     }
 
+    /// Locks all existing question submissions for a candidate guide — new responses are still permitted
+    async fn lock_all_candidate_quide_questions(
+        &self,
+        ctx: &Context<'_>,
+        candidate_guide_id: ID,
+    ) -> Result<bool> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let result = sqlx::query!(
+            r#"
+            UPDATE question_submission
+            SET is_locked = true
+            WHERE id IN (
+                SELECT qs.question_id
+                FROM candidate_guide_questions cgq
+                JOIN question_submission qs ON qs.question_id = cgq.question_id
+                WHERE cgq.candidate_guide_id = $1
+            );
+        "#,
+            uuid::Uuid::parse_str(candidate_guide_id.as_str())?,
+        )
+        .execute(&db_pool)
+        .await?;
+
+        Ok(result.rows_affected() > 0)
+    }
+
     async fn delete_candidate_guide(&self, ctx: &Context<'_>, id: ID) -> Result<bool> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         CandidateGuide::delete(&db_pool, uuid::Uuid::parse_str(id.as_str()).unwrap()).await?;

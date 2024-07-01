@@ -83,6 +83,7 @@ impl QuestionResult {
                   candidate_id,
                   response,
                   sentiment AS "sentiment: Sentiment",
+                  is_locked,
                   created_at,
                   updated_at
                 FROM question_submission
@@ -112,6 +113,7 @@ impl QuestionResult {
                   qs.candidate_id,
                   qs.response,
                   qs.sentiment AS "sentiment: Sentiment",
+                  qs.is_locked,
                   qs.created_at,
                   qs.updated_at
                 FROM question_submission qs
@@ -145,6 +147,7 @@ impl QuestionResult {
                   qs.candidate_id,
                   qs.response,
                   qs.sentiment AS "sentiment: Sentiment",
+                  qs.is_locked,
                   qs.created_at,
                   qs.updated_at
                 FROM question_submission qs

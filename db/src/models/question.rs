@@ -24,6 +24,7 @@ pub struct QuestionSubmission {
     pub candidate_id: Option<uuid::Uuid>,
     pub response: String,
     pub sentiment: Option<Sentiment>,
+    pub is_locked: bool,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
@@ -181,6 +182,7 @@ impl QuestionSubmission {
                     response = $5,
                     sentiment = $6,
                     updated_at = now()
+                WHERE question_submission.is_locked <> TRUE
                 RETURNING 
                     id,
                     question_id,
@@ -188,6 +190,7 @@ impl QuestionSubmission {
                     candidate_id,
                     response,
                     sentiment AS "sentiment:Sentiment",
+                    is_locked,
                     created_at,
                     updated_at
             "#,
@@ -201,5 +204,35 @@ impl QuestionSubmission {
         .fetch_one(db_pool)
         .await?;
         Ok(question_submission)
+    }
+
+    pub async fn lock(db_pool: &PgPool, id: uuid::Uuid) -> Result<bool, Error> {
+        let _question_submission = sqlx::query_as!(
+            QuestionSubmission,
+            r#"
+                UPDATE question_submission
+                SET is_locked = TRUE
+                WHERE id = $1
+            "#,
+            id
+        )
+        .fetch_one(db_pool)
+        .await?;
+        Ok(true)
+    }
+
+    pub async fn unlock(db_pool: &PgPool, id: uuid::Uuid) -> Result<bool, Error> {
+        let _question_submission = sqlx::query_as!(
+            QuestionSubmission,
+            r#"
+                UPDATE question_submission
+                SET is_locked = FALSE
+                WHERE id = $1
+            "#,
+            id
+        )
+        .fetch_one(db_pool)
+        .await?;
+        Ok(true)
     }
 }
