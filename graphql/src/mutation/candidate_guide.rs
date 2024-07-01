@@ -80,6 +80,7 @@ impl CandidateGuideMutation {
         &self,
         ctx: &Context<'_>,
         candidate_guide_id: ID,
+        race_id: ID,
         politician_id: ID,
     ) -> Result<String> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
@@ -95,9 +96,10 @@ impl CandidateGuideMutation {
         .await?;
 
         let url = format!(
-            "{}/intakes/candidate-guides/{}?token={}",
+            "{}/intakes/candidate-guides/{}?raceId={}&token={}",
             config::Config::default().web_app_url,
             candidate_guide_id.to_string(),
+            race_id.to_string(),
             token
         );
 
@@ -150,6 +152,7 @@ impl CandidateGuideMutation {
                 RETURNING politician.id, politician.intake_token
             )
             SELECT
+                r.populist_race_id as race_id,
                 r.*, 
                 p.full_name AS candidate_name, 
                 p.id AS politician_id, 
@@ -172,10 +175,11 @@ impl CandidateGuideMutation {
             wtr.write_record(&["race_title", "candidate_name", "form_link"])?;
             for record in records {
                 let form_link = format!(
-                    "{}/intakes/candidate-guides/{}?token={}",
+                    "{}/intakes/candidate-guides/{}?raceId={}&token={}",
                     config::Config::default().web_app_url,
                     candidate_guide_id.to_string(),
-                    record.intake_token.unwrap_or_default()
+                    record.intake_token.unwrap_or_default(),
+                    record.race_id.to_string()
                 );
                 wtr.write_record(&[record.race_title, record.candidate_name, form_link])?;
             }
