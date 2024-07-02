@@ -20,6 +20,7 @@ pub struct QuestionResult {
 #[graphql(complex)]
 pub struct QuestionSubmissionResult {
     id: ID,
+    question_id: ID,
     respondent_id: Option<ID>,
     candidate_id: Option<ID>,
     response: String,
@@ -284,6 +285,17 @@ impl QuestionSubmissionResult {
             Ok(None)
         }
     }
+
+    async fn question(&self, ctx: &Context<'_>) -> Result<QuestionResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let question = db::Question::find_by_id(
+            &db_pool,
+            uuid::Uuid::parse_str(self.question_id.as_str()).unwrap(),
+        )
+        .await?;
+
+        Ok(question.into())
+    }
 }
 
 impl From<Question> for QuestionResult {
@@ -304,6 +316,7 @@ impl From<QuestionSubmission> for QuestionSubmissionResult {
     fn from(q: QuestionSubmission) -> Self {
         Self {
             id: q.id.into(),
+            question_id: q.question_id.into(),
             respondent_id: q.respondent_id.map(|id| id.into()),
             candidate_id: q.candidate_id.map(|id| id.into()),
             response: q.response,
