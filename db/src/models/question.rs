@@ -43,6 +43,18 @@ pub struct UpsertQuestionInput {
 }
 
 #[derive(FromRow, Debug, Clone, InputObject)]
+pub struct InsertQuestionInput {
+    pub name: Option<String>,
+    pub prompt: String,
+    pub response_char_limit: Option<i32>,
+    pub response_placeholder_text: Option<String>,
+    pub allow_anonymous_responses: bool,
+    pub embed_id: Option<uuid::Uuid>,
+    pub candidate_guide_id: Option<uuid::Uuid>,
+    pub issue_tag_ids: Option<Vec<uuid::Uuid>>,
+}
+
+#[derive(FromRow, Debug, Clone, InputObject)]
 pub struct UpsertQuestionSubmissionInput {
     pub id: Option<uuid::Uuid>,
     pub question_id: uuid::Uuid,
@@ -63,6 +75,7 @@ pub enum Sentiment {
 }
 
 impl Question {
+    #[deprecated(note = "Use `insert` and `update` instead")]
     pub async fn upsert(db_pool: &PgPool, input: &UpsertQuestionInput) -> Result<Self, Error> {
         let id = match input.id {
             Some(id) => id,

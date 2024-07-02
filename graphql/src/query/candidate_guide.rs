@@ -37,10 +37,10 @@ impl CandidateGuideQuery {
         Ok(records.into_iter().map(|r| r.into()).collect())
     }
 
-    async fn recent_candidate_guide_question_submissions(
+    async fn recent_candidate_guide_question_submissions_by_organization(
         &self,
         ctx: &Context<'_>,
-        candidate_guide_id: ID,
+        organization_id: ID,
         limit: Option<i64>,
     ) -> Result<Vec<QuestionSubmissionResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
@@ -61,17 +61,20 @@ impl CandidateGuideQuery {
                 question_submission qs
             JOIN
                 candidate_guide_questions cgq ON qs.question_id = cgq.question_id
+            JOIN
+                candidate_guide cg ON cgq.candidate_guide_id = cg.id
             WHERE
-                cgq.candidate_guide_id = $1
+                cg.organization_id = $1
             ORDER BY
                 qs.created_at DESC
             LIMIT $2;
             "#,
-            uuid::Uuid::parse_str(candidate_guide_id.as_str())?,
+            uuid::Uuid::parse_str(&organization_id)?,
             limit.unwrap_or(10),
         )
         .fetch_all(&db_pool)
-        .await?;
+        .await
+        .map_err(|err| format!("Database query failed: {}", err))?;
         Ok(records.into_iter().map(|r| r.into()).collect())
     }
 
