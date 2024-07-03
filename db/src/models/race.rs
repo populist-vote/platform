@@ -61,6 +61,7 @@ pub struct RaceFilter {
     election_scope: Option<ElectionScope>,
     office_titles: Option<Vec<String>>,
     election_id: Option<uuid::Uuid>,
+    year: Option<i32>,
 }
 
 impl Race {
@@ -217,6 +218,7 @@ impl Race {
                 LEFT JOIN us_states s ON race.state = s.code
                 WHERE 
                     ({election_id} IS NULL OR e.id = {election_id})
+                    AND ({year}) IS NULL OR e.election_date = EXTRACT(YEAR FROM e.election_date)::INTEGER 
                     AND (
                         ({query} IS NULL OR {query} = '' OR websearch_to_tsquery({query}) @@ to_tsvector(
                             COALESCE(race.title, '') || ' ' ||
@@ -265,7 +267,11 @@ impl Race {
             election_id = input
                 .election_id
                 .map(|s| format!("'{}'", s))
-                .unwrap_or_else(|| "NULL".to_string())
+                .unwrap_or_else(|| "NULL".to_string()),
+            year = input
+                .year
+                .map(|s| format!("'{}'", s))
+                .unwrap_or_else(|| "NULL".to_string()),
         );
 
         let records = sqlx::query_as(query).fetch_all(db_pool).await?;
