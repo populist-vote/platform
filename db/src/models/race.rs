@@ -60,6 +60,7 @@ pub struct RaceFilter {
     political_scope: Option<PoliticalScope>,
     election_scope: Option<ElectionScope>,
     office_titles: Option<Vec<String>>,
+    election_id: Option<uuid::Uuid>,
 }
 
 impl Race {
@@ -233,6 +234,7 @@ impl Race {
                     AND ({political_scope} IS NULL OR o.political_scope = {political_scope})
                     AND ({election_scope} IS NULL OR o.election_scope = {election_scope})
                     AND ({office_titles} IS NULL OR o.title IN ({office_titles}))
+                    AND ({election_id} IS NULL OR e.id = {election_id})
                 ORDER BY 
                     e.election_date DESC, 
                     o.priority ASC, 
@@ -259,7 +261,11 @@ impl Race {
                 .map(|s| format!("'{}'", s))
                 .unwrap_or_else(|| "NULL".to_string())
                 .to_lowercase(),
-            office_titles = office_titles
+            office_titles = office_titles,
+            election_id = input
+                .election_id
+                .map(|s| format!("'{}'", s))
+                .unwrap_or_else(|| "NULL".to_string())
         );
 
         let records = sqlx::query_as(query).fetch_all(db_pool).await?;
