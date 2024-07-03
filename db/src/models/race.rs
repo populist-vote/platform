@@ -216,8 +216,9 @@ impl Race {
                 LEFT JOIN election e ON race.election_id = e.id
                 LEFT JOIN us_states s ON race.state = s.code
                 WHERE 
-                    (
-                        ({query} = '' OR websearch_to_tsquery({query}) @@ to_tsvector(
+                    ({election_id} IS NULL OR e.id = {election_id})
+                    AND (
+                        ({query} IS NULL OR {query} = '' OR websearch_to_tsquery({query}) @@ to_tsvector(
                             COALESCE(race.title, '') || ' ' ||
                             COALESCE(e.election_date::text, '') || ' ' ||
                             COALESCE(o.title, '') || ' ' ||
@@ -234,13 +235,12 @@ impl Race {
                     AND ({political_scope} IS NULL OR o.political_scope = {political_scope})
                     AND ({election_scope} IS NULL OR o.election_scope = {election_scope})
                     AND ({office_titles} IS NULL OR o.title IN ({office_titles}))
-                    AND ({election_id} IS NULL OR e.id = {election_id})
                 ORDER BY 
                     e.election_date DESC, 
                     o.priority ASC, 
                     o.district ASC, 
                     o.title DESC
-                LIMIT 250;
+                LIMIT 500;
 
                 "#,
             query = input
