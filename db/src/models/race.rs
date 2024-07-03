@@ -218,7 +218,7 @@ impl Race {
                 LEFT JOIN us_states s ON race.state = s.code
                 WHERE 
                     ({election_id} IS NULL OR e.id = {election_id})
-                    AND ({year}) IS NULL OR e.election_date = EXTRACT(YEAR FROM e.election_date)::INTEGER 
+                    AND ({year}) IS NULL OR EXTRACT(YEAR FROM e.election_date)::INTEGER = {year}
                     AND (
                         ({query} IS NULL OR {query} = '' OR websearch_to_tsquery({query}) @@ to_tsvector(
                             COALESCE(race.title, '') || ' ' ||
