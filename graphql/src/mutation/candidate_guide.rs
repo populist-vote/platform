@@ -115,8 +115,8 @@ impl CandidateGuideMutation {
         candidate_guide_id: ID,
         race_id: Option<ID>,
     ) -> Result<String> {
-        // TODO: use optional race title to filter down records
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+
         let records = sqlx::query!(
             r#"
             WITH races AS (
@@ -128,11 +128,17 @@ impl CandidateGuideMutation {
                     JOIN candidate_guide_races cgr ON cgr.race_id = race.id
                 WHERE
                     cgr.candidate_guide_id = $1
+                AND ($2::uuid IS NULL OR race.id = $2::uuid)
             ),
             politicians AS (
                 SELECT
                     r.*,
-                    p.full_name AS candidate_name,
+                    p.first_name,
+                    p.middle_name,
+                    p.last_name,
+                    p.preferred_name,
+                    p.suffix,
+                    p.email AS email,
                     p.id AS politician_id,
                     p.intake_token
                 FROM
@@ -154,17 +160,26 @@ impl CandidateGuideMutation {
             SELECT
                 r.populist_race_id as race_id,
                 r.*, 
-                p.full_name AS candidate_name, 
+                p.first_name,
+                p.middle_name,
+                p.last_name,
+                p.preferred_name,
+                p.suffix,
+                p.email AS email,
                 p.id AS politician_id, 
                 upit.intake_token as intake_token
             FROM
                 races r
                 JOIN race_candidates rc ON rc.race_id = r.populist_race_id
                 JOIN politician p ON rc.candidate_id = p.id
-                JOIN update_politician_intake_tokens upit ON p.id = upit.id;
-
+                JOIN update_politician_intake_tokens upit ON p.id = upit.id
+            WHERE
+                ($2::uuid IS NULL OR r.populist_race_id = $2::uuid);
         "#,
-            uuid::Uuid::parse_str(&candidate_guide_id)?
+            uuid::Uuid::parse_str(&candidate_guide_id)?,
+            race_id
+                .map(|id| uuid::Uuid::parse_str(id.as_str()))
+                .transpose()?,
         )
         .fetch_all(&db_pool)
         .await?;
@@ -172,16 +187,44 @@ impl CandidateGuideMutation {
         let mut csv_string = Vec::new();
         {
             let mut wtr = csv::Writer::from_writer(&mut csv_string);
-            wtr.write_record(&["race_title", "candidate_name", "form_link"])?;
+            wtr.write_record(&[
+                "race_title",
+                "first_name",
+                "middle_name",
+                "last_name",
+                "preferred_name",
+                "suffix",
+                "full_name",
+                "email",
+                "form_link",
+            ])?;
             for record in records {
+                let full_name = format!(
+                    "{first_name} {last_name} {suffix}",
+                    first_name = &record.preferred_name.as_ref().unwrap_or(&record.first_name),
+                    last_name = &record.last_name,
+                    suffix = &record.suffix.as_ref().unwrap_or(&"".to_string())
+                )
+                .trim_end()
+                .to_string();
                 let form_link = format!(
                     "{}/intakes/candidate-guides/{}?raceId={}&token={}",
                     config::Config::default().web_app_url,
                     candidate_guide_id.to_string(),
-                    record.intake_token.unwrap_or_default(),
-                    record.race_id.to_string()
+                    record.race_id.to_string(),
+                    record.intake_token.unwrap_or_default()
                 );
-                wtr.write_record(&[record.race_title, record.candidate_name, form_link])?;
+                wtr.write_record(&[
+                    record.race_title,
+                    record.first_name,
+                    record.middle_name.unwrap_or_default(),
+                    record.last_name,
+                    record.preferred_name.unwrap_or_default(),
+                    record.suffix.unwrap_or_default(),
+                    full_name,
+                    record.email.unwrap_or_default(),
+                    form_link,
+                ])?;
             }
             wtr.flush()?;
         }
