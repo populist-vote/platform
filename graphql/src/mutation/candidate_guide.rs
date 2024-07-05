@@ -87,7 +87,7 @@ impl CandidateGuideMutation {
         let token = create_random_token().unwrap();
         sqlx::query!(
             r#"
-            UPDATE politician SET intake_token = $1 WHERE id = $2
+            UPDATE politician SET intake_token = $1 WHERE id = $2 AND intake_token IS NULL;
         "#,
             token,
             uuid::Uuid::parse_str(&politician_id)?,
@@ -155,6 +155,7 @@ impl CandidateGuideMutation {
                     politicians
                 WHERE
                     politician.id = politicians.politician_id
+                    AND politician.intake_token IS NULL
                 RETURNING politician.id, politician.intake_token
             )
             SELECT
