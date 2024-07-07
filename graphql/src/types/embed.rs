@@ -178,6 +178,52 @@ impl EmbedResult {
             Ok(None)
         }
     }
+
+    /// Each candidate guide embed is associated with a single race. This field returns the
+    /// the number of questions submitted by candidates in this race, divided by the number
+    /// of questions in a candidate guide
+    async fn candidate_guide_submission_count_by_race(
+        &self,
+        ctx: &Context<'_>,
+    ) -> Result<Option<i64>> {
+        let candidate_guide_id = self.attributes["candidateGuideId"].as_str();
+        let race_id = self.attributes["raceId"].as_str();
+        if let (Some(candidate_guide_id), Some(race_id)) = (candidate_guide_id, race_id) {
+            let candidate_guide_id = uuid::Uuid::parse_str(candidate_guide_id)?;
+            let race_id = uuid::Uuid::parse_str(race_id)?;
+            let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+            let result = sqlx::query!(
+                r#"
+                SELECT
+                    COUNT(DISTINCT qs.id) AS total_submissions,
+                    COUNT(DISTINCT cgq.question_id) AS total_questions
+                FROM
+                    candidate_guide_questions cgq
+                    JOIN question_submission qs ON cgq.question_id = qs.question_id
+                    JOIN candidate_guide_races cgr ON cgr.candidate_guide_id = $1
+                    JOIN race_candidates rc ON cgr.race_id = rc.race_id
+                WHERE
+                    cgq.candidate_guide_id = $1
+                    AND cgr.race_id = $2
+                    AND rc.candidate_id = qs.candidate_id
+            "#,
+                candidate_guide_id,
+                race_id
+            )
+            .fetch_one(&db_pool)
+            .await?;
+            let total_submissions = result.total_submissions.unwrap_or(0);
+            let total_questions = result.total_questions.unwrap_or(0);
+            let count = if total_questions > 0 {
+                total_submissions as i64 / total_questions as i64
+            } else {
+                0
+            };
+            Ok(Some(count))
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 impl From<Embed> for EmbedResult {
