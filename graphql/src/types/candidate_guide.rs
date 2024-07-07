@@ -125,6 +125,32 @@ impl CandidateGuideResult {
         .await?;
         Ok(questions.into_iter().map(QuestionResult::from).collect())
     }
+
+    /// Returns the total number of question submissions in the candidate guide divided by the number of questions
+    /// in the candidate guide to get the number of intake submissions per candidate guide.
+    async fn submission_count(&self, ctx: &Context<'_>, candidate_guide_id: ID) -> Result<i64> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let result = sqlx::query!(
+            r#"
+            SELECT COUNT(DISTINCT qs.question_id) AS total_submissions, COUNT (DISTINCT cgq.question_id) AS total_questions
+            FROM candidate_guide cg
+            JOIN candidate_guide_questions cgq ON cg.id = cgq.candidate_guide_id
+            JOIN question_submission qs ON cgq.question_id = qs.question_id
+            WHERE cg.id = $1;
+            "#,
+            uuid::Uuid::parse_str(candidate_guide_id.as_str())?,
+        )
+        .fetch_one(&db_pool)
+        .await?;
+        let total_submissions = result.total_submissions.unwrap_or(0);
+        let total_questions = result.total_questions.unwrap_or(0);
+        let count = if total_questions > 0 {
+            total_submissions as i64 / total_questions as i64
+        } else {
+            0
+        };
+        Ok(count)
+    }
 }
 
 impl From<CandidateGuide> for CandidateGuideResult {
