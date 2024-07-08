@@ -84,15 +84,15 @@ impl CandidateGuideMutation {
         politician_id: ID,
     ) -> Result<String> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let token = create_random_token().unwrap();
-        sqlx::query!(
+        let updated_politician = sqlx::query!(
             r#"
-            UPDATE politician SET intake_token = $1 WHERE id = $2 AND intake_token IS NULL;
+            UPDATE politician SET intake_token = encode(gen_random_bytes(32), 'hex') 
+            WHERE id = $1 AND intake_token IS NULL
+            RETURNING intake_token
         "#,
-            token,
             uuid::Uuid::parse_str(&politician_id)?,
         )
-        .execute(&db_pool)
+        .fetch_one(&db_pool)
         .await?;
 
         let url = format!(
@@ -100,7 +100,7 @@ impl CandidateGuideMutation {
             config::Config::default().web_app_url,
             candidate_guide_id.to_string(),
             race_id.to_string(),
-            token
+            updated_politician.intake_token.unwrap_or_default()
         );
 
         Ok(url)
