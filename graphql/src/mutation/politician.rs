@@ -1,6 +1,6 @@
 use crate::{
     context::{ApiContext, DataLoaders},
-    guard::StaffOnly,
+    guard::{IntakeTokenGuard, StaffOnly},
     is_admin,
     types::{Error, PoliticianResult},
     upload_to_s3, File,
@@ -223,10 +223,14 @@ impl PoliticianMutation {
         Ok(DeletePoliticianResult { id })
     }
 
-    #[graphql(guard = "StaffOnly", visible = "is_admin")]
+    #[graphql(
+        guard = "IntakeTokenGuard::new(&_intake_token, &slug)",
+        visible = "is_admin"
+    )]
     async fn upload_politician_picture(
         &self,
         ctx: &Context<'_>,
+        _intake_token: String, // Only used for the guard
         slug: String,
         file: Upload,
     ) -> Result<String> {

@@ -3,6 +3,8 @@ use auth::AccessTokenClaims;
 use jsonwebtoken::TokenData;
 use uuid::Uuid;
 
+use crate::context::ApiContext;
+
 // Could genericize and expand this struct to take a role (for gating certain API calls to certain roles, e.g.)
 //
 // pub struct UserGuard;
@@ -23,6 +25,40 @@ impl Guard for StaffOnly {
             }
         } else {
             Err("You don't have permission to to run this query/mutation".into())
+        }
+    }
+}
+
+pub struct IntakeTokenGuard<'a> {
+    intake_token: &'a str,
+    slug: &'a str,
+}
+
+impl<'a> IntakeTokenGuard<'a> {
+    pub fn new(intake_token: &'a str, slug: &'a str) -> Self {
+        Self { intake_token, slug }
+    }
+}
+
+impl<'a> Guard for IntakeTokenGuard<'a> {
+    async fn check(&self, ctx: &Context<'_>) -> Result<(), async_graphql::Error> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let record = sqlx::query!(
+            r#"
+            SELECT id FROM politician WHERE intake_token = $1 AND slug = $2
+        "#,
+            self.intake_token,
+            self.slug,
+        )
+        .fetch_optional(&db_pool)
+        .await?;
+
+        match record {
+            Some(_) => Ok(()),
+            None => {
+                let staff_guard = StaffOnly;
+                staff_guard.check(ctx).await
+            }
         }
     }
 }

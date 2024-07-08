@@ -1,6 +1,6 @@
 use crate::{context::ApiContext, types::CandidateGuideResult};
 use async_graphql::{Context, Object, Result, ID};
-use auth::{create_random_token, AccessTokenClaims};
+use auth::AccessTokenClaims;
 use db::{
     models::candidate_guide::{CandidateGuide, UpsertCandidateGuideInput},
     EmbedType, UpsertEmbedInput,
@@ -188,7 +188,7 @@ impl CandidateGuideMutation {
         let mut csv_string = Vec::new();
         {
             let mut wtr = csv::Writer::from_writer(&mut csv_string);
-            wtr.write_record(&[
+            wtr.write_record([
                 "race_title",
                 "first_name",
                 "middle_name",
