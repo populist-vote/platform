@@ -86,8 +86,9 @@ impl CandidateGuideMutation {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let updated_politician = sqlx::query!(
             r#"
-            UPDATE politician SET intake_token = encode(gen_random_bytes(32), 'hex') 
-            WHERE id = $1 AND intake_token IS NULL
+            UPDATE politician
+            SET intake_token = COALESCE(intake_token, encode(gen_random_bytes(32), 'hex'))
+            WHERE id = $1
             RETURNING intake_token
         "#,
             uuid::Uuid::parse_str(&politician_id)?,
