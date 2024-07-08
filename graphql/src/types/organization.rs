@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 pub struct OrganizationAssets {
     thumbnail_image_160: Option<String>,
     thumbnail_image_400: Option<String>,
+    banner_image: Option<String>,
 }
 
 #[derive(SimpleObject, Debug, Clone)]
