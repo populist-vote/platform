@@ -168,12 +168,11 @@ impl CandidateGuideMutation {
                 p.suffix,
                 p.email AS email,
                 p.id AS politician_id, 
-                upit.intake_token as intake_token
+                p.intake_token as intake_token
             FROM
                 races r
                 JOIN race_candidates rc ON rc.race_id = r.populist_race_id
                 JOIN politician p ON rc.candidate_id = p.id
-                JOIN update_politician_intake_tokens upit ON p.id = upit.id
             WHERE
                 ($2::uuid IS NULL OR r.populist_race_id = $2::uuid);
         "#,
