@@ -158,9 +158,21 @@ impl CandidateGuideMutation {
                     politician.id = politicians.politician_id
                     AND politician.intake_token IS NULL
                 RETURNING politician.id, politician.intake_token
+            ),
+            last_submissions AS (
+                SELECT
+                    qs.candidate_id,
+                    MAX(qs.updated_at) AS last_submission
+                FROM
+                    question_submission qs
+                    JOIN candidate_guide_questions cgq ON qs.question_id = cgq.question_id
+                WHERE
+                    cgq.candidate_guide_id = $1
+                GROUP BY
+                    qs.candidate_id
             )
             SELECT
-                r.populist_race_id as race_id,
+                r.populist_race_id AS race_id,
                 r.*, 
                 p.first_name,
                 p.middle_name,
@@ -169,11 +181,13 @@ impl CandidateGuideMutation {
                 p.suffix,
                 p.email AS email,
                 p.id AS politician_id, 
-                p.intake_token as intake_token
+                p.intake_token AS intake_token,
+                ls.last_submission
             FROM
                 races r
                 JOIN race_candidates rc ON rc.race_id = r.populist_race_id
                 JOIN politician p ON rc.candidate_id = p.id
+                LEFT JOIN last_submissions ls ON p.id = ls.candidate_id
             WHERE
                 ($2::uuid IS NULL OR r.populist_race_id = $2::uuid);
         "#,
@@ -198,6 +212,7 @@ impl CandidateGuideMutation {
                 "full_name",
                 "email",
                 "form_link",
+                "last_submission",
             ])?;
             for record in records {
                 let full_name = format!(
@@ -225,6 +240,10 @@ impl CandidateGuideMutation {
                     full_name,
                     record.email.unwrap_or_default(),
                     form_link,
+                    record
+                        .last_submission
+                        .map(|d| d.to_string())
+                        .unwrap_or_default(),
                 ])?;
             }
             wtr.flush()?;

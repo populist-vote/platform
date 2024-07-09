@@ -215,7 +215,7 @@ impl Race {
                     race
                 LEFT JOIN office o ON race.office_id = o.id
                 LEFT JOIN election e ON race.election_id = e.id
-                LEFT JOIN us_states s ON race.state = s.code
+                LEFT JOIN us_states s ON o.state = s.code
                 WHERE 
                     ({election_id} IS NULL OR e.id = {election_id})
                     AND ({year}) IS NULL OR EXTRACT(YEAR FROM e.election_date)::INTEGER = {year}
@@ -233,7 +233,7 @@ impl Race {
                             COALESCE(o.hospital_district, '')
                         ))
                     )
-                    AND ({state} IS NULL OR race.state = {state})
+                    AND ({state} IS NULL OR o.state = {state})
                     AND ({political_scope} IS NULL OR o.political_scope = {political_scope})
                     AND ({election_scope} IS NULL OR o.election_scope = {election_scope})
                     AND ({office_titles} IS NULL OR o.title IN ({office_titles}))
