@@ -18,6 +18,8 @@ pub struct CandidateGuideResult {
     id: ID,
     organization_id: ID,
     name: Option<String>,
+    submissions_open_at: Option<chrono::DateTime<chrono::Utc>>,
+    submissions_close_at: Option<chrono::DateTime<chrono::Utc>>,
     created_at: chrono::DateTime<chrono::Utc>,
     updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -159,6 +161,8 @@ impl From<CandidateGuide> for CandidateGuideResult {
             id: ID::from(c.id),
             organization_id: ID::from(c.organization_id),
             name: c.name,
+            submissions_open_at: c.submissions_open_at,
+            submissions_close_at: c.submissions_close_at,
             created_at: c.created_at,
             updated_at: c.updated_at,
         }
