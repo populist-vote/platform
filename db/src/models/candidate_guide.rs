@@ -9,6 +9,8 @@ pub struct CandidateGuide {
     pub id: Uuid,
     pub organization_id: Uuid,
     pub name: Option<String>,
+    pub submissions_open_at: Option<DateTime>,
+    pub submissions_close_at: Option<DateTime>,
     pub created_by: Uuid,
     pub created_at: DateTime,
     pub updated_at: DateTime,
@@ -21,6 +23,8 @@ pub struct UpsertCandidateGuideInput {
     pub organization_id: Option<Uuid>,
     pub user_id: Option<Uuid>,
     pub race_ids: Option<Vec<Uuid>>,
+    pub submissions_open_at: Option<DateTime>,
+    pub submissions_close_at: Option<DateTime>,
 }
 
 impl CandidateGuide {
@@ -34,16 +38,18 @@ impl CandidateGuide {
             CandidateGuide,
             r#"
                 INSERT INTO candidate_guide
-                (id, name, organization_id, created_by)
-                VALUES ($1, $2, $3, $4)
+                (id, name, organization_id, created_by, submissions_open_at, submissions_close_at)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 ON CONFLICT (id) DO UPDATE SET
                     name = COALESCE($2, candidate_guide.name)
-                RETURNING id, name, created_at, created_by, updated_at, organization_id
+                RETURNING id, name, submissions_open_at, created_at, submissions_close_at, created_by, updated_at, organization_id
             "#,
             id,
             input.name,
             input.organization_id,
             input.user_id,
+            input.submissions_open_at,
+            input.submissions_close_at,
         )
         .fetch_one(db_pool)
         .await?;
@@ -91,6 +97,8 @@ impl CandidateGuide {
                 SELECT
                     id,
                     name,
+                    submissions_open_at,
+                    submissions_close_at,
                     created_at,
                     created_by,
                     updated_at,
@@ -116,6 +124,8 @@ impl CandidateGuide {
                 SELECT
                     id,
                     name,
+                    submissions_open_at,
+                    submissions_close_at,
                     created_at,
                     created_by,
                     updated_at,
