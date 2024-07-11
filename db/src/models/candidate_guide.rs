@@ -38,18 +38,20 @@ impl CandidateGuide {
             CandidateGuide,
             r#"
                 INSERT INTO candidate_guide
-                (id, name, organization_id, created_by, submissions_open_at, submissions_close_at)
+                (id, name, organization_id, submissions_open_at, submissions_close_at, created_by)
                 VALUES ($1, $2, $3, $4, $5, $6)
                 ON CONFLICT (id) DO UPDATE SET
-                    name = COALESCE($2, candidate_guide.name)
-                RETURNING id, name, submissions_open_at, created_at, submissions_close_at, created_by, updated_at, organization_id
+                    name = COALESCE($2, candidate_guide.name),
+                    submissions_open_at = COALESCE($4, candidate_guide.submissions_open_at),
+                    submissions_close_at = COALESCE($5, candidate_guide.submissions_close_at)
+                RETURNING id, name, organization_id,  submissions_open_at, submissions_close_at, created_by, created_at, updated_at
             "#,
             id,
             input.name,
             input.organization_id,
-            input.user_id,
             input.submissions_open_at,
             input.submissions_close_at,
+            input.user_id
         )
         .fetch_one(db_pool)
         .await?;
