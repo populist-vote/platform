@@ -74,6 +74,25 @@ impl CandidateGuide {
         Ok(record)
     }
 
+    pub async fn open_all_submissions(
+        db_pool: &PgPool,
+        candidate_guide_id: uuid::Uuid,
+    ) -> Result<bool, sqlx::Error> {
+        sqlx::query!(
+            r#"
+                UPDATE candidate_guide
+                SET submissions_open_at = NOW(),
+                    submissions_close_at = NULL
+                WHERE id = $1
+            "#,
+            candidate_guide_id,
+        )
+        .execute(db_pool)
+        .await?;
+
+        Ok(true)
+    }
+
     pub async fn delete(db_pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
         sqlx::query!(
             r#"

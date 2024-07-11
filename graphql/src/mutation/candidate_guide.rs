@@ -49,6 +49,21 @@ impl CandidateGuideMutation {
         Ok(upsert.into())
     }
 
+    async fn open_all_candidate_guide_submissions(
+        &self,
+        ctx: &Context<'_>,
+        candidate_guide_id: ID,
+    ) -> Result<bool> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let result = db::models::candidate_guide::CandidateGuide::open_all_submissions(
+            &db_pool,
+            uuid::Uuid::parse_str(candidate_guide_id.as_str())?,
+        )
+        .await?;
+
+        Ok(result)
+    }
+
     async fn remove_candidate_guide_race(
         &self,
         ctx: &Context<'_>,
