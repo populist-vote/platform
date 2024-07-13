@@ -171,10 +171,15 @@ impl PoliticianMutation {
         Ok(PoliticianResult::from(new_record))
     }
 
-    #[graphql(guard = "StaffOnly", visible = "is_admin")]
+    #[graphql(
+        guard = "IntakeTokenGuard::new(&_intake_token, &_slug)",
+        visible = "is_admin"
+    )]
     async fn update_politician(
         &self,
         ctx: &Context<'_>,
+        _intake_token: String, // Only used for the guard
+        _slug: String,
         input: UpdatePoliticianInput,
     ) -> Result<PoliticianResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
