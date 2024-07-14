@@ -148,4 +148,46 @@ impl EmbedQuery {
         }
         Ok(record.into())
     }
+
+    #[graphql(
+        guard = "OrganizationGuard::new(&organization_id)",
+        visible = "is_admin"
+    )]
+    async fn total_candidate_guide_submissions(
+        &self,
+        ctx: &Context<'_>,
+        organization_id: ID,
+    ) -> Result<i32> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let result = sqlx::query!(
+            r#"
+            WITH guide_averages AS (
+                SELECT
+                    cg.id AS candidate_guide_id,
+                    COUNT(qs.id) / COUNT(DISTINCT q.id) AS average_submissions_per_question
+                FROM
+                    candidate_guide cg
+                JOIN
+                    candidate_guide_questions cgq ON cg.id = cgq.candidate_guide_id
+                JOIN
+                    question q ON cgq.question_id = q.id
+                LEFT JOIN
+                    question_submission qs ON q.id = qs.question_id
+                WHERE cg.organization_id = $1
+                GROUP BY
+                    cg.id
+            )
+            SELECT
+                COALESCE(SUM(average_submissions_per_question)::integer, 0) AS total_average_submissions
+            FROM
+                guide_averages;
+        "#,
+            uuid::Uuid::parse_str(&organization_id)?,
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        let total_average_submissions = result.total_average_submissions.unwrap_or_default();
+        Ok(total_average_submissions)
+    }
 }
