@@ -187,11 +187,13 @@ impl AuthMutation {
                     confirmation_token
                 );
 
-                if let Err(err) = EmailClient::default()
-                    .send_welcome_email(new_user.email, account_confirmation_url)
-                    .await
-                {
-                    println!("Error sending welcome email: {}", err)
+                if !new_user.email.contains("staging.email.test") {
+                    if let Err(err) = EmailClient::default()
+                        .send_welcome_email(new_user.email, account_confirmation_url)
+                        .await
+                    {
+                        println!("Error sending welcome email: {}", err)
+                    }
                 }
 
                 ctx.insert_http_header(
