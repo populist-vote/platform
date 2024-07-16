@@ -62,7 +62,7 @@ impl ElectionResult {
                 election_id = $1
                 AND ($2::state IS NULL OR state = $2)
             ORDER BY title DESC
-            LIMIT 250
+            LIMIT 1000
             "#,
             uuid::Uuid::parse_str(&self.id).unwrap(),
             filter.state as Option<State>
