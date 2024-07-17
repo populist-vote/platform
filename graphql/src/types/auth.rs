@@ -1,7 +1,7 @@
 use crate::{context::ApiContext, is_admin, Error};
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use auth::AccessTokenClaims;
-use db::{Role, User, UserWithProfile};
+use db::{OrganizationRole, SystemRoleType, User, UserWithProfile};
 use jsonwebtoken::TokenData;
 
 use super::UserResult;
@@ -13,8 +13,8 @@ pub struct AuthTokenResult {
     id: ID,
     username: String,
     email: String,
-    role: Role,
-    organization_id: Option<ID>,
+    system_role: SystemRoleType,
+    organizations: Vec<OrganizationRole>,
 }
 
 #[derive(SimpleObject)]
@@ -63,8 +63,8 @@ impl From<&TokenData<AccessTokenClaims>> for AuthTokenResult {
             id: ID::from(user.claims.sub),
             username: user.claims.username.clone(),
             email: user.claims.email.clone(),
-            role: user.claims.role,
-            organization_id: user.claims.organization_id.map(ID::from),
+            system_role: user.claims.system_role,
+            organizations: user.claims.organizations.clone(),
         }
     }
 }

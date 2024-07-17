@@ -40,7 +40,12 @@ async fn refresh_token_check(cookies: &Cookies) -> Option<TokenData<AccessTokenC
                         };
 
                         // If so, create a new access token, set it in the cookie, and return it
-                        let access_token = jwt::create_access_token_for_user(user).unwrap();
+                        let organization_roles =
+                            db::User::organization_roles(&db_pool.connection, user.id)
+                                .await
+                                .unwrap_or(vec![]);
+                        let access_token =
+                            jwt::create_access_token_for_user(user, organization_roles).unwrap();
                         let mut cookie =
                             tower_cookies::Cookie::new("access_token", access_token.clone());
                         cookie.set_expires(

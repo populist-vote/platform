@@ -3,7 +3,7 @@ use super::{
     enums::State,
 };
 use crate::{DateTime, Error};
-use async_graphql::{Enum, InputObject};
+use async_graphql::{Enum, InputObject, SimpleObject};
 use geocodio::GeocodioProxy;
 use pwhash::bcrypt;
 use serde::{Deserialize, Serialize};
@@ -13,10 +13,9 @@ use sqlx::{FromRow, PgPool, Type};
 pub struct User {
     pub id: uuid::Uuid,
     pub email: String,
+    pub system_role: SystemRoleType,
     pub username: String,
     pub password: String,
-    pub role: Role,
-    pub organization_id: Option<uuid::Uuid>,
     pub invited_at: Option<DateTime>,
     pub confirmed_at: Option<DateTime>,
     pub refresh_token: Option<String>,
@@ -49,8 +48,7 @@ pub struct CreateUserInput {
     pub email: String,
     pub username: String,
     pub password: String,
-    pub role: Option<Role>,
-    pub organization_id: Option<uuid::Uuid>,
+    pub system_role: SystemRoleType,
     pub confirmation_token: String,
 }
 
@@ -67,40 +65,66 @@ pub struct CreateUserWithProfileInput {
 #[derive(
     Debug, Clone, strum_macros::Display, Type, Serialize, Deserialize, Copy, Eq, PartialEq, Enum,
 )]
-#[sqlx(type_name = "user_role", rename_all = "lowercase")]
+#[sqlx(type_name = "organization_role_type", rename_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
-pub enum Role {
-    SUPERUSER,
-    STAFF,
-    PREMIUM,
-    BASIC,
+pub enum OrganizationRoleType {
+    Admin,
+    Member,
+    ReadOnly,
+}
+
+#[derive(
+    Debug, Clone, strum_macros::Display, Type, Serialize, Deserialize, Copy, Eq, PartialEq, Enum,
+)]
+#[sqlx(type_name = "system_role_type", rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
+pub enum SystemRoleType {
+    Staff,
+    Superuser,
+    User,
+}
+
+#[derive(SimpleObject, Debug, Clone, Serialize, Deserialize)]
+pub struct OrganizationRole {
+    pub organization_id: uuid::Uuid,
+    pub role: OrganizationRoleType,
 }
 
 impl User {
     pub async fn create(db_pool: &PgPool, input: &CreateUserInput) -> Result<Self, Error> {
         let hash = bcrypt::hash(&input.password).unwrap();
-        let role = input.role.unwrap_or(Role::BASIC);
         let record = sqlx::query_as!(
             User,
-            r#" 
+            r#"
             WITH ins_user AS (
-                INSERT INTO populist_user (email, username, password, role, organization_id, confirmation_token)
-                VALUES (LOWER($1), LOWER($2), $3, $4, $5, $6)
+                INSERT INTO populist_user (email, username, password, confirmation_token)
+                VALUES (LOWER($1), LOWER($2), $3, $4)
                 RETURNING *
             ), 
             ins_profile AS (
                 INSERT INTO user_profile (user_id)
                 SELECT id FROM ins_user
             )
-            SELECT id, email, username, password, role AS "role:Role", organization_id, created_at, invited_at, refresh_token, confirmed_at, updated_at FROM ins_user
+            SELECT 
+                id, 
+                email, 
+                username, 
+                password, 
+                system_role as "system_role: SystemRoleType",
+                created_at, 
+                invited_at, 
+                refresh_token, 
+                confirmed_at, 
+                updated_at 
+            FROM ins_user
             "#,
             input.email,
             input.username,
             hash,
-            role as Role,
-            input.organization_id,
             input.confirmation_token
-        ).fetch_one(db_pool).await?;
+        )
+        .fetch_one(db_pool)
+        .await?;
 
         Ok(record)
     }
@@ -126,13 +150,13 @@ impl User {
             User,
             r#"
                 WITH ins_user AS (
-                    INSERT INTO populist_user (email, username, password, role, confirmation_token)
-                    VALUES (LOWER($1), LOWER($2), $3, $4, $5)
-                    RETURNING id, email, username, password, role AS "role:Role", organization_id, invited_at, refresh_token, created_at, confirmed_at, updated_at
+                    INSERT INTO populist_user (email, username, password, confirmation_token)
+                    VALUES (LOWER($1), LOWER($2), $3, $4)
+                    RETURNING id, email, username, system_role AS "system_role: SystemRoleType", password, invited_at, refresh_token, created_at, confirmed_at, updated_at
                 ),
                 ins_address AS (
                     INSERT INTO address (line_1, line_2, city, state, county, country, postal_code, lon, lat, geog, geom, congressional_district, state_senate_district, state_house_district)
-                    VALUES ($6, $7, $8, $9, $10, $11, $12, $13, $14, ST_SetSRID(ST_MakePoint($13, $14), 4326), ST_GeomFromText($15, 4326), $16, $17, $18)
+                    VALUES ($5, $6, $7, $8, $9, $10, $11, $12, $13, ST_SetSRID(ST_MakePoint($12, $13), 4326), ST_GeomFromText($14, 4326), $15, $16, $17)
                     RETURNING id
                 ),
                 ins_profile AS (
@@ -144,7 +168,6 @@ impl User {
             input.email,
             input.username,
             hash,
-            Role::BASIC as Role,
             input.confirmation_token,
             input.address.line_1,
             input.address.line_2,
@@ -170,7 +193,7 @@ impl User {
         let record = sqlx::query_as!(
             User,
             r#"
-                SELECT id, email, username, password, role AS "role:Role", organization_id, created_at,  invited_at, refresh_token, confirmed_at, updated_at FROM populist_user 
+                SELECT id, email, username, system_role AS "system_role: SystemRoleType", password, created_at,  invited_at, refresh_token, confirmed_at, updated_at FROM populist_user 
                 WHERE $1 = id;
             "#,
             id
@@ -193,9 +216,8 @@ impl User {
                     id, 
                     email, 
                     username, 
+                    system_role AS "system_role: SystemRoleType",
                     password, 
-                    role AS "role:Role", 
-                    organization_id,
                     created_at,
                     invited_at, 
                     refresh_token, 
@@ -213,6 +235,30 @@ impl User {
             Some(record) => Ok(record),
             None => Err(Error::EmailOrUsernameNotFound),
         }
+    }
+
+    pub async fn organization_roles(
+        db_pool: &PgPool,
+        user_id: uuid::Uuid,
+    ) -> Result<Vec<OrganizationRole>, Error> {
+        let records = sqlx::query!(
+            r#"
+                SELECT organization_id, role AS "role: OrganizationRoleType" FROM organization_users WHERE user_id = $1
+            "#,
+            user_id
+        )
+        .fetch_all(db_pool)
+        .await?;
+
+        let roles = records
+            .into_iter()
+            .map(|r| OrganizationRole {
+                organization_id: r.organization_id,
+                role: r.role,
+            })
+            .collect();
+
+        Ok(roles)
     }
 
     pub async fn validate_email_exists(db_pool: &PgPool, email: String) -> Result<bool, Error> {
@@ -243,7 +289,7 @@ impl User {
                 UPDATE populist_user
                 SET refresh_token = $1
                 WHERE id = $2
-                RETURNING id, email, username, password, role AS "role:Role", organization_id, invited_at, refresh_token, created_at, confirmed_at, updated_at
+                RETURNING id, email, username, system_role AS "system_role: SystemRoleType", password, invited_at, refresh_token, created_at, confirmed_at, updated_at
             "#,
             token,
             id
@@ -261,7 +307,7 @@ impl User {
                 UPDATE populist_user
                 SET last_login_at = now()
                 WHERE id = $1
-                RETURNING id, email, username, password, role AS "role:Role", organization_id, created_at, invited_at, refresh_token, confirmed_at, updated_at
+                RETURNING id, email, username, system_role AS "system_role: SystemRoleType", password, created_at, invited_at, refresh_token, confirmed_at, updated_at
             "#,
             id
         )
@@ -285,7 +331,7 @@ impl User {
                     reset_token = NULL
                 WHERE reset_token = $2
                 AND reset_token_expires_at > now()
-                RETURNING id, email, username, password, role AS "role:Role", organization_id, invited_at, refresh_token, created_at, confirmed_at, updated_at
+                RETURNING id, email, username, system_role AS "system_role: SystemRoleType", password, invited_at, refresh_token, created_at, confirmed_at, updated_at
             "#,
             hash,
             reset_token

@@ -6,7 +6,7 @@ use crate::{
 };
 use async_graphql::{Context, Object, Result, SimpleObject, Upload, ID};
 use auth::{create_access_token_for_user, format_auth_cookie, AccessTokenClaims, TokenType};
-use db::{AddressInput, Role, User};
+use db::{AddressInput, SystemRoleType, User};
 use jsonwebtoken::TokenData;
 use std::io::Read;
 
@@ -35,7 +35,8 @@ struct UpdateNameResult {
 pub async fn refresh_access_token(ctx: &Context<'_>, user_id: uuid::Uuid) -> Result<bool> {
     let db_pool = ctx.data::<ApiContext>()?.pool.clone();
     let user = User::find_by_id(&db_pool, user_id).await?;
-    let access_token = create_access_token_for_user(user)?;
+    let organization_roles = User::organization_roles(&db_pool, user_id).await?;
+    let access_token = create_access_token_for_user(user, organization_roles)?;
     ctx.insert_http_header(
         "Set-Cookie",
         format_auth_cookie(auth::TokenType::Access, &access_token),
@@ -145,7 +146,7 @@ impl UserMutation {
             r#"
             UPDATE populist_user SET username = $1
             WHERE id = $2
-            RETURNING id, email, username, password, role AS "role:Role", organization_id, invited_at, refresh_token, created_at, confirmed_at, updated_at
+            RETURNING id, email, username, password, system_role AS "system_role:SystemRoleType", invited_at, refresh_token, created_at, confirmed_at, updated_at
         "#,
             username,
             user_id,
@@ -155,7 +156,8 @@ impl UserMutation {
 
         match updated_record {
             Ok(user) => {
-                let access_token = create_access_token_for_user(user.clone())?;
+                let organization_roles = User::organization_roles(&db_pool, user.id).await?;
+                let access_token = create_access_token_for_user(user.clone(), organization_roles)?;
                 ctx.insert_http_header(
                     "Set-Cookie",
                     format_auth_cookie(auth::TokenType::Access, &access_token),
@@ -195,7 +197,7 @@ impl UserMutation {
             r#"
             UPDATE populist_user SET email = $1
             WHERE id = $2
-            RETURNING id, email, username, password, role AS "role:Role", organization_id, invited_at, refresh_token, created_at, confirmed_at, updated_at
+            RETURNING id, email, username, password, system_role AS "system_role:SystemRoleType", invited_at, refresh_token, created_at, confirmed_at, updated_at
         "#,
             email,
             user_id,
@@ -205,7 +207,8 @@ impl UserMutation {
 
         match updated_record {
             Ok(user) => {
-                let access_token = create_access_token_for_user(user.clone())?;
+                let organization_roles = User::organization_roles(&db_pool, user.id).await?;
+                let access_token = create_access_token_for_user(user.clone(), organization_roles)?;
                 ctx.insert_http_header(
                     "Set-Cookie",
                     format_auth_cookie(auth::TokenType::Access, &access_token),

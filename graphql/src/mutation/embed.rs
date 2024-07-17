@@ -37,13 +37,7 @@ impl EmbedMutation {
         input: UpsertEmbedInput,
     ) -> Result<EmbedResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let user_org_id = ctx
-            .data::<Option<TokenData<AccessTokenClaims>>>()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .claims
-            .organization_id;
+        let user_org_id = input.organization_id;
 
         if let Some(embed_id) = input.id {
             let existing_embed_org_id =
@@ -92,21 +86,10 @@ impl EmbedMutation {
         Ok(record)
     }
 
+    // Needs an org guard
     #[graphql(visible = "is_admin")]
     async fn delete_embed(&self, ctx: &Context<'_>, id: uuid::Uuid) -> Result<DeleteEmbedResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let user_org_id = ctx
-            .data::<Option<TokenData<AccessTokenClaims>>>()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .claims
-            .organization_id;
-
-        let existing_embed_org_id = Embed::find_by_id(&db_pool, id).await?.organization_id;
-        if existing_embed_org_id != user_org_id.unwrap() {
-            return Err("Unauthorized".into());
-        }
 
         Embed::delete(&db_pool, id).await?;
         Ok(DeleteEmbedResult { id: id.to_string() })

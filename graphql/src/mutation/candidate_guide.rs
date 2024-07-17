@@ -19,10 +19,10 @@ impl CandidateGuideMutation {
     ) -> Result<CandidateGuideResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let user = ctx.data::<Option<TokenData<AccessTokenClaims>>>().unwrap();
-        let organization_id = user.as_ref().unwrap().claims.organization_id.unwrap();
+        let organization_id = input.organization_id;
         let input = UpsertCandidateGuideInput {
             user_id: Some(user.as_ref().unwrap().claims.sub),
-            organization_id: Some(organization_id),
+            organization_id,
             ..input
         };
         let upsert = CandidateGuide::upsert(&db_pool, &input).await?;
@@ -32,7 +32,7 @@ impl CandidateGuideMutation {
             for race_id in input.race_ids.unwrap() {
                 let embed_input = UpsertEmbedInput {
                     id: None,
-                    organization_id: Some(organization_id),
+                    organization_id,
                     name: upsert.name.clone(),
                     description: None,
                     embed_type: Some(EmbedType::CandidateGuide),
