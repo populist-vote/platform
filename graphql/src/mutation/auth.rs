@@ -9,7 +9,9 @@ use auth::{
     create_access_token_for_user, create_random_token, create_refresh_token_for_user,
     create_temporary_username, format_auth_cookie, AccessTokenClaims,
 };
-use db::{AddressInput, Coordinates, CreateUserInput, CreateUserWithProfileInput, Role, User};
+use db::{
+    AddressInput, Coordinates, CreateUserInput, CreateUserWithProfileInput, SystemRoleType, User,
+};
 use geocodio::GeocodioProxy;
 use jsonwebtoken::TokenData;
 use mailers::EmailClient;
@@ -166,8 +168,7 @@ impl AuthMutation {
                     email: input.email.clone(),
                     username: temp_username,
                     password: input.password,
-                    role: Some(Role::BASIC),
-                    organization_id: None,
+                    system_role: SystemRoleType::User,
                     confirmation_token: confirmation_token.clone(),
                 };
 
@@ -177,7 +178,7 @@ impl AuthMutation {
 
         match new_user_result {
             Ok(new_user) => {
-                let access_token = create_access_token_for_user(new_user.clone())?;
+                let access_token = create_access_token_for_user(new_user.clone(), vec![])?;
                 let refresh_token = create_refresh_token_for_user(new_user.clone())?;
                 db::User::update_refresh_token(&db_pool, new_user.id, &refresh_token).await?;
 
@@ -251,7 +252,8 @@ impl AuthMutation {
             let password_is_valid = bcrypt::verify(input.password, &user.password);
 
             if password_is_valid {
-                let access_token = create_access_token_for_user(user.clone())?;
+                let organization_roles = User::organization_roles(&db_pool, user.id).await?;
+                let access_token = create_access_token_for_user(user.clone(), organization_roles)?;
                 ctx.insert_http_header(
                     "Set-Cookie",
                     format_auth_cookie(auth::TokenType::Access, &access_token),

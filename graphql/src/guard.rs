@@ -1,5 +1,6 @@
 use async_graphql::{Context, Guard, Result, ID};
 use auth::AccessTokenClaims;
+use db::OrganizationRoleType;
 use jsonwebtoken::TokenData;
 use uuid::Uuid;
 
@@ -18,9 +19,9 @@ pub struct StaffOnly;
 impl Guard for StaffOnly {
     async fn check(&self, ctx: &Context<'_>) -> Result<(), async_graphql::Error> {
         if let Some(token_data) = ctx.data_unchecked::<Option<TokenData<AccessTokenClaims>>>() {
-            match token_data.claims.role {
-                db::Role::STAFF => Ok(()),
-                db::Role::SUPERUSER => Ok(()),
+            match token_data.claims.system_role {
+                db::SystemRoleType::Staff => Ok(()),
+                db::SystemRoleType::Superuser => Ok(()),
                 _ => Err("You don't have permission to to run this query/mutation".into()),
             }
         } else {
@@ -89,20 +90,25 @@ impl<'a> Guard for UserGuard<'a> {
 
 pub struct OrganizationGuard<'a> {
     organization_id: &'a ID,
+    min_role: &'a OrganizationRoleType,
 }
 
 impl<'a> OrganizationGuard<'a> {
-    pub fn new(organization_id: &'a ID) -> Self {
-        Self { organization_id }
+    pub fn new(organization_id: &'a ID, min_role: &'a OrganizationRoleType) -> Self {
+        Self {
+            organization_id,
+            min_role,
+        }
     }
 }
 
 impl<'a> Guard for OrganizationGuard<'a> {
     async fn check(&self, ctx: &Context<'_>) -> Result<()> {
         if let Some(token_data) = ctx.data_unchecked::<Option<TokenData<AccessTokenClaims>>>() {
-            if token_data.claims.organization_id
-                == Some(Uuid::parse_str(self.organization_id.as_str())?)
-            {
+            if token_data.claims.organizations.iter().any(|o| {
+                o.organization_id == Uuid::parse_str(self.organization_id.as_str()).unwrap()
+                    && o.role as i32 >= *self.min_role as i32
+            }) {
                 Ok(())
             } else {
                 Err("You don't have permission to to run this query/mutation".into())

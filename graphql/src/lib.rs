@@ -127,8 +127,8 @@ pub async fn delete_from_s3(path: String) -> Result<(), Error> {
 pub fn is_admin(ctx: &Context<'_>) -> bool {
     if let Some(token_data) = ctx.data_unchecked::<Option<TokenData<AccessTokenClaims>>>() {
         matches!(
-            token_data.claims.role,
-            db::Role::STAFF | db::Role::SUPERUSER
+            token_data.claims.system_role,
+            db::SystemRoleType::Staff | db::SystemRoleType::Superuser
         )
     } else {
         false

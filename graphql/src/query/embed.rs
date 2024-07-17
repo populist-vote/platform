@@ -2,7 +2,7 @@ use crate::{context::ApiContext, guard::OrganizationGuard, is_admin, types::Embe
 use async_graphql::{Context, Object, Result, SimpleObject, ID};
 use auth::AccessTokenClaims;
 use chrono::Utc;
-use db::{Embed, EmbedFilter, EmbedType};
+use db::{Embed, EmbedFilter, EmbedType, OrganizationRoleType};
 use jsonwebtoken::TokenData;
 
 #[derive(Default)]
@@ -29,7 +29,7 @@ pub struct EnhancedEmbedOriginResult {
 #[Object]
 impl EmbedQuery {
     #[graphql(
-        guard = "OrganizationGuard::new(&organization_id)",
+        guard = "OrganizationGuard::new(&organization_id, &OrganizationRoleType::ReadOnly)",
         visible = "is_admin"
     )]
     async fn embeds_activity(
@@ -72,7 +72,7 @@ impl EmbedQuery {
     }
 
     #[graphql(
-        guard = "OrganizationGuard::new(&organization_id)",
+        guard = "OrganizationGuard::new(&organization_id, &OrganizationRoleType::ReadOnly)",
         visible = "is_admin"
     )]
     async fn recent_deployments(
@@ -116,7 +116,7 @@ impl EmbedQuery {
     }
 
     #[graphql(
-        guard = "OrganizationGuard::new(&organization_id)",
+        guard = "OrganizationGuard::new(&organization_id, &OrganizationRoleType::ReadOnly)",
         visible = "is_admin"
     )]
     async fn embeds_by_organization(
@@ -142,15 +142,20 @@ impl EmbedQuery {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = Embed::find_by_id(&db_pool, uuid::Uuid::parse_str(&id)?).await?;
         if let Some(token_data) = ctx.data_unchecked::<Option<TokenData<AccessTokenClaims>>>() {
-            if token_data.claims.organization_id.unwrap_or_default() != record.organization_id {
-                return Err("Unauthorized".into());
+            if token_data
+                .claims
+                .organizations
+                .iter()
+                .any(|role| role.organization_id == record.organization_id)
+            {
+                return Ok(record.into());
             }
         }
         Ok(record.into())
     }
 
     #[graphql(
-        guard = "OrganizationGuard::new(&organization_id)",
+        guard = "OrganizationGuard::new(&organization_id, &OrganizationRoleType::ReadOnly)",
         visible = "is_admin"
     )]
     async fn total_candidate_guide_submissions(
