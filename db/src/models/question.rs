@@ -75,7 +75,6 @@ pub enum Sentiment {
 }
 
 impl Question {
-    #[deprecated(note = "Use `insert` and `update` instead")]
     pub async fn upsert(db_pool: &PgPool, input: &UpsertQuestionInput) -> Result<Self, Error> {
         let id = match input.id {
             Some(id) => id,
@@ -131,10 +130,16 @@ impl Question {
             .await?;
         }
 
+        // Input must always contain the desired issue_tag_id set, use empty set to remove all
         if (input.issue_tag_ids).is_some() {
             for issue_tag_id in input.issue_tag_ids.as_ref().unwrap() {
                 sqlx::query!(
                     r#"
+                    WITH deleted AS (
+                        DELETE FROM question_issue_tags
+                        WHERE question_id = $1
+                        RETURNING *
+                    )
                     INSERT INTO question_issue_tags (question_id, issue_tag_id)
                     VALUES ($1, $2)
                     ON CONFLICT (question_id, issue_tag_id) DO NOTHING
