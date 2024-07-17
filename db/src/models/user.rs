@@ -68,9 +68,9 @@ pub struct CreateUserWithProfileInput {
 #[sqlx(type_name = "organization_role_type", rename_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
 pub enum OrganizationRoleType {
-    Admin,
-    Member,
     ReadOnly,
+    Member,
+    Admin,
 }
 
 #[derive(
@@ -79,9 +79,9 @@ pub enum OrganizationRoleType {
 #[sqlx(type_name = "system_role_type", rename_all = "lowercase")]
 #[serde(rename_all = "lowercase")]
 pub enum SystemRoleType {
+    User,
     Staff,
     Superuser,
-    User,
 }
 
 #[derive(SimpleObject, Debug, Clone, Serialize, Deserialize)]
