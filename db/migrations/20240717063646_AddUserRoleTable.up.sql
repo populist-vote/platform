@@ -14,15 +14,16 @@ CREATE TABLE public.organization_users
     user_id uuid NOT NULL
     REFERENCES public.populist_user (id)
     ON DELETE CASCADE
-    ON UPDATE CASCADE
-    PRIMARY KEY,
+    ON UPDATE CASCADE,
 
     organization_id uuid NOT NULL
     REFERENCES public.organization
     ON DELETE CASCADE
     ON UPDATE CASCADE,
 
-    role organization_role_type NOT NULL
+    role organization_role_type NOT NULL,
+
+    PRIMARY KEY (user_id, organization_id)
 );
 
 CREATE INDEX organization_users_organization_idx ON public.organization_users (

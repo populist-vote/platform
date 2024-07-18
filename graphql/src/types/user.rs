@@ -1,7 +1,7 @@
-use super::{AddressExtendedMNResult, AddressResult};
+use super::{AddressExtendedMNResult, AddressResult, OrganizationResult};
 use crate::{context::ApiContext, guard::UserGuard, is_admin};
 use async_graphql::{ComplexObject, Context, InputObject, Result, SimpleObject, ID};
-use db::{Address, UserWithProfile};
+use db::{Address, Organization, UserWithProfile};
 
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
@@ -24,6 +24,31 @@ pub struct UpdateUserProfileInput {
 
 #[ComplexObject]
 impl UserResult {
+    #[graphql(guard = "UserGuard::new(&self.id)", visible = "is_admin")]
+    async fn available_organizations(&self, ctx: &Context<'_>) -> Result<Vec<OrganizationResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let organizations = sqlx::query_as!(
+            Organization,
+            r#"
+            SELECT
+                o.*
+            FROM
+                organization o
+            JOIN
+                organization_users ou ON o.id = ou.organization_id
+            WHERE
+                ou.user_id = $1
+                "#,
+            &uuid::Uuid::try_parse(&self.id).unwrap()
+        )
+        .fetch_all(&db_pool)
+        .await?;
+        Ok(organizations
+            .into_iter()
+            .map(|organization| organization.into())
+            .collect())
+    }
+
     #[graphql(guard = "UserGuard::new(&self.id)", visible = "is_admin")]
     async fn address(&self, ctx: &Context<'_>) -> Result<Option<AddressResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
