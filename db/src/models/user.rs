@@ -71,6 +71,7 @@ pub enum OrganizationRoleType {
     ReadOnly,
     Member,
     Admin,
+    Owner,
 }
 
 #[derive(
