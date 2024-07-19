@@ -111,6 +111,7 @@ impl CandidateGuideResult {
                 SELECT
                   id,
                   prompt,
+                  translations,
                   response_char_limit,
                   response_placeholder_text,
                   allow_anonymous_responses,

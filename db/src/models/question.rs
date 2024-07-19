@@ -1,4 +1,4 @@
-use crate::{DateTime, Error};
+use crate::{util::translate::translate_text, DateTime, Error};
 use async_graphql::{Enum, InputObject};
 use sqlx::{FromRow, PgPool};
 use strum_macros::{Display, EnumString};
@@ -8,6 +8,7 @@ use uuid::Uuid;
 pub struct Question {
     pub id: uuid::Uuid,
     pub prompt: String,
+    pub translations: Option<serde_json::Value>,
     pub response_char_limit: Option<i32>,
     pub response_placeholder_text: Option<String>,
     pub allow_anonymous_responses: bool,
@@ -23,6 +24,7 @@ pub struct QuestionSubmission {
     pub respondent_id: Option<uuid::Uuid>,
     pub candidate_id: Option<uuid::Uuid>,
     pub response: String,
+    pub translations: Option<serde_json::Value>,
     pub sentiment: Option<Sentiment>,
     pub is_locked: bool,
     pub created_at: DateTime,
@@ -40,6 +42,7 @@ pub struct UpsertQuestionInput {
     pub embed_id: Option<uuid::Uuid>,
     pub candidate_guide_id: Option<uuid::Uuid>,
     pub issue_tag_ids: Option<Vec<uuid::Uuid>>,
+    pub should_translate: Option<bool>,
 }
 
 #[derive(FromRow, Debug, Clone, InputObject)]
@@ -52,6 +55,7 @@ pub struct InsertQuestionInput {
     pub embed_id: Option<uuid::Uuid>,
     pub candidate_guide_id: Option<uuid::Uuid>,
     pub issue_tag_ids: Option<Vec<uuid::Uuid>>,
+    pub should_translate: Option<bool>,
 }
 
 #[derive(FromRow, Debug, Clone, InputObject)]
@@ -62,6 +66,7 @@ pub struct UpsertQuestionSubmissionInput {
     pub respondent_id: Option<Uuid>,
     pub response: String,
     pub sentiment: Option<Sentiment>,
+    pub should_translate: Option<bool>,
 }
 
 #[derive(Display, Copy, Clone, Eq, PartialEq, Debug, Enum, EnumString, sqlx::Type)]
@@ -81,7 +86,7 @@ impl Question {
             None => uuid::Uuid::new_v4(),
         };
 
-        let question = sqlx::query_as!(
+        let mut question = sqlx::query_as!(
             Question,
             r#"
                 INSERT INTO question (
@@ -152,6 +157,29 @@ impl Question {
             }
         }
 
+        let should_translate = input.should_translate.unwrap_or(false);
+
+        if should_translate {
+            let translations = translate_text(&question.prompt, vec!["es", "so", "hmn"]).await;
+
+            if let Ok(translations) = translations {
+                let result = sqlx::query!(
+                    r#"
+                    UPDATE question
+                    SET translations = $1
+                    WHERE id = $2
+                    returning *
+                "#,
+                    translations,
+                    id
+                )
+                .fetch_one(db_pool)
+                .await?;
+
+                question.translations = result.translations;
+            }
+        }
+
         Ok(question)
     }
 
@@ -179,6 +207,16 @@ impl QuestionSubmission {
             None => uuid::Uuid::new_v4(),
         };
 
+        let should_translate = input.should_translate.unwrap_or(false);
+
+        let mut translations = None;
+        if should_translate {
+            let result = translate_text(&input.response, vec!["es", "so", "hmn"]).await;
+            if let Ok(result) = result {
+                translations = Some(result);
+            }
+        }
+
         let question_submission = sqlx::query_as!(
             QuestionSubmission,
             r#"
@@ -188,17 +226,20 @@ impl QuestionSubmission {
                     respondent_id,
                     candidate_id,
                     response,
-                    sentiment
+                    sentiment,
+                    translations
                 ) VALUES (
                     $1,
                     $2,
                     $3,
                     $4,
                     $5,
-                    $6
+                    $6,
+                    $7
                 ) ON CONFLICT (id) DO UPDATE SET
                     response = $5,
                     sentiment = $6,
+                    translations = $7,
                     updated_at = now()
                 WHERE question_submission.is_locked <> TRUE
                 RETURNING 
@@ -207,6 +248,7 @@ impl QuestionSubmission {
                     respondent_id,
                     candidate_id,
                     response,
+                    translations,
                     sentiment AS "sentiment:Sentiment",
                     is_locked,
                     created_at,
@@ -217,7 +259,8 @@ impl QuestionSubmission {
             input.respondent_id,
             input.candidate_id,
             input.response,
-            input.sentiment as Option<Sentiment>
+            input.sentiment as Option<Sentiment>,
+            translations
         )
         .fetch_one(db_pool)
         .await?;

@@ -2,6 +2,7 @@ pub mod errors;
 pub mod loaders;
 pub mod models;
 pub mod pool;
+pub mod util;
 
 pub type DateTime = chrono::DateTime<chrono::Utc>;
 

@@ -1096,6 +1096,7 @@ name = "db"
 version = "0.1.0"
 dependencies = [
  "async-graphql",
+ "async-openai 0.19.1",
  "chrono",
  "dotenv",
  "geocodio",
