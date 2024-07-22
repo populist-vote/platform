@@ -66,6 +66,7 @@ pub struct UpsertQuestionSubmissionInput {
     pub respondent_id: Option<Uuid>,
     pub response: String,
     pub sentiment: Option<Sentiment>,
+    pub translations: Option<serde_json::Value>,
     pub should_translate: Option<bool>,
 }
 
@@ -209,7 +210,8 @@ impl QuestionSubmission {
 
         let should_translate = input.should_translate.unwrap_or(false);
 
-        let mut translations = None;
+        let mut translations = input.translations.clone();
+
         if should_translate {
             let result = translate_text(&input.response, vec!["es", "so", "hmn"]).await;
             if let Ok(result) = result {
