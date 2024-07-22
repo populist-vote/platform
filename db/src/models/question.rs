@@ -42,6 +42,7 @@ pub struct UpsertQuestionInput {
     pub embed_id: Option<uuid::Uuid>,
     pub candidate_guide_id: Option<uuid::Uuid>,
     pub issue_tag_ids: Option<Vec<uuid::Uuid>>,
+    pub translations: Option<serde_json::Value>,
     pub should_translate: Option<bool>,
 }
 
@@ -96,20 +97,23 @@ impl Question {
                     response_char_limit,
                     response_placeholder_text,
                     allow_anonymous_responses,
-                    embed_id
+                    embed_id,
+                    translations
                 ) VALUES (
                     $1,
                     $2,
                     $3,
                     $4,
                     $5,
-                    $6
+                    $6,
+                    $7
                 ) ON CONFLICT (id) DO UPDATE SET
                     prompt = $2,
                     response_char_limit = $3,
                     response_placeholder_text = $4,
                     allow_anonymous_responses = $5,
-                    embed_id = $6
+                    embed_id = $6,
+                    translations = $7
                 RETURNING *
             "#,
             id,
@@ -117,7 +121,8 @@ impl Question {
             input.response_char_limit,
             input.response_placeholder_text,
             input.allow_anonymous_responses,
-            input.embed_id
+            input.embed_id,
+            input.translations
         )
         .fetch_one(db_pool)
         .await?;
