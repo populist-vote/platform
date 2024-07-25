@@ -78,6 +78,9 @@ impl EmbedResult {
             EmbedOriginResult,
             r#"
             SELECT url, last_ping_at FROM embed_origin WHERE embed_id = $1
+            AND url NOT LIKE '%localhost:3030%'
+            AND url NOT LIKE '%staging.populist.us%'
+            AND url NOT LIKE '%populist.us%'
         "#,
             uuid::Uuid::parse_str(&self.id.as_str()).unwrap(),
         )

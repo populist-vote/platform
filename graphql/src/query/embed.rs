@@ -97,6 +97,9 @@ impl EmbedQuery {
                     embed e ON eo.embed_id = e.id
                 WHERE
                     e.organization_id = $1
+                    AND eo.url NOT LIKE '%localhost:3030%'
+                    AND eo.url NOT LIKE '%staging.populist.us%'
+                    AND eo.url NOT LIKE '%populist.us%'
                 ORDER BY
                     eo.last_ping_at DESC
                 LIMIT $2;
