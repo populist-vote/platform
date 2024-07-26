@@ -139,8 +139,14 @@ impl ElectionResult {
 
             let ward = user_address_extended_mn_data
                 .map(|a| {
-                    a.ward
-                        .map(|d| d.as_str().trim_start_matches('0').to_string())
+                    a.ward.map(|d| {
+                        // Remove non-numeric prefix and then trim leading zeros
+                        if let Some(pos) = d.find('-') {
+                            d[(pos + 1)..].trim_start_matches('0').to_string()
+                        } else {
+                            d.trim_start_matches('0').to_string()
+                        }
+                    })
                 })
                 .unwrap_or(None);
 
