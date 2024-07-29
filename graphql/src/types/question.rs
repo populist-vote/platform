@@ -330,6 +330,7 @@ impl From<QuestionSubmission> for QuestionSubmissionResult {
             respondent_id: q.respondent_id.map(|id| id.into()),
             candidate_id: q.candidate_id.map(|id| id.into()),
             response: q.response,
+            editorial: q.editorial,
             translations: q.translations,
             sentiment: q.sentiment,
             created_at: q.created_at,
