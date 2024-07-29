@@ -25,6 +25,7 @@ pub struct QuestionSubmissionResult {
     respondent_id: Option<ID>,
     candidate_id: Option<ID>,
     response: String,
+    editorial: Option<String>,
     translations: Option<serde_json::Value>,
     sentiment: Option<Sentiment>,
     created_at: DateTime,
