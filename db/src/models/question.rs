@@ -24,6 +24,7 @@ pub struct QuestionSubmission {
     pub respondent_id: Option<uuid::Uuid>,
     pub candidate_id: Option<uuid::Uuid>,
     pub response: String,
+    pub editorial: Option<String>,
     pub translations: Option<serde_json::Value>,
     pub sentiment: Option<Sentiment>,
     pub is_locked: bool,
@@ -66,6 +67,7 @@ pub struct UpsertQuestionSubmissionInput {
     pub candidate_id: Option<Uuid>,
     pub respondent_id: Option<Uuid>,
     pub response: String,
+    pub editorial: Option<String>,
     pub sentiment: Option<Sentiment>,
     pub translations: Option<serde_json::Value>,
     pub should_translate: Option<bool>,
@@ -234,7 +236,8 @@ impl QuestionSubmission {
                     candidate_id,
                     response,
                     sentiment,
-                    translations
+                    translations,
+                    editorial
                 ) VALUES (
                     $1,
                     $2,
@@ -242,11 +245,13 @@ impl QuestionSubmission {
                     $4,
                     $5,
                     $6,
-                    $7
+                    $7,
+                    $8
                 ) ON CONFLICT (id) DO UPDATE SET
                     response = $5,
                     sentiment = $6,
                     translations = $7,
+                    editorial = $8,
                     updated_at = now()
                 WHERE question_submission.is_locked <> TRUE
                 RETURNING 
@@ -255,6 +260,7 @@ impl QuestionSubmission {
                     respondent_id,
                     candidate_id,
                     response,
+                    editorial,
                     translations,
                     sentiment AS "sentiment:Sentiment",
                     is_locked,
@@ -267,7 +273,8 @@ impl QuestionSubmission {
             input.candidate_id,
             input.response,
             input.sentiment as Option<Sentiment>,
-            translations
+            translations,
+            input.editorial
         )
         .fetch_one(db_pool)
         .await?;

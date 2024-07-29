@@ -52,6 +52,7 @@ impl CandidateGuideQuery {
                 qs.candidate_id,
                 qs.question_id,
                 qs.response,
+                qs.editorial,
                 qs.translations,
                 qs.sentiment AS "sentiment:Sentiment",
                 qs.created_at,
