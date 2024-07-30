@@ -144,25 +144,30 @@ impl Question {
         }
 
         // Input must always contain the desired issue_tag_id set, use empty set to remove all
-        if (input.issue_tag_ids).is_some() {
-            for issue_tag_id in input.issue_tag_ids.as_ref().unwrap() {
-                sqlx::query!(
-                    r#"
-                    WITH deleted AS (
-                        DELETE FROM question_issue_tags
-                        WHERE question_id = $1
-                        RETURNING *
-                    )
-                    INSERT INTO question_issue_tags (question_id, issue_tag_id)
-                    VALUES ($1, $2)
-                    ON CONFLICT (question_id, issue_tag_id) DO NOTHING
+        if let Some(issue_tag_ids) = input.issue_tag_ids.clone() {
+            // Delete existing issue tags
+            sqlx::query!(
+                r#"
+                DELETE FROM question_issue_tags
+                WHERE question_id = $1
                 "#,
-                    id,
-                    issue_tag_id
-                )
-                .execute(db_pool)
-                .await?;
-            }
+                id
+            )
+            .execute(db_pool)
+            .await?;
+
+            // Insert new issue tags
+            sqlx::query!(
+                r#"
+                INSERT INTO question_issue_tags (question_id, issue_tag_id)
+                SELECT $1, unnest($2::uuid[])
+                ON CONFLICT (question_id, issue_tag_id) DO NOTHING
+                "#,
+                id,
+                &issue_tag_ids
+            )
+            .execute(db_pool)
+            .await?;
         }
 
         let should_translate = input.should_translate.unwrap_or(false);
