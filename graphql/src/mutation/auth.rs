@@ -4,13 +4,14 @@ use crate::{
     is_admin,
     types::{CreateUserResult, Error, LoginResult},
 };
-use async_graphql::{Context, InputObject, Object, Result};
+use async_graphql::{Context, InputObject, Object, Result, ID};
 use auth::{
     create_access_token_for_user, create_random_token, create_refresh_token_for_user,
     create_temporary_username, format_auth_cookie, AccessTokenClaims,
 };
 use db::{
-    AddressInput, Coordinates, CreateUserInput, CreateUserWithProfileInput, SystemRoleType, User,
+    AddressInput, Coordinates, CreateUserInput, CreateUserWithProfileInput, OrganizationRole,
+    OrganizationRoleType, SystemRoleType, User,
 };
 use geocodio::GeocodioProxy;
 use jsonwebtoken::TokenData;
@@ -32,6 +33,7 @@ pub struct BeginUserRegistrationInput {
     pub email: String,
     pub password: String,
     pub address: Option<AddressInput>,
+    pub invite_token: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, InputObject)]
@@ -46,6 +48,15 @@ pub struct ResetPasswordInput {
 pub struct UpdatePasswordInput {
     old_password: String,
     new_password: String,
+}
+
+#[derive(Serialize, Deserialize, InputObject)]
+#[graphql(visible = "is_admin")]
+pub struct InviteUserInput {
+    email: String,
+    organization_id: Option<ID>,
+    politician_id: Option<ID>,
+    role: Option<OrganizationRoleType>,
 }
 
 #[derive(Default)]
@@ -63,6 +74,43 @@ impl AuthMutation {
         let new_record = User::create(&db_pool, &input).await?;
 
         Ok(CreateUserResult::from(new_record))
+    }
+
+    #[graphql(guard = "StaffOnly", visible = "is_admin")]
+    async fn invite_user(&self, ctx: &Context<'_>, input: InviteUserInput) -> Result<String> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let invite = sqlx::query!(
+            r#"
+            INSERT INTO invite_token (email, organization_id, politician_id, role, invited_by, sent_at)
+            VALUES ($1, $2, $3, $4, $5, now() AT TIME ZONE 'utc')
+            RETURNING email, token
+        "#,
+            input.email,
+            uuid::Uuid::parse_str(&input.organization_id.unwrap().to_string()).unwrap(),
+            input
+                .politician_id
+                .map(|id| uuid::Uuid::parse_str(&id.to_string()).unwrap()),
+            input.role as Option<OrganizationRoleType>,
+            ctx.data::<TokenData<AccessTokenClaims>>().unwrap().claims.sub
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        // Send email to user with invite token
+        let invite_url = format!(
+            "{}/register/invite?token={}",
+            config::Config::default().web_app_url,
+            invite.token
+        );
+
+        if let Err(err) = EmailClient::default()
+            .send_invite_email(invite.email, invite_url.clone())
+            .await
+        {
+            println!("Error sending welcome email: {}", err)
+        }
+
+        Ok(invite_url)
     }
 
     #[graphql(visible = "is_admin")]
@@ -178,7 +226,47 @@ impl AuthMutation {
 
         match new_user_result {
             Ok(new_user) => {
-                let access_token = create_access_token_for_user(new_user.clone(), vec![])?;
+                // Lookup invite_token and assign user to organization / politician
+                let mut organization_roles = vec![];
+                if let Some(invite_token) = input.invite_token {
+                    let invite = sqlx::query!(
+                        r#"
+                        SELECT email, organization_id, politician_id, role AS "role:OrganizationRoleType" FROM invite_token
+                        WHERE token = $1
+                        AND email = $2
+                    "#,
+                        uuid::Uuid::parse_str(&invite_token).unwrap(),
+                        input.email
+                    )
+                    .fetch_one(&db_pool)
+                    .await?;
+
+                    if let Some(organization_id) = invite.organization_id {
+                        let organization_role = OrganizationRole {
+                            organization_id,
+                            role: invite.role.unwrap_or(OrganizationRoleType::Member),
+                        };
+                        organization_roles.push(organization_role);
+                    }
+
+                    if let Some(politician_id) = invite.politician_id {
+                        // Create a new organization for the politician
+                        let new_organization = sqlx::query!(
+                            r#"
+                            INSERT INTO organization (name, politician_id)
+                            VALUES ($1, $2)
+                            RETURNING id
+                        "#,
+                            input.email,
+                            uuid::Uuid::parse_str(&politician_id).unwrap()
+                        )
+                        .fetch_one(&db_pool)
+                        .await?;
+                    }
+                }
+
+                let access_token =
+                    create_access_token_for_user(new_user.clone(), organization_roles)?;
                 let refresh_token = create_refresh_token_for_user(new_user.clone())?;
                 db::User::update_refresh_token(&db_pool, new_user.id, &refresh_token).await?;
 

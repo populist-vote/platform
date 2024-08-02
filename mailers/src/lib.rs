@@ -48,6 +48,22 @@ impl EmailClient {
         Ok(status.into())
     }
 
+    pub async fn send_invite_email(
+        &self,
+        recipient_email: String,
+        invite_url: String,
+    ) -> Result<u16, sendgrid::SendgridError> {
+        let p = Personalization::new(Email::new(&recipient_email))
+            .add_dynamic_template_data_json(&json!({ "invite_url": &invite_url }))
+            .unwrap();
+        let mail = Message::new(self.from.clone())
+            .set_template_id(WELCOME_EMAIL_TEMPLATE_ID)
+            .add_personalization(p);
+        let response = self.sender.send(&mail).await;
+        let status = response.unwrap().status();
+        Ok(status.into())
+    }
+
     pub async fn send_reset_password_email(
         &self,
         recipient_email: String,
