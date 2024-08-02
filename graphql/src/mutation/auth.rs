@@ -250,15 +250,23 @@ impl AuthMutation {
                     }
 
                     if let Some(politician_id) = invite.politician_id {
+                        let politician =
+                            db::Politician::find_by_id(&db_pool, politician_id).await?;
                         // Create a new organization for the politician
+                        let name = format!(
+                            "{} {}'s Campaign",
+                            politician.first_name, politician.last_name
+                        );
+
                         let new_organization = sqlx::query!(
                             r#"
-                            INSERT INTO organization (name, politician_id)
-                            VALUES ($1, $2)
+                            INSERT INTO organization (name, slug, politician_id)
+                            VALUES ($1, $2, $3)
                             RETURNING id
                         "#,
-                            input.email,
-                            uuid::Uuid::parse_str(&politician_id).unwrap()
+                            name,
+                            slug::slugify!(&name),
+                            input.politician_id
                         )
                         .fetch_one(&db_pool)
                         .await?;

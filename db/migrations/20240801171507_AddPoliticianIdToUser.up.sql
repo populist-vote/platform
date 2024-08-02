@@ -1,8 +1,8 @@
 -- Add up migration script here
-ALTER TABLE politician
-ADD COLUMN organization_id UUID REFERENCES organization (id);
+ALTER TABLE organization
+ADD COLUMN politician_id UUID REFERENCES politician (id);
 
-CREATE INDEX idx_organization_id ON politician (organization_id);
+CREATE INDEX idx_organization_politician_id ON organization (politician_id);
 
 CREATE TABLE invite_token (
     token UUID PRIMARY KEY,
