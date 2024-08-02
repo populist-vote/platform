@@ -24,6 +24,8 @@ pub struct Organization {
     pub headquarters_address_id: Option<uuid::Uuid>,
     pub headquarters_phone: Option<String>,
     pub tax_classification: Option<String>,
+    /// Organization for a politician's campaign
+    pub politician_id: Option<uuid::Uuid>,
     pub assets: JSON,
     pub created_at: DateTime,
     pub updated_at: DateTime,
@@ -112,6 +114,7 @@ impl Organization {
                     headquarters_address_id,
                     headquarters_phone,
                     tax_classification,
+                    politician_id,
                     assets,
                     created_at,
                     updated_at
