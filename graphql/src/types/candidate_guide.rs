@@ -139,8 +139,10 @@ impl CandidateGuideResult {
             FROM candidate_guide cg
             JOIN candidate_guide_questions cgq ON cg.id = cgq.candidate_guide_id
             JOIN question_submission qs ON cgq.question_id = qs.question_id
-            WHERE cg.id = $1
-            AND (qs.response IS NOT NULL OR qs.response != '');
+            WHERE 
+                cg.id = $1
+                AND qs.response IS NOT NULL
+                AND qs.response != ''
             "#,
             uuid::Uuid::parse_str(&self.id.as_str())?,
         )
