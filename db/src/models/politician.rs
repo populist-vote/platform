@@ -682,7 +682,7 @@ impl Politician {
     ) -> Result<Vec<Organization>, sqlx::Error> {
         let records = sqlx::query_as!(Organization,
             r#"
-                SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, o.assets, o.created_at, o.updated_at  FROM organization o
+                SELECT o.id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, o.politician_id, o.assets, o.created_at, o.updated_at  FROM organization o
                 JOIN politician_organization_endorsements
                 ON politician_organization_endorsements.organization_id = o.id
                 WHERE politician_organization_endorsements.politician_id = $1
