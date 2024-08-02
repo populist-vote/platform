@@ -209,7 +209,8 @@ impl EmbedResult {
                     cgq.candidate_guide_id = $1
                     AND cgr.race_id = $2
                     AND rc.candidate_id = qs.candidate_id
-                    AND (qs.response IS NOT NULL OR qs.response != '')
+                    AND qs.response IS NOT NULL
+                    AND qs.response != ''
             "#,
                 candidate_guide_id,
                 race_id

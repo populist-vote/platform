@@ -66,7 +66,9 @@ impl CandidateGuideQuery {
             JOIN
                 candidate_guide cg ON cgq.candidate_guide_id = cg.id
             WHERE
-                cg.organization_id = $1 AND (qs.response IS NOT NULL OR qs.response != '')
+                cg.organization_id = $1 
+                AND qs.response IS NOT NULL
+                AND qs.response != ''
             ORDER BY
                 qs.created_at DESC
             LIMIT $2;
