@@ -261,12 +261,12 @@ impl AuthMutation {
                         let new_organization = sqlx::query!(
                             r#"
                             INSERT INTO organization (name, slug, politician_id)
-                            VALUES ($1, $2, $3)
+                            VALUES ($1, slugify($2), $3)
                             RETURNING id
                         "#,
                             name,
-                            slug::slugify!(&name),
-                            input.politician_id
+                            name,
+                            politician_id
                         )
                         .fetch_one(&db_pool)
                         .await?;
