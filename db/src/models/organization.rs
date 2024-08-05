@@ -1,4 +1,3 @@
-use crate::CreateOrConnectIssueTagInput;
 use crate::DateTime;
 use crate::IssueTag;
 use crate::IssueTagIdentifier;
@@ -33,10 +32,8 @@ pub struct Organization {
 
 #[serde_with::serde_as]
 #[derive(InputObject, Debug, Default, Serialize, Deserialize)]
-pub struct UpsertOrganizationInput {
-    pub id: Option<uuid::Uuid>,
-    pub name: Option<String>,
-    pub slug: Option<String>,
+pub struct CreateOrganizationInput {
+    pub name: String,
     pub description: Option<String>,
     pub thumbnail_image_url: Option<String>,
     pub website_url: Option<String>,
@@ -48,9 +45,27 @@ pub struct UpsertOrganizationInput {
     pub headquarters_address_id: Option<uuid::Uuid>,
     pub headquarters_phone: Option<String>,
     pub tax_classification: Option<String>,
-    pub issue_tags: Option<CreateOrConnectIssueTagInput>,
-    #[serde_as(as = "serde_with::json::JsonString")]
-    pub assets: Option<JSON>,
+    pub assets: Option<serde_json::Value>,
+}
+
+#[serde_with::serde_as]
+#[derive(InputObject, Debug, Default, Serialize, Deserialize)]
+pub struct UpdateOrganizationInput {
+    pub id: uuid::Uuid,
+    pub slug: Option<String>,
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub thumbnail_image_url: Option<String>,
+    pub website_url: Option<String>,
+    pub facebook_url: Option<String>,
+    pub twitter_url: Option<String>,
+    pub instagram_url: Option<String>,
+    pub email: Option<String>,
+    pub votesmart_sig_id: Option<i32>,
+    pub headquarters_address_id: Option<uuid::Uuid>,
+    pub headquarters_phone: Option<String>,
+    pub tax_classification: Option<String>,
+    pub assets: Option<serde_json::Value>,
 }
 
 #[derive(Default, InputObject)]
@@ -60,7 +75,7 @@ pub struct OrganizationSearch {
 
 #[derive(Debug, Serialize, Deserialize, InputObject)]
 pub struct CreateOrConnectOrganizationInput {
-    pub create: Option<Vec<UpsertOrganizationInput>>,
+    pub create: Option<Vec<CreateOrganizationInput>>,
     pub connect: Option<Vec<String>>, // Accept UUIDs or slugs
 }
 
@@ -70,54 +85,20 @@ pub enum OrganizationIdentifier {
 }
 
 impl Organization {
-    pub async fn upsert(
+    pub async fn create(
         db_pool: &PgPool,
-        input: &UpsertOrganizationInput,
+        input: &CreateOrganizationInput,
     ) -> Result<Self, sqlx::Error> {
-        let id = input.id.unwrap_or_else(uuid::Uuid::new_v4);
-        let slug = input.slug.clone().unwrap_or_else(|| {
-            slugify!(input.name.as_ref().expect("Organization name is required"))
-        });
+        let id = uuid::Uuid::new_v4();
+        let slug = slugify!(&input.name);
 
         let record = sqlx::query_as!(
             Organization,
             r#"
                 INSERT INTO organization (id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, assets)
-                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) 
-                ON CONFLICT (id) DO UPDATE SET
-                    slug = COALESCE($2, organization.slug),
-                    name = COALESCE($3, organization.name),
-                    description = COALESCE($4, organization.description),
-                    thumbnail_image_url = COALESCE($5, organization.thumbnail_image_url),
-                    website_url = COALESCE($6, organization.website_url),
-                    facebook_url = COALESCE($7, organization.facebook_url),
-                    twitter_url = COALESCE($8, organization.twitter_url),
-                    instagram_url = COALESCE($9, organization.instagram_url),
-                    email = COALESCE($10, organization.email),
-                    votesmart_sig_id = COALESCE($11, organization.votesmart_sig_id),
-                    headquarters_address_id = COALESCE($12, organization.headquarters_address_id),
-                    headquarters_phone = COALESCE($13, organization.headquarters_phone),
-                    tax_classification = COALESCE($14, organization.tax_classification),
-                    assets = COALESCE($15, organization.assets)
+                VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                 RETURNING
-                    id,
-                    slug,
-                    name,
-                    description,
-                    thumbnail_image_url,
-                    website_url,
-                    facebook_url,
-                    twitter_url,
-                    instagram_url,
-                    email,
-                    votesmart_sig_id,
-                    headquarters_address_id,
-                    headquarters_phone,
-                    tax_classification,
-                    politician_id,
-                    assets,
-                    created_at,
-                    updated_at
+                    id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, politician_id, assets, created_at, updated_at
             "#,
             id,
             slug,
@@ -134,6 +115,54 @@ impl Organization {
             input.headquarters_phone,
             input.tax_classification,
             input.assets
+        )
+        .fetch_one(db_pool)
+        .await?;
+
+        Ok(record)
+    }
+
+    pub async fn update(
+        db_pool: &PgPool,
+        input: &UpdateOrganizationInput,
+    ) -> Result<Self, sqlx::Error> {
+        let record = sqlx::query_as!(
+            Organization,
+            r#"
+                UPDATE organization SET
+                    slug = COALESCE($1, slug),
+                    name = COALESCE($2, name),
+                    description = COALESCE($3, description),
+                    thumbnail_image_url = COALESCE($4, thumbnail_image_url),
+                    website_url = COALESCE($5, website_url),
+                    facebook_url = COALESCE($6, facebook_url),
+                    twitter_url = COALESCE($7, twitter_url),
+                    instagram_url = COALESCE($8, instagram_url),
+                    email = COALESCE($9, email),
+                    votesmart_sig_id = COALESCE($10, votesmart_sig_id),
+                    headquarters_address_id = COALESCE($11, headquarters_address_id),
+                    headquarters_phone = COALESCE($12, headquarters_phone),
+                    tax_classification = COALESCE($13, tax_classification),
+                    assets = COALESCE($14, assets)
+                WHERE id = $15
+                RETURNING
+                    id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, politician_id, assets, created_at, updated_at
+            "#,
+            input.slug,
+            input.name,
+            input.description,
+            input.thumbnail_image_url,
+            input.website_url,
+            input.facebook_url,
+            input.twitter_url,
+            input.instagram_url,
+            input.email,
+            input.votesmart_sig_id,
+            input.headquarters_address_id,
+            input.headquarters_phone,
+            input.tax_classification,
+            input.assets,
+            input.id
         )
         .fetch_one(db_pool)
         .await?;

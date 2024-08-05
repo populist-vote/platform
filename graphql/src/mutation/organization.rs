@@ -64,13 +64,13 @@ pub async fn handle_nested_issue_tags(
 #[Object]
 impl OrganizationMutation {
     #[graphql(guard = "StaffOnly", visible = "is_admin")]
-    async fn upsert_organization(
+    async fn update_organization(
         &self,
         ctx: &Context<'_>,
         input: UpsertOrganizationInput,
     ) -> Result<OrganizationResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let new_record = Organization::upsert(&db_pool, &input).await?;
+        let new_record = Organization::update(&db_pool, &input).await?;
 
         if input.issue_tags.is_some() {
             handle_nested_issue_tags(&db_pool, new_record.id, input.issue_tags.unwrap()).await?;
