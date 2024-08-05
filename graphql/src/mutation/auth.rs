@@ -77,40 +77,82 @@ impl AuthMutation {
     }
 
     #[graphql(guard = "StaffOnly", visible = "is_admin")]
-    async fn invite_user(&self, ctx: &Context<'_>, input: InviteUserInput) -> Result<String> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let invite = sqlx::query!(
+    async fn invite_user(
+        &self,
+        ctx: &Context<'_>,
+        input: InviteUserInput,
+    ) -> Result<String, Error> {
+        let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+        let requesting_user = ctx.data::<Option<TokenData<AccessTokenClaims>>>().unwrap();
+
+        match requesting_user {
+            Some(requesting_user) => {
+                let invite = sqlx::query!(
             r#"
-            INSERT INTO invite_token (email, organization_id, politician_id, role, invited_by, sent_at)
-            VALUES ($1, $2, $3, $4, $5, now() AT TIME ZONE 'utc')
+            INSERT INTO invite_token (email, organization_id, politician_id, role, invited_by, sent_at, expires_at)
+            VALUES ($1, $2, $3, $4, $5, now() AT TIME ZONE 'utc', now() AT TIME ZONE 'utc' + INTERVAL '7 days')
             RETURNING email, token
         "#,
             input.email,
-            uuid::Uuid::parse_str(&input.organization_id.unwrap().to_string()).unwrap(),
             input
-                .politician_id
+                .organization_id.clone()
+                .map(|id| uuid::Uuid::parse_str(&id.to_string()).unwrap()),
+            input
+                .politician_id.clone()
                 .map(|id| uuid::Uuid::parse_str(&id.to_string()).unwrap()),
             input.role as Option<OrganizationRoleType>,
-            ctx.data::<TokenData<AccessTokenClaims>>().unwrap().claims.sub
+            requesting_user.claims.sub
         )
         .fetch_one(&db_pool)
         .await?;
 
-        // Send email to user with invite token
-        let invite_url = format!(
-            "{}/register/invite?token={}",
-            config::Config::default().web_app_url,
-            invite.token
-        );
+                // Send email to user with invite token
+                let invite_url = format!(
+                    "{}/register/invite?token={}",
+                    config::Config::default().web_app_url,
+                    invite.token
+                );
 
-        if let Err(err) = EmailClient::default()
-            .send_invite_email(invite.email, invite_url.clone())
-            .await
-        {
-            println!("Error sending welcome email: {}", err)
+                let organization = if let Some(organization_id) = input.organization_id.as_ref() {
+                    Some(
+                        db::Organization::find_by_id(
+                            &db_pool,
+                            uuid::Uuid::parse_str(organization_id).unwrap(),
+                        )
+                        .await?,
+                    )
+                } else {
+                    None
+                };
+
+                let politician = if let Some(politician_id) = input.politician_id.as_ref() {
+                    Some(
+                        db::Politician::find_by_id(
+                            &db_pool,
+                            uuid::Uuid::parse_str(politician_id).unwrap(),
+                        )
+                        .await?,
+                    )
+                } else {
+                    None
+                };
+
+                if let Err(err) = EmailClient::default()
+                    .send_invite_email(
+                        invite.email,
+                        invite_url.clone(),
+                        organization.map(|o| o.name),
+                        politician.map(|p| format!("{} {}", p.first_name, p.last_name)),
+                    )
+                    .await
+                {
+                    println!("Error sending welcome email: {}", err)
+                }
+
+                Ok(invite_url)
+            }
+            None => Err(Error::Unauthorized),
         }
-
-        Ok(invite_url)
     }
 
     #[graphql(visible = "is_admin")]
@@ -137,7 +179,7 @@ impl AuthMutation {
             return Err(Error::UserExistsError);
         };
 
-        // Create a temporary user account (unconfirmed) in the database
+        // Create a temporary username to be changed later
         let temp_username = create_temporary_username(input.email.clone());
 
         // Create confirmation token so user can securely confirm their email is legitimate
@@ -229,47 +271,71 @@ impl AuthMutation {
                 // Lookup invite_token and assign user to organization / politician
                 let mut organization_roles = vec![];
                 if let Some(invite_token) = input.invite_token {
+                    // Update invite_token record to set accepted_at time
                     let invite = sqlx::query!(
                         r#"
-                        SELECT email, organization_id, politician_id, role AS "role:OrganizationRoleType" FROM invite_token
+                        UPDATE invite_token
+                        SET accepted_at = now() AT TIME ZONE 'utc'
                         WHERE token = $1
                         AND email = $2
+                        AND accepted_at IS NULL
+                        RETURNING email, organization_id, politician_id, role AS "role:OrganizationRoleType"
                     "#,
                         uuid::Uuid::parse_str(&invite_token).unwrap(),
                         input.email
                     )
-                    .fetch_one(&db_pool)
+                    .fetch_optional(&db_pool)
                     .await?;
 
-                    if let Some(organization_id) = invite.organization_id {
-                        let organization_role = OrganizationRole {
-                            organization_id,
-                            role: invite.role.unwrap_or(OrganizationRoleType::Member),
-                        };
-                        organization_roles.push(organization_role);
-                    }
-
-                    if let Some(politician_id) = invite.politician_id {
-                        let politician =
-                            db::Politician::find_by_id(&db_pool, politician_id).await?;
-                        // Create a new organization for the politician
-                        let name = format!(
-                            "{} {}'s Campaign",
-                            politician.first_name, politician.last_name
-                        );
-
-                        let new_organization = sqlx::query!(
-                            r#"
-                            INSERT INTO organization (name, slug, politician_id)
-                            VALUES ($1, slugify($2), $3)
-                            RETURNING id
+                    if let Some(invite) = invite {
+                        if let Some(organization_id) = invite.organization_id {
+                            let organization_role = OrganizationRole {
+                                organization_id,
+                                role: invite.role.unwrap_or(OrganizationRoleType::Member),
+                            };
+                            organization_roles.push(organization_role);
+                            sqlx::query!(
+                                r#"
+                            INSERT INTO organization_users (organization_id, user_id, role)
+                            VALUES ($1, $2, $3)
                         "#,
-                            name,
-                            name,
-                            politician_id
-                        )
-                        .fetch_one(&db_pool)
-                        .await?;
+                                organization_id,
+                                new_user.id,
+                                invite.role.unwrap_or(OrganizationRoleType::Member)
+                                    as OrganizationRoleType
+                            )
+                            .execute(&db_pool)
+                            .await?;
+                        }
+
+                        if let Some(politician_id) = invite.politician_id {
+                            let politician =
+                                db::Politician::find_by_id(&db_pool, politician_id).await?;
+                            // Create a new organization for the politician's campaign
+                            let name = format!(
+                                "{} {}'s Campaign",
+                                politician.first_name, politician.last_name
+                            );
+
+                            sqlx::query!(
+                                r#"
+                            WITH new_org AS (
+                                INSERT INTO organization (name, slug, politician_id)
+                                VALUES ($1, slugify($2), $3)
+                                RETURNING id
+                            )
+                            INSERT INTO organization_users (organization_id, user_id, role)
+                            SELECT id, $4, 'owner' FROM new_org
+
+                        "#,
+                                name,
+                                name,
+                                politician_id,
+                                new_user.id
+                            )
+                            .execute(&db_pool)
+                            .await?;
+                        }
                     }
                 }
 
