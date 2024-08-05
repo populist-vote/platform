@@ -1,3 +1,4 @@
+use crate::CreateOrConnectIssueTagInput;
 use crate::DateTime;
 use crate::IssueTag;
 use crate::IssueTagIdentifier;
@@ -66,6 +67,7 @@ pub struct UpdateOrganizationInput {
     pub headquarters_phone: Option<String>,
     pub tax_classification: Option<String>,
     pub assets: Option<serde_json::Value>,
+    pub issue_tags: Option<CreateOrConnectIssueTagInput>,
 }
 
 #[derive(Default, InputObject)]

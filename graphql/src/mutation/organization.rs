@@ -7,7 +7,7 @@ use crate::{
 use async_graphql::*;
 use db::{
     CreateOrConnectIssueTagInput, IssueTag, IssueTagIdentifier, Organization,
-    UpsertOrganizationInput,
+    UpdateOrganizationInput,
 };
 use sqlx::{Pool, Postgres};
 use std::str::FromStr;
@@ -67,7 +67,7 @@ impl OrganizationMutation {
     async fn update_organization(
         &self,
         ctx: &Context<'_>,
-        input: UpsertOrganizationInput,
+        input: UpdateOrganizationInput,
     ) -> Result<OrganizationResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let new_record = Organization::update(&db_pool, &input).await?;
