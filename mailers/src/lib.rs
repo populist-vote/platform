@@ -2,10 +2,11 @@ use sendgrid::v3::{Email, Message, Personalization, Sender};
 use serde_json::json;
 
 static POPULIST_FROM_EMAIL: &str = "info@populist.us";
-
 static WELCOME_EMAIL_TEMPLATE_ID: &str = "d-edaebe0011f441348a0f310c05813cb0";
 static FORGOT_PASSWORD_TEMPLATE_ID: &str = "d-819b5a97194e4b3e99efa5ec2d9c6e6e";
 static PASSWORD_CHANGED_TEMPLATE_ID: &str = "d-a5a79e8740864187aadfdd0bc07bbb97";
+static INVITE_EMAIL_TEMPLATE_ID: &str = "d-4a43724169e54aa7a3a12553f7163808";
+
 pub struct EmailClient {
     from: Email,
     sender: Sender,
@@ -42,6 +43,24 @@ impl EmailClient {
             .unwrap();
         let mail = Message::new(self.from.clone())
             .set_template_id(WELCOME_EMAIL_TEMPLATE_ID)
+            .add_personalization(p);
+        let response = self.sender.send(&mail).await;
+        let status = response.unwrap().status();
+        Ok(status.into())
+    }
+
+    pub async fn send_invite_email(
+        &self,
+        recipient_email: String,
+        invite_url: String,
+        organization_name: Option<String>,
+        politician_name: Option<String>,
+    ) -> Result<u16, sendgrid::SendgridError> {
+        let p = Personalization::new(Email::new(&recipient_email))
+            .add_dynamic_template_data_json(&json!({ "organization_name": &organization_name, "politician_name": &politician_name, "invite_url": &invite_url }))
+            .unwrap();
+        let mail = Message::new(self.from.clone())
+            .set_template_id(INVITE_EMAIL_TEMPLATE_ID)
             .add_personalization(p);
         let response = self.sender.send(&mail).await;
         let status = response.unwrap().status();

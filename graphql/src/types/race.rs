@@ -234,9 +234,6 @@ impl RaceResult {
         })
     }
 
-    #[deprecated(
-        note = "This field is deprecated and will be removed in future versions. Use election.electionDate instead."
-    )]
     async fn election_date(&self, ctx: &Context<'_>) -> Result<Option<chrono::NaiveDate>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query!(
