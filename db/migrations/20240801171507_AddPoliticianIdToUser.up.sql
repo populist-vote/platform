@@ -11,9 +11,9 @@ CREATE TABLE invite_token (
     politician_id UUID REFERENCES politician (id),
     role ORGANIZATION_ROLE_TYPE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
-    expires_at TIMESTAMP NOT NULL,
-    sent_at TIMESTAMP,
-    accepted_at TIMESTAMP,
+    expires_at TIMESTAMPTZ NOT NULL,
+    sent_at TIMESTAMPTZ,
+    accepted_at TIMESTAMPTZ,
     invited_by UUID REFERENCES populist_user (id),
     -- number of times the token can be used, NULL means unlimited
     invite_limit INT,
