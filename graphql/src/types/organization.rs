@@ -1,8 +1,8 @@
-use crate::context::ApiContext;
+use crate::{context::ApiContext, guard::OrganizationGuard, is_admin};
 
 use super::{organization_politician_note::OrganizationPoliticianNoteResult, IssueTagResult};
 use async_graphql::*;
-use db::{Organization, OrganizationPoliticianNote};
+use db::{Organization, OrganizationPoliticianNote, OrganizationRoleType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, SimpleObject)]
@@ -32,6 +32,16 @@ pub struct OrganizationResult {
     headquarters_phone: Option<String>,
     tax_classification: Option<String>,
     assets: OrganizationAssets,
+}
+
+#[derive(SimpleObject, Debug, Clone)]
+pub struct OrganizationMemberResult {
+    id: ID,
+    email: String,
+    first_name: Option<String>,
+    last_name: Option<String>,
+    profile_picture_url: Option<String>,
+    role: OrganizationRoleType,
 }
 
 #[ComplexObject]
@@ -78,6 +88,29 @@ impl OrganizationResult {
             .into_iter()
             .map(OrganizationPoliticianNoteResult::from)
             .collect())
+    }
+
+    #[graphql(
+        guard = "OrganizationGuard::new(&self.id, &OrganizationRoleType::ReadOnly)",
+        visible = "is_admin"
+    )]
+    async fn members(&self, ctx: &Context<'_>) -> FieldResult<Vec<OrganizationMemberResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records = sqlx::query_as!(
+            OrganizationMemberResult,
+            r#"
+            SELECT u.id, ou.role AS "role:OrganizationRoleType", u.email, up.first_name, up.last_name, up.profile_picture_url
+            FROM organization_users ou
+            JOIN populist_user u ON ou.user_id = u.id
+            JOIN user_profile up ON u.id = up.user_id
+            WHERE ou.organization_id = $1
+            "#,
+            uuid::Uuid::parse_str(&self.id).unwrap()
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        Ok(records)
     }
 }
 
