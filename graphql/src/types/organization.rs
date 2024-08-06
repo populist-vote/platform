@@ -55,6 +55,7 @@ pub struct OrganizationMemberResult {
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(visible = "is_admin")]
 pub struct PendingInviteResult {
+    token: ID,
     email: String,
     role: Option<OrganizationRoleType>,
     created_at: chrono::DateTime<chrono::Utc>,
@@ -138,7 +139,7 @@ impl OrganizationResult {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let records = sqlx::query!(
             r#"
-            SELECT i.email, i.role AS "role:OrganizationRoleType", i.created_at, i.accepted_at, i.organization_id FROM invite_token i
+            SELECT i.token, i.email, i.role AS "role:OrganizationRoleType", i.created_at, i.accepted_at, i.organization_id FROM invite_token i
             WHERE i.organization_id = $1
             AND i.accepted_at IS NULL
             "#,
@@ -150,6 +151,7 @@ impl OrganizationResult {
         let results = records
             .into_iter()
             .map(|r| PendingInviteResult {
+                token: ID::from(r.token),
                 email: r.email,
                 role: r.role.map(OrganizationRoleType::from),
                 created_at: r.created_at,
