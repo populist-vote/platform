@@ -1,6 +1,6 @@
 use crate::{
     context::ApiContext,
-    guard::StaffOnly,
+    guard::{OrganizationGuard, StaffOnly},
     is_admin,
     types::{CreateUserResult, Error, LoginResult},
 };
@@ -76,7 +76,6 @@ impl AuthMutation {
         Ok(CreateUserResult::from(new_record))
     }
 
-    #[graphql(guard = "StaffOnly", visible = "is_admin")]
     async fn invite_user(
         &self,
         ctx: &Context<'_>,
@@ -84,6 +83,25 @@ impl AuthMutation {
     ) -> Result<String, Error> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
         let requesting_user = ctx.data::<Option<TokenData<AccessTokenClaims>>>().unwrap();
+
+        // If input has organization_id, ensure that the requesting user is a member of that organization with at least a role of 'member'
+        if let Some(organization_id) = input.organization_id.as_ref() {
+            let organization_id = uuid::Uuid::parse_str(&organization_id).unwrap();
+            if let Some(requesting_user) = requesting_user.as_ref() {
+                let organization_roles =
+                    User::organization_roles(&db_pool, requesting_user.claims.sub).await?;
+                if let Some(role) = organization_roles
+                    .iter()
+                    .find(|r| r.organization_id == organization_id)
+                {
+                    if (role.role as i32) < (OrganizationRoleType::Member as i32) {
+                        return Err(Error::Unauthorized);
+                    }
+                } else {
+                    return Err(Error::Unauthorized);
+                }
+            }
+        }
 
         match requesting_user {
             Some(requesting_user) => {
