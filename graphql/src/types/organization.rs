@@ -13,6 +13,12 @@ pub struct OrganizationAssets {
     banner_image: Option<String>,
 }
 
+#[derive(Default, Debug, Clone, PartialEq, Eq, Serialize, Deserialize, SimpleObject)]
+#[serde(rename_all = "camelCase")]
+pub struct OrganizationAttributes {
+    supported_languages: Option<Vec<String>>,
+}
+
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
 pub struct OrganizationResult {
@@ -32,6 +38,7 @@ pub struct OrganizationResult {
     headquarters_phone: Option<String>,
     tax_classification: Option<String>,
     assets: OrganizationAssets,
+    attributes: OrganizationAttributes,
 }
 
 #[derive(SimpleObject, Debug, Clone)]
@@ -171,6 +178,7 @@ impl From<Organization> for OrganizationResult {
             headquarters_phone: o.headquarters_phone,
             tax_classification: o.tax_classification,
             assets: serde_json::from_value(o.assets).unwrap_or_default(),
+            attributes: serde_json::from_value(o.attributes).unwrap_or_default(),
         }
     }
 }

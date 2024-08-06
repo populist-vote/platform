@@ -27,6 +27,7 @@ pub struct Organization {
     /// Organization for a politician's campaign
     pub politician_id: Option<uuid::Uuid>,
     pub assets: JSON,
+    pub attributes: JSON,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
@@ -100,7 +101,7 @@ impl Organization {
                 INSERT INTO organization (id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, assets)
                 VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                 RETURNING
-                    id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, politician_id, assets, created_at, updated_at
+                    id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, politician_id, assets, attributes, created_at, updated_at
             "#,
             id,
             slug,
@@ -148,7 +149,7 @@ impl Organization {
                     assets = COALESCE($14, assets)
                 WHERE id = $15
                 RETURNING
-                    id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, politician_id, assets, created_at, updated_at
+                    id, slug, name, description, thumbnail_image_url, website_url, facebook_url, twitter_url, instagram_url, email, votesmart_sig_id, headquarters_address_id, headquarters_phone, tax_classification, politician_id, assets, attributes, created_at, updated_at
             "#,
             input.slug,
             input.name,
