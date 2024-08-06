@@ -88,7 +88,6 @@ impl OrganizationMutation {
         guard = "OrganizationGuard::new(&id.clone().into(), &OrganizationRoleType::ReadOnly)",
         visible = "is_admin"
     )]
-
     async fn upload_organization_thumbnail(
         &self,
         ctx: &Context<'_>,
@@ -135,6 +134,34 @@ impl OrganizationMutation {
             .as_str()
             .unwrap()
             .to_string())
+    }
+
+    #[graphql(
+        guard = "OrganizationGuard::new(&id.clone().into(), &OrganizationRoleType::ReadOnly)",
+        visible = "is_admin"
+    )]
+    async fn delete_organization_user(
+        &self,
+        ctx: &Context<'_>,
+        id: ID,
+        user_id: ID,
+    ) -> Result<bool> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let query = sqlx::query!(
+            r#"
+            DELETE FROM organization_users
+            WHERE organization_id = $1 AND user_id = $2
+            "#,
+            uuid::Uuid::parse_str(&id).unwrap(),
+            uuid::Uuid::parse_str(&user_id).unwrap()
+        )
+        .execute(&db_pool)
+        .await;
+
+        match query {
+            Ok(_) => Ok(true),
+            Err(err) => Err(err.into()),
+        }
     }
 
     #[graphql(guard = "StaffOnly", visible = "is_admin")]

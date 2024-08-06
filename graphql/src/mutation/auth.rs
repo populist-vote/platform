@@ -1,6 +1,6 @@
 use crate::{
     context::ApiContext,
-    guard::{OrganizationGuard, StaffOnly},
+    guard::StaffOnly,
     is_admin,
     types::{CreateUserResult, Error, LoginResult},
 };
@@ -569,6 +569,22 @@ impl AuthMutation {
             }
             None => Err(Error::Unauthorized),
         }
+    }
+
+    #[graphql(visible = "is_admin")]
+    async fn delete_invite(&self, ctx: &Context<'_>, token: ID) -> Result<bool, Error> {
+        let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+        let _delete_result = sqlx::query!(
+            r#"
+            DELETE FROM invite_token
+            WHERE token = $1
+        "#,
+            uuid::Uuid::parse_str(&token).unwrap()
+        )
+        .execute(&db_pool)
+        .await;
+
+        Ok(true)
     }
 
     #[graphql(visible = "is_admin")]
