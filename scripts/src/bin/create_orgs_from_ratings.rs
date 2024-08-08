@@ -1,4 +1,4 @@
-use db::{Organization, UpsertOrganizationInput};
+use db::{CreateOrganizationInput, Organization};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::process;
@@ -169,17 +169,14 @@ async fn create_organizations() -> Result<(), Box<dyn Error>> {
             .fetch_one(&pool.connection)
             .await?;
 
-            let new_org_input = UpsertOrganizationInput {
-                id: None,
-                name: Some(name.clone()),
-                slug: None,
+            let new_org_input = CreateOrganizationInput {
+                name: name.clone(),
                 thumbnail_image_url: None,
                 facebook_url: None,
                 twitter_url: None,
                 instagram_url: None,
                 headquarters_phone: Some(phone),
                 tax_classification: None,
-                issue_tags: None,
                 website_url: Some(website),
                 description: Some(description),
                 email: Some(email),
@@ -187,7 +184,7 @@ async fn create_organizations() -> Result<(), Box<dyn Error>> {
                 headquarters_address_id: Some(new_address.id),
                 assets: Some(serde_json::json!({})),
             };
-            if let Err(err) = Organization::upsert(&pool.connection, &new_org_input).await {
+            if let Err(err) = Organization::create(&pool.connection, &new_org_input).await {
                 println!("Error creating {}: {}", name, err);
             } else {
                 println!("Created {}", name);
