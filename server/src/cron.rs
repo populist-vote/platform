@@ -30,8 +30,8 @@ pub async fn init_job_schedule() {
     })
     .unwrap();
 
-    // Run job every 10 minutes on November 7 and 8, 2023
-    let update_mn_results_job = Job::new_async("0 1/15 * 6-9 Nov * 2023", |uuid, mut l| {
+    // Run job every 10 minutes on August 13 and 14, 2023
+    let update_mn_results_job = Job::new_async("0 1/10 * 08-14 Aug * 2024", |uuid, mut l| {
         Box::pin(async move {
             info!("Running update_mn_results job");
             scrapers::mn_sos_results::fetch_results()

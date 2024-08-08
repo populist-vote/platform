@@ -41,44 +41,40 @@ static PRECINCT_STATS_HEADER_NAMES: [&str; 12] = [
 pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
     let mut results_file_paths: HashMap<&str, &str> = HashMap::new();
     results_file_paths.insert(
-        "County Races",
-        "https://electionresultsfiles.sos.state.mn.us/20231107/cntyRaces.txt",
+        "U.S. Senator Statewide",
+        "https://electionresultsfiles.sos.state.mn.us/20240813/ussenate.txt",
     );
     results_file_paths.insert(
-        "County Races and Questions",
-        "https://electionresultsfiles.sos.state.mn.us/20231107/cntyRaceQuestions.txt",
+        "U.S. Representative by District",
+        "https://electionresultsfiles.sos.state.mn.us/20240813/ushouse.txt",
     );
-    // results_file_paths.insert(
-    //     "City Questions",
-    //     "https://electionresultsfiles.sos.state.mn.us/20231107/CityQuestions.txt",
-    // );
+    results_file_paths.insert(
+        "State Senator by District",
+        "https://electionresultsfiles.sos.state.mn.us/20240813/stsenate.txt",
+    );
+    results_file_paths.insert(
+        "County Races",
+        "https://electionresultsfiles.sos.state.mn.us/20240813/cntyRaces.txt",
+    );
     results_file_paths.insert(
         "Municipal Races and Questions",
-        "https://electionresultsfiles.sos.state.mn.us/20231107/local.txt",
+        "https://electionresultsfiles.sos.state.mn.us/20240813/local.txt",
     );
-    // results_file_paths.insert(
-    //     "Municipal and School District Races and Questions by Precinct",
-    //     "https://electionresultsfiles.sos.state.mn.us/20231107/localPrct.txt",
-    // );
     results_file_paths.insert(
         "School Board Races",
-        "https://electionresultsfiles.sos.state.mn.us/20231107/sdrace.txt",
+        "https://electionresultsfiles.sos.state.mn.us/20240813/sdrace.txt",
+    );
+    results_file_paths.insert(
+        "All Federal, State, and County Races by County",
+        "https://electionresultsfiles.sos.state.mn.us/20240813/allracesbycounty.txt",
     );
     // results_file_paths.insert(
-    //     "School Referendum and Bond Questions",
-    //     "https://electionresultsfiles.sos.state.mn.us/20231107/SchoolQuestions.txt",
+    //     "API Wire",
+    //     "https://electionresultsfiles.sos.state.mn.us/20240813/AP-Wire.txt",
     // );
     // results_file_paths.insert(
-    //     "School Board Races and Questions",
-    //     "https://electionresultsfiles.sos.state.mn.us/20231107/SDRaceQuestions.txt",
-    // );
-    // results_file_paths.insert(
-    //     "County Races by Precinct",
-    //     "https://electionresultsfiles.sos.state.mn.us/20231107/allracesbyprecinct.txt",
-    // );
-    // results_file_paths.insert(
-    //     "Precinct Reporting Statistics",
-    //     "https://electionresultsfiles.sos.state.mn.us/20231107/pctstats.txt",
+    //     "AP-Local",
+    //     "https://electionresultsfiles.sos.state.mn.us/20240813/AP-Local.txt",
     // );
 
     let client = Client::new();
@@ -87,8 +83,11 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
         let data = convert_text_to_csv(name, &response);
         let csv_data_as_string = String::from_utf8(data.clone())?;
         let table_name = format!(
-            "p6t_state_mn.results_2023_{}",
-            name.replace(' ', "_").to_lowercase()
+            "p6t_state_mn.results_2024_{}",
+            name.replace('.', "")
+                .replace(',', "")
+                .replace(' ', "_")
+                .to_lowercase()
         );
         let copy_query = format!("COPY {} FROM STDIN WITH CSV HEADER;", table_name);
         let pool = db::pool().await;
@@ -105,7 +104,7 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
         let mut tx_copy = tx.copy_in_raw(&copy_query).await?;
         tx_copy.send(csv_data_as_string.as_bytes()).await?;
         tx_copy.finish().await?;
-        _write_to_csv_file(name, &data)?;
+        // _write_to_csv_file(name, &data)?;
     }
     update_public_schema_with_results().await;
 
@@ -177,14 +176,40 @@ async fn update_public_schema_with_results() {
     let db_pool = db::pool().await;
     let query = r#"
         WITH source AS (
-            SELECT * FROM p6t_state_mn.results_2023_county_races_and_questions
-            UNION ALL 
-            SELECT * FROM p6t_state_mn.results_2023_municipal_races_and_questions	
-            UNION ALL SELECT * FROM p6t_state_mn.results_2023_school_board_races
+            SELECT
+                *
+            FROM
+                p6t_state_mn.results_2024_county_races
+            UNION ALL
+            SELECT
+                *
+            FROM
+                p6t_state_mn.results_2024_municipal_races_and_questions
+            UNION ALL
+            SELECT
+                *
+            FROM
+                p6t_state_mn.results_2024_school_board_races
+            UNION ALL
+            SELECT
+                *
+            FROM
+                p6t_state_mn.results_2024_state_senator_by_district
+            UNION ALL
+            SELECT
+                *
+            FROM
+                p6t_state_mn.results_2024_us_representative_by_district
+            UNION ALL
+            SELECT
+                *
+            FROM
+                p6t_state_mn.results_2024_us_senator_statewide
         ),
         results AS (
-            SELECT DISTINCT ON (candidate_name)
-            office_name,
+            SELECT DISTINCT ON (office_name,
+                candidate_name)
+                office_name,
                 candidate_name,
                 votes_for_candidate,
                 total_number_of_votes_for_office_in_area,
@@ -200,27 +225,32 @@ async fn update_public_schema_with_results() {
                     NULL
                 END AS first_choice_votes,
                 CASE WHEN office_name ILIKE '%first choice%' THEN
-                total_number_of_votes_for_office_in_area::int
+                    total_number_of_votes_for_office_in_area::int
                 ELSE
                     NULL
                 END AS total_first_choice_votes
             FROM
                 source
-                JOIN politician p ON p.slug = SLUGIFY (source.candidate_name)
-                JOIN race_candidates rc ON rc.candidate_id = p.id
-                JOIN race r ON r.id = rc.race_id
-            WHERE (
-                SELECT slug 
-                FROM election
-                WHERE id = r.election_id
-            ) = 'general-election-2023'
-            ORDER BY candidate_name,
-            CASE 
-            WHEN office_name LIKE '%First Choice%' THEN 1
-            WHEN office_name LIKE '%Second Choice%' THEN 2
-            WHEN office_name LIKE '%Third Choice%' THEN 3
-            ELSE 4 -- You can add more conditions if needed
-        END
+            LEFT JOIN politician p ON p.slug = SLUGIFY (source.candidate_name)
+            LEFT JOIN race_candidates rc ON rc.candidate_id = p.id
+            LEFT JOIN race r ON r.id = rc.race_id
+                AND(
+                    SELECT
+                        slug FROM election
+                WHERE
+                    id = r.election_id) = 'minnesota-primaries-2024'
+            ORDER BY
+                office_name,
+                candidate_name,
+                CASE WHEN office_name LIKE '%First Choice%' THEN
+                    1
+                WHEN office_name LIKE '%Second Choice%' THEN
+                    2
+                WHEN office_name LIKE '%Third Choice%' THEN
+                    3
+                ELSE
+                    4 -- You can add more conditions if needed
+                END
         ),
         update_race_candidates AS (
             UPDATE
@@ -244,7 +274,8 @@ async fn update_public_schema_with_results() {
             WHERE
                 race.id = results.race_id
         )
-        SELECT * FROM results;
+        SELECT * FROM results
+        WHERE office_name NOT ILIKE '%question%';
     "#;
 
     let result = sqlx::query(query)
