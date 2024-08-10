@@ -6,9 +6,15 @@ use crate::update_legiscan_bill_data;
 // Creates a new job scheduler and adds an async job to update legiscan bill data
 pub async fn init_job_schedule() {
     let environment = config::Config::default().environment;
-    if environment != config::Environment::Production || environment != config::Environment::Staging
+    if environment != config::Environment::Production && environment != config::Environment::Staging
     {
-        info!("Not running cron jobs in non-production environment");
+        warn!(
+            "{}",
+            format!(
+                "Not running cron jobs in non-production environment: {}",
+                environment
+            )
+        );
         return;
     } else {
         info!("Initializing job scheduler");
