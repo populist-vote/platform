@@ -231,14 +231,15 @@ async fn update_public_schema_with_results() {
                 END AS total_first_choice_votes
             FROM
                 source
-            LEFT JOIN politician p ON p.slug = SLUGIFY (source.candidate_name)
+            LEFT JOIN politician p ON p.slug = SLUGIFY(source.candidate_name)
             LEFT JOIN race_candidates rc ON rc.candidate_id = p.id
+                AND rc.race_id IN (
+                    SELECT r.id
+                    FROM race r
+                    JOIN election e ON e.id = r.election_id
+                    WHERE e.slug = 'minnesota-primaries-2024'
+                )
             LEFT JOIN race r ON r.id = rc.race_id
-                AND(
-                    SELECT
-                        slug FROM election
-                WHERE
-                    id = r.election_id) = 'minnesota-primaries-2024'
             ORDER BY
                 office_name,
                 candidate_name,
