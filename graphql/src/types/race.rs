@@ -1,7 +1,7 @@
 use crate::{context::ApiContext, types::OfficeResult};
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use db::{
-    loaders::politician::PoliticianId,
+    loaders::{politician::PoliticianId, race},
     models::{
         enums::{RaceType, State, VoteType},
         politician::Politician,
@@ -53,6 +53,7 @@ pub struct RaceResultsResult {
     total_votes: Option<i32>,
     num_precincts_reporting: Option<i32>,
     total_precincts: Option<i32>,
+    precinct_reporting_percentage: Option<f64>,
     winners: Option<Vec<PoliticianResult>>,
 }
 
@@ -195,9 +196,10 @@ impl RaceResult {
             r#"
             SELECT
               total_votes,
+              winner_ids,
               num_precincts_reporting,
               total_precincts,
-              winner_ids
+              ROUND(CAST(CAST(num_precincts_reporting AS FLOAT) / CAST(NULLIF(total_precincts, 0) AS FLOAT) * 100 AS NUMERIC), 1)::FLOAT AS "precinct_reporting_percentage"
             FROM
               race
             WHERE
@@ -236,6 +238,7 @@ impl RaceResult {
             total_votes: race_results.total_votes,
             num_precincts_reporting: race_results.num_precincts_reporting,
             total_precincts: race_results.total_precincts,
+            precinct_reporting_percentage: race_results.precinct_reporting_percentage,
             winners,
         })
     }
