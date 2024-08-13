@@ -75,6 +75,8 @@ impl CandidateGuideResult {
             r.early_voting_begins_date,
             r.winner_ids,
             r.total_votes,
+            r.num_precincts_reporting,
+            r.total_precincts,
             r.official_website,
             r.election_id,
             r.is_special_election,

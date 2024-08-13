@@ -213,6 +213,8 @@ async fn update_public_schema_with_results() {
                 candidate_name,
                 votes_for_candidate,
                 total_number_of_votes_for_office_in_area,
+                number_of_precincts_reporting,
+                total_number_of_precincts_voting_for_the_office,
                 p.id AS politician_id,
                 rc.race_id AS race_id,
                 r.title AS race_title,
@@ -270,6 +272,8 @@ async fn update_public_schema_with_results() {
                 race
             SET
                 total_votes = COALESCE(total_first_choice_votes, NULLIF(results.total_number_of_votes_for_office_in_area::integer, 0))
+                num_precincts_reporting = results.number_of_precincts_reporting::integer
+                total_precincts = results.total_number_of_precincts_voting_for_the_office::integer
             FROM
                 results
             WHERE

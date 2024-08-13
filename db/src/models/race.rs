@@ -26,6 +26,8 @@ pub struct Race {
     pub election_id: Option<uuid::Uuid>,
     pub winner_ids: Option<Vec<uuid::Uuid>>,
     pub total_votes: Option<i32>,
+    pub num_precincts_reporting: Option<i32>,
+    pub total_precincts: Option<i32>,
     pub is_special_election: bool,
     pub num_elect: Option<i32>,
     pub created_at: DateTime,
@@ -92,7 +94,7 @@ impl Race {
 
         let record = sqlx::query_as!(Race,
             r#"
-                INSERT INTO race (id, slug, title, office_id, race_type, vote_type, party_id, state,  description, ballotpedia_link, early_voting_begins_date, winner_ids, official_website, election_id, total_votes, is_special_election, num_elect)
+                INSERT INTO race (id, slug, title, office_id, race_type, vote_type, party_id, state, description, ballotpedia_link, early_voting_begins_date, winner_ids, official_website, election_id, total_votes, is_special_election, num_elect)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
                 ON CONFLICT (id) DO UPDATE
                 SET
@@ -112,7 +114,7 @@ impl Race {
                     total_votes = COALESCE($15, race.total_votes),
                     is_special_election = COALESCE($16, race.is_special_election),
                     num_elect = COALESCE($17, race.num_elect)
-                RETURNING id, slug, title,  office_id, race_type AS "race_type:RaceType", vote_type AS "vote_type:VoteType", party_id, state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_ids, official_website, election_id, total_votes, is_special_election, num_elect, created_at, updated_at
+                RETURNING id, slug, title,  office_id, race_type AS "race_type:RaceType", vote_type AS "vote_type:VoteType", party_id, state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_ids, official_website, election_id, total_votes, num_precincts_reporting, total_precincts, is_special_election, num_elect, created_at, updated_at
             "#,
             id,
             slug,
@@ -149,7 +151,7 @@ impl Race {
         let record = sqlx::query_as!(
             Race,
             r#"
-                SELECT id, slug, title, office_id, race_type AS "race_type:RaceType", vote_type AS "vote_type:VoteType", party_id, state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_ids, total_votes, official_website, election_id,  is_special_election, num_elect, created_at, updated_at FROM race
+                SELECT id, slug, title, office_id, race_type AS "race_type:RaceType", vote_type AS "vote_type:VoteType", party_id, state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_ids, total_votes, num_precincts_reporting, total_precincts, official_website, election_id, is_special_election, num_elect, created_at, updated_at FROM race
                 WHERE id = $1
             "#,
             id
@@ -164,7 +166,7 @@ impl Race {
         let record = sqlx::query_as!(
             Race,
             r#"
-                SELECT id, slug, title, office_id, race_type AS "race_type:RaceType", vote_type AS "vote_type:VoteType", party_id, state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_ids, total_votes, official_website, election_id, is_special_election, num_elect, created_at, updated_at FROM race
+                SELECT id, slug, title, office_id, race_type AS "race_type:RaceType", vote_type AS "vote_type:VoteType", party_id, state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_ids, total_votes, num_precincts_reporting, total_precincts, official_website, election_id, is_special_election, num_elect, created_at, updated_at FROM race
                 WHERE slug = $1
             "#,
             slug

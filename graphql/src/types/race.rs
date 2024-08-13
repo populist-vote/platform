@@ -51,6 +51,8 @@ pub struct RaceCandidateResult {
 pub struct RaceResultsResult {
     votes_by_candidate: Vec<RaceCandidateResult>,
     total_votes: Option<i32>,
+    num_precincts_reporting: Option<i32>,
+    total_precincts: Option<i32>,
     winners: Option<Vec<PoliticianResult>>,
 }
 
@@ -193,6 +195,8 @@ impl RaceResult {
             r#"
             SELECT
               total_votes,
+              num_precincts_reporting,
+              total_precincts,
               winner_ids
             FROM
               race
@@ -230,6 +234,8 @@ impl RaceResult {
         Ok(RaceResultsResult {
             votes_by_candidate: race_candidate_results,
             total_votes: race_results.total_votes,
+            num_precincts_reporting: race_results.num_precincts_reporting,
+            total_precincts: race_results.total_precincts,
             winners,
         })
     }
