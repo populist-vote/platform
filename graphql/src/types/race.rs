@@ -1,7 +1,7 @@
 use crate::{context::ApiContext, types::OfficeResult};
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use db::{
-    loaders::{politician::PoliticianId, race},
+    loaders::politician::PoliticianId,
     models::{
         enums::{RaceType, State, VoteType},
         politician::Politician,
