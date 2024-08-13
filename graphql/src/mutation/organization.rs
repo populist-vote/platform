@@ -85,7 +85,7 @@ impl OrganizationMutation {
     }
 
     #[graphql(
-        guard = "OrganizationGuard::new(&id.clone().into(), &OrganizationRoleType::ReadOnly)",
+        guard = "OrganizationGuard::new(&id.clone(), &OrganizationRoleType::ReadOnly)",
         visible = "is_admin"
     )]
     async fn upload_organization_thumbnail(
@@ -137,7 +137,7 @@ impl OrganizationMutation {
     }
 
     #[graphql(
-        guard = "OrganizationGuard::new(&id.clone().into(), &OrganizationRoleType::ReadOnly)",
+        guard = "OrganizationGuard::new(&id.clone(), &OrganizationRoleType::ReadOnly)",
         visible = "is_admin"
     )]
     async fn delete_organization_user(

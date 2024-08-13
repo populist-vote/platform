@@ -114,8 +114,8 @@ impl CandidateGuideMutation {
         let url = format!(
             "{}/intakes/candidate-guides/{}?raceId={}&token={}",
             config::Config::default().web_app_url,
-            candidate_guide_id.to_string(),
-            race_id.to_string(),
+            *candidate_guide_id,
+            *race_id,
             updated_politician.intake_token.unwrap_or_default()
         );
 
@@ -241,8 +241,8 @@ impl CandidateGuideMutation {
                 let form_link = format!(
                     "{}/intakes/candidate-guides/{}?raceId={}&token={}",
                     config::Config::default().web_app_url,
-                    candidate_guide_id.to_string(),
-                    record.race_id.to_string(),
+                    *candidate_guide_id,
+                    record.race_id,
                     record.intake_token.unwrap_or_default()
                 );
                 wtr.write_record(&[

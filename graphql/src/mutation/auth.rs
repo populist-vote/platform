@@ -86,7 +86,7 @@ impl AuthMutation {
 
         // If input has organization_id, ensure that the requesting user is a member of that organization with at least a role of 'member'
         if let Some(organization_id) = input.organization_id.as_ref() {
-            let organization_id = uuid::Uuid::parse_str(&organization_id).unwrap();
+            let organization_id = uuid::Uuid::parse_str(organization_id).unwrap();
             if let Some(requesting_user) = requesting_user.as_ref() {
                 let organization_roles =
                     User::organization_roles(&db_pool, requesting_user.claims.sub).await?;

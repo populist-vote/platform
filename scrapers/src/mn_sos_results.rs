@@ -84,8 +84,7 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
         let csv_data_as_string = String::from_utf8(data.clone())?;
         let table_name = format!(
             "p6t_state_mn.results_2024_{}",
-            name.replace('.', "")
-                .replace(',', "")
+            name.replace(['.', ','], "")
                 .replace(' ', "_")
                 .to_lowercase()
         );
