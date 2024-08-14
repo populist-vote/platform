@@ -68,6 +68,10 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
         "State Representative by District",
         "https://electionresultsfiles.sos.mn.gov/20240813/LegislativeByDistrict.txt",
     );
+    results_file_paths.insert(
+        "District Court Judges",
+        "https://electionresultsfiles.sos.mn.gov/20240813/judicialdst.txt",
+    );
     // results_file_paths.insert(
     //     "API Wire",
     //     "https://electionresultsfiles.sos.state.mn.us/20240813/AP-Wire.txt",
@@ -175,40 +179,21 @@ async fn update_public_schema_with_results() {
     let db_pool = db::pool().await;
     let query = r#"
         WITH source AS (
-            SELECT
-                *
-            FROM
-                p6t_state_mn.results_2024_county_races
+            SELECT * FROM p6t_state_mn.results_2024_county_races
             UNION ALL
-            SELECT
-                *
-            FROM
-                p6t_state_mn.results_2024_municipal_races_and_questions
+            SELECT * FROM p6t_state_mn.results_2024_municipal_races_and_questions
             UNION ALL
-            SELECT
-                *
-            FROM
-                p6t_state_mn.results_2024_school_board_races
+            SELECT * FROM p6t_state_mn.results_2024_school_board_races
             UNION ALL
-            SELECT
-                *
-            FROM
-                p6t_state_mn.results_2024_state_senator_by_district
+            SELECT * FROM p6t_state_mn.results_2024_state_senator_by_district
             UNION ALL
-            SELECT
-                *
-            FROM
-                p6t_state_mn.results_2024_us_representative_by_district
+            SELECT * FROM p6t_state_mn.results_2024_us_representative_by_district
             UNION ALL
-            SELECT
-                *
-            FROM
-                p6t_state_mn.results_2024_us_senator_statewide
+            SELECT * FROM p6t_state_mn.results_2024_us_senator_statewide
             UNION ALL
-            SELECT
-                *
-            FROM
-                p6t_state_mn.results_2024_state_representative_by_district
+            SELECT * FROM p6t_state_mn.results_2024_state_representative_by_district
+            UNION ALL
+            SELECT * FROM p6t_state_mn.results_2024_district_court_judges
         ),
         results AS (
             SELECT DISTINCT ON (office_name,
