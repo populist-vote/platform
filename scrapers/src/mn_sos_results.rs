@@ -232,15 +232,15 @@ async fn update_public_schema_with_results() {
                 END AS total_first_choice_votes
             FROM
                 source
-            LEFT JOIN politician p ON p.slug = SLUGIFY(source.candidate_name)
+            LEFT JOIN politician p ON p.slug = SLUGIFY (source.candidate_name)
             LEFT JOIN race_candidates rc ON rc.candidate_id = p.id
-                AND rc.race_id IN (
-                    SELECT r.id
-                    FROM race r
+                AND rc.race_id IN(
+                    SELECT
+                        r.id FROM race r
                     JOIN election e ON e.id = r.election_id
-                    WHERE e.slug = 'minnesota-primaries-2024'
-                )
-            LEFT JOIN race r ON r.id = rc.race_id
+                WHERE
+                    e.slug = 'minnesota-primaries-2024')
+                LEFT JOIN race r ON r.id = rc.race_id
             ORDER BY
                 office_name,
                 candidate_name,
@@ -258,28 +258,36 @@ async fn update_public_schema_with_results() {
             UPDATE
                 race_candidates rc
             SET
-                votes = COALESCE(first_choice_votes, results.votes_for_candidate::integer)
+                votes = COALESCE(first_choice_votes,
+                    results.votes_for_candidate::integer)
             FROM
                 results
             WHERE
                 rc.race_id = results.race_id
                 AND rc.candidate_id = results.politician_id
-            RETURNING *
+            RETURNING
+                *
         ),
         update_race AS (
             UPDATE
                 race
             SET
-                total_votes = COALESCE(total_first_choice_votes, NULLIF(results.total_number_of_votes_for_office_in_area::integer, 0))
-                num_precincts_reporting = results.number_of_precincts_reporting::integer
+                total_votes = COALESCE(total_first_choice_votes,
+                    NULLIF(results.total_number_of_votes_for_office_in_area::integer,
+                        0)),
+                num_precincts_reporting = results.number_of_precincts_reporting::integer,
                 total_precincts = results.total_number_of_precincts_voting_for_the_office::integer
             FROM
                 results
             WHERE
                 race.id = results.race_id
         )
-        SELECT * FROM results
-        WHERE office_name NOT ILIKE '%question%';
+        SELECT
+            *
+        FROM
+            results
+        WHERE
+            office_name NOT ILIKE '%question%';
     "#;
 
     let result = sqlx::query(query)
