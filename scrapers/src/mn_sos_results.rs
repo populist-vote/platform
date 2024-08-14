@@ -65,8 +65,8 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
         "https://electionresultsfiles.sos.state.mn.us/20240813/sdrace.txt",
     );
     results_file_paths.insert(
-        "All Federal, State, and County Races by County",
-        "https://electionresultsfiles.sos.state.mn.us/20240813/allracesbycounty.txt",
+        "State Representative by District",
+        "https://electionresultsfiles.sos.mn.gov/20240813/LegislativeByDistrict.txt",
     );
     // results_file_paths.insert(
     //     "API Wire",
@@ -204,6 +204,11 @@ async fn update_public_schema_with_results() {
                 *
             FROM
                 p6t_state_mn.results_2024_us_senator_statewide
+            UNION ALL
+            SELECT
+                *
+            FROM
+                p6t_state_mn.results_2024_state_representative_by_district
         ),
         results AS (
             SELECT DISTINCT ON (office_name,
