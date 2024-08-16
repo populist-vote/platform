@@ -72,14 +72,6 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
         "District Court Judges",
         "https://electionresultsfiles.sos.mn.gov/20240813/judicialdst.txt",
     );
-    // results_file_paths.insert(
-    //     "API Wire",
-    //     "https://electionresultsfiles.sos.state.mn.us/20240813/AP-Wire.txt",
-    // );
-    // results_file_paths.insert(
-    //     "AP-Local",
-    //     "https://electionresultsfiles.sos.state.mn.us/20240813/AP-Local.txt",
-    // );
 
     let client = Client::new();
     for (name, url) in results_file_paths {

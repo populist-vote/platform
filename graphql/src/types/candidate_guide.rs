@@ -26,6 +26,22 @@ pub struct CandidateGuideResult {
 
 #[ComplexObject]
 impl CandidateGuideResult {
+    async fn embed_count(&self, ctx: &Context<'_>) -> Result<i64> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let result = sqlx::query!(
+            r#"
+            SELECT COUNT(*) AS count
+            FROM embed
+            WHERE embed_type = 'candidate_guide' 
+            AND attributes->>'candidateGuideId' = $1
+        "#,
+            self.id.as_str()
+        )
+        .fetch_one(&db_pool)
+        .await?;
+        Ok(result.count.unwrap_or(0))
+    }
+
     async fn embeds(&self, ctx: &Context<'_>) -> Result<Vec<EmbedResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let embeds = sqlx::query_as!(
