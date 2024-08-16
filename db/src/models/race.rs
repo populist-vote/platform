@@ -200,6 +200,8 @@ impl Race {
                     early_voting_begins_date,
                     winner_ids,
                     total_votes,
+                    num_precincts_reporting, 
+                    total_precincts,
                     official_website,
                     election_id,
                     is_special_election,
