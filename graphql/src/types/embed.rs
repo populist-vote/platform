@@ -138,9 +138,13 @@ impl EmbedResult {
         let race_id = self.attributes["raceId"].as_str();
         if let Some(race_id) = race_id {
             let race_id = uuid::Uuid::parse_str(race_id)?;
-            let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-            let record = db::Race::find_by_id(&db_pool, race_id).await?;
-            Ok(Some(record.into()))
+            let race = ctx
+                .data::<ApiContext>()?
+                .loaders
+                .race_loader
+                .load_one(race_id)
+                .await?;
+            Ok(race.map(|r| r.into()))
         } else {
             Ok(None)
         }
