@@ -134,6 +134,7 @@ impl CandidateGuideResult {
                   response_placeholder_text,
                   allow_anonymous_responses,
                   embed_id,
+                  organization_id,
                   created_at,
                   updated_at
                 FROM question

@@ -13,6 +13,7 @@ pub struct Question {
     pub response_placeholder_text: Option<String>,
     pub allow_anonymous_responses: bool,
     pub embed_id: Option<uuid::Uuid>,
+    pub organization_id: uuid::Uuid,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
@@ -45,6 +46,7 @@ pub struct UpsertQuestionInput {
     pub issue_tag_ids: Option<Vec<uuid::Uuid>>,
     pub translations: Option<serde_json::Value>,
     pub should_translate: Option<bool>,
+    pub organization_id: Option<uuid::Uuid>,
 }
 
 #[derive(FromRow, Debug, Clone, InputObject)]
@@ -100,7 +102,8 @@ impl Question {
                     response_placeholder_text,
                     allow_anonymous_responses,
                     embed_id,
-                    translations
+                    translations,
+                    organization_id
                 ) VALUES (
                     $1,
                     $2,
@@ -108,7 +111,8 @@ impl Question {
                     $4,
                     $5,
                     $6,
-                    $7
+                    $7,
+                    $8
                 ) ON CONFLICT (id) DO UPDATE SET
                     prompt = $2,
                     response_char_limit = $3,
@@ -124,7 +128,8 @@ impl Question {
             input.response_placeholder_text,
             input.allow_anonymous_responses,
             input.embed_id,
-            input.translations
+            input.translations,
+            input.organization_id
         )
         .fetch_one(db_pool)
         .await?;

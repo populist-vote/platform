@@ -6,6 +6,7 @@ use crate::{
 use async_graphql::{Context, Object, Result, ID};
 use db::{
     loaders::politician::{PoliticianId, PoliticianSlug},
+    models::enums::State,
     Politician, PoliticianFilter,
 };
 
@@ -88,5 +89,71 @@ impl PoliticianQuery {
             .fetch_all(&db_pool)
             .await?;
         Ok(parties)
+    }
+
+    async fn politician_respondents_by_organization_id(
+        &self,
+        ctx: &Context<'_>,
+        organization_id: ID,
+    ) -> Result<Vec<PoliticianResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records = sqlx::query_as!(
+            Politician,
+            r#"
+                SELECT DISTINCT ON (p.id)
+                        p.id,
+                        p.slug,
+                        p.first_name,
+                        p.middle_name,
+                        last_name,
+                        suffix,
+                        preferred_name,
+                        biography,
+                        biography_source,
+                        home_state AS "home_state:State",
+                        date_of_birth,
+                        office_id,
+                        upcoming_race_id,
+                        thumbnail_image_url,
+                        assets,
+                        official_website_url,
+                        campaign_website_url,
+                        facebook_url,
+                        twitter_url,
+                        instagram_url,
+                        youtube_url,
+                        linkedin_url,
+                        tiktok_url,
+                        email,
+                        phone,
+                        party_id,
+                        votesmart_candidate_id,
+                        votesmart_candidate_bio,
+                        votesmart_candidate_ratings,
+                        legiscan_people_id,
+                        crp_candidate_id,
+                        fec_candidate_id,
+                        race_wins,
+                        race_losses,
+                        p.created_at,
+                        p.updated_at
+                FROM
+                    politician p
+                JOIN
+                    question_submission qs ON p.id = qs.candidate_id
+                JOIN
+                    question q ON qs.question_id = q.id
+                WHERE
+                    q.organization_id = $1
+            "#,
+            uuid::Uuid::parse_str(&organization_id)?
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        let results: Vec<PoliticianResult> =
+            records.into_iter().map(PoliticianResult::from).collect();
+
+        Ok(results)
     }
 }
