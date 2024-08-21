@@ -63,6 +63,7 @@ pub struct RaceFilter {
     election_scope: Option<ElectionScope>,
     office_titles: Option<Vec<String>>,
     election_id: Option<uuid::Uuid>,
+    race_type: Option<RaceType>,
     year: Option<i32>,
 }
 
@@ -238,6 +239,7 @@ impl Race {
                         ))
                     )
                     AND ({state} IS NULL OR o.state = {state})
+                    AND ({race_type} IS NULL OR race.race_type = {race_type})
                     AND ({political_scope} IS NULL OR o.political_scope = {political_scope})
                     AND ({election_scope} IS NULL OR o.election_scope = {election_scope})
                     AND ({office_titles} IS NULL OR o.title IN ({office_titles}))
@@ -256,6 +258,10 @@ impl Race {
             state = input
                 .state
                 .map(|s| format!("'{}'", s))
+                .unwrap_or_else(|| "NULL".to_string()),
+            race_type = input
+                .race_type
+                .map(|s| format!("'{}'", s.to_string().to_lowercase()))
                 .unwrap_or_else(|| "NULL".to_string()),
             political_scope = input
                 .political_scope
