@@ -539,7 +539,11 @@ impl PoliticianResult {
             WHERE
                 candidate_id = $1
             ORDER BY
-                ABS(CURRENT_DATE - election_date)
+                CASE 
+                    WHEN e.election_date >= CURRENT_DATE THEN 0 
+                    ELSE 1 
+                END,
+                ABS(e.election_date - CURRENT_DATE)
             LIMIT 1;
             "#,
             uuid::Uuid::parse_str(&self.id).unwrap()
