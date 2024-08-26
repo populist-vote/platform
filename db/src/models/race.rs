@@ -248,7 +248,7 @@ impl Race {
                     o.priority ASC, 
                     o.district ASC, 
                     o.title DESC
-                LIMIT 1000;
+                LIMIT 2000;
 
                 "#,
             query = input
