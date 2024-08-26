@@ -1,8 +1,10 @@
 use crate::context::ApiContext;
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
-use db::{DateTime, IssueTag, Question, QuestionSubmission, Respondent, Sentiment};
+use db::{
+    DateTime, Embed, EmbedType, IssueTag, Question, QuestionSubmission, Respondent, Sentiment,
+};
 
-use super::{IssueTagResult, PoliticianResult, SubmissionCountByDateResult};
+use super::{EmbedResult, IssueTagResult, PoliticianResult, SubmissionCountByDateResult};
 
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
@@ -304,6 +306,29 @@ impl QuestionSubmissionResult {
         .await?;
 
         Ok(question.into())
+    }
+
+    /// Returns the candidate guide embed associated with the question submission.
+    async fn candidate_guide_embed(&self, ctx: &Context<'_>) -> Result<EmbedResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let embed = sqlx::query_as!(
+            Embed,
+            r#"
+                SELECT e.id, e.organization_id, e.name, e.description, e.attributes, e.embed_type AS "embed_type:EmbedType", e.created_at, e.created_by, e.updated_at, e.updated_by
+                FROM question_submission qs
+                JOIN question q ON qs.question_id = q.id
+                JOIN candidate_guide_questions cgq ON q.id = cgq.question_id
+                JOIN candidate_guide cg ON cgq.candidate_guide_id = cg.id
+                JOIN embed e ON (e.attributes->>'candidateGuideId')::uuid = cg.id
+                WHERE qs.id = $1
+                LIMIT 1;
+        "#,
+            uuid::Uuid::parse_str(self.id.as_str()).unwrap()
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(embed.into())
     }
 }
 
