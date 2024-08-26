@@ -321,6 +321,7 @@ impl QuestionSubmissionResult {
                 JOIN candidate_guide cg ON cgq.candidate_guide_id = cg.id
                 JOIN embed e ON (e.attributes->>'candidateGuideId')::uuid = cg.id
                 JOIN race_candidates rc ON rc.candidate_id = qs.candidate_id
+                    AND (e.attributes ->> 'raceId')::uuid = rc.race_id
                 WHERE qs.id = $1
                 LIMIT 1;
         "#,
