@@ -196,12 +196,13 @@ impl CandidateGuideMutation {
                 p.suffix,
                 p.email AS email,
                 p.id AS politician_id, 
-                p.intake_token AS intake_token,
+                upt.intake_token AS intake_token,
                 ls.last_submission
             FROM
                 races r
                 JOIN race_candidates rc ON rc.race_id = r.populist_race_id
                 JOIN politician p ON rc.candidate_id = p.id
+                JOIN update_politician_intake_tokens upt ON upt.id = p.id
                 LEFT JOIN last_submissions ls ON p.id = ls.candidate_id
             WHERE
                 ($2::uuid IS NULL OR r.populist_race_id = $2::uuid);
