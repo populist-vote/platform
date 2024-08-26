@@ -196,13 +196,13 @@ impl CandidateGuideMutation {
                 p.suffix,
                 p.email AS email,
                 p.id AS politician_id, 
-                upt.intake_token AS intake_token,
+                COALESCE(upt.intake_token, p.intake_token) AS intake_token,
                 ls.last_submission
             FROM
                 races r
                 JOIN race_candidates rc ON rc.race_id = r.populist_race_id
                 JOIN politician p ON rc.candidate_id = p.id
-                JOIN update_politician_intake_tokens upt ON upt.id = p.id
+                LEFT JOIN update_politician_intake_tokens upt ON upt.id = p.id
                 LEFT JOIN last_submissions ls ON p.id = ls.candidate_id
             WHERE
                 ($2::uuid IS NULL OR r.populist_race_id = $2::uuid);
@@ -239,13 +239,17 @@ impl CandidateGuideMutation {
                 )
                 .trim_end()
                 .to_string();
-                let form_link = format!(
-                    "{}/intakes/candidate-guides/{}?raceId={}&token={}",
-                    config::Config::default().web_app_url,
-                    *candidate_guide_id,
-                    record.race_id,
-                    record.intake_token.unwrap_or_default()
-                );
+                let form_link = if let Some(intake_token) = record.intake_token {
+                    format!(
+                        "{}/intakes/candidate-guides/{}?raceId={}&token={}",
+                        config::Config::default().web_app_url,
+                        *candidate_guide_id,
+                        record.race_id,
+                        intake_token
+                    )
+                } else {
+                    "".to_string()
+                };
                 wtr.write_record(&[
                     record.race_title,
                     record.first_name,
