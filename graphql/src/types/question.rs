@@ -309,7 +309,7 @@ impl QuestionSubmissionResult {
     }
 
     /// Returns the candidate guide embed associated with the question submission.
-    async fn candidate_guide_embed(&self, ctx: &Context<'_>) -> Result<EmbedResult> {
+    async fn candidate_guide_embed(&self, ctx: &Context<'_>) -> Result<Option<EmbedResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let embed = sqlx::query_as!(
             Embed,
@@ -327,10 +327,10 @@ impl QuestionSubmissionResult {
         "#,
             uuid::Uuid::parse_str(self.id.as_str()).unwrap()
         )
-        .fetch_one(&db_pool)
+        .fetch_optional(&db_pool)
         .await?;
 
-        Ok(embed.into())
+        Ok(embed.map(|e| e.into()))
     }
 }
 
