@@ -1,5 +1,5 @@
 use crate::{context::ApiContext, types::CandidateGuideResult};
-use async_graphql::{Context, Object, Result, ID};
+use async_graphql::{Context, InputObject, Object, Result, SimpleObject, ID};
 use auth::AccessTokenClaims;
 use db::{
     models::candidate_guide::{CandidateGuide, UpsertCandidateGuideInput},
@@ -9,6 +9,18 @@ use jsonwebtoken::TokenData;
 
 #[derive(Default)]
 pub struct CandidateGuideMutation;
+
+#[derive(InputObject)]
+struct UpdateCandidateGuideRaceInput {
+    were_candidates_emailed: bool,
+}
+
+#[derive(SimpleObject)]
+pub struct UpdateCandidateGuideRaceResult {
+    pub were_candidates_emailed: bool,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
 
 #[Object]
 impl CandidateGuideMutation {
@@ -60,6 +72,38 @@ impl CandidateGuideMutation {
             uuid::Uuid::parse_str(candidate_guide_id.as_str())?,
         )
         .await?;
+
+        Ok(result)
+    }
+
+    async fn update_candidate_guide_race(
+        &self,
+        ctx: &Context<'_>,
+        candidate_guide_id: ID,
+        race_id: ID,
+        input: UpdateCandidateGuideRaceInput,
+    ) -> Result<UpdateCandidateGuideRaceResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let result = sqlx::query!(
+            r#"
+            UPDATE candidate_guide_races
+            SET were_candidates_emailed = $3
+            WHERE candidate_guide_id = $1
+                AND race_id = $2
+            RETURNING *
+        "#,
+            uuid::Uuid::parse_str(candidate_guide_id.as_str())?,
+            uuid::Uuid::parse_str(race_id.as_str())?,
+            input.were_candidates_emailed,
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        let result = UpdateCandidateGuideRaceResult {
+            were_candidates_emailed: result.were_candidates_emailed.unwrap_or(false),
+            created_at: result.created_at,
+            updated_at: result.updated_at,
+        };
 
         Ok(result)
     }
