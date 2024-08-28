@@ -76,6 +76,28 @@ impl CandidateGuideMutation {
         Ok(result)
     }
 
+    async fn set_all_candidate_guide_races_emailed(
+        &self,
+        ctx: &Context<'_>,
+        candidate_guide_id: ID,
+        were_candidates_emailed: bool,
+    ) -> Result<bool> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let result = sqlx::query!(
+            r#"
+            UPDATE candidate_guide_races 
+            SET were_candidates_emailed = $2
+            WHERE candidate_guide_id = $1
+        "#,
+            uuid::Uuid::parse_str(candidate_guide_id.as_str())?,
+            were_candidates_emailed,
+        )
+        .execute(&db_pool)
+        .await?;
+
+        Ok(result.rows_affected() > 0)
+    }
+
     async fn update_candidate_guide_race(
         &self,
         ctx: &Context<'_>,
