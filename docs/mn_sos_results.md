@@ -31,16 +31,22 @@ winners AS (
 SELECT
 	rc.race_id,
 	r.num_elect,
+	o.political_scope,
 	ARRAY_AGG(rc.candidate_id ORDER BY rc.rank) AS winner_ids
 FROM
 	ranked_candidates rc
 	JOIN race r ON rc.race_id = r.id
+	JOIN office o ON r.office_id = o.id
 WHERE (rc.num_elect IS NOT NULL
-	AND rc.rank <= rc.num_elect)
+	AND rc.rank <= rc.num_elect * 2)
+	OR(rc.num_elect IS NULL
+	AND o.political_scope = 'local'
+	AND rc.rank <= 2)
 	OR(rc.num_elect IS NULL
 	AND rc.rank = 1)
 GROUP BY
 	rc.race_id,
+	o.political_scope,
 	r.num_elect
 ),
 aggregates AS (
@@ -97,14 +103,18 @@ SELECT
 	gr.office_id,
 	gr.title,
 	ge.election_date,
-	gr.election_id
+	gr.election_id,
+	o.political_scope
 FROM
 	race gr
 	JOIN election ge ON gr.election_id = ge.id
+	JOIN office o ON gr.office_id = o.id
 WHERE
 	ge.slug = 'general-election-2024'
 )
-SELECT DISTINCT ON (rc.race_id, rc.candidate_id)
+-- Get general race candidates to be deleted
+SELECT DISTINCT ON (rc.race_id,
+	rc.candidate_id)
 	rc.*
 FROM
 	race_candidates rc
@@ -113,14 +123,19 @@ FROM
 	JOIN general_races general_r ON general_r.office_id = r.office_id
 WHERE
 	rc.candidate_id = rnk.candidate_id
-	AND rnk.rank > COALESCE(rnk.num_elect, 1)
+	AND rnk.rank > CASE WHEN political_scope = 'local'
+		AND r.num_elect IS NULL THEN
+		2
+	WHEN r.num_elect IS NOT NULL THEN
+		r.num_elect * 2
+	ELSE
+		1
+	END
 	AND r.election_id = (
-		SELECT
-			id
-		FROM
-			election
-		WHERE
-			slug = 'general-election-2024');
-
-COMMIT;
+	SELECT
+		id
+	FROM
+		election
+	WHERE
+		slug = 'general-election-2024');
 ```
