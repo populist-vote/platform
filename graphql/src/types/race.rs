@@ -15,21 +15,21 @@ use super::{ElectionResult, PoliticalParty, PoliticianResult};
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
 pub struct RaceResult {
-    id: ID,
-    slug: String,
-    title: String,
-    office_id: ID,
-    party_id: Option<ID>,
-    race_type: RaceType,
-    vote_type: VoteType,
-    state: Option<State>,
-    description: Option<String>,
-    ballotpedia_link: Option<String>,
-    early_voting_begins_date: Option<chrono::NaiveDate>,
-    official_website: Option<String>,
-    election_id: Option<ID>,
-    is_special_election: bool,
-    num_elect: Option<i32>,
+    pub id: ID,
+    pub slug: String,
+    pub title: String,
+    pub office_id: ID,
+    pub party_id: Option<ID>,
+    pub race_type: RaceType,
+    pub vote_type: VoteType,
+    pub state: Option<State>,
+    pub description: Option<String>,
+    pub ballotpedia_link: Option<String>,
+    pub early_voting_begins_date: Option<chrono::NaiveDate>,
+    pub official_website: Option<String>,
+    pub election_id: Option<ID>,
+    pub is_special_election: bool,
+    pub num_elect: Option<i32>,
 }
 
 pub struct RaceCandidate {

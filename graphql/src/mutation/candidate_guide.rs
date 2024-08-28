@@ -138,7 +138,8 @@ impl CandidateGuideMutation {
             WITH races AS (
                 SELECT
                     id AS populist_race_id,
-                    title AS race_title
+                    title AS race_title,
+                    cgr.were_candidates_emailed
                 FROM
                     race
                     JOIN candidate_guide_races cgr ON cgr.race_id = race.id
@@ -228,6 +229,7 @@ impl CandidateGuideMutation {
                 "full_name",
                 "email",
                 "form_link",
+                "was_candidate_emailed",
                 "last_submission",
             ])?;
             for record in records {
@@ -260,6 +262,10 @@ impl CandidateGuideMutation {
                     full_name,
                     record.email.unwrap_or_default(),
                     form_link,
+                    record
+                        .were_candidates_emailed
+                        .map(|b| b.to_string())
+                        .unwrap_or_default(),
                     record
                         .last_submission
                         .map(|d| d.to_string())

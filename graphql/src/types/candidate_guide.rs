@@ -3,7 +3,6 @@ use db::{
     models::{
         candidate_guide::CandidateGuide,
         enums::{RaceType, State, VoteType},
-        race::Race,
     },
     Embed, EmbedType, Question,
 };
@@ -20,6 +19,14 @@ pub struct CandidateGuideResult {
     name: Option<String>,
     submissions_open_at: Option<chrono::DateTime<chrono::Utc>>,
     submissions_close_at: Option<chrono::DateTime<chrono::Utc>>,
+    created_at: chrono::DateTime<chrono::Utc>,
+    updated_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(SimpleObject)]
+pub struct CandidateGuideRaceResult {
+    race: RaceResult,
+    were_candidates_emailed: bool,
     created_at: chrono::DateTime<chrono::Utc>,
     updated_at: chrono::DateTime<chrono::Utc>,
 }
@@ -72,10 +79,9 @@ impl CandidateGuideResult {
         Ok(embeds.into_iter().map(EmbedResult::from).collect())
     }
 
-    async fn races(&self, ctx: &Context<'_>) -> Result<Vec<RaceResult>> {
+    async fn races(&self, ctx: &Context<'_>) -> Result<Vec<CandidateGuideRaceResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let races = sqlx::query_as!(
-            Race,
+        let races = sqlx::query!(
             r#"
             SELECT 
             r.id,
@@ -98,9 +104,12 @@ impl CandidateGuideResult {
             r.is_special_election,
             r.num_elect,
             r.created_at,
-            r.updated_at 
-            FROM candidate_guide_races 
-            JOIN race r ON r.id = candidate_guide_races.race_id 
+            r.updated_at,
+            cgr.were_candidates_emailed,
+            cgr.created_at AS cgr_created_at,
+            cgr.updated_at AS cgr_updated_at
+            FROM candidate_guide_races cgr
+            JOIN race r ON r.id = cgr.race_id 
             WHERE candidate_guide_id = $1
         "#,
             uuid::Uuid::parse_str(self.id.as_str()).unwrap()
@@ -108,7 +117,33 @@ impl CandidateGuideResult {
         .fetch_all(&db_pool)
         .await?;
 
-        Ok(races.into_iter().map(RaceResult::from).collect())
+        let results = races
+            .iter()
+            .map(|r| CandidateGuideRaceResult {
+                race: RaceResult {
+                    id: r.id.into(),
+                    slug: r.slug.clone(),
+                    title: r.title.clone(),
+                    office_id: r.office_id.into(),
+                    race_type: r.race_type.clone(),
+                    vote_type: r.vote_type.clone(),
+                    party_id: r.party_id.map(|p| p.into()),
+                    state: r.state.clone(),
+                    description: r.description.clone(),
+                    ballotpedia_link: r.ballotpedia_link.clone(),
+                    early_voting_begins_date: r.early_voting_begins_date,
+                    official_website: r.official_website.clone(),
+                    election_id: r.election_id.map(|e| e.into()),
+                    is_special_election: r.is_special_election,
+                    num_elect: r.num_elect,
+                },
+                were_candidates_emailed: r.were_candidates_emailed.unwrap_or(false),
+                created_at: r.cgr_created_at,
+                updated_at: r.cgr_updated_at,
+            })
+            .collect::<Vec<CandidateGuideRaceResult>>();
+
+        Ok(results)
     }
 
     async fn organization(&self, ctx: &Context<'_>) -> Result<OrganizationResult> {
