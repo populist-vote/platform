@@ -1,11 +1,5 @@
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
-use db::{
-    models::{
-        candidate_guide::CandidateGuide,
-        enums::{RaceType, State, VoteType},
-    },
-    Embed, EmbedType, Question,
-};
+use db::{models::candidate_guide::CandidateGuide, Embed, EmbedType, Question};
 
 use crate::context::ApiContext;
 
@@ -25,10 +19,10 @@ pub struct CandidateGuideResult {
 
 #[derive(SimpleObject)]
 pub struct CandidateGuideRaceResult {
-    race: RaceResult,
-    were_candidates_emailed: bool,
-    created_at: chrono::DateTime<chrono::Utc>,
-    updated_at: chrono::DateTime<chrono::Utc>,
+    pub race: RaceResult,
+    pub were_candidates_emailed: bool,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[ComplexObject]
@@ -77,73 +71,6 @@ impl CandidateGuideResult {
         tracing::warn!("embeds: {:?}", embeds);
 
         Ok(embeds.into_iter().map(EmbedResult::from).collect())
-    }
-
-    async fn races(&self, ctx: &Context<'_>) -> Result<Vec<CandidateGuideRaceResult>> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let races = sqlx::query!(
-            r#"
-            SELECT 
-            r.id,
-            r.slug,
-            r.title,
-            r.office_id,
-            r.race_type AS "race_type:RaceType", 
-            r.vote_type AS "vote_type:VoteType", 
-            r.party_id, 
-            r.state AS "state:State",
-            r.description,
-            r.ballotpedia_link,
-            r.early_voting_begins_date,
-            r.winner_ids,
-            r.total_votes,
-            r.num_precincts_reporting,
-            r.total_precincts,
-            r.official_website,
-            r.election_id,
-            r.is_special_election,
-            r.num_elect,
-            r.created_at,
-            r.updated_at,
-            cgr.were_candidates_emailed,
-            cgr.created_at AS cgr_created_at,
-            cgr.updated_at AS cgr_updated_at
-            FROM candidate_guide_races cgr
-            JOIN race r ON r.id = cgr.race_id 
-            WHERE candidate_guide_id = $1
-        "#,
-            uuid::Uuid::parse_str(self.id.as_str()).unwrap()
-        )
-        .fetch_all(&db_pool)
-        .await?;
-
-        let results = races
-            .iter()
-            .map(|r| CandidateGuideRaceResult {
-                race: RaceResult {
-                    id: r.id.into(),
-                    slug: r.slug.clone(),
-                    title: r.title.clone(),
-                    office_id: r.office_id.into(),
-                    race_type: r.race_type.clone(),
-                    vote_type: r.vote_type.clone(),
-                    party_id: r.party_id.map(|p| p.into()),
-                    state: r.state.clone(),
-                    description: r.description.clone(),
-                    ballotpedia_link: r.ballotpedia_link.clone(),
-                    early_voting_begins_date: r.early_voting_begins_date,
-                    official_website: r.official_website.clone(),
-                    election_id: r.election_id.map(|e| e.into()),
-                    is_special_election: r.is_special_election,
-                    num_elect: r.num_elect,
-                },
-                were_candidates_emailed: r.were_candidates_emailed.unwrap_or(false),
-                created_at: r.cgr_created_at,
-                updated_at: r.cgr_updated_at,
-            })
-            .collect::<Vec<CandidateGuideRaceResult>>();
-
-        Ok(results)
     }
 
     async fn organization(&self, ctx: &Context<'_>) -> Result<OrganizationResult> {

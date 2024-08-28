@@ -6,8 +6,8 @@ use serde_json::Value as JSON;
 use crate::context::ApiContext;
 
 use super::{
-    BillResult, CandidateGuideResult, Error, PoliticianResult, PollResult, QuestionResult,
-    RaceResult, UserResult,
+    BillResult, CandidateGuideRaceResult, CandidateGuideResult, Error, PoliticianResult,
+    PollResult, QuestionResult, RaceResult, UserResult,
 };
 
 #[derive(SimpleObject, Clone, Debug)]
@@ -145,6 +145,52 @@ impl EmbedResult {
                 .load_one(race_id)
                 .await?;
             Ok(race.map(|r| r.into()))
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn candidate_guide_race(
+        &self,
+        ctx: &Context<'_>,
+    ) -> Result<Option<CandidateGuideRaceResult>> {
+        let race_id = self.attributes["raceId"].as_str();
+        let candidate_guide_id = self.attributes["candidateGuideId"].as_str();
+
+        if let (Some(race_id), Some(candidate_guide_id)) = (race_id, candidate_guide_id) {
+            let race_id = uuid::Uuid::parse_str(race_id)?;
+            let race = ctx
+                .data::<ApiContext>()?
+                .loaders
+                .race_loader
+                .load_one(race_id)
+                .await?;
+            let race_result = race.map(|r| r.into());
+
+            let candidate_guide_id = uuid::Uuid::parse_str(candidate_guide_id)?;
+            let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+            let cgr = sqlx::query!(
+                r#"
+                SELECT were_candidates_emailed, created_at, updated_at FROM candidate_guide_races
+                WHERE race_id = $1 AND candidate_guide_id = $2
+                "#,
+                race_id,
+                candidate_guide_id
+            )
+            .fetch_optional(&db_pool)
+            .await?;
+
+            if let (Some(race), Some(cgr)) = (race_result, cgr) {
+                let result = CandidateGuideRaceResult {
+                    race,
+                    were_candidates_emailed: cgr.were_candidates_emailed.unwrap_or(false),
+                    created_at: cgr.created_at,
+                    updated_at: cgr.updated_at,
+                };
+                Ok(Some(result))
+            } else {
+                Ok(None)
+            }
         } else {
             Ok(None)
         }
