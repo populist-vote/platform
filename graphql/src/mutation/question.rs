@@ -149,7 +149,7 @@ impl QuestionSubmissionMutation {
                     qs.translations,
                     qs.sentiment,
                     $1 AS copied_from_id,  -- This is the original question_submission_id you want to copy
-                    NOW(),  -- Set the creation timestamp to now
+                    qs.created_at,  -- Set the creation timestamp to the original timestamp
                     NOW()   -- Set the updated timestamp to now
                 FROM
                     question_submission qs
@@ -168,8 +168,8 @@ impl QuestionSubmissionMutation {
                     created_at,
                     updated_at
             "#,
+            question_submission_id,
             target_question_id,
-            question_submission_id
         ).fetch_one(&db_pool).await?;
 
         Ok(result.into())
