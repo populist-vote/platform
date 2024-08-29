@@ -26,7 +26,7 @@ impl QuestionSubmissionQuery {
         candidate_id: ID,
         question_id: ID,
         organization_id: ID,
-    ) -> Result<QuestionSubmissionResult> {
+    ) -> Result<Option<QuestionSubmissionResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let record = sqlx::query_as!(
             QuestionSubmission,
@@ -58,9 +58,9 @@ impl QuestionSubmissionQuery {
             uuid::Uuid::parse_str(question_id.as_str())?,
             uuid::Uuid::parse_str(organization_id.as_str())?,
         )
-        .fetch_one(&db_pool)
+        .fetch_optional(&db_pool)
         .await?;
 
-        Ok(record.into())
+        Ok(record.map(|r| r.into()))
     }
 }
