@@ -28,7 +28,7 @@ pub struct QuestionSubmission {
     pub editorial: Option<String>,
     pub translations: Option<serde_json::Value>,
     pub sentiment: Option<Sentiment>,
-    pub is_locked: bool,
+    pub copied_from_id: Option<uuid::Uuid>,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
@@ -73,6 +73,7 @@ pub struct UpsertQuestionSubmissionInput {
     pub sentiment: Option<Sentiment>,
     pub translations: Option<serde_json::Value>,
     pub should_translate: Option<bool>,
+    pub copied_from_id: Option<uuid::Uuid>,
 }
 
 #[derive(Display, Copy, Clone, Eq, PartialEq, Debug, Enum, EnumString, sqlx::Type)]
@@ -247,7 +248,8 @@ impl QuestionSubmission {
                     response,
                     sentiment,
                     translations,
-                    editorial
+                    editorial,
+                    copied_from_id
                 ) VALUES (
                     $1,
                     $2,
@@ -256,14 +258,15 @@ impl QuestionSubmission {
                     $5,
                     $6,
                     $7,
-                    $8
+                    $8,
+                    $9
                 ) ON CONFLICT (id) DO UPDATE SET
                     response = $5,
                     sentiment = $6,
                     translations = $7,
                     editorial = $8,
-                    updated_at = now()
-                WHERE question_submission.is_locked <> TRUE
+                    updated_at = now(),
+                    copied_from_id = $9
                 RETURNING 
                     id,
                     question_id,
@@ -273,7 +276,7 @@ impl QuestionSubmission {
                     editorial,
                     translations,
                     sentiment AS "sentiment:Sentiment",
-                    is_locked,
+                    copied_from_id,
                     created_at,
                     updated_at
             "#,
@@ -284,40 +287,11 @@ impl QuestionSubmission {
             input.response,
             input.sentiment as Option<Sentiment>,
             translations,
-            input.editorial
+            input.editorial,
+            input.copied_from_id
         )
         .fetch_one(db_pool)
         .await?;
         Ok(question_submission)
-    }
-
-    pub async fn lock(db_pool: &PgPool, id: uuid::Uuid) -> Result<bool, Error> {
-        let _question_submission = sqlx::query_as!(
-            QuestionSubmission,
-            r#"
-                UPDATE question_submission
-                SET is_locked = TRUE
-                WHERE id = $1
-            "#,
-            id
-        )
-        .fetch_one(db_pool)
-        .await?;
-        Ok(true)
-    }
-
-    pub async fn unlock(db_pool: &PgPool, id: uuid::Uuid) -> Result<bool, Error> {
-        let _question_submission = sqlx::query_as!(
-            QuestionSubmission,
-            r#"
-                UPDATE question_submission
-                SET is_locked = FALSE
-                WHERE id = $1
-            "#,
-            id
-        )
-        .fetch_one(db_pool)
-        .await?;
-        Ok(true)
     }
 }

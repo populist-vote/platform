@@ -91,7 +91,7 @@ impl QuestionResult {
                   editorial,
                   translations,
                   sentiment AS "sentiment: Sentiment",
-                  is_locked,
+                  copied_from_id,
                   created_at,
                   updated_at
                 FROM question_submission
@@ -123,7 +123,7 @@ impl QuestionResult {
                   qs.editorial,
                   qs.translations,
                   qs.sentiment AS "sentiment: Sentiment",
-                  qs.is_locked,
+                  qs.copied_from_id,
                   qs.created_at,
                   qs.updated_at
                 FROM question_submission qs
@@ -159,7 +159,7 @@ impl QuestionResult {
                   qs.editorial,
                   qs.translations,
                   qs.sentiment AS "sentiment: Sentiment",
-                  qs.is_locked,
+                  qs.copied_from_id,
                   qs.created_at,
                   qs.updated_at
                 FROM question_submission qs

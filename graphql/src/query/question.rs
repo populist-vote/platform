@@ -40,7 +40,7 @@ impl QuestionSubmissionQuery {
                   qs.editorial,
                   qs.translations,
                   qs.sentiment AS "sentiment: Sentiment",
-                  qs.is_locked,
+                  qs.copied_from_id,
                   qs.created_at,
                   qs.updated_at
                 FROM

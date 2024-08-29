@@ -6,7 +6,7 @@ use async_graphql::{Context, Object, Result, SimpleObject, ID};
 use async_openai::types::CreateCompletionRequestArgs;
 use db::{
     models::{question::UpsertQuestionInput, respondent::UpsertRespondentInput},
-    Sentiment, UpsertQuestionSubmissionInput,
+    QuestionSubmission, Sentiment, UpsertQuestionSubmissionInput,
 };
 
 use crate::context::ApiContext;
@@ -32,6 +32,25 @@ impl QuestionMutation {
         Ok(new_question.into())
     }
 
+    async fn delete_question(&self, ctx: &Context<'_>, id: ID) -> Result<DeleteQuestionResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        sqlx::query!(
+            r#"
+                DELETE FROM question WHERE id = $1
+            "#,
+            uuid::Uuid::parse_str(&id)?
+        )
+        .execute(&db_pool)
+        .await?;
+        Ok(DeleteQuestionResult { id })
+    }
+}
+
+#[derive(Default)]
+pub struct QuestionSubmissionMutation;
+
+#[Object]
+impl QuestionSubmissionMutation {
     async fn upsert_question_submission(
         &self,
         ctx: &Context<'_>,
@@ -96,16 +115,63 @@ impl QuestionMutation {
         Ok(question.into())
     }
 
-    async fn delete_question(&self, ctx: &Context<'_>, id: ID) -> Result<DeleteQuestionResult> {
+    async fn copy_question_submission(
+        &self,
+        ctx: &Context<'_>,
+        question_submission_id: ID,
+        target_question_id: ID,
+    ) -> Result<QuestionSubmissionResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        sqlx::query!(
+        let question_submission_id = uuid::Uuid::parse_str(&question_submission_id)?;
+        let target_question_id = uuid::Uuid::parse_str(&target_question_id)?;
+
+        let result = sqlx::query_as!(
+            QuestionSubmission,
             r#"
-                DELETE FROM question WHERE id = $1
+                INSERT INTO question_submission (
+                    question_id,
+                    respondent_id,
+                    candidate_id,
+                    response,
+                    editorial,
+                    translations,
+                    sentiment,
+                    copied_from_id,
+                    created_at,
+                    updated_at
+                )
+                SELECT
+                    $2 AS question_id,  -- This is the new question_id you want to associate the copy with
+                    qs.respondent_id,
+                    qs.candidate_id,
+                    qs.response,
+                    qs.editorial,
+                    qs.translations,
+                    qs.sentiment,
+                    $1 AS copied_from_id,  -- This is the original question_submission_id you want to copy
+                    NOW(),  -- Set the creation timestamp to now
+                    NOW()   -- Set the updated timestamp to now
+                FROM
+                    question_submission qs
+                WHERE
+                    qs.id = $1
+                RETURNING 
+                    id,
+                    question_id,
+                    respondent_id,
+                    candidate_id,
+                    response,
+                    editorial,
+                    translations,
+                    sentiment AS "sentiment: Sentiment",
+                    copied_from_id,
+                    created_at,
+                    updated_at
             "#,
-            uuid::Uuid::parse_str(&id)?
-        )
-        .execute(&db_pool)
-        .await?;
-        Ok(DeleteQuestionResult { id })
+            target_question_id,
+            question_submission_id
+        ).fetch_one(&db_pool).await?;
+
+        Ok(result.into())
     }
 }

@@ -58,7 +58,7 @@ impl CandidateGuideQuery {
                 qs.created_at,
                 qs.updated_at,
                 qs.respondent_id,
-                qs.is_locked
+                qs.copied_from_id
             FROM
                 question_submission qs
             JOIN
