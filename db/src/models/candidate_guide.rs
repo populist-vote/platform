@@ -62,6 +62,7 @@ impl CandidateGuide {
                     r#"
                         INSERT INTO candidate_guide_races (candidate_guide_id, race_id)
                         SELECT $1, unnest($2::uuid[])
+                        ON CONFLICT DO NOTHING
                     "#,
                     id,
                     race_ids,
