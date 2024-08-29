@@ -124,6 +124,7 @@ impl CandidateGuideResult {
                 cg.id = $1
                 AND qs.response IS NOT NULL
                 AND qs.response != ''
+                AND qs.copied_from_id IS NULL
             "#,
             uuid::Uuid::parse_str(&self.id.as_str())?,
         )
