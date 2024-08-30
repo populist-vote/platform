@@ -158,6 +158,15 @@ impl User {
                 ins_address AS (
                     INSERT INTO address (line_1, line_2, city, state, county, country, postal_code, lon, lat, geog, geom, congressional_district, state_senate_district, state_house_district)
                     VALUES ($5, $6, $7, $8, $9, $10, $11, $12, $13, ST_SetSRID(ST_MakePoint($12, $13), 4326), ST_GeomFromText($14, 4326), $15, $16, $17)
+                    ON CONFLICT (line_1, line_2, city, state, country, postal_code) -- adjust the conflict target columns as per your unique constraint
+                    DO UPDATE SET
+                        lon = EXCLUDED.lon,
+                        lat = EXCLUDED.lat,
+                        geog = EXCLUDED.geog,
+                        geom = EXCLUDED.geom,
+                        congressional_district = EXCLUDED.congressional_district,
+                        state_senate_district = EXCLUDED.state_senate_district,
+                        state_house_district = EXCLUDED.state_house_district
                     RETURNING id
                 ),
                 ins_profile AS (
