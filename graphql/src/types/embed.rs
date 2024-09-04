@@ -1,9 +1,6 @@
 use crate::is_admin;
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
-use db::{
-    models::{candidate_guide::CandidateGuide, election},
-    DateTime, Embed, EmbedType, UserWithProfile,
-};
+use db::{models::candidate_guide::CandidateGuide, DateTime, Embed, EmbedType, UserWithProfile};
 use serde_json::Value as JSON;
 
 use crate::context::ApiContext;

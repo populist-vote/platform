@@ -1,7 +1,7 @@
 use super::{AddressExtendedMNResult, AddressResult, OrganizationResult};
 use crate::{context::ApiContext, guard::UserGuard, is_admin};
 use async_graphql::{ComplexObject, Context, InputObject, Result, SimpleObject, ID};
-use db::{Address, Organization, UserWithProfile};
+use db::{models::address, Address, Organization, UserWithProfile};
 
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
@@ -63,24 +63,28 @@ impl UserResult {
         ctx: &Context<'_>,
     ) -> Result<Option<AddressExtendedMNResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let address_id = sqlx::query!(
+        let profile = sqlx::query!(
             r#"
-            SELECT
-                up.address_id
-            FROM
-                user_profile up
-            WHERE
-                up.user_id = $1
-            "#,
+                SELECT
+                    up.address_id
+                FROM
+                    user_profile up
+                WHERE
+                    up.user_id = $1
+                "#,
             &uuid::Uuid::try_parse(&self.id).unwrap()
         )
-        .fetch_one(&db_pool)
-        .await?
-        .address_id;
+        .fetch_optional(&db_pool)
+        .await?;
 
-        if let Some(address_id) = address_id {
-            let address = Address::extended_mn_by_address_id(&db_pool, &address_id).await?;
-            Ok(address.map(|address| address.into()))
+        if let Some(profile) = profile {
+            let address_id = profile.address_id;
+            if let Some(address_id) = address_id {
+                let address = Address::extended_mn_by_address_id(&db_pool, &address_id).await?;
+                Ok(address.map(|address| address.into()))
+            } else {
+                Ok(None)
+            }
         } else {
             Ok(None)
         }
