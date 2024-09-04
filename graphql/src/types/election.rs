@@ -4,8 +4,9 @@ use async_graphql::{ComplexObject, Context, InputObject, Result, SimpleObject, I
 use auth::AccessTokenClaims;
 use db::{
     models::enums::{RaceType, State, VoteType},
-    Address, Election, Race,
+    Address, AddressInput, Election, Race,
 };
+use geocodio::GeocodioProxy;
 use jsonwebtoken::TokenData;
 
 #[derive(SimpleObject, Clone, Debug)]
@@ -22,6 +23,151 @@ pub struct ElectionResult {
 #[derive(InputObject, Default, Debug)]
 pub struct ElectionRaceFilter {
     state: Option<State>,
+}
+
+async fn get_races_by_address_id(
+    db_pool: &sqlx::PgPool,
+    election_id: &uuid::Uuid,
+    address_id: &uuid::Uuid,
+) -> Result<Vec<RaceResult>, Error> {
+    let user_address_data = sqlx::query!(
+        r#"
+        SELECT
+            a.congressional_district,
+            a.state_senate_district,
+            a.state_house_district,
+            a.state AS "state:State",
+            a.county,
+            a.city
+        FROM
+            address AS a
+        WHERE
+            
+            a.id = $1
+        "#,
+        address_id
+    )
+    .fetch_one(db_pool)
+    .await?;
+
+    let user_address_extended_mn_data = if user_address_data.state == State::MN {
+        Address::extended_mn_by_address_id(&db_pool, &address_id).await?
+    } else {
+        None
+    };
+
+    let county_commissioner_district = user_address_extended_mn_data
+        .clone()
+        .map(|a| {
+            a.county_commissioner_district
+                .map(|d| d.as_str().trim_start_matches('0').to_string())
+        })
+        .unwrap_or(None);
+
+    let school_district = user_address_extended_mn_data
+        .clone()
+        .map(|a| {
+            a.school_district_number
+                .map(|d| d.as_str().trim_start_matches('0').to_string())
+        })
+        .unwrap_or(None);
+
+    let school_district_type = user_address_extended_mn_data
+        .clone()
+        .map(|a| a.school_district_type)
+        .unwrap_or(None);
+
+    let school_subdistrict = user_address_extended_mn_data
+        .clone()
+        .map(|a| {
+            a.school_subdistrict_code
+                .map(|d| d.as_str().trim_start_matches('0').to_string())
+        })
+        .unwrap_or(None);
+
+    let ward = user_address_extended_mn_data
+        .map(|a| {
+            a.ward.map(|d| {
+                // Remove non-numeric prefix and then trim leading zeros
+                if let Some(pos) = d.find('-') {
+                    d[(pos + 1)..].trim_start_matches('0').to_string()
+                } else {
+                    d.trim_start_matches('0').to_string()
+                }
+            })
+        })
+        .unwrap_or(None);
+
+    let city = user_address_data.city.clone().replace("Saint", "St.");
+
+    let records = sqlx::query_as!(
+        Race,
+        r#"
+    SELECT
+        r.id,
+        r.slug,
+        r.title,
+        r.office_id,
+        r.race_type AS "race_type:RaceType",
+        r.vote_type AS "vote_type:VoteType",
+        r.party_id,
+        r.state AS "state:State",
+        r.description,
+        r.ballotpedia_link,
+        r.early_voting_begins_date,
+        r.winner_ids,
+        r.total_votes,
+        r.num_precincts_reporting,
+        r.total_precincts,
+        r.official_website,
+        r.election_id,
+        r.is_special_election,
+        r.num_elect,
+        r.created_at,
+        r.updated_at
+    FROM
+        race r
+        JOIN office o ON office_id = o.id
+    WHERE
+        r.election_id = $1 AND (
+            o.election_scope = 'national'
+            OR (o.state = $2 AND o.election_scope = 'state')
+            OR (o.state = $2 AND (  
+                (o.election_scope = 'county' AND o.county = $4) OR
+                (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR
+                (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR
+                (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
+                (o.election_scope = 'district' AND o.district_type = 'county' AND o.county = $4 AND o.district = $8) OR
+                (o.election_scope = 'city' AND o.municipality = $3) OR
+                (o.election_scope = 'district' AND o.district_type = 'city' AND o.municipality = $3 AND o.district = $12) OR
+               (CASE 
+                 WHEN $10 = '01' THEN
+                  (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'ISD #', '') = $9) AND
+                  (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)
+                 WHEN $10 = '03' THEN
+                   (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'SSD #', '') = $9) AND
+                   (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)
+                END)
+            )))
+    ORDER BY o.priority ASC, title DESC
+        "#,
+        &election_id,
+        user_address_data.state as State,
+        city,
+        user_address_data.county.map(|c| c.to_string().replace(" County", "")),
+        user_address_data.congressional_district,
+        user_address_data.state_senate_district,
+        user_address_data.state_house_district,
+        county_commissioner_district,
+        school_district,
+        school_district_type,
+        school_subdistrict,
+        ward
+    )
+    .fetch_all(db_pool)
+    .await?;
+    let results = records.into_iter().map(RaceResult::from).collect();
+    Ok(results)
 }
 
 #[ComplexObject]
@@ -77,149 +223,127 @@ impl ElectionResult {
         Ok(results)
     }
 
+    /// Show races based on an anonymous user with an address
+    async fn races_by_address(
+        &self,
+        ctx: &Context<'_>,
+        address: AddressInput,
+    ) -> Result<Vec<RaceResult>> {
+        let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+        let address_clone = address.clone();
+        let geocodio = GeocodioProxy::new().unwrap();
+
+        // Process address with geocodio
+        let geocode_result = geocodio
+            .geocode(
+                geocodio::AddressParams::AddressInput(geocodio::AddressInput {
+                    line_1: address.line_1,
+                    line_2: address.line_2,
+                    city: address.city,
+                    state: address.state.to_string(),
+                    country: address.country,
+                    postal_code: address.postal_code,
+                }),
+                Some(&["cd118", "stateleg-next"]),
+            )
+            .await;
+
+        if let Ok(geocodio_data) = geocode_result {
+            let city = geocodio_data.results[0]
+                .address_components
+                .city
+                .clone()
+                .unwrap_or(address_clone.city);
+            let coordinates = geocodio_data.results[0].location.clone();
+            let county = geocodio_data.results[0].address_components.county.clone();
+            let primary_result = geocodio_data.results[0].fields.as_ref().unwrap();
+            let congressional_district =
+                &primary_result.congressional_districts.as_ref().unwrap()[0].district_number;
+            let state_legislative_districts =
+                primary_result.state_legislative_districts.as_ref().unwrap();
+            let state_house_district = &state_legislative_districts.house[0].district_number;
+            let state_senate_district = &state_legislative_districts.senate[0].district_number;
+
+            let temp_address_record = sqlx::query!(r#"
+                    INSERT INTO address (line_1, line_2, city, state, county, country, postal_code, lon, lat, geog, geom, congressional_district, state_senate_district, state_house_district)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, ST_GeographyFromText($10), ST_GeomFromText($11), $12, $13, $14)
+                    ON CONFLICT (line_1, line_2, city, state, country, postal_code) -- adjust the conflict target columns as per your unique constraint
+                    DO UPDATE SET
+                        lon = EXCLUDED.lon,
+                        lat = EXCLUDED.lat,
+                        geog = EXCLUDED.geog,
+                        geom = EXCLUDED.geom,
+                        congressional_district = EXCLUDED.congressional_district,
+                        state_senate_district = EXCLUDED.state_senate_district,
+                        state_house_district = EXCLUDED.state_house_district
+                    RETURNING id
+
+            "#, 
+            address_clone.line_1,
+            address_clone.line_2,
+            city,
+            address_clone.state.to_string(),
+            county,
+            address_clone.country,
+            address_clone.postal_code,
+            coordinates.longitude,
+            coordinates.latitude,
+            format!("POINT({} {})", coordinates.longitude, coordinates.latitude),
+            format!("POINT({} {})", coordinates.longitude, coordinates.latitude),
+            &congressional_district.to_string(),
+            state_senate_district,
+            state_house_district
+            ).fetch_one(&db_pool).await?;
+
+            let election_id = uuid::Uuid::parse_str(&self.id)?;
+            let address_id = temp_address_record.id;
+            let races = get_races_by_address_id(&db_pool, &election_id, &address_id).await?;
+
+            // Clean up and delete temp address record in separate thread
+            tokio::spawn(async move {
+                if let Err(err) = sqlx::query!(
+                    r#"
+                    DELETE FROM address
+                    WHERE id = $1
+                    "#,
+                    address_id
+                )
+                .execute(&db_pool)
+                .await
+                {
+                    tracing::error!("Failed to delete address: {:?}", err);
+                }
+            });
+
+            Ok(races)
+        } else {
+            Err(Error::BadInput {
+                field: "address".to_string(),
+                message: "Invalid address".to_string(),
+            }
+            .into())
+        }
+    }
+
     /// Show races relevant to the user based on their address
     async fn races_by_user_districts(&self, ctx: &Context<'_>) -> Result<Vec<RaceResult>, Error> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
         let token = ctx.data::<Option<TokenData<AccessTokenClaims>>>();
 
         if let Some(token_data) = token.unwrap() {
-            let user_address_data = sqlx::query!(
-                r#"
-                SELECT
-                    a.congressional_district,
-                    a.state_senate_district,
-                    a.state_house_district,
-                    a.state AS "state:State",
-                    a.county,
-                    a.city
-                FROM
-                    address AS a
-                    JOIN user_profile up ON user_id = $1
-                WHERE
-                    up.user_id = $1 AND 
-                    up.address_id = a.id
-                "#,
-                token_data.claims.sub
-            )
-            .fetch_one(&db_pool)
-            .await?;
+            let election_id = uuid::Uuid::parse_str(&self.id)?;
+            let address_id = Address::find_by_user_id(&db_pool, &token_data.claims.sub)
+                .await?
+                .map(|a| a.id);
+            if let Some(address_id) = address_id {
+                println!("address_id = {:?}", address_id);
+                let results = get_races_by_address_id(&db_pool, &election_id, &address_id).await?;
 
-            let user_address_extended_mn_data = if user_address_data.state == State::MN {
-                Address::extended_mn_by_user_id(&db_pool, &token_data.claims.sub).await?
+                Ok(results)
             } else {
-                None
-            };
-
-            let county_commissioner_district = user_address_extended_mn_data
-                .clone()
-                .map(|a| {
-                    a.county_commissioner_district
-                        .map(|d| d.as_str().trim_start_matches('0').to_string())
-                })
-                .unwrap_or(None);
-
-            let school_district = user_address_extended_mn_data
-                .clone()
-                .map(|a| {
-                    a.school_district_number
-                        .map(|d| d.as_str().trim_start_matches('0').to_string())
-                })
-                .unwrap_or(None);
-
-            let school_district_type = user_address_extended_mn_data
-                .clone()
-                .map(|a| a.school_district_type)
-                .unwrap_or(None);
-
-            let school_subdistrict = user_address_extended_mn_data
-                .clone()
-                .map(|a| {
-                    a.school_subdistrict_code
-                        .map(|d| d.as_str().trim_start_matches('0').to_string())
-                })
-                .unwrap_or(None);
-
-            let ward = user_address_extended_mn_data
-                .map(|a| {
-                    a.ward.map(|d| {
-                        // Remove non-numeric prefix and then trim leading zeros
-                        if let Some(pos) = d.find('-') {
-                            d[(pos + 1)..].trim_start_matches('0').to_string()
-                        } else {
-                            d.trim_start_matches('0').to_string()
-                        }
-                    })
-                })
-                .unwrap_or(None);
-
-            let records = sqlx::query_as!(
-                Race,
-                r#"
-            SELECT
-                r.id,
-                r.slug,
-                r.title,
-                r.office_id,
-                r.race_type AS "race_type:RaceType",
-                r.vote_type AS "vote_type:VoteType",
-                r.party_id,
-                r.state AS "state:State",
-                r.description,
-                r.ballotpedia_link,
-                r.early_voting_begins_date,
-                r.winner_ids,
-                r.total_votes,
-                r.num_precincts_reporting,
-                r.total_precincts,
-                r.official_website,
-                r.election_id,
-                r.is_special_election,
-                r.num_elect,
-                r.created_at,
-                r.updated_at
-            FROM
-                race r
-                JOIN office o ON office_id = o.id
-            WHERE
-                r.election_id = $1 AND (
-                    o.election_scope = 'national'
-                    OR (o.state = $2 AND o.election_scope = 'state')
-                    OR (o.state = $2 AND (  
-                        (o.election_scope = 'county' AND o.county = $4) OR
-                        (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR
-                        (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR
-                        (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
-                        (o.election_scope = 'district' AND o.district_type = 'county' AND o.county = $4 AND o.district = $8) OR
-                        (o.election_scope = 'city' AND o.municipality = $3) OR
-                        (o.election_scope = 'district' AND o.district_type = 'city' AND o.municipality = $3 AND o.district = $12) OR
-                       (CASE 
-                         WHEN $10 = '01' THEN
-                          (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'ISD #', '') = $9) AND
-                          (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)
-                         WHEN $10 = '03' THEN
-                           (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'SSD #', '') = $9) AND
-                           (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)
-                        END)
-                    )))
-            ORDER BY o.priority ASC, title DESC
-                "#,
-                uuid::Uuid::parse_str(&self.id).unwrap(),
-                user_address_data.state as State,
-                user_address_data.city,
-                user_address_data.county.map(|c| c.to_string().replace(" County", "")),
-                user_address_data.congressional_district,
-                user_address_data.state_senate_district,
-                user_address_data.state_house_district,
-                county_commissioner_district,
-                school_district,
-                school_district_type,
-                school_subdistrict,
-                ward
-            )
-            .fetch_all(&db_pool)
-            .await?;
-            let results = records.into_iter().map(RaceResult::from).collect();
-            Ok(results)
+                tracing::debug!("No address found with user address data");
+                Err(Error::UserAddressNotFound)
+            }
         } else {
             tracing::debug!("No races found with user address data");
             Err(Error::UserAddressNotFound)

@@ -13,6 +13,7 @@ pub enum EmbedType {
     Poll,
     Race,
     CandidateGuide,
+    MyBallot,
 }
 
 #[derive(FromRow, Debug, Clone)]

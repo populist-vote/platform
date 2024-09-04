@@ -63,10 +63,27 @@ impl UserResult {
         ctx: &Context<'_>,
     ) -> Result<Option<AddressExtendedMNResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let address =
-            Address::extended_mn_by_user_id(&db_pool, &uuid::Uuid::try_parse(&self.id).unwrap())
-                .await?;
-        Ok(address.map(|address| address.into()))
+        let address_id = sqlx::query!(
+            r#"
+            SELECT
+                up.address_id
+            FROM
+                user_profile up
+            WHERE
+                up.user_id = $1
+            "#,
+            &uuid::Uuid::try_parse(&self.id).unwrap()
+        )
+        .fetch_one(&db_pool)
+        .await?
+        .address_id;
+
+        if let Some(address_id) = address_id {
+            let address = Address::extended_mn_by_address_id(&db_pool, &address_id).await?;
+            Ok(address.map(|address| address.into()))
+        } else {
+            Ok(None)
+        }
     }
 }
 
