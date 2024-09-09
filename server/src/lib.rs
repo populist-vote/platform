@@ -11,6 +11,7 @@ use tracing_subscriber::EnvFilter;
 
 mod cron;
 pub mod jobs;
+mod postgres;
 pub use cron::init_job_schedule;
 pub use jobs::*;
 mod handlers;
@@ -25,19 +26,27 @@ pub async fn run() {
         .init();
 
     db::init_pool().await.unwrap();
-    let pool = db::pool().await.to_owned();
+    let pool = db::pool().await;
 
     // Run cron jobs in separate thread
     tokio::spawn(cron::init_job_schedule());
 
+    // Postgres realtime listeners in separate thread
+    let pool_for_listener = pool.clone(); // No need to clone the actual connection pool
+
+    tokio::spawn(async move {
+        if let Err(e) = postgres::listener(pool_for_listener.connection).await {
+            eprintln!("Error in listener: {}", e);
+        }
+    });
+
     // Embed migrations into binary
-    let migrator = pool.connection.clone();
     sqlx::migrate!("../db/migrations")
-        .run(&migrator)
+        .run(&pool.connection)
         .await
         .unwrap();
 
-    let context = ApiContext::new(pool.connection.clone());
+    let context = ApiContext::new(pool.clone().connection);
 
     let schema = new_schema().data(context).extension(ApolloTracing).finish();
 

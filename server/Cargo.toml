@@ -30,3 +30,5 @@ tower-cookies = { version = "0.10.0" }
 http = "0.2.8"
 tokio-cron-scheduler = "0.9.4"
 uuid = "1.7.0"
+regex = "1.10.6"
+reqwest = "0.12.7"
