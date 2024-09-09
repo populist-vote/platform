@@ -26,6 +26,7 @@ struct DeleteEmbedResult {
 struct PingEmbedOriginInput {
     embed_id: uuid::Uuid,
     url: String,
+    page_title: Option<String>,
 }
 
 #[Object]
@@ -71,14 +72,16 @@ impl EmbedMutation {
         let record = sqlx::query_as!(
             EmbedOriginResult,
             r#"
-            INSERT INTO embed_origin (embed_id, url)
-            VALUES ($1, $2)
+            INSERT INTO embed_origin (embed_id, url, page_title)
+            VALUES ($1, $2, $3)
             ON CONFLICT (embed_id, url)
-            DO UPDATE SET last_ping_at = CURRENT_TIMESTAMP
-            RETURNING url, last_ping_at as "last_ping_at: DateTime"
+            DO UPDATE SET last_ping_at = CURRENT_TIMESTAMP,
+                          page_title = EXCLUDED.page_title
+            RETURNING url, last_ping_at as "last_ping_at: DateTime", page_title
         "#,
             input.embed_id,
             cleaned,
+            input.page_title,
         )
         .fetch_one(&db_pool)
         .await?;

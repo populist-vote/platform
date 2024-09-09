@@ -7,10 +7,10 @@ use db::{
         politician::Politician,
         race::Race,
     },
-    Election,
+    Election, Embed, EmbedType,
 };
 
-use super::{ElectionResult, PoliticalParty, PoliticianResult};
+use super::{ElectionResult, EmbedResult, PoliticalParty, PoliticianResult};
 
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]
@@ -271,6 +271,34 @@ impl RaceResult {
         .await?;
 
         Ok(record.into())
+    }
+
+    async fn related_embeds(&self, ctx: &Context<'_>) -> Result<Vec<EmbedResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let embeds = sqlx::query_as!(
+            Embed,
+            r#"
+            SELECT 
+                id,
+                organization_id,
+                name,
+                description,
+                embed_type AS "embed_type:EmbedType",
+                attributes,
+                created_at,
+                created_by,
+                updated_at,
+                updated_by
+            FROM embed
+            WHERE
+                attributes->>'raceId' = $1
+        "#,
+            self.id.to_string()
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        Ok(embeds.into_iter().map(EmbedResult::from).collect())
     }
 }
 

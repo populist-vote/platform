@@ -1,7 +1,7 @@
 use super::{AddressExtendedMNResult, AddressResult, OrganizationResult};
 use crate::{context::ApiContext, guard::UserGuard, is_admin};
 use async_graphql::{ComplexObject, Context, InputObject, Result, SimpleObject, ID};
-use db::{models::address, Address, Organization, UserWithProfile};
+use db::{Address, Organization, UserWithProfile};
 
 #[derive(SimpleObject, Debug, Clone)]
 #[graphql(complex)]

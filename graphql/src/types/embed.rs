@@ -30,6 +30,7 @@ pub struct EmbedResult {
 pub struct EmbedOriginResult {
     pub url: String,
     pub last_ping_at: DateTime,
+    pub page_title: Option<String>,
 }
 
 #[ComplexObject]
@@ -77,7 +78,7 @@ impl EmbedResult {
         let records = sqlx::query_as!(
             EmbedOriginResult,
             r#"
-            SELECT url, last_ping_at FROM embed_origin WHERE embed_id = $1
+            SELECT url, last_ping_at, page_title FROM embed_origin WHERE embed_id = $1
             AND url NOT LIKE '%localhost:3030%'
             AND url NOT LIKE '%staging.populist.us%'
             AND url NOT LIKE '%populist.us%'
