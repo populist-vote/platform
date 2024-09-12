@@ -1,7 +1,7 @@
 use crate::types::QuestionResult;
 use crate::{context::ApiContext, types::QuestionSubmissionResult};
 use async_graphql::{Context, Object, Result, ID};
-use db::{Question, QuestionSubmission, Sentiment};
+use db::{Question, QuestionSubmission, QuestionSubmissionsFilter, Sentiment};
 
 #[derive(Default)]
 pub struct QuestionQuery;
@@ -20,6 +20,16 @@ impl QuestionQuery {
 
 #[Object]
 impl QuestionSubmissionQuery {
+    async fn submissions(
+        &self,
+        ctx: &Context<'_>,
+        filter: QuestionSubmissionsFilter,
+    ) -> Result<Vec<QuestionSubmissionResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let records = QuestionSubmission::filter(&db_pool, filter).await?;
+        Ok(records.into_iter().map(|r| r.into()).collect())
+    }
+
     async fn related_question_submission_by_candidate_and_question(
         &self,
         ctx: &Context<'_>,

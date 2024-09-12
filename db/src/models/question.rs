@@ -1,8 +1,11 @@
 use crate::{util::translate::translate_text, DateTime, Error};
 use async_graphql::{Enum, InputObject};
+use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
 use strum_macros::{Display, EnumString};
 use uuid::Uuid;
+
+use super::enums::{PoliticalScope, RaceType, State};
 
 #[derive(FromRow, Debug, Clone)]
 pub struct Question {
@@ -84,6 +87,14 @@ pub enum Sentiment {
     Negative,
     Neutral,
     Unknown,
+}
+
+#[derive(Default, Debug, Serialize, Deserialize, InputObject)]
+pub struct QuestionSubmissionsFilter {
+    query: Option<String>,
+    political_scope: Option<PoliticalScope>,
+    race_type: Option<RaceType>,
+    state: Option<State>,
 }
 
 impl Question {
@@ -293,5 +304,54 @@ impl QuestionSubmission {
         .fetch_one(db_pool)
         .await?;
         Ok(question_submission)
+    }
+
+    pub async fn filter(
+        db_pool: &PgPool,
+        filter: QuestionSubmissionsFilter,
+    ) -> Result<Vec<Self>, Error> {
+        let search_query = filter.query.to_owned().unwrap_or_default();
+
+        let records = sqlx::query_as!(
+            QuestionSubmission,
+            r#"
+               SELECT DISTINCT ON (qs.candidate_id, qs.question_id, qs.response)
+                  qs.id,
+                  qs.question_id,
+                  respondent_id,
+                  qs.candidate_id,
+                  response,
+                  editorial,
+                  translations,
+                  sentiment AS "sentiment: Sentiment",
+                  copied_from_id,
+                  qs.created_at,
+                  qs.updated_at
+                FROM question_submission qs
+                JOIN candidate_guide_questions cgq ON qs.question_id = cgq.question_id
+                JOIN candidate_guide cg ON cg.id = cgq.candidate_guide_id
+                JOIN candidate_guide_races cgr ON cg.id = cgr.candidate_guide_id
+                JOIN race r ON (cgr.race_id = r.id AND r.race_type = 'general')
+                JOIN office o ON r.office_id = o.id
+                JOIN politician p ON qs.candidate_id = p.id
+                JOIN race_candidates rc ON rc.candidate_id = p.id AND rc.race_id = r.id,
+                to_tsvector(
+                    r.title || o.title || ' ' || o.name || ' ' || COALESCE(o.subtitle, '') || ' ' || COALESCE(o.office_type, '') || ' ' || COALESCE(o.district, '') || ' ' || COALESCE(o.hospital_district, '') || ' ' || COALESCE(o.school_district, '') || ' ' || COALESCE(o.state::text, '') || ' ' || COALESCE(o.county, '') || ' ' || COALESCE(o.municipality, '') || ' ' || COALESCE(p.full_name, '')
+                  ) document,
+                websearch_to_tsquery($1) AS query
+                WHERE (($1::text = '') IS NOT FALSE OR query @@ document)
+                  AND ($2::race_type IS NULL OR r.race_type = $2::race_type)
+                  AND ($3::political_scope IS NULL OR o.political_scope = $3::political_scope)
+                  AND ($4::state IS NULL OR o.state = $4::state)
+                    
+                            "#,
+            search_query,
+            filter.race_type as Option<RaceType>,
+            filter.political_scope as Option<PoliticalScope>,
+            filter.state as Option<State>,
+        )
+        .fetch_all(db_pool)
+        .await?;
+        Ok(records)
     }
 }
