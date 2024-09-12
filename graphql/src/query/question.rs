@@ -23,10 +23,12 @@ impl QuestionSubmissionQuery {
     async fn submissions(
         &self,
         ctx: &Context<'_>,
+        organization_id: ID,
         filter: QuestionSubmissionsFilter,
     ) -> Result<Vec<QuestionSubmissionResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let records = QuestionSubmission::filter(&db_pool, filter).await?;
+        let organization_id = uuid::Uuid::parse_str(organization_id.as_str())?;
+        let records = QuestionSubmission::filter(&db_pool, organization_id, filter).await?;
         Ok(records.into_iter().map(|r| r.into()).collect())
     }
 

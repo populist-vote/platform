@@ -308,6 +308,7 @@ impl QuestionSubmission {
 
     pub async fn filter(
         db_pool: &PgPool,
+        organization_id: uuid::Uuid,
         filter: QuestionSubmissionsFilter,
     ) -> Result<Vec<Self>, Error> {
         let search_query = filter.query.to_owned().unwrap_or_default();
@@ -322,12 +323,13 @@ impl QuestionSubmission {
                   qs.candidate_id,
                   response,
                   editorial,
-                  translations,
+                  qs.translations,
                   sentiment AS "sentiment: Sentiment",
                   copied_from_id,
                   qs.created_at,
                   qs.updated_at
                 FROM question_submission qs
+                JOIN question q ON qs.question_id = q.id
                 JOIN candidate_guide_questions cgq ON qs.question_id = cgq.question_id
                 JOIN candidate_guide cg ON cg.id = cgq.candidate_guide_id
                 JOIN candidate_guide_races cgr ON cg.id = cgr.candidate_guide_id
@@ -338,13 +340,14 @@ impl QuestionSubmission {
                 to_tsvector(
                     r.title || o.title || ' ' || o.name || ' ' || COALESCE(o.subtitle, '') || ' ' || COALESCE(o.office_type, '') || ' ' || COALESCE(o.district, '') || ' ' || COALESCE(o.hospital_district, '') || ' ' || COALESCE(o.school_district, '') || ' ' || COALESCE(o.state::text, '') || ' ' || COALESCE(o.county, '') || ' ' || COALESCE(o.municipality, '') || ' ' || COALESCE(p.full_name, '')
                   ) document,
-                websearch_to_tsquery($1) AS query
-                WHERE (($1::text = '') IS NOT FALSE OR query @@ document)
-                  AND ($2::race_type IS NULL OR r.race_type = $2::race_type)
-                  AND ($3::political_scope IS NULL OR o.political_scope = $3::political_scope)
-                  AND ($4::state IS NULL OR o.state = $4::state)
-                    
+                websearch_to_tsquery($2) AS query
+                WHERE q.organization_id = $1::uuid
+                  AND(($2::text = '') IS NOT FALSE OR query @@ document)
+                  AND ($3::race_type IS NULL OR r.race_type = $3::race_type)
+                  AND ($4::political_scope IS NULL OR o.political_scope = $4::political_scope)
+                  AND ($5::state IS NULL OR o.state = $5::state)
                             "#,
+            organization_id,
             search_query,
             filter.race_type as Option<RaceType>,
             filter.political_scope as Option<PoliticalScope>,
