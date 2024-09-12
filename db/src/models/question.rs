@@ -333,7 +333,7 @@ impl QuestionSubmission {
                 JOIN candidate_guide_questions cgq ON qs.question_id = cgq.question_id
                 JOIN candidate_guide cg ON cg.id = cgq.candidate_guide_id
                 JOIN candidate_guide_races cgr ON cg.id = cgr.candidate_guide_id
-                JOIN race r ON (cgr.race_id = r.id AND r.race_type = 'general')
+                JOIN race r ON cgr.race_id = r.id
                 JOIN office o ON r.office_id = o.id
                 JOIN politician p ON qs.candidate_id = p.id
                 JOIN race_candidates rc ON rc.candidate_id = p.id AND rc.race_id = r.id,
