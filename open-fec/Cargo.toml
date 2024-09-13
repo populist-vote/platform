@@ -8,4 +8,4 @@ edition = "2021"
 [dependencies]
 dotenv = "0.15.0"
 reqwest = { version = "0.11", features = ["json"] }
-serde = "1.0.196"
+serde = { version = "1.0", features = ["derive"] }
