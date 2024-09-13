@@ -1,7 +1,8 @@
 use crate::context::ApiContext;
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
 use db::{
-    DateTime, Embed, EmbedType, IssueTag, Question, QuestionSubmission, Respondent, Sentiment,
+    loaders::politician::PoliticianId, DateTime, Embed, EmbedType, IssueTag, Question,
+    QuestionSubmission, Respondent, Sentiment,
 };
 
 use super::{EmbedResult, IssueTagResult, PoliticianResult, SubmissionCountByDateResult};
@@ -283,15 +284,15 @@ impl QuestionSubmissionResult {
     }
 
     async fn politician(&self, ctx: &Context<'_>) -> Result<Option<PoliticianResult>> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        if let Some(candidate_id) = self.candidate_id.clone() {
-            let politician = db::Politician::find_by_id(
-                &db_pool,
-                uuid::Uuid::parse_str(candidate_id.as_str()).unwrap(),
-            )
-            .await?;
+        if let Some(id) = self.candidate_id.clone() {
+            let politician = ctx
+                .data::<ApiContext>()?
+                .loaders
+                .politician_loader
+                .load_one(PoliticianId(uuid::Uuid::parse_str(&id)?))
+                .await?;
 
-            Ok(Some(politician.into()))
+            Ok(politician.map(PoliticianResult::from))
         } else {
             Ok(None)
         }
