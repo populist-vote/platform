@@ -95,6 +95,7 @@ pub struct QuestionSubmissionsFilter {
     political_scope: Option<PoliticalScope>,
     race_type: Option<RaceType>,
     state: Option<State>,
+    county: Option<String>,
 }
 
 impl Question {
@@ -346,12 +347,14 @@ impl QuestionSubmission {
                   AND ($3::race_type IS NULL OR r.race_type = $3::race_type)
                   AND ($4::political_scope IS NULL OR o.political_scope = $4::political_scope)
                   AND ($5::state IS NULL OR o.state = $5::state)
+                  AND ($6::text IS NULL OR o.county = $6::text)
                             "#,
             organization_id,
             search_query,
             filter.race_type as Option<RaceType>,
             filter.political_scope as Option<PoliticalScope>,
             filter.state as Option<State>,
+            filter.county
         )
         .fetch_all(db_pool)
         .await?;
