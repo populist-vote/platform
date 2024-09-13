@@ -1,5 +1,5 @@
 use async_graphql::{Context, FieldResult, Object};
-use db::{Office, OfficeFilter};
+use db::{models::enums::State, Office, OfficeFilter};
 
 use crate::{context::ApiContext, relay, types::OfficeResult};
 
@@ -41,5 +41,22 @@ impl OfficeQuery {
         let record = Office::find_by_slug(&db_pool, slug).await?;
 
         Ok(record.into())
+    }
+
+    async fn counties_by_state(&self, ctx: &Context<'_>, state: State) -> FieldResult<Vec<String>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+
+        // Fetch distinct county names from the database
+        let records = sqlx::query!(
+            "SELECT DISTINCT county FROM office WHERE state = $1",
+            state as State
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        // Map the resulting records to a vector of county strings
+        let counties: Vec<String> = records.into_iter().filter_map(|rec| rec.county).collect();
+
+        Ok(counties)
     }
 }
