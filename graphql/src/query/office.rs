@@ -48,7 +48,9 @@ impl OfficeQuery {
 
         // Fetch distinct county names from the database
         let records = sqlx::query!(
-            "SELECT DISTINCT county FROM office WHERE state = $1",
+            "SELECT DISTINCT county FROM office WHERE state = $1
+            ORDER BY county ASC
+            ",
             state as State
         )
         .fetch_all(&db_pool)
