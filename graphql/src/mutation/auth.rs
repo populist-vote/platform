@@ -153,9 +153,10 @@ impl AuthMutation {
 
                 // Send email to user with invite token
                 let invite_url = format!(
-                    "{}/register?inviteToken={}",
+                    "{}/register?inviteToken={}&email={}",
                     config::Config::default().web_app_url,
-                    invite.token
+                    invite.token,
+                    input.email
                 );
 
                 let organization = if let Some(organization_id) = input.organization_id.as_ref() {
