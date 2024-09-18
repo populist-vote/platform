@@ -157,6 +157,7 @@ impl IssueTag {
                         last_name,
                         suffix,
                         preferred_name,
+                        full_name,
                         biography,
                         biography_source,
                         home_state AS "home_state:State",

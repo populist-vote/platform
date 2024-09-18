@@ -33,6 +33,7 @@ pub struct PoliticianResult {
     last_name: String,
     suffix: Option<String>,
     preferred_name: Option<String>,
+    full_name: String,
     biography: Option<String>,
     biography_source: Option<String>,
     home_state: Option<State>,
@@ -263,17 +264,6 @@ async fn fetch_donations_by_industry(crp_id: String) -> Result<DonationsByIndust
 
 #[ComplexObject]
 impl PoliticianResult {
-    async fn full_name(&self) -> String {
-        format!(
-            "{first_name} {last_name} {suffix}",
-            first_name = &self.preferred_name.as_ref().unwrap_or(&self.first_name),
-            last_name = &self.last_name,
-            suffix = &self.suffix.as_ref().unwrap_or(&"".to_string())
-        )
-        .trim_end()
-        .to_string()
-    }
-
     async fn age(&self) -> Option<i64> {
         match self.date_of_birth {
             Some(dob) => calculate_age(dob).ok(),
@@ -595,6 +585,18 @@ impl PoliticianResult {
 
 impl From<Politician> for PoliticianResult {
     fn from(p: Politician) -> Self {
+        let full_name = match &p.full_name {
+            Some(full_name) => full_name.to_string(),
+            None => format!(
+                "{first_name} {last_name} {suffix}",
+                first_name = &p.preferred_name.as_ref().unwrap_or(&p.first_name),
+                last_name = &p.last_name,
+                suffix = &p.suffix.as_ref().unwrap_or(&"".to_string())
+            )
+            .trim_end()
+            .to_string(),
+        };
+
         Self {
             id: ID::from(p.id),
             slug: p.slug,
@@ -603,6 +605,7 @@ impl From<Politician> for PoliticianResult {
             last_name: p.last_name,
             suffix: p.suffix,
             preferred_name: p.preferred_name,
+            full_name,
             biography: p.biography,
             biography_source: p.biography_source,
             home_state: p.home_state,
