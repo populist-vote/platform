@@ -348,6 +348,7 @@ impl QuestionSubmission {
                   AND ($4::political_scope IS NULL OR o.political_scope = $4::political_scope)
                   AND ($5::state IS NULL OR o.state = $5::state)
                   AND ($6::text IS NULL OR o.county = $6::text)
+                LIMIT 250
                             "#,
             organization_id,
             search_query,

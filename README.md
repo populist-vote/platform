@@ -37,26 +37,6 @@ To start the api server, run `cargo watch -x run` which will type check, compile
 
 To run certain mutations and queries which require staff or superuser permissions, you can add an `Authorization` token to the HTTP headers section of the playground. You can login to `https://staging.populist.us` or `https://populist.us` and grab the value from the `access_token` cookie in your browsers developer tools. Add this to the http headers like so: `"Authorization" : "Bearer <TOKEN>"`
 
-## Command Line
-
-The `/cli` crate compiles an executable binary that serves as the Populist CLI. You can run the cli locally and learn more about usage with `./target/debug/cli --help`
-
-Here are a few example commands to get you started:
-
-```bash
-./target/debug/cli proxy votesmart get-politician-bio 169020 --create-record --pretty-print
-```
-
-This will fetch the candidate bio data from Votesmart for Cori Bush, the Democratic Representative from Missouri, with the Votesmart candidate_id of 169020. The `--create--record` flag, or `-c` for short, will create a new record for the fetched politician and write the votesmart data to the `votesmart_candidate_bio` jsonb column in the candidate table. The `--pretty-print` flag, or `-p` for short, will simply print the fetched json data to the console once it has been fetched.
-
-If a politician already exists in our database but does not yet have `votesmart_candidate_bio` data, you can add their votesmart_candidate_id to their row in the politician table, and run the above command with the `--update-record flag`, or `-u` for short. (Instead of the `-c` flag)
-
-If you want to explore the command line api proxy utility further, you can run:
-
-```bash
-./target/debug/cli proxy --help
-```
-
 ## Testing
 
 `cargo test`

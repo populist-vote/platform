@@ -68,8 +68,6 @@ impl CandidateGuideResult {
         .fetch_all(&db_pool)
         .await?;
 
-        tracing::warn!("embeds: {:?}", embeds);
-
         Ok(embeds.into_iter().map(EmbedResult::from).collect())
     }
 
