@@ -317,7 +317,7 @@ impl QuestionSubmission {
         let records = sqlx::query_as!(
             QuestionSubmission,
             r#"
-               SELECT DISTINCT ON (qs.candidate_id, qs.question_id, qs.response)
+               SELECT DISTINCT ON (qs.created_at, qs.candidate_id, qs.question_id, qs.response)
                   qs.id,
                   qs.question_id,
                   respondent_id,
@@ -348,7 +348,7 @@ impl QuestionSubmission {
                   AND ($4::political_scope IS NULL OR o.political_scope = $4::political_scope)
                   AND ($5::state IS NULL OR o.state = $5::state)
                   AND ($6::text IS NULL OR o.county = $6::text)
-                ORDER BY qs.candidate_id, qs.question_id, qs.response, qs.created_at DESC
+                ORDER BY qs.created_at DESC
                 LIMIT 250
                             "#,
             organization_id,
