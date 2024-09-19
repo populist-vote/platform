@@ -435,6 +435,7 @@ impl Bill {
             r#"
                 SELECT p.id,
                         slug,
+                        full_name,
                         first_name,
                         middle_name,
                         last_name,
