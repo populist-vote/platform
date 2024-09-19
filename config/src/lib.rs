@@ -1,5 +1,6 @@
 mod errors;
 pub use crate::errors::Error;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::{env, fmt, str::FromStr};
 use url::Url;
@@ -37,6 +38,20 @@ impl Default for Config {
             root_domain,
             same_site,
         }
+    }
+}
+
+impl Config {
+    pub fn is_allowed_origin(url: &str) -> bool {
+        let allowed_origins = ["http://www.mprnews.org", "http://mprnews.org"];
+        let excluded_origins = ["http://www.mprnews.org/preview/"];
+
+        allowed_origins
+            .iter()
+            .any(|&origin| url.starts_with(origin))
+            && !excluded_origins
+                .iter()
+                .any(|&excluded| url.starts_with(excluded))
     }
 }
 
@@ -123,5 +138,18 @@ mod tests {
         let config = Config::default();
         assert_eq!(config.environment, Environment::Local);
         assert_eq!(config.web_app_url.to_string(), "http://localhost:3030/");
+    }
+
+    #[test]
+    fn test_is_allowed_origin() {
+        assert_eq!(Config::is_allowed_origin("http://www.mprnews.org"), true);
+        assert_eq!(
+            Config::is_allowed_origin("http://www.mprnews.org/story/breaking-news-with-populist"),
+            true
+        );
+        assert_eq!(
+            Config::is_allowed_origin("http://www.mprnews.org/preview/whatever"),
+            false
+        );
     }
 }

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use async_graphql::{Context, InputObject, Object, Result, SimpleObject};
 use auth::AccessTokenClaims;
+use config::Config;
 use db::{DateTime, Embed, UpsertEmbedInput};
 use jsonwebtoken::TokenData;
 use url::{Position, Url};
@@ -67,24 +68,29 @@ impl EmbedMutation {
         input: PingEmbedOriginInput,
     ) -> Result<EmbedOriginResult> {
         let cleaned = parse_url_and_retain_token_param(&input.url).ok_or("Invalid URL")?;
-
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let record = sqlx::query_as!(
-            EmbedOriginResult,
-            r#"
-            INSERT INTO embed_origin (embed_id, url)
-            VALUES ($1, $2)
-            ON CONFLICT (embed_id, url)
-            DO UPDATE SET last_ping_at = CURRENT_TIMESTAMP
-            RETURNING url, last_ping_at as "last_ping_at: DateTime", page_title
-        "#,
-            input.embed_id,
-            cleaned
-        )
-        .fetch_one(&db_pool)
-        .await?;
 
-        Ok(record)
+        match Config::is_allowed_origin(&cleaned) {
+            true => {
+                let record = sqlx::query_as!(
+                    EmbedOriginResult,
+                    r#"
+                    INSERT INTO embed_origin (embed_id, url)
+                    VALUES ($1, $2)
+                    ON CONFLICT (embed_id, url)
+                    DO UPDATE SET last_ping_at = CURRENT_TIMESTAMP
+                    RETURNING url, last_ping_at as "last_ping_at: DateTime", page_title
+                "#,
+                    input.embed_id,
+                    cleaned
+                )
+                .fetch_one(&db_pool)
+                .await?;
+
+                Ok(record)
+            }
+            _ => Err("URL is not an allowed Populist origin".into()),
+        }
     }
 
     // Needs an org guard
