@@ -342,7 +342,7 @@ impl QuestionSubmission {
                     r.title || o.title || ' ' || o.name || ' ' || COALESCE(o.subtitle, '') || ' ' || COALESCE(o.office_type, '') || ' ' || COALESCE(o.district, '') || ' ' || COALESCE(o.hospital_district, '') || ' ' || COALESCE(o.school_district, '') || ' ' || COALESCE(o.state::text, '') || ' ' || COALESCE(o.county, '') || ' ' || COALESCE(o.municipality, '') || ' ' || COALESCE(p.full_name, '')
                   ) document,
                 websearch_to_tsquery($2) AS query
-                WHERE q.organization_id = $1::uuid
+                WHERE cg.organization_id = $1::uuid
                   AND(($2::text = '') IS NOT FALSE OR query @@ document)
                   AND ($3::race_type IS NULL OR r.race_type = $3::race_type)
                   AND ($4::political_scope IS NULL OR o.political_scope = $4::political_scope)

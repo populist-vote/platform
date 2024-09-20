@@ -1,6 +1,5 @@
 mod errors;
 pub use crate::errors::Error;
-use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::{env, fmt, str::FromStr};
 use url::Url;

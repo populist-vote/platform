@@ -23,7 +23,7 @@ static PRIMARY_HEADER_NAMES: [&str; 18] = [
     "campaign_email",
 ];
 
-static HEADER_NAMES: [&str; 19] = [
+static HEADER_NAMES: [&str; 18] = [
     "office_code",
     "candidate_name",
     "office_id",
@@ -31,7 +31,7 @@ static HEADER_NAMES: [&str; 19] = [
     "county_id",
     "mcd_fips_code",
     "school_district_number",
-    "party_abbreviation",
+    // "party_abbreviation",
     "residence_street_address",
     "residence_city",
     "residence_state",
@@ -114,7 +114,7 @@ pub async fn get_mn_sos_candidate_filings_local() -> Result<(), Box<dyn Error>> 
     driver.goto("https://candidates.sos.mn.gov").await?;
     let link = driver
         .find(By::LinkText(
-            "Candidate Filings - Local Offices (Municipal, School District, and Hospital District)",
+            "Candidates in the General Election - Local Offices (Municipal, School District, and Hospital District)",
         ))
         .await?;
     link.click().await?;
@@ -143,11 +143,13 @@ pub async fn get_mn_sos_candidate_filings_local() -> Result<(), Box<dyn Error>> 
     let csv_data_as_string = String::from_utf8(csv_string)?;
 
     let pool = db::pool().await;
-    sqlx::query!(r#"DROP TABLE IF EXISTS p6t_state_mn.mn_candidate_filings_local_2024 CASCADE;"#)
-        .execute(&pool.connection)
-        .await?;
+    sqlx::query!(
+        r#"DROP TABLE IF EXISTS p6t_state_mn.mn_candidate_filings_local_2024_fri_sep_20 CASCADE;"#
+    )
+    .execute(&pool.connection)
+    .await?;
     let create_table_query = format!(
-        "CREATE TABLE p6t_state_mn.mn_candidate_filings_local_2024 (
+        "CREATE TABLE p6t_state_mn.mn_candidate_filings_local_2024_fri_sep_20 (
             {}
         );",
         HEADER_NAMES
@@ -161,8 +163,7 @@ pub async fn get_mn_sos_candidate_filings_local() -> Result<(), Box<dyn Error>> 
         .execute(&pool.connection)
         .await?;
     let mut tx = pool.connection.acquire().await?;
-    let copy_query =
-        r#"COPY p6t_state_mn.mn_candidate_filings_local_2024 FROM STDIN WITH CSV HEADER;"#;
+    let copy_query = r#"COPY p6t_state_mn.mn_candidate_filings_local_2024_fri_sep_20 FROM STDIN WITH CSV HEADER;"#;
     let mut tx_copy = tx.copy_in_raw(copy_query).await?;
     tx_copy.send(csv_data_as_string.as_bytes()).await?;
     tx_copy.finish().await?;
