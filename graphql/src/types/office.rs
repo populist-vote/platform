@@ -6,7 +6,7 @@ use db::{
         enums::{FullState, PoliticalScope, State},
         office::Office,
     },
-    Chamber, District, ElectionScope, Politician,
+    Chamber, DistrictType, ElectionScope, Politician,
 };
 
 #[derive(SimpleObject, Debug, Clone)]
@@ -24,7 +24,7 @@ pub struct OfficeResult {
     /// The district name, e.g. "2, 3B, Ward 5"
     district: Option<String>,
     /// The type of district, used to determine which field is referenced for the district
-    district_type: Option<District>,
+    district_type: Option<DistrictType>,
     hospital_district: Option<String>,
     school_district: Option<String>,
     /// Local, State, or Federal
@@ -66,14 +66,14 @@ fn compute_office_subtitle(office: &Office, use_short: bool) -> Option<String> {
             .state
             .as_ref()
             .map(|state| state.full_state().to_string()),
-        (ElectionScope::District, PoliticalScope::Federal, Some(District::UsCongressional)) => {
+        (ElectionScope::District, PoliticalScope::Federal, Some(DistrictType::UsCongressional)) => {
             if let (Some(state), Some(district)) = (&office.state, &office.district) {
                 Some(format!("{} - District {}", state, district))
             } else {
                 None
             }
         }
-        (ElectionScope::District, PoliticalScope::State, Some(District::StateHouse)) => {
+        (ElectionScope::District, PoliticalScope::State, Some(DistrictType::StateHouse)) => {
             if let (Some(state), Some(district)) = (&office.state, &office.district) {
                 Some(format!(
                     "{} - {} {}",
@@ -85,7 +85,7 @@ fn compute_office_subtitle(office: &Office, use_short: bool) -> Option<String> {
                 None
             }
         }
-        (ElectionScope::District, PoliticalScope::State, Some(District::StateSenate)) => {
+        (ElectionScope::District, PoliticalScope::State, Some(DistrictType::StateSenate)) => {
             if let (Some(state), Some(district)) = (&office.state, &office.district) {
                 Some(format!(
                     "{} - {} {}",
@@ -97,7 +97,7 @@ fn compute_office_subtitle(office: &Office, use_short: bool) -> Option<String> {
                 None
             }
         }
-        (ElectionScope::District, PoliticalScope::Local, Some(District::County)) => {
+        (ElectionScope::District, PoliticalScope::Local, Some(DistrictType::County)) => {
             if let (Some(county), Some(state), Some(district)) =
                 (&office.county, &office.state, &office.district)
             {
@@ -109,7 +109,7 @@ fn compute_office_subtitle(office: &Office, use_short: bool) -> Option<String> {
                 None
             }
         }
-        (ElectionScope::District, PoliticalScope::Local, Some(District::City)) => {
+        (ElectionScope::District, PoliticalScope::Local, Some(DistrictType::City)) => {
             if let (Some(muni), Some(state), Some(district)) =
                 (&office.municipality, &office.state, &office.district)
             {
@@ -118,7 +118,7 @@ fn compute_office_subtitle(office: &Office, use_short: bool) -> Option<String> {
                 None
             }
         }
-        (ElectionScope::District, PoliticalScope::Local, Some(District::School)) => {
+        (ElectionScope::District, PoliticalScope::Local, Some(DistrictType::School)) => {
             if let (Some(school_district), Some(state), Some(district)) =
                 (&office.school_district, &office.state, &office.district)
             {
@@ -217,7 +217,7 @@ async fn test_compute_office_title() {
         name: None,
         office_type: None,
         district: Some("1".to_string()),
-        district_type: Some(District::StateSenate),
+        district_type: Some(DistrictType::StateSenate),
         hospital_district: None,
         school_district: None,
         chamber: Some(Chamber::Senate),
@@ -249,7 +249,7 @@ async fn test_compute_office_title() {
         name: None,
         office_type: None,
         district: Some("Ward 3".to_string()),
-        district_type: Some(District::City),
+        district_type: Some(DistrictType::City),
         hospital_district: None,
         school_district: None,
         chamber: Some(Chamber::Senate),

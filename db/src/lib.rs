@@ -14,6 +14,7 @@ pub use models::ballot_measure::*;
 pub use models::bill::*;
 pub use models::election::*;
 pub use models::embed::*;
+pub use models::enums::*;
 pub use models::issue_tag::*;
 pub use models::office::*;
 pub use models::organization::*;
