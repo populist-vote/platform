@@ -17,7 +17,7 @@ pub struct Office {
     pub name: Option<String>,
     pub office_type: Option<String>,
     pub district: Option<String>,
-    pub district_type: Option<District>,
+    pub district_type: Option<DistrictType>,
     pub hospital_district: Option<String>,
     pub school_district: Option<String>,
     pub chamber: Option<Chamber>,
@@ -44,7 +44,7 @@ pub struct UpsertOfficeInput {
     pub name: Option<String>,
     pub office_type: Option<String>,
     pub district: Option<String>,
-    pub district_type: Option<District>,
+    pub district_type: Option<DistrictType>,
     pub hospital_district: Option<String>,
     pub school_district: Option<String>,
     pub chamber: Option<Chamber>,
@@ -91,7 +91,7 @@ pub enum ElectionScope {
 #[strum(ascii_case_insensitive)]
 #[serde(rename_all = "snake_case")]
 #[sqlx(type_name = "district_type", rename_all = "snake_case")]
-pub enum District {
+pub enum DistrictType {
     UsCongressional,
     StateSenate,
     StateHouse,
@@ -178,7 +178,7 @@ impl Office {
                     term_length = COALESCE($18, office.term_length),
                     seat = COALESCE($19, office.seat),
                     priority = COALESCE($20, office.priority)
-                RETURNING id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:District", hospital_district, school_district, chamber AS "chamber:Chamber", political_scope AS "political_scope:PoliticalScope", election_scope as "election_scope:ElectionScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at
+                RETURNING id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:DistrictType", hospital_district, school_district, chamber AS "chamber:Chamber", political_scope AS "political_scope:PoliticalScope", election_scope as "election_scope:ElectionScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at
             "#,
             id,
             slug,
@@ -188,7 +188,7 @@ impl Office {
             input.name,
             input.office_type,
             input.district,
-            input.district_type as Option<District>,
+            input.district_type as Option<DistrictType>,
             input.hospital_district,
             input.school_district,
             input.chamber as Option<Chamber>,
@@ -218,7 +218,7 @@ impl Office {
         let record = sqlx::query_as!(
             Office,
             r#"
-                SELECT id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:District", hospital_district, school_district, chamber AS "chamber:Chamber", election_scope as "election_scope:ElectionScope", political_scope AS "political_scope:PoliticalScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at FROM office
+                SELECT id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:DistrictType", hospital_district, school_district, chamber AS "chamber:Chamber", election_scope as "election_scope:ElectionScope", political_scope AS "political_scope:PoliticalScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at FROM office
                 WHERE id = $1
             "#,
             id
@@ -233,7 +233,7 @@ impl Office {
         let record = sqlx::query_as!(
             Office,
             r#"
-                SELECT id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:District", hospital_district, school_district, chamber AS "chamber:Chamber", election_scope as "election_scope:ElectionScope", political_scope AS "political_scope:PoliticalScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at FROM office
+                SELECT id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:DistrictType", hospital_district, school_district, chamber AS "chamber:Chamber", election_scope as "election_scope:ElectionScope", political_scope AS "political_scope:PoliticalScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at FROM office
                 WHERE slug = $1
             "#,
             slug
@@ -259,7 +259,7 @@ impl Office {
                 name,
                 office_type,
                 district,
-                district_type AS "district_type:District",
+                district_type AS "district_type:DistrictType",
                 hospital_district,
                 school_district,
                 chamber AS "chamber:Chamber",
