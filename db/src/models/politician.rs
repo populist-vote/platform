@@ -15,7 +15,6 @@ use super::enums::{Chambers, PoliticalScope};
 pub struct Politician {
     pub id: uuid::Uuid,
     pub slug: String,
-    pub full_name: String,
     pub first_name: String,
     pub middle_name: Option<String>,
     pub last_name: String,
@@ -57,7 +56,6 @@ pub struct Politician {
 #[derive(InputObject, Debug, Default, Serialize, Deserialize)]
 pub struct InsertPoliticianInput {
     pub slug: Option<String>,
-    pub full_name: String,
     pub first_name: String,
     pub middle_name: Option<String>,
     pub last_name: String,
@@ -101,7 +99,6 @@ pub struct InsertPoliticianInput {
 pub struct UpdatePoliticianInput {
     pub id: uuid::Uuid,
     pub slug: Option<String>,
-    pub full_name: Option<String>,
     pub first_name: Option<String>,
     pub middle_name: Option<String>,
     pub last_name: Option<String>,
@@ -180,12 +177,11 @@ impl Politician {
         let record = sqlx::query_as!(
             Politician,
             r#"
-            INSERT INTO politician (slug, full_name, first_name, middle_name, last_name, suffix, preferred_name, biography, biography_source, home_state, date_of_birth, office_id, upcoming_race_id, thumbnail_image_url, assets, official_website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, phone, party_id, votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses)
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34) 
+            INSERT INTO politician (slug, first_name, middle_name, last_name, suffix, preferred_name, biography, biography_source, home_state, date_of_birth, office_id, upcoming_race_id, thumbnail_image_url, assets, official_website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, phone, party_id, votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses)
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33) 
             RETURNING
                 id,
                 slug,
-                full_name,
                 first_name,
                 middle_name,
                 last_name,
@@ -224,7 +220,6 @@ impl Politician {
 
             "#, 
             slug,
-            input.full_name,
             input.first_name,
             input.middle_name,
             input.last_name,
@@ -303,8 +298,7 @@ impl Politician {
                 crp_candidate_id = COALESCE($31, politician.crp_candidate_id),
                 fec_candidate_id = COALESCE($32, politician.fec_candidate_id),
                 race_wins = COALESCE($33, politician.race_wins),
-                race_losses = COALESCE($34, politician.race_losses),
-                full_name = COALESCE($35, politician.full_name)
+                race_losses = COALESCE($34, politician.race_losses)
             WHERE id = $1
             RETURNING
                 id,
@@ -343,8 +337,7 @@ impl Politician {
                 race_wins,
                 race_losses,
                 created_at,
-                updated_at,
-                full_name
+                updated_at
             "#,
             input.id,
             input.slug,
@@ -380,7 +373,6 @@ impl Politician {
             input.fec_candidate_id,
             input.race_wins,
             input.race_losses,
-            input.full_name,
         )
         .fetch_one(db_pool)
         .await?;
@@ -413,7 +405,6 @@ impl Politician {
             Politician,
             r#"SELECT id,
                         slug,
-                        full_name,
                         first_name,
                         middle_name,
                         last_name,
@@ -461,7 +452,6 @@ impl Politician {
             r#"
                 SELECT id,
                         slug,
-                        full_name,
                         first_name,
                         middle_name,
                         last_name,
@@ -512,7 +502,6 @@ impl Politician {
             r#"
                 SELECT id,
                         slug,
-                        full_name,
                         first_name,
                         middle_name,
                         last_name,
@@ -567,7 +556,6 @@ impl Politician {
             r#"
                 SELECT id,
                         slug,
-                        full_name,
                         first_name,
                         middle_name,
                         last_name,
@@ -623,7 +611,6 @@ impl Politician {
             r#"
                 SELECT  p.id,
                         p.slug,
-                        full_name,
                         first_name,
                         middle_name,
                         last_name,
@@ -722,7 +709,6 @@ impl Politician {
             r#"
                 SELECT p.id,
                         slug,
-                        full_name,
                         first_name,
                         middle_name,
                         last_name,
