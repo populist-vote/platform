@@ -207,6 +207,67 @@ impl Office {
         Ok(record)
     }
 
+    pub async fn upsert_from_source(
+        db_pool: &PgPool,
+        input: &UpsertOfficeInput,
+    ) -> Result<Self, sqlx::Error> {
+        input
+            .slug
+            .as_ref()
+            .ok_or("slug is required")
+            .map_err(|err| sqlx::Error::AnyDriverError(err.into()))?;
+
+        sqlx::query_as!(
+            Office,
+            r#"
+                INSERT INTO office (slug, title, subtitle, subtitle_short, name, office_type, district, district_type, hospital_district, school_district, chamber, political_scope, election_scope, state, county, municipality, term_length, seat, priority)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+                ON CONFLICT (slug) DO UPDATE
+                SET
+                    title = COALESCE($2, office.title),
+                    subtitle = COALESCE($3, office.subtitle),
+                    subtitle_short = COALESCE($4, office.subtitle_short),
+                    name = COALESCE($5, office.name),
+                    office_type = COALESCE($6, office.office_type),
+                    district = COALESCE($7, office.district),
+                    district_type = COALESCE($8, office.district_type),
+                    hospital_district = COALESCE($9, office.hospital_district),
+                    school_district = COALESCE($10, office.school_district),
+                    chamber = COALESCE($11, office.chamber),
+                    political_scope = COALESCE($12, office.political_scope),
+                    election_scope = COALESCE($13, office.election_scope),
+                    state = COALESCE($14, office.state),
+                    county = COALESCE($15, office.county),
+                    municipality = COALESCE($16, office.municipality),
+                    term_length = COALESCE($17, office.term_length),
+                    seat = COALESCE($18, office.seat),
+                    priority = COALESCE($19, office.priority)
+                RETURNING id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:DistrictType", hospital_district, school_district, chamber AS "chamber:Chamber", political_scope AS "political_scope:PoliticalScope", election_scope as "election_scope:ElectionScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at
+            "#,
+            input.slug,
+            input.title,
+            input.subtitle,
+            input.subtitle_short,
+            input.name,
+            input.office_type,
+            input.district,
+            input.district_type as Option<DistrictType>,
+            input.hospital_district,
+            input.school_district,
+            input.chamber as Option<Chamber>,
+            input.political_scope as Option<PoliticalScope>,
+            input.election_scope as Option<ElectionScope>,
+            input.state as Option<State>,
+            input.county,
+            input.municipality,
+            input.term_length,
+            input.seat,
+            input.priority,
+        )
+        .fetch_one(db_pool)
+        .await
+    }
+
     pub async fn delete(db_pool: &PgPool, id: uuid::Uuid) -> Result<(), sqlx::Error> {
         sqlx::query!("DELETE FROM office WHERE id=$1", id)
             .execute(db_pool)

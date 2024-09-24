@@ -1,7 +1,7 @@
 use async_graphql::Enum;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use strum_macros::{Display, EnumIter, EnumString};
+use strum_macros::{AsRefStr, Display, EnumIter, EnumString};
 
 #[derive(
     Enum,
@@ -40,6 +40,7 @@ pub enum PoliticalScope {
     sqlx::Type,
     Serialize,
     Deserialize,
+    AsRefStr,
 )]
 
 pub enum State {
