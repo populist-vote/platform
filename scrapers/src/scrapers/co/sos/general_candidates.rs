@@ -1,5 +1,6 @@
-use std::error::Error;
+use std::{error::Error, sync::OnceLock};
 
+use regex::Regex;
 use scraper::{Html, Selector};
 
 use crate::{extractors::*, util, util::extensions::NoneIfEmptyExt};
@@ -28,11 +29,28 @@ impl Scraper {
         html: String,
         context: &crate::ScraperContext<'_>,
     ) -> Result<(), Box<dyn Error>> {
-        let entries = Self::parse_raw_entries(html)?;
-        for entry in entries {
-            let mut office = Self::build_office_input(&entry);
-            office.slug = Some(crate::generate_office_slug(&office));
-            if let Err(err) = db::Office::upsert_from_source(&context.db.connection, &office).await
+        let data = Self::scrape_page_data(html)?;
+
+        let election_year = Self::parse_election_year(&data.title)?;
+        let election_date = crate::generate_general_election_date(election_year)?;
+        let (election_title, election_slug) =
+            crate::generate_general_election_title_slug(election_year);
+        let _election = db::Election::upsert_from_source(
+            &context.db.connection,
+            &db::UpsertElectionInput {
+                slug: Some(election_slug),
+                title: Some(election_title),
+                election_date: Some(election_date),
+                ..Default::default()
+            },
+        )
+        .await?;
+
+        for entry in data.candidates {
+            let mut office_input = Self::build_office_input(&entry);
+            office_input.slug = Some(crate::generate_office_slug(&office_input));
+            if let Err(err) =
+                db::Office::upsert_from_source(&context.db.connection, &office_input).await
             {
                 // TODO - Track/log error
                 panic!("{err}");
@@ -41,10 +59,27 @@ impl Scraper {
         Ok(())
     }
 
-    pub fn parse_raw_entries(html: String) -> Result<Vec<RawEntry>, Box<dyn Error>> {
+    pub fn scrape_page_data(html: String) -> Result<PageData, Box<dyn Error>> {
+        let html = Html::parse_document(&html);
+        Ok(PageData {
+            title: Self::scrape_page_title(&html)?,
+            candidates: Self::scrape_candidate_entries(&html)?,
+        })
+    }
+
+    pub fn scrape_page_title(html: &Html) -> Result<String, Box<dyn Error>> {
+        let title = html
+            .select(&Selector::parse("p.pageTitle")?)
+            .next()
+            .ok_or("Page title not found")?
+            .text()
+            .collect::<String>();
+        Ok(title)
+    }
+
+    pub fn scrape_candidate_entries(html: &Html) -> Result<Vec<CandidateEntry>, Box<dyn Error>> {
         let mut entries = Vec::new();
-        let document = Html::parse_document(&html);
-        for (index, element) in document
+        for (index, element) in html
             .select(&Selector::parse("table.w3-cmsTable")?)
             .next()
             .ok_or("Candidate table not found")?
@@ -67,7 +102,7 @@ impl Scraper {
                     .map(|f| f.none_if_empty())
             };
 
-            let entry = RawEntry {
+            let entry = CandidateEntry {
                 index,
                 name: next_field("name")?.ok_or("Empty name field")?,
                 office: next_field("office")?.ok_or("Empty office field")?,
@@ -83,7 +118,20 @@ impl Scraper {
         Ok(entries)
     }
 
-    fn build_office_input(entry: &RawEntry) -> db::UpsertOfficeInput {
+    pub fn parse_election_year(title: &str) -> Result<u16, Box<dyn Error>> {
+        static REGEX: OnceLock<Regex> = OnceLock::new();
+        let regex = REGEX.get_or_init(|| Regex::new(r"(\d{4}) General Election").unwrap());
+        let year = regex
+            .captures(title)
+            .ok_or("Unexpected election title format")?
+            .get(1)
+            .ok_or("Failure extracting election year from title")?
+            .as_str()
+            .parse::<u16>()?;
+        Ok(year)
+    }
+
+    fn build_office_input(entry: &CandidateEntry) -> db::UpsertOfficeInput {
         let Some(meta) = extract_office_meta(&entry.office) else {
             // TODO - Track/log failed scrape
             return db::UpsertOfficeInput::default();
@@ -124,7 +172,12 @@ impl Scraper {
     }
 }
 
-pub struct RawEntry {
+pub struct PageData {
+    pub title: String,
+    pub candidates: Vec<CandidateEntry>,
+}
+
+pub struct CandidateEntry {
     pub index: usize,
     pub name: String,
     pub office: String,

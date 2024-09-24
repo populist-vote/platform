@@ -1,5 +1,6 @@
 use std::{error::Error, future::Future};
 
+use chrono::{Days, NaiveDate, Weekday};
 use slugify::slugify;
 
 pub mod extractors;
@@ -25,6 +26,23 @@ pub trait Scraper {
         &self,
         context: &ScraperContext,
     ) -> impl Future<Output = Result<(), Box<dyn Error>>> + Send;
+}
+
+// Reference: https://en.wikipedia.org/wiki/Election_Day_(United_States)
+// "The Tuesday after the first Monday of November"
+pub fn generate_general_election_date(year: u16) -> Result<NaiveDate, Box<dyn Error>> {
+    let first_monday = NaiveDate::from_weekday_of_month_opt(year as _, 11, Weekday::Mon, 1)
+        .ok_or_else(|| format!("Unable to determine general election date for year: {year}"))?;
+    let next_tuesday = first_monday
+        .checked_add_days(Days::new(1))
+        .ok_or_else(|| format!("Unable to determine general election date for year: {year}"))?;
+    Ok(next_tuesday)
+}
+
+pub fn generate_general_election_title_slug(year: u16) -> (String, String) {
+    let title = format!("General Election {year}");
+    let slug = slugify!(&title);
+    (title, slug)
 }
 
 pub fn generate_office_slug(input: &db::UpsertOfficeInput) -> String {
@@ -54,6 +72,39 @@ pub fn generate_office_slug(input: &db::UpsertOfficeInput) -> String {
 
 #[cfg(test)]
 mod tests {
+    use chrono::Datelike;
+
+    #[test]
+    fn generate_general_election_date() {
+        let tests: Vec<((u32, u32), u16)> = vec![
+            ((11, 7), 2023),
+            ((11, 5), 2024),
+            ((11, 4), 2025),
+            ((11, 3), 2026),
+            ((11, 2), 2027),
+            ((11, 7), 2028),
+        ];
+
+        for (expected, input) in tests {
+            let date = super::generate_general_election_date(input).unwrap();
+            assert_eq!(expected, (date.month(), date.day()));
+        }
+    }
+
+    #[test]
+    fn generate_general_election_title_slug() {
+        let tests: Vec<((&'static str, &'static str), u16)> = vec![
+            (("General Election 2024", "general-election-2024"), 2024),
+            (("General Election 2025", "general-election-2025"), 2025),
+        ];
+
+        for (expected, input) in tests {
+            let actual = super::generate_general_election_title_slug(input);
+            assert_eq!(expected.0, actual.0);
+            assert_eq!(expected.1, actual.1);
+        }
+    }
+
     #[test]
     fn generate_office_slug() {
         let tests: Vec<(&'static str, db::UpsertOfficeInput)> = vec![

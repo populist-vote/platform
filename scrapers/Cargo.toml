@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 db = { path = "../db" }
+chrono = "0"
 csv = "1"
 project-root = "0"
 regex = "1"
