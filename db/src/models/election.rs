@@ -82,7 +82,7 @@ impl Election {
             .ok_or("slug is required")
             .map_err(|err| sqlx::Error::AnyDriverError(err.into()))?;
 
-        let record = sqlx::query_as!(
+        sqlx::query_as!(
             Election,
             r#"
                 INSERT INTO election
@@ -104,9 +104,7 @@ impl Election {
             input.election_date
         )
         .fetch_one(db_pool)
-        .await?;
-
-        Ok(record)
+        .await
     }
 
     pub async fn delete(db_pool: &PgPool, id: uuid::Uuid) -> Result<(), sqlx::Error> {

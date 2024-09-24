@@ -35,7 +35,7 @@ impl Scraper {
         let election_date = crate::generate_general_election_date(election_year)?;
         let (election_title, election_slug) =
             crate::generate_general_election_title_slug(election_year);
-        let _election = db::Election::upsert_from_source(
+        let election = db::Election::upsert_from_source(
             &context.db.connection,
             &db::UpsertElectionInput {
                 slug: Some(election_slug),
@@ -47,14 +47,26 @@ impl Scraper {
         .await?;
 
         for entry in data.candidates {
-            let mut office_input = Self::build_office_input(&entry);
-            office_input.slug = Some(crate::generate_office_slug(&office_input));
-            if let Err(err) =
-                db::Office::upsert_from_source(&context.db.connection, &office_input).await
+            let mut office = Self::build_office_input(&entry);
+            let office = match db::Office::upsert_from_source(&context.db.connection, &office).await
             {
-                // TODO - Track/log error
-                panic!("{err}");
-            }
+                Ok(office) => office,
+                Err(err) => {
+                    // TODO - Track/log error
+                    println!("Error upserting office {err}");
+                    continue;
+                }
+            };
+
+            let race = Self::build_race_input(&election, &office);
+            let race = match db::Race::upsert_from_source(&context.db.connection, &race).await {
+                Ok(race) => race,
+                Err(err) => {
+                    // TODO - Track/log error
+                    println!("Error upserting race {err}");
+                    continue;
+                }
+            };
         }
         Ok(())
     }
@@ -156,7 +168,7 @@ impl Scraper {
             None
         };
 
-        return db::UpsertOfficeInput {
+        let mut office = db::UpsertOfficeInput {
             name: Some(meta.name),
             title: Some(meta.title),
             chamber: meta.chamber,
@@ -169,6 +181,23 @@ impl Scraper {
             election_scope: Some(meta.election_scope),
             ..Default::default()
         };
+        office.slug = Some(crate::generate_office_slug(&office));
+        return office;
+    }
+
+    fn build_race_input(election: &db::Election, office: &db::Office) -> db::UpsertRaceInput {
+        let (title, slug) =
+            crate::generate_race_title_slug(election, office, db::RaceType::General);
+        db::UpsertRaceInput {
+            title: Some(title),
+            slug: Some(slug),
+            office_id: Some(office.id),
+            election_id: Some(election.id),
+            state: Some(db::State::CO),
+            race_type: Some(db::RaceType::General),
+            vote_type: Some(db::VoteType::Plurality),
+            ..Default::default()
+        }
     }
 }
 

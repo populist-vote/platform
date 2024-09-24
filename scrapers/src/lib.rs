@@ -1,6 +1,6 @@
 use std::{error::Error, future::Future};
 
-use chrono::{Days, NaiveDate, Weekday};
+use chrono::{Datelike, Days, NaiveDate, Weekday};
 use slugify::slugify;
 
 pub mod extractors;
@@ -12,6 +12,8 @@ pub mod util;
 mod scrapers;
 
 pub use scrapers::*;
+
+use util::extensions::*;
 
 pub struct ScraperContext<'a> {
     pub db: &'a db::DatabasePool,
@@ -45,29 +47,61 @@ pub fn generate_general_election_title_slug(year: u16) -> (String, String) {
     (title, slug)
 }
 
+pub fn generate_race_title_slug(
+    election: &db::Election,
+    office: &db::Office,
+    race_type: db::RaceType,
+) -> (String, String) {
+    let qualifier = match office.election_scope {
+        db::ElectionScope::County => (office.county.as_str_unwrapped_or_empty(), " County"),
+        _ => {
+            if office.district.is_some() {
+                ("District ", office.district.as_str_unwrapped_or_empty())
+            } else {
+                ("", office.seat.as_str_unwrapped_or_empty())
+            }
+        }
+    };
+
+    let title = format!(
+        "{} {} {}{} {} {}",
+        state_str(&office.state),
+        office.name.as_str_unwrapped_or_empty(),
+        qualifier.0,
+        qualifier.1,
+        race_type,
+        election.election_date.year(),
+    );
+
+    let slug = slugify!(&title.replace(".", ""));
+    (title, slug)
+}
+
 pub fn generate_office_slug(input: &db::UpsertOfficeInput) -> String {
-    slugify!(&format!(
+    let format = format!(
         "{} {} {}",
-        input.state.as_ref().map(|s| s.as_ref()).unwrap_or(""),
+        state_str(&input.state),
         input
             .name
             .as_ref()
             .map(|n| n.replace(".", ""))
-            .as_ref()
-            .map(String::as_str)
-            .unwrap_or(""),
+            .as_str_unwrapped_or_empty(),
         match input.election_scope {
-            Some(db::ElectionScope::District) => input
-                .district
-                .as_ref()
-                .or(input.seat.as_ref())
-                .map(String::as_str)
-                .unwrap_or(""),
-            Some(db::ElectionScope::County) =>
-                input.county.as_ref().map(String::as_str).unwrap_or(""),
-            _ => input.seat.as_ref().map(String::as_str).unwrap_or(""),
+            Some(db::ElectionScope::County) => input.county.as_str_unwrapped_or_empty(),
+            _ =>
+                if input.district.is_some() {
+                    input.district.as_str_unwrapped_or_empty()
+                } else {
+                    input.seat.as_str_unwrapped_or_empty()
+                },
         }
-    ))
+    );
+    slugify!(&format)
+}
+
+#[inline]
+fn state_str<'a>(state: &'a Option<db::State>) -> &'a str {
+    state.as_ref().map(|s| s.as_ref()).unwrap_or_default()
 }
 
 #[cfg(test)]
