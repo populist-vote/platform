@@ -86,7 +86,8 @@ async fn get_races_by_address_id(
         .unwrap_or(None);
 
     let ward = user_address_extended_mn_data
-        .map(|a| {
+        .map(|a: db::AddressExtendedMN| {
+            println!("a = {:?}", a);
             a.ward.map(|d| {
                 // Remove non-numeric prefix and then trim leading zeros
                 if let Some(pos) = d.find('-') {
@@ -139,14 +140,14 @@ async fn get_races_by_address_id(
                 (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
                 (o.election_scope = 'district' AND o.district_type = 'county' AND o.county = $4 AND o.district = $8) OR
                 (o.election_scope = 'city' AND o.municipality = $3) OR
-                (o.election_scope = 'district' AND o.district_type = 'city' AND o.municipality = $3 AND o.district = $12) OR
-               (CASE 
-                 WHEN $10 = '01' THEN
-                  (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'ISD #', '') = $9) AND
-                  (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)
-                 WHEN $10 = '03' THEN
-                   (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'SSD #', '') = $9) AND
-                   (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)
+                (o.election_scope = 'district' AND o.district_type = 'city' AND o.municipality = $3 AND o.district = REGEXP_REPLACE($12, '^[^0-9]*', '')) OR
+                (CASE 
+                  WHEN $10 = '01' THEN
+                    (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'ISD #', '') = $9) AND
+                    (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)
+                  WHEN $10 = '03' THEN
+                    (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'SSD #', '') = $9) AND
+                    (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)
                 END)
             )))
     ORDER BY o.priority ASC, title DESC
