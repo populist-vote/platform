@@ -207,12 +207,10 @@ impl Office {
         Ok(record)
     }
 
-    // TODO - Refactor this with the above upsert, maybe?
     pub async fn upsert_from_source(
         db_pool: &PgPool,
         input: &UpsertOfficeInput,
     ) -> Result<Self, sqlx::Error> {
-        // FIXME - A better input interface would be ideal
         input
             .slug
             .as_ref()

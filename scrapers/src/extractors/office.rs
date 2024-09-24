@@ -151,7 +151,6 @@ pub fn extract_office_meta(input: &str) -> Option<OfficeMeta> {
                 },
             ),
             (
-                // TODO - should we have state only extractors? (Colorado RTD)
                 r"(?i:Regional Transportation District Director)",
                 OfficeMeta {
                     name: "Regional Transportation District Director".into(),
