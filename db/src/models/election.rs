@@ -15,7 +15,7 @@ pub struct Election {
     pub election_date: chrono::NaiveDate,
 }
 
-#[derive(InputObject)]
+#[derive(InputObject, Default, Debug)]
 pub struct UpsertElectionInput {
     pub id: Option<uuid::Uuid>,
     pub slug: Option<String>,
@@ -59,6 +59,43 @@ impl Election {
                 RETURNING id, slug, title, description, state AS "state:State", municipality, election_date
             "#,
             id,
+            input.slug,
+            input.title,
+            input.description,
+            input.state as Option<State>,
+            input.municipality,
+            input.election_date
+        )
+        .fetch_one(db_pool)
+        .await?;
+
+        Ok(record)
+    }
+
+    pub async fn upsert_from_source(
+        db_pool: &PgPool,
+        input: &UpsertElectionInput,
+    ) -> Result<Self, sqlx::Error> {
+        input
+            .slug
+            .as_ref()
+            .ok_or("slug is required")
+            .map_err(|err| sqlx::Error::AnyDriverError(err.into()))?;
+
+        let record = sqlx::query_as!(
+            Election,
+            r#"
+                INSERT INTO election
+                (slug, title, description, state, municipality, election_date)
+                VALUES ($1, $2, $3, $4, $5, $6)
+                ON CONFLICT (slug) DO UPDATE SET
+                    title = COALESCE($2, election.title),
+                    description = COALESCE($3, election.description),
+                    state = COALESCE($4, election.state),
+                    municipality = COALESCE($5, election.municipality),
+                    election_date = COALESCE($6, election.election_date)
+                RETURNING id, slug, title, description, state AS "state:State", municipality, election_date
+            "#,
             input.slug,
             input.title,
             input.description,

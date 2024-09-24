@@ -6,7 +6,6 @@ use regex::Regex;
 pub struct OfficeMeta {
     pub name: String,
     pub title: String,
-    pub r#type: Option<String>, // TODO - What determines this?
     pub chamber: Option<db::Chamber>,
     pub district_type: Option<db::DistrictType>,
     pub political_scope: db::PoliticalScope,
@@ -23,7 +22,6 @@ pub fn extract_office_meta(input: &str) -> Option<OfficeMeta> {
                 OfficeMeta {
                     name: "U.S. Senate".into(),
                     title: "U.S. Senator".into(),
-                    r#type: None,
                     chamber: Some(db::Chamber::Senate),
                     district_type: None,
                     political_scope: db::PoliticalScope::Federal,
@@ -35,7 +33,6 @@ pub fn extract_office_meta(input: &str) -> Option<OfficeMeta> {
                 OfficeMeta {
                     name: "U.S. House".into(),
                     title: "U.S. Representative".into(),
-                    r#type: None,
                     chamber: Some(db::Chamber::House),
                     district_type: Some(db::DistrictType::UsCongressional),
                     political_scope: db::PoliticalScope::Federal,
@@ -47,7 +44,6 @@ pub fn extract_office_meta(input: &str) -> Option<OfficeMeta> {
                 OfficeMeta {
                     name: "State Senate".into(),
                     title: "State Senator".into(),
-                    r#type: None,
                     chamber: Some(db::Chamber::Senate),
                     district_type: Some(db::DistrictType::StateHouse),
                     political_scope: db::PoliticalScope::State,
@@ -59,7 +55,6 @@ pub fn extract_office_meta(input: &str) -> Option<OfficeMeta> {
                 OfficeMeta {
                     name: "State House".into(),
                     title: "State Representative".into(),
-                    r#type: None,
                     chamber: Some(db::Chamber::House),
                     district_type: Some(db::DistrictType::StateHouse),
                     political_scope: db::PoliticalScope::State,
@@ -71,7 +66,6 @@ pub fn extract_office_meta(input: &str) -> Option<OfficeMeta> {
                 OfficeMeta {
                     name: "Board of Education".into(),
                     title: "Board of Education Member".into(),
-                    r#type: None,
                     chamber: None,
                     district_type: Some(db::DistrictType::School),
                     political_scope: db::PoliticalScope::State,
@@ -83,7 +77,6 @@ pub fn extract_office_meta(input: &str) -> Option<OfficeMeta> {
                 OfficeMeta {
                     name: "Board of Regents".into(),
                     title: "Regent".into(),
-                    r#type: None,
                     chamber: None,
                     district_type: Some(db::DistrictType::School),
                     political_scope: db::PoliticalScope::State,
@@ -95,7 +88,6 @@ pub fn extract_office_meta(input: &str) -> Option<OfficeMeta> {
                 OfficeMeta {
                     name: "District Attorney".into(),
                     title: "District Attorney".into(),
-                    r#type: None,
                     chamber: None,
                     district_type: Some(db::DistrictType::Judicial),
                     political_scope: db::PoliticalScope::State,
@@ -107,7 +99,6 @@ pub fn extract_office_meta(input: &str) -> Option<OfficeMeta> {
                 OfficeMeta {
                     name: "District Court Judge".into(),
                     title: "District Court Judge".into(),
-                    r#type: None,
                     chamber: None,
                     district_type: Some(db::DistrictType::Judicial),
                     political_scope: db::PoliticalScope::State,
@@ -119,7 +110,6 @@ pub fn extract_office_meta(input: &str) -> Option<OfficeMeta> {
                 OfficeMeta {
                     name: "County Court Judge".into(),
                     title: "County Court Judge".into(),
-                    r#type: None,
                     chamber: None,
                     district_type: None,
                     political_scope: db::PoliticalScope::State,
@@ -131,7 +121,6 @@ pub fn extract_office_meta(input: &str) -> Option<OfficeMeta> {
                 OfficeMeta {
                     name: "Court of Appeals Judge".into(),
                     title: "Court of Appeals Judge".into(),
-                    r#type: None,
                     chamber: None,
                     district_type: None,
                     political_scope: db::PoliticalScope::State,
@@ -143,7 +132,6 @@ pub fn extract_office_meta(input: &str) -> Option<OfficeMeta> {
                 OfficeMeta {
                     name: "Supreme Court Justice".into(),
                     title: "Supreme Court Justice".into(),
-                    r#type: None,
                     chamber: None,
                     district_type: None,
                     political_scope: db::PoliticalScope::State,
@@ -155,7 +143,6 @@ pub fn extract_office_meta(input: &str) -> Option<OfficeMeta> {
                 OfficeMeta {
                     name: "Regional Transportation District Director".into(),
                     title: "Regional Transportation District Director".into(),
-                    r#type: None,
                     chamber: None,
                     district_type: None, // TODO - Add a "transportation" district type ???
                     political_scope: db::PoliticalScope::State,
