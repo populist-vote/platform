@@ -70,7 +70,7 @@ pub fn extract_office_meta(input: &str) -> Option<OfficeMeta> {
                 r"(?i:Board of Education)",
                 OfficeMeta {
                     name: "Board of Education".into(),
-                    title: "Board of Education".into(),
+                    title: "Board of Education Member".into(),
                     r#type: None,
                     chamber: None,
                     district_type: Some(db::DistrictType::School),
@@ -82,7 +82,7 @@ pub fn extract_office_meta(input: &str) -> Option<OfficeMeta> {
                 r"(?i:(?:Board of Regents|Regent of (?:the )?University))",
                 OfficeMeta {
                     name: "Board of Regents".into(),
-                    title: "Board of Regents".into(), // TODO - Is this right?
+                    title: "Regent".into(),
                     r#type: None,
                     chamber: None,
                     district_type: Some(db::DistrictType::School),
