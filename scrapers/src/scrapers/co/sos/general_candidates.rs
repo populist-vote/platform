@@ -34,13 +34,12 @@ impl Scraper {
         let election_year = Self::parse_election_year(&data.title)?;
         let election_date = crate::generate_general_election_date(election_year)?;
         let (election_title, election_slug) =
-            crate::generate_general_election_title_slug(&db::State::CO, election_year);
+            crate::generate_general_election_title_slug(election_year);
         let _election = db::Election::upsert_from_source(
             &context.db.connection,
             &db::UpsertElectionInput {
                 slug: Some(election_slug),
                 title: Some(election_title),
-                state: Some(db::State::CO),
                 election_date: Some(election_date),
                 ..Default::default()
             },

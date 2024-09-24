@@ -3,8 +3,6 @@ use std::{error::Error, future::Future};
 use chrono::{Days, NaiveDate, Weekday};
 use slugify::slugify;
 
-use db::FullState;
-
 pub mod extractors;
 pub mod mn_sos_candidate_filings_fed_state_county;
 pub mod mn_sos_candidate_filings_local;
@@ -41,8 +39,8 @@ pub fn generate_general_election_date(year: u16) -> Result<NaiveDate, Box<dyn Er
     Ok(next_tuesday)
 }
 
-pub fn generate_general_election_title_slug(state: &db::State, year: u16) -> (String, String) {
-    let title = format!("{} General Election {year}", state.full_state());
+pub fn generate_general_election_title_slug(year: u16) -> (String, String) {
+    let title = format!("General Election {year}");
     let slug = slugify!(&title);
     (title, slug)
 }
@@ -95,25 +93,13 @@ mod tests {
 
     #[test]
     fn generate_general_election_title_slug() {
-        let tests: Vec<((&'static str, &'static str), (db::State, u16))> = vec![
-            (
-                (
-                    "Colorado General Election 2024",
-                    "colorado-general-election-2024",
-                ),
-                (db::State::CO, 2024),
-            ),
-            (
-                (
-                    "Minnesota General Election 2025",
-                    "minnesota-general-election-2025",
-                ),
-                (db::State::MN, 2025),
-            ),
+        let tests: Vec<((&'static str, &'static str), u16)> = vec![
+            (("General Election 2024", "general-election-2024"), 2024),
+            (("General Election 2025", "general-election-2025"), 2025),
         ];
 
         for (expected, input) in tests {
-            let actual = super::generate_general_election_title_slug(&input.0, input.1);
+            let actual = super::generate_general_election_title_slug(input);
             assert_eq!(expected.0, actual.0);
             assert_eq!(expected.1, actual.1);
         }
