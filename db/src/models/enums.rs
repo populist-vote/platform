@@ -1,7 +1,7 @@
 use async_graphql::Enum;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use strum_macros::{Display, EnumIter, EnumString};
+use strum_macros::{AsRefStr, Display, EnumIter, EnumString};
 
 #[derive(
     Enum,
@@ -40,6 +40,7 @@ pub enum PoliticalScope {
     sqlx::Type,
     Serialize,
     Deserialize,
+    AsRefStr,
 )]
 
 pub enum State {
@@ -102,72 +103,6 @@ pub enum State {
     WV,
     WI,
     WY,
-}
-
-impl AsRef<str> for State {
-    fn as_ref(&self) -> &str {
-        match self {
-            State::AL => "AL",
-            State::AK => "AK",
-            State::AS => "AS",
-            State::AZ => "AZ",
-            State::AR => "AR",
-            State::CA => "CA",
-            State::CO => "CO",
-            State::CT => "CT",
-            State::DC => "DC",
-            State::FM => "FM",
-            State::DE => "DE",
-            State::FL => "FL",
-            State::GA => "GA",
-            State::GU => "GU",
-            State::HI => "HI",
-            State::ID => "ID",
-            State::IL => "IL",
-            State::IN => "IN",
-            State::IA => "IA",
-            State::KS => "KS",
-            State::KY => "KY",
-            State::LA => "LA",
-            State::ME => "ME",
-            State::MH => "MH",
-            State::MD => "MD",
-            State::MA => "MA",
-            State::MI => "MI",
-            State::MN => "MN",
-            State::MS => "MS",
-            State::MO => "MO",
-            State::MT => "MT",
-            State::NE => "NE",
-            State::NV => "NV",
-            State::NH => "NH",
-            State::NJ => "NJ",
-            State::NM => "NM",
-            State::NY => "NY",
-            State::NC => "NC",
-            State::ND => "ND",
-            State::MP => "MP",
-            State::OH => "OH",
-            State::OK => "OK",
-            State::OR => "OR",
-            State::PW => "PW",
-            State::PA => "PA",
-            State::PR => "PR",
-            State::RI => "RI",
-            State::SC => "SC",
-            State::SD => "SD",
-            State::TN => "TN",
-            State::TX => "TX",
-            State::UT => "UT",
-            State::VT => "VT",
-            State::VI => "VI",
-            State::VA => "VA",
-            State::WA => "WA",
-            State::WI => "WV",
-            State::WY => "WI",
-            State::WV => "WY",
-        }
-    }
 }
 
 pub trait FullState {
