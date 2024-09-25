@@ -22,10 +22,7 @@ impl AdminQuery {
     ) -> Result<Option<i64>, Error> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
 
-        let filter = match filter {
-            Some(filter) => filter,
-            None => UserCountFilter::default(),
-        };
+        let filter = filter.unwrap_or_default();
 
         let user_count_record = sqlx::query!(
             r#"

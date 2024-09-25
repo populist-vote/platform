@@ -12,9 +12,8 @@ use crate::{
     util::{self, extensions::NoneIfEmptyExt},
 };
 
-const HTML_PATH: &'static str = "co/sos/general_candidates.html";
-const PAGE_URL: &'static str =
-    "https://www.sos.state.co.us/pubs/elections/vote/generalCandidates.html";
+const HTML_PATH: &str = "co/sos/general_candidates.html";
+const PAGE_URL: &str = "https://www.sos.state.co.us/pubs/elections/vote/generalCandidates.html";
 
 #[derive(Default)]
 pub struct Scraper {}
@@ -26,7 +25,7 @@ impl crate::Scraper for Scraper {
     }
 
     async fn run_local(&self, context: &crate::ScraperContext<'_>) -> Result<(), Box<dyn Error>> {
-        let html = util::read_local_html(&HTML_PATH)?;
+        let html = util::read_local_html(HTML_PATH)?;
         Self::scrape_html(html, context).await
     }
 }
@@ -189,7 +188,7 @@ impl Scraper {
             ..Default::default()
         };
         office.slug = Some(OfficeSlugGenerator::from_source(&office).generate());
-        return office;
+        office
     }
 
     fn build_race_input(election: &db::Election, office: &db::Office) -> db::UpsertRaceInput {

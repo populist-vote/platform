@@ -6,7 +6,7 @@ pub mod relay;
 pub mod subscription;
 pub mod types;
 
-use std::net::SocketAddr;
+use std::{fmt, net::SocketAddr};
 
 use crate::{mutation::Mutation, query::Query, types::Error};
 use async_graphql::extensions::Tracing;
@@ -37,9 +37,9 @@ impl From<String> for SessionID {
     }
 }
 
-impl ToString for SessionID {
-    fn to_string(&self) -> String {
-        self.0.clone()
+impl fmt::Display for SessionID {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 

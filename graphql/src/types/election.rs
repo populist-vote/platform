@@ -51,7 +51,7 @@ async fn get_races_by_address_id(
     .await?;
 
     let user_address_extended_mn_data = if user_address_data.state == State::MN {
-        Address::extended_mn_by_address_id(&db_pool, &address_id).await?
+        Address::extended_mn_by_address_id(db_pool, address_id).await?
     } else {
         None
     };

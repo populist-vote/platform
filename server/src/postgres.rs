@@ -17,7 +17,7 @@ pub async fn listener(db_pool: PgPool) -> Result<(), Box<dyn Error>> {
         let url = notification.payload();
 
         // Fetch and update the title for the received URL
-        if let Err(e) = fetch_and_update_title(&url, &db_pool).await {
+        if let Err(e) = fetch_and_update_title(url, &db_pool).await {
             eprintln!("Failed to fetch or update the title for {}: {}", url, e);
         }
     }

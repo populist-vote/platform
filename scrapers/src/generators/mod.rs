@@ -7,6 +7,6 @@ pub use office::*;
 pub use race::*;
 
 #[inline]
-fn optional_state_str<'a>(state: Option<&'a db::State>) -> &'a str {
+fn optional_state_str(state: Option<&db::State>) -> &str {
     state.map(|s| s.as_ref()).unwrap_or_default()
 }

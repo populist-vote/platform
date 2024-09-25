@@ -62,6 +62,6 @@ impl OpenFecProxy {
 
     pub async fn get_candidates(&self, query: CandidatesQuery) -> Result<Response, Error> {
         let path = "/v1/candidates";
-        self.get(&path, query).await
+        self.get(path, query).await
     }
 }
