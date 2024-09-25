@@ -76,7 +76,7 @@ impl RaceResult {
             Some(party_id) => {
                 let record = sqlx::query!(
                     r#"
-                    SELECT id, fec_code, name, description, notes
+                    SELECT *
                     FROM party
                     WHERE id = $1
                 "#,
@@ -88,6 +88,7 @@ impl RaceResult {
                 match record {
                     Some(record) => Some(PoliticalParty {
                         id: ID::from(record.id),
+                        slug: record.slug,
                         fec_code: record.fec_code,
                         name: record.name,
                         description: record.description,

@@ -85,12 +85,9 @@ impl PoliticianQuery {
 
     async fn political_parties(&self, ctx: &Context<'_>) -> Result<Vec<PoliticalParty>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let parties = sqlx::query_as!(
-            PoliticalParty,
-            "SELECT id, fec_code, name, description, notes FROM party"
-        )
-        .fetch_all(&db_pool)
-        .await?;
+        let parties = sqlx::query_as!(PoliticalParty, "SELECT * FROM party")
+            .fetch_all(&db_pool)
+            .await?;
         Ok(parties)
     }
 
