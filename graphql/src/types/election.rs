@@ -300,21 +300,23 @@ impl ElectionResult {
             let address_id = temp_address_record.id;
             let races = get_races_by_address_id(&db_pool, &election_id, &address_id).await?;
 
-            // Clean up and delete temp address record in separate thread
-            tokio::spawn(async move {
-                if let Err(err) = sqlx::query!(
-                    r#"
-                    DELETE FROM address
-                    WHERE id = $1
-                    "#,
-                    address_id
-                )
-                .execute(&db_pool)
-                .await
-                {
-                    tracing::error!("Failed to delete address: {:?}", err);
-                }
-            });
+            // TODO - Clean up and delete temp address record in separate thread
+            // Need to determine if new address was created or existing address was updated so we
+            // don't delete an address that is still in use
+            // tokio::spawn(async move {
+            //     if let Err(err) = sqlx::query!(
+            //         r#"
+            //         DELETE FROM address
+            //         WHERE id = $1
+            //         "#,
+            //         address_id
+            //     )
+            //     .execute(&db_pool)
+            //     .await
+            //     {
+            //         tracing::error!("Failed to delete address: {:?}", err);
+            //     }
+            // });
 
             Ok(races)
         } else {
