@@ -7,7 +7,7 @@ use slugify::slugify;
 use sqlx::PgPool;
 use strum_macros::{Display, EnumString};
 
-#[derive(sqlx::FromRow, Debug, Clone, Default)]
+#[derive(sqlx::FromRow, Debug, Clone)]
 pub struct Office {
     pub id: uuid::Uuid,
     pub slug: String,

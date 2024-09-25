@@ -3,7 +3,14 @@ use std::{error::Error, sync::OnceLock};
 use regex::Regex;
 use scraper::{Html, Selector};
 
-use crate::{extractors::*, util, util::extensions::NoneIfEmptyExt};
+use crate::{
+    extractors::*,
+    generators::{
+        ElectionTitleGenerator, GeneralElectionDateGenerator, OfficeSlugGenerator,
+        RaceTitleGenerator,
+    },
+    util::{self, extensions::NoneIfEmptyExt},
+};
 
 const HTML_PATH: &'static str = "co/sos/general_candidates.html";
 const PAGE_URL: &'static str =
@@ -32,9 +39,9 @@ impl Scraper {
         let data = Self::scrape_page_data(html)?;
 
         let election_year = Self::parse_election_year(&data.title)?;
-        let election_date = crate::generate_general_election_date(election_year)?;
+        let election_date = GeneralElectionDateGenerator::new(election_year).generate()?;
         let (election_title, election_slug) =
-            crate::generate_general_election_title_slug(election_year);
+            ElectionTitleGenerator::new(&db::RaceType::General, election_year).generate();
         let election = db::Election::upsert_from_source(
             &context.db.connection,
             &db::UpsertElectionInput {
@@ -47,7 +54,7 @@ impl Scraper {
         .await?;
 
         for entry in data.candidates {
-            let mut office = Self::build_office_input(&entry);
+            let office = Self::build_office_input(&entry);
             let office = match db::Office::upsert_from_source(&context.db.connection, &office).await
             {
                 Ok(office) => office,
@@ -59,7 +66,7 @@ impl Scraper {
             };
 
             let race = Self::build_race_input(&election, &office);
-            let race = match db::Race::upsert_from_source(&context.db.connection, &race).await {
+            let _race = match db::Race::upsert_from_source(&context.db.connection, &race).await {
                 Ok(race) => race,
                 Err(err) => {
                     // TODO - Track/log error
@@ -181,13 +188,13 @@ impl Scraper {
             election_scope: Some(meta.election_scope),
             ..Default::default()
         };
-        office.slug = Some(crate::generate_office_slug(&office));
+        office.slug = Some(OfficeSlugGenerator::from_source(&office).generate());
         return office;
     }
 
     fn build_race_input(election: &db::Election, office: &db::Office) -> db::UpsertRaceInput {
         let (title, slug) =
-            crate::generate_race_title_slug(election, office, db::RaceType::General);
+            RaceTitleGenerator::from_source(&db::RaceType::General, election, office).generate();
         db::UpsertRaceInput {
             title: Some(title),
             slug: Some(slug),
