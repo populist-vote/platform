@@ -389,44 +389,97 @@ impl User {
         user_id: uuid::Uuid,
         address: AddressInput,
     ) -> Result<Address, Error> {
-        let geocodio = GeocodioProxy::new().unwrap();
-        let address_clone = address.clone();
-        let geocode_result = geocodio
-            .geocode(
-                geocodio::AddressParams::AddressInput(geocodio::AddressInput {
-                    line_1: address_clone.line_1,
-                    line_2: address_clone.line_2,
-                    city: address_clone.city,
-                    state: address_clone.state.to_string(),
-                    country: address_clone.country,
-                    postal_code: address_clone.postal_code,
-                }),
-                Some(&["cd", "stateleg"]),
-            )
-            .await;
+        // First lookup to see if address already exists in address table
+        let existing_address = sqlx::query!(
+            r#"
+            SELECT id FROM address WHERE line_1 = $1 AND line_2 = $2 AND city = $3 AND state = $4 AND postal_code = $5
+        "#,
+            address.line_1,
+            address.line_2,
+            address.city,
+            address.state.to_string(),
+            address.postal_code
+        )
+        .fetch_optional(db_pool)
+        .await?;
 
-        match geocode_result {
-            Ok(geocodio_data) => {
-                if geocodio_data.results.is_empty() {
-                    return Err(Error::Custom(
-                        "This is not a valid voting address".to_string(),
-                    ));
-                }
-                let coordinates = geocodio_data.results[0].location.clone();
-                let county = geocodio_data.results[0].address_components.county.clone();
-                let primary_result = geocodio_data.results[0].fields.as_ref().unwrap();
-                let congressional_district =
-                    primary_result.congressional_districts.as_ref().unwrap()[0]
-                        .district_number
-                        .to_string();
-                let state_legislative_districts =
-                    primary_result.state_legislative_districts.as_ref().unwrap();
-                let state_house_district = &state_legislative_districts.house[0].district_number;
-                let state_senate_district = &state_legislative_districts.senate[0].district_number;
-                let lat = coordinates.latitude;
-                let lon = coordinates.longitude;
-
+        match existing_address {
+            Some(address) => {
                 let updated_record_result = sqlx::query_as!(
+                    Address,
+                    r#"
+                    WITH updated_profile AS (
+                    UPDATE user_profile
+                    SET address_id = $1
+                    WHERE user_id = $2
+                    )
+                    SELECT 
+                        id,
+                        line_1,
+                        line_2,
+                        city,
+                        state AS "state:State",
+                        postal_code,
+                        country,
+                        county,
+                        congressional_district,
+                        state_senate_district,
+                        state_house_district
+                    FROM address
+                    WHERE id = $1
+                "#,
+                    address.id,
+                    user_id
+                )
+                .fetch_one(db_pool)
+                .await;
+
+                match updated_record_result {
+                    Ok(updated_record) => Ok(updated_record),
+                    Err(err) => Err(err.into()),
+                }
+            }
+            None => {
+                let geocodio = GeocodioProxy::new().unwrap();
+                let address_clone = address.clone();
+                let geocode_result = geocodio
+                    .geocode(
+                        geocodio::AddressParams::AddressInput(geocodio::AddressInput {
+                            line_1: address_clone.line_1,
+                            line_2: address_clone.line_2,
+                            city: address_clone.city,
+                            state: address_clone.state.to_string(),
+                            country: address_clone.country,
+                            postal_code: address_clone.postal_code,
+                        }),
+                        Some(&["cd", "stateleg"]),
+                    )
+                    .await;
+
+                match geocode_result {
+                    Ok(geocodio_data) => {
+                        if geocodio_data.results.is_empty() {
+                            return Err(Error::Custom(
+                                "This is not a valid voting address".to_string(),
+                            ));
+                        }
+                        let coordinates = geocodio_data.results[0].location.clone();
+                        let county = geocodio_data.results[0].address_components.county.clone();
+                        let primary_result = geocodio_data.results[0].fields.as_ref().unwrap();
+                        let congressional_district =
+                            primary_result.congressional_districts.as_ref().unwrap()[0]
+                                .district_number
+                                .to_string();
+                        let state_legislative_districts =
+                            primary_result.state_legislative_districts.as_ref().unwrap();
+                        let state_house_district =
+                            &state_legislative_districts.house[0].district_number;
+                        let state_senate_district =
+                            &state_legislative_districts.senate[0].district_number;
+                        let lat = coordinates.latitude;
+                        let lon = coordinates.longitude;
+
+                        let updated_record_result = sqlx::query_as!(
                     Address,
                     r#"
                     INSERT INTO address (id, line_1, line_2, city, county, state, postal_code, country, lon, lat, geog, geom, congressional_district, state_house_district, state_senate_district)
@@ -479,27 +532,29 @@ impl User {
                 .fetch_one(db_pool)
                 .await;
 
-                match updated_record_result {
-                    Ok(updated_record) => {
-                        let _ = sqlx::query!(
-                            r#"
+                        match updated_record_result {
+                            Ok(updated_record) => {
+                                let _ = sqlx::query!(
+                                    r#"
                             UPDATE user_profile
                             SET address_id = $1
                             WHERE user_id = $2
                         "#,
-                            updated_record.id,
-                            user_id
-                        )
-                        .execute(db_pool)
-                        .await;
-                        Ok(updated_record)
+                                    updated_record.id,
+                                    user_id
+                                )
+                                .execute(db_pool)
+                                .await;
+                                Ok(updated_record)
+                            }
+                            Err(err) => Err(err.into()),
+                        }
                     }
-                    Err(err) => Err(err.into()),
+                    Err(_) => Err(Error::Custom(
+                        "This is not a valid voting address".to_string(),
+                    )),
                 }
             }
-            Err(_) => Err(Error::Custom(
-                "This is not a valid voting address".to_string(),
-            )),
         }
     }
 }
