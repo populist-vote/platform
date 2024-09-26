@@ -42,8 +42,8 @@ impl Default for Config {
 
 impl Config {
     pub fn is_allowed_origin(url: &str) -> bool {
-        let allowed_origins = ["http://www.mprnews.org", "http://mprnews.org"];
-        let excluded_origins = ["http://www.mprnews.org/preview/"];
+        let allowed_origins = ["https://www.mprnews.org", "https://mprnews.org"];
+        let excluded_origins = ["https://www.mprnews.org/preview/"];
 
         allowed_origins
             .iter()
@@ -141,13 +141,17 @@ mod tests {
 
     #[test]
     fn test_is_allowed_origin() {
-        assert_eq!(Config::is_allowed_origin("http://www.mprnews.org"), true);
+        assert_eq!(Config::is_allowed_origin("https://www.mprnews.org"), true);
         assert_eq!(
-            Config::is_allowed_origin("http://www.mprnews.org/story/breaking-news-with-populist"),
+            Config::is_allowed_origin("https://www.mprnews.org/some-great-article"),
             true
         );
         assert_eq!(
-            Config::is_allowed_origin("http://www.mprnews.org/preview/whatever"),
+            Config::is_allowed_origin("https://www.mprnews.org/story/breaking-news-with-populist"),
+            true
+        );
+        assert_eq!(
+            Config::is_allowed_origin("https://www.mprnews.org/preview/whatever"),
             false
         );
     }
