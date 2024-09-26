@@ -206,65 +206,75 @@ impl From<Office> for OfficeResult {
     }
 }
 
-#[tokio::test]
-async fn test_compute_office_title() {
-    let office = Office {
-        id: uuid::Uuid::new_v4(),
-        slug: "test-state-senator".to_string(),
-        title: "State Senator".to_string(),
-        subtitle: None,
-        subtitle_short: None,
-        name: None,
-        office_type: None,
-        district: Some("1".to_string()),
-        district_type: Some(DistrictType::StateSenate),
-        hospital_district: None,
-        school_district: None,
-        chamber: Some(Chamber::Senate),
-        political_scope: PoliticalScope::State,
-        election_scope: ElectionScope::District,
-        state: Some(State::AL),
-        county: Some("Buckwild County".to_string()),
-        municipality: None,
-        term_length: None,
-        seat: None,
-        ..Default::default()
-    };
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::{DateTime, Utc};
 
-    assert_eq!(
-        compute_office_subtitle(&office, false),
-        Some("AL - Senate District 1".to_string())
-    );
-    assert_eq!(
-        compute_office_subtitle(&office, true),
-        Some("AL - SD 1".to_string())
-    );
+    #[tokio::test]
+    async fn test_compute_office_title() {
+        let office = Office {
+            id: uuid::Uuid::new_v4(),
+            slug: "test-state-senator".to_string(),
+            title: "State Senator".to_string(),
+            subtitle: None,
+            subtitle_short: None,
+            name: None,
+            office_type: None,
+            district: Some("1".to_string()),
+            district_type: Some(DistrictType::StateSenate),
+            hospital_district: None,
+            school_district: None,
+            chamber: Some(Chamber::Senate),
+            political_scope: PoliticalScope::State,
+            election_scope: ElectionScope::District,
+            state: Some(State::AL),
+            county: Some("Buckwild County".to_string()),
+            municipality: None,
+            term_length: None,
+            seat: None,
+            priority: None,
+            created_at: DateTime::<Utc>::default(),
+            updated_at: DateTime::<Utc>::default(),
+        };
 
-    let office = Office {
-        id: uuid::Uuid::new_v4(),
-        slug: "test-state-senator".to_string(),
-        title: "State Senator".to_string(),
-        subtitle: None,
-        subtitle_short: None,
-        name: None,
-        office_type: None,
-        district: Some("Ward 3".to_string()),
-        district_type: Some(DistrictType::City),
-        hospital_district: None,
-        school_district: None,
-        chamber: Some(Chamber::Senate),
-        political_scope: PoliticalScope::Local,
-        election_scope: ElectionScope::District,
-        state: Some(State::AL),
-        county: None,
-        municipality: Some("Buckwild City".to_string()),
-        term_length: None,
-        seat: None,
-        ..Default::default()
-    };
+        assert_eq!(
+            compute_office_subtitle(&office, false),
+            Some("AL - Senate District 1".to_string())
+        );
+        assert_eq!(
+            compute_office_subtitle(&office, true),
+            Some("AL - SD 1".to_string())
+        );
 
-    assert_eq!(
-        compute_office_subtitle(&office, false),
-        Some("Buckwild City, AL - Ward 3".to_string())
-    )
+        let office = Office {
+            id: uuid::Uuid::new_v4(),
+            slug: "test-state-senator".to_string(),
+            title: "State Senator".to_string(),
+            subtitle: None,
+            subtitle_short: None,
+            name: None,
+            office_type: None,
+            district: Some("Ward 3".to_string()),
+            district_type: Some(DistrictType::City),
+            hospital_district: None,
+            school_district: None,
+            chamber: Some(Chamber::Senate),
+            political_scope: PoliticalScope::Local,
+            election_scope: ElectionScope::District,
+            state: Some(State::AL),
+            county: None,
+            municipality: Some("Buckwild City".to_string()),
+            term_length: None,
+            seat: None,
+            priority: None,
+            created_at: DateTime::<Utc>::default(),
+            updated_at: DateTime::<Utc>::default(),
+        };
+
+        assert_eq!(
+            compute_office_subtitle(&office, false),
+            Some("Buckwild City, AL - Ward 3".to_string())
+        )
+    }
 }

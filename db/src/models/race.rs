@@ -141,6 +141,60 @@ impl Race {
         Ok(record)
     }
 
+    pub async fn upsert_from_source(
+        db_pool: &PgPool,
+        input: &UpsertRaceInput,
+    ) -> Result<Self, sqlx::Error> {
+        input
+            .slug
+            .as_ref()
+            .ok_or("slug is required")
+            .map_err(|err| sqlx::Error::AnyDriverError(err.into()))?;
+
+        sqlx::query_as!(Race,
+            r#"
+                INSERT INTO race (slug, title, office_id, race_type, vote_type, party_id, state, description, ballotpedia_link, early_voting_begins_date, winner_ids, official_website, election_id, total_votes, is_special_election, num_elect)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+                ON CONFLICT (slug) DO UPDATE
+                SET
+                    title = COALESCE($2, race.title), 
+                    office_id = COALESCE($3, race.office_id),
+                    race_type = COALESCE($4, race.race_type),
+                    vote_type = COALESCE($5, race.vote_type),
+                    party_id = COALESCE($6, race.party_id),
+                    state = COALESCE($7, race.state),
+                    description = COALESCE($8, race.description),
+                    ballotpedia_link = COALESCE($9, race.ballotpedia_link),
+                    early_voting_begins_date = COALESCE($10, race.early_voting_begins_date),
+                    winner_ids = COALESCE($11, race.winner_ids),
+                    official_website = COALESCE($12, race.official_website),
+                    election_id = COALESCE($13, race.election_id),
+                    total_votes = COALESCE($14, race.total_votes),
+                    is_special_election = COALESCE($15, race.is_special_election),
+                    num_elect = COALESCE($16, race.num_elect)
+                RETURNING id, slug, title,  office_id, race_type AS "race_type:RaceType", vote_type AS "vote_type:VoteType", party_id, state AS "state:State", description, ballotpedia_link, early_voting_begins_date, winner_ids, official_website, election_id, total_votes, num_precincts_reporting, total_precincts, is_special_election, num_elect, created_at, updated_at
+            "#,
+            input.slug,
+            input.title,
+            input.office_id,
+            input.race_type as Option<RaceType>,
+            input.vote_type as Option<VoteType>,
+            input.party_id,
+            input.state as Option<State>,
+            input.description,
+            input.ballotpedia_link,
+            input.early_voting_begins_date,
+            input.winner_ids.as_ref().map(|v| v.as_slice()),
+            input.official_website,
+            input.election_id,
+            input.total_votes,
+            input.is_special_election,
+            input.num_elect,
+        )
+        .fetch_one(db_pool)
+        .await
+    }
+
     pub async fn delete(db_pool: &PgPool, id: uuid::Uuid) -> Result<(), sqlx::Error> {
         sqlx::query!("DELETE FROM race WHERE id=$1", id)
             .execute(db_pool)

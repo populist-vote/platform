@@ -1,10 +1,5 @@
-use scrapers::mn_sos_candidate_filings_fed_state_county::{
-    get_mn_sos_candidate_filings_fed_state_county,
-    get_mn_sos_candidate_filings_fed_state_county_primaries,
-};
-use scrapers::mn_sos_candidate_filings_local::{
-    get_mn_sos_candidate_filings_local, get_mn_sos_candidate_filings_local_primaries,
-};
+use scrapers::mn_sos_candidate_filings_fed_state_county::get_mn_sos_candidate_filings_fed_state_county;
+use scrapers::mn_sos_candidate_filings_local::get_mn_sos_candidate_filings_local;
 
 #[tokio::main]
 async fn main() {

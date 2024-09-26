@@ -3,11 +3,17 @@ use std::{error::Error, sync::OnceLock};
 use regex::Regex;
 use scraper::{Html, Selector};
 
-use crate::{extractors::*, util, util::extensions::NoneIfEmptyExt};
+use crate::{
+    extractors::*,
+    generators::{
+        ElectionTitleGenerator, GeneralElectionDateGenerator, OfficeSlugGenerator,
+        RaceTitleGenerator,
+    },
+    util::{self, extensions::NoneIfEmptyExt},
+};
 
-const HTML_PATH: &'static str = "co/sos/general_candidates.html";
-const PAGE_URL: &'static str =
-    "https://www.sos.state.co.us/pubs/elections/vote/generalCandidates.html";
+const HTML_PATH: &str = "co/sos/general_candidates.html";
+const PAGE_URL: &str = "https://www.sos.state.co.us/pubs/elections/vote/generalCandidates.html";
 
 #[derive(Default)]
 pub struct Scraper {}
@@ -19,7 +25,7 @@ impl crate::Scraper for Scraper {
     }
 
     async fn run_local(&self, context: &crate::ScraperContext<'_>) -> Result<(), Box<dyn Error>> {
-        let html = util::read_local_html(&HTML_PATH)?;
+        let html = util::read_local_html(HTML_PATH)?;
         Self::scrape_html(html, context).await
     }
 }
@@ -32,10 +38,10 @@ impl Scraper {
         let data = Self::scrape_page_data(html)?;
 
         let election_year = Self::parse_election_year(&data.title)?;
-        let election_date = crate::generate_general_election_date(election_year)?;
+        let election_date = GeneralElectionDateGenerator::new(election_year).generate()?;
         let (election_title, election_slug) =
-            crate::generate_general_election_title_slug(election_year);
-        let _election = db::Election::upsert_from_source(
+            ElectionTitleGenerator::new(&db::RaceType::General, election_year).generate();
+        let election = db::Election::upsert_from_source(
             &context.db.connection,
             &db::UpsertElectionInput {
                 slug: Some(election_slug),
@@ -47,14 +53,26 @@ impl Scraper {
         .await?;
 
         for entry in data.candidates {
-            let mut office_input = Self::build_office_input(&entry);
-            office_input.slug = Some(crate::generate_office_slug(&office_input));
-            if let Err(err) =
-                db::Office::upsert_from_source(&context.db.connection, &office_input).await
+            let office = Self::build_office_input(&entry);
+            let office = match db::Office::upsert_from_source(&context.db.connection, &office).await
             {
-                // TODO - Track/log error
-                panic!("{err}");
-            }
+                Ok(office) => office,
+                Err(err) => {
+                    // TODO - Track/log error
+                    println!("Error upserting office {err}");
+                    continue;
+                }
+            };
+
+            let race = Self::build_race_input(&election, &office);
+            let _race = match db::Race::upsert_from_source(&context.db.connection, &race).await {
+                Ok(race) => race,
+                Err(err) => {
+                    // TODO - Track/log error
+                    println!("Error upserting race {err}");
+                    continue;
+                }
+            };
         }
         Ok(())
     }
@@ -156,7 +174,7 @@ impl Scraper {
             None
         };
 
-        return db::UpsertOfficeInput {
+        let mut office = db::UpsertOfficeInput {
             name: Some(meta.name),
             title: Some(meta.title),
             chamber: meta.chamber,
@@ -169,6 +187,23 @@ impl Scraper {
             election_scope: Some(meta.election_scope),
             ..Default::default()
         };
+        office.slug = Some(OfficeSlugGenerator::from_source(&office).generate());
+        office
+    }
+
+    fn build_race_input(election: &db::Election, office: &db::Office) -> db::UpsertRaceInput {
+        let (title, slug) =
+            RaceTitleGenerator::from_source(&db::RaceType::General, election, office).generate();
+        db::UpsertRaceInput {
+            title: Some(title),
+            slug: Some(slug),
+            office_id: Some(office.id),
+            election_id: Some(election.id),
+            state: Some(db::State::CO),
+            race_type: Some(db::RaceType::General),
+            vote_type: Some(db::VoteType::Plurality),
+            ..Default::default()
+        }
     }
 }
 
