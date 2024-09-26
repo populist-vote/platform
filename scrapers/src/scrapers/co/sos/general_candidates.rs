@@ -5,11 +5,8 @@ use scraper::{Html, Selector};
 
 use crate::{
     extractors::*,
-    generators::{
-        ElectionTitleGenerator, GeneralElectionDateGenerator, OfficeSlugGenerator,
-        RaceTitleGenerator,
-    },
-    util::{self, extensions::NoneIfEmptyExt},
+    generators::*,
+    util::{self, extensions::*},
 };
 
 const HTML_PATH: &str = "co/sos/general_candidates.html";
@@ -59,7 +56,7 @@ impl Scraper {
                 Ok(office) => office,
                 Err(err) => {
                     // TODO - Track/log error
-                    println!("Error upserting office {err}");
+                    println!("Error upserting Office: {err}");
                     continue;
                 }
             };
@@ -69,9 +66,23 @@ impl Scraper {
                 Ok(race) => race,
                 Err(err) => {
                     // TODO - Track/log error
-                    println!("Error upserting race {err}");
+                    println!("Error upserting Race: {err}");
                     continue;
                 }
+            };
+
+            let party = Self::build_party_input(&entry);
+            let _party = if let Some(party) = party {
+                match db::Party::upsert_from_source(&context.db.connection, &party).await {
+                    Ok(party) => Some(party),
+                    Err(err) => {
+                        // TODO - Track/log error
+                        println!("Error upserting Party: {err}");
+                        continue;
+                    }
+                }
+            } else {
+                None
             };
         }
         Ok(())
@@ -204,6 +215,21 @@ impl Scraper {
             vote_type: Some(db::VoteType::Plurality),
             ..Default::default()
         }
+    }
+
+    fn build_party_input(entry: &CandidateEntry) -> Option<db::UpsertPartyInput> {
+        let party = entry.party.as_str()?;
+        let Some(name) = extract_party_name(party) else {
+            // TODO - Track/log failed scrape
+            println!("party: {:?}", entry.party);
+            return None;
+        };
+        let slug = PartySlugGenerator::new(name.as_str()).generate();
+        Some(db::UpsertPartyInput {
+            name: Some(name),
+            slug: Some(slug),
+            ..Default::default()
+        })
     }
 }
 
