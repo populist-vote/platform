@@ -65,6 +65,14 @@ async fn get_races_by_address_id(
         })
         .unwrap_or(None);
 
+    let judicial_district = user_address_extended_mn_data
+        .clone()
+        .map(|a| {
+            a.judicial_district
+                .map(|d| d.as_str().trim_start_matches('0').to_string())
+        })
+        .unwrap_or(None);
+
     let school_district = user_address_extended_mn_data
         .clone()
         .map(|a| {
@@ -145,6 +153,7 @@ async fn get_races_by_address_id(
                 (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR
                 (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR
                 (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
+                (o.election_scope = 'district' AND o.district_type = 'judicial' AND o.district = $13) OR
                 (o.election_scope = 'district' AND o.district_type = 'county' AND o.county = $4 AND o.district = $8) OR
                 (o.election_scope = 'city' AND o.municipality = $3) OR
                 (o.election_scope = 'district' AND o.district_type = 'city' AND o.municipality = $3 AND REGEXP_REPLACE(o.district, '^[^0-9]*', '') = $12) OR
@@ -170,7 +179,8 @@ async fn get_races_by_address_id(
         school_district,
         school_district_type,
         school_subdistrict,
-        ward
+        ward,
+        judicial_district
     )
     .fetch_all(db_pool)
     .await?;
