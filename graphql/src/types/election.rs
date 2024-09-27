@@ -87,6 +87,7 @@ async fn get_races_by_address_id(
         .unwrap_or(None);
 
     let ward = user_address_extended_mn_data
+        .clone()
         .map(|a: db::AddressExtendedMN| {
             a.ward.map(|d| {
                 // Remove non-numeric prefix and then trim leading zeros
@@ -99,14 +100,13 @@ async fn get_races_by_address_id(
         })
         .unwrap_or(None);
 
-    let city = user_address_data.city.clone().replace("Saint", "St.");
-
-    // Edge case for Robbinsdale, MN which Geocodio returns as "Minneapolis"
-    let city = match user_address_data.postal_code.as_str() {
-        "55412" => "Robbinsdale",
-        "55422" => "Robbinsdale",
-        _ => &city,
-    };
+    let city = user_address_extended_mn_data
+        .and_then(|a| {
+            a.municipality_name
+                .clone()
+                .map(|m| m.replace("Twp", "Township"))
+        })
+        .unwrap_or_else(|| user_address_data.city.clone());
 
     let records = sqlx::query_as!(
         Race,
