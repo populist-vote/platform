@@ -37,6 +37,7 @@ async fn get_races_by_address_id(
             a.state_senate_district,
             a.state_house_district,
             a.state AS "state:State",
+            a.postal_code,
             a.county,
             a.city
         FROM
@@ -99,6 +100,13 @@ async fn get_races_by_address_id(
         .unwrap_or(None);
 
     let city = user_address_data.city.clone().replace("Saint", "St.");
+
+    // Edge case for Robbinsdale, MN which Geocodio returns as "Minneapolis"
+    let city = match user_address_data.postal_code.as_str() {
+        "55412" => "Robbinsdale",
+        "55422" => "Robbinsdale",
+        _ => &city,
+    };
 
     let records = sqlx::query_as!(
         Race,
