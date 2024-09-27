@@ -87,7 +87,6 @@ async fn get_races_by_address_id(
 
     let ward = user_address_extended_mn_data
         .map(|a: db::AddressExtendedMN| {
-            println!("a = {:?}", a);
             a.ward.map(|d| {
                 // Remove non-numeric prefix and then trim leading zeros
                 if let Some(pos) = d.find('-') {
