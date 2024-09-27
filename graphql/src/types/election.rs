@@ -267,7 +267,7 @@ impl ElectionResult {
 
             let temp_address_record = sqlx::query!(r#"
                     INSERT INTO address (line_1, line_2, city, state, county, country, postal_code, lon, lat, geog, geom, congressional_district, state_senate_district, state_house_district)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, ST_GeographyFromText($10), ST_GeomFromText($11), $12, $13, $14)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, ST_SetSRID(ST_MakePoint($8, $9), 4326), ST_GeomFromText($10, 4326), $11, $12, $13)
                     ON CONFLICT (line_1, line_2, city, state, country, postal_code) -- adjust the conflict target columns as per your unique constraint
                     DO UPDATE SET
                         lon = EXCLUDED.lon,
@@ -289,8 +289,7 @@ impl ElectionResult {
             address_clone.postal_code,
             coordinates.longitude,
             coordinates.latitude,
-            format!("POINT({} {})", coordinates.longitude, coordinates.latitude),
-            format!("POINT({} {})", coordinates.longitude, coordinates.latitude),
+            format!("POINT({} {})", coordinates.longitude, coordinates.latitude), // A string we pass into ST_GeomFromText function
             &congressional_district.to_string(),
             state_senate_district,
             state_house_district
