@@ -185,9 +185,9 @@ async fn get_races_by_address_id(
                 (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
                 (o.election_scope = 'district' AND o.district_type = 'judicial' AND o.district = $13) OR
                 (o.election_scope = 'district' AND o.district_type = 'county' AND o.county = $4 AND o.district = $8) OR
-                (o.election_scope = 'district' AND o.district_type = 'soil_and_water' AND o.county = $4 AND (REGEXP_SUBSTR(o.district, '\\(([^)]+)\\)') = $14 OR o.district = $14)) OR
-                (o.election_scope = 'city' AND o.municipality = $3) OR
+                (o.election_scope = 'district' AND o.district_type = 'soil_and_water' AND o.county = $4 AND (REGEXP_REPLACE(o.district, '.*\(([^)]+)\).*', '\1') = $14 OR o.district = $14)) OR
                 (o.election_scope = 'district' AND o.district_type = 'city' AND o.municipality = $3 AND REGEXP_REPLACE(o.district, '^[^0-9]*', '') = $12) OR
+                (o.election_scope = 'city' AND o.municipality = $3) OR
                 (CASE 
                   WHEN $10 = '01' THEN
                     (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'ISD #', '') = $9) AND
