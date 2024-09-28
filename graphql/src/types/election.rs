@@ -8,6 +8,7 @@ use db::{
 };
 use geocodio::GeocodioProxy;
 use jsonwebtoken::TokenData;
+use regex::Regex;
 
 #[derive(SimpleObject, Clone, Debug)]
 #[graphql(complex)]
@@ -23,6 +24,24 @@ pub struct ElectionResult {
 #[derive(InputObject, Default, Debug)]
 pub struct ElectionRaceFilter {
     state: Option<State>,
+}
+
+fn extract_district_or_direction(input: Option<String>) -> Option<String> {
+    let re = Regex::new(r"(District\s*(\d+)|(East|West|North|South))").unwrap();
+
+    input.and_then(|d| {
+        re.captures(&d).and_then(|cap| {
+            if let Some(district) = cap.get(2) {
+                // Extract district number, remove leading zeros
+                Some(district.as_str().trim_start_matches('0').to_string())
+            } else if let Some(direction) = cap.get(3) {
+                // Extract directional if available
+                Some(direction.as_str().to_string())
+            } else {
+                None
+            }
+        })
+    })
 }
 
 async fn get_races_by_address_id(
@@ -72,6 +91,17 @@ async fn get_races_by_address_id(
                 .map(|d| d.as_str().trim_start_matches('0').to_string())
         })
         .unwrap_or(None);
+
+    let soil_and_water_district = user_address_extended_mn_data
+        .clone()
+        .map(|a| {
+            a.soil_and_water_district
+                .map(|d| d.as_str().trim_start_matches('0').to_string())
+        })
+        .unwrap_or(None);
+
+    let parsed_soil_and_water_district =
+        extract_district_or_direction(soil_and_water_district.clone());
 
     let school_district = user_address_extended_mn_data
         .clone()
@@ -155,6 +185,7 @@ async fn get_races_by_address_id(
                 (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
                 (o.election_scope = 'district' AND o.district_type = 'judicial' AND o.district = $13) OR
                 (o.election_scope = 'district' AND o.district_type = 'county' AND o.county = $4 AND o.district = $8) OR
+                (o.election_scope = 'district' AND o.district_type = 'soil_and_water' AND o.county = $4 AND (REGEXP_SUBSTR(o.district, '\\(([^)]+)\\)') = $14 OR o.district = $14)) OR
                 (o.election_scope = 'city' AND o.municipality = $3) OR
                 (o.election_scope = 'district' AND o.district_type = 'city' AND o.municipality = $3 AND REGEXP_REPLACE(o.district, '^[^0-9]*', '') = $12) OR
                 (CASE 
@@ -180,7 +211,8 @@ async fn get_races_by_address_id(
         school_district_type,
         school_subdistrict,
         ward,
-        judicial_district
+        judicial_district,
+        parsed_soil_and_water_district
     )
     .fetch_all(db_pool)
     .await?;
