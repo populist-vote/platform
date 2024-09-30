@@ -38,11 +38,8 @@ fn extract_district_or_direction(input: Option<String>) -> Option<String> {
             if let Some(district) = cap.get(2) {
                 // Extract district number, remove leading zeros
                 Some(district.as_str().trim_start_matches('0').to_string())
-            } else if let Some(direction) = cap.get(3) {
-                // Extract directional if available
-                Some(direction.as_str().to_string())
             } else {
-                None
+                cap.get(3).map(|direction| direction.as_str().to_string())
             }
         })
     })
@@ -169,8 +166,7 @@ pub async fn process_address_with_geocodio(
         Err(Error::BadInput {
             field: "address".to_string(),
             message: "Invalid address".to_string(),
-        }
-        .into())
+        })
     }
 }
 
@@ -572,6 +568,10 @@ impl ElectionResult {
                 bm.full_text_url,
                 bm.election_id,
                 bm.state AS "state:State",
+                bm.yes_votes,
+                bm.no_votes,
+                bm.num_precincts_reporting,
+                bm.total_precincts,
                 bm.created_at,
                 bm.updated_at
             FROM

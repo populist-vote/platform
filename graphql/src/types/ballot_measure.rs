@@ -55,7 +55,7 @@ impl From<BallotMeasure> for BallotMeasureResult {
             measure_type: b.measure_type,
             definitions: b.definitions,
             description: b.description,
-            official_summary: b.official_summary, 
+            official_summary: b.official_summary,
             populist_summary: b.populist_summary,
             full_text_url: b.full_text_url,
         }

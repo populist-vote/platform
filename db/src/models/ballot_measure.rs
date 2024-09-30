@@ -19,6 +19,10 @@ pub struct BallotMeasure {
     pub measure_type: String, //perhaps make enum later
     pub definitions: String,  // markdown list of bulleted items
     //optional fields
+    pub yes_votes: Option<i32>,
+    pub no_votes: Option<i32>,
+    pub num_precincts_reporting: Option<i32>,
+    pub total_precincts: Option<i32>,
     pub description: Option<String>,
     pub official_summary: Option<String>,
     pub populist_summary: Option<String>,
@@ -78,7 +82,7 @@ impl BallotMeasure {
                     ballot_measure_code = COALESCE($11, ballot_measure.ballot_measure_code),
                     measure_type = COALESCE($12, ballot_measure.measure_type),
                     definitions = COALESCE($13, ballot_measure.definitions)
-                RETURNING id, election_id, slug, title, status AS "status: BallotMeasureStatus", description, official_summary, populist_summary, full_text_url, state AS "state:State", ballot_measure_code, measure_type, definitions, created_at, updated_at
+                RETURNING id, election_id, slug, title, status AS "status: BallotMeasureStatus", description, official_summary, populist_summary, full_text_url, state AS "state:State", ballot_measure_code, measure_type, definitions, yes_votes, no_votes, num_precincts_reporting, total_precincts, created_at, updated_at
             "#,
             id,
             election_id,
@@ -108,7 +112,7 @@ impl BallotMeasure {
     }
 
     pub async fn index(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
-        let records = sqlx::query_as!(BallotMeasure, r#"SELECT id, election_id, slug, title, status AS "status: BallotMeasureStatus", state AS "state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure"#,)
+        let records = sqlx::query_as!(BallotMeasure, r#"SELECT id, election_id, slug, title, status AS "status: BallotMeasureStatus", state AS "state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url,  yes_votes, no_votes, num_precincts_reporting, total_precincts, created_at, updated_at FROM ballot_measure"#,)
             .fetch_all(db_pool)
             .await?;
         Ok(records)
@@ -121,7 +125,7 @@ impl BallotMeasure {
         let records = sqlx::query_as!(
             BallotMeasure,
             r#"
-                SELECT id, election_id, slug, title, status AS "status: BallotMeasureStatus", state AS "state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url, created_at, updated_at FROM ballot_measure
+                SELECT id, election_id, slug, title, status AS "status: BallotMeasureStatus", state AS "state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url,  yes_votes, no_votes, num_precincts_reporting, total_precincts, created_at, updated_at FROM ballot_measure
                 WHERE ($1::text IS NULL OR slug = $1)
                 AND ($2::text IS NULL OR levenshtein($2, title) <=5)
                 AND ($3::state IS NULL OR state = $3)
