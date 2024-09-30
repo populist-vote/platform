@@ -1,14 +1,18 @@
-use super::RaceResult;
+use super::{BallotMeasureResult, RaceResult};
 use crate::{context::ApiContext, Error};
 use async_graphql::{ComplexObject, Context, InputObject, Result, SimpleObject, ID};
 use auth::AccessTokenClaims;
 use db::{
-    models::enums::{RaceType, State, VoteType},
+    models::{
+        ballot_measure::BallotMeasure,
+        enums::{BallotMeasureStatus, RaceType, State, VoteType},
+    },
     Address, AddressInput, Election, Race,
 };
 use geocodio::GeocodioProxy;
 use jsonwebtoken::TokenData;
 use regex::Regex;
+use uuid::Uuid;
 
 #[derive(SimpleObject, Clone, Debug)]
 #[graphql(complex)]
@@ -42,6 +46,132 @@ fn extract_district_or_direction(input: Option<String>) -> Option<String> {
             }
         })
     })
+}
+
+pub async fn process_address_with_geocodio(
+    db_pool: &sqlx::PgPool,
+    address: AddressInput,
+) -> Result<Uuid, Error> {
+    let address_clone = address.clone();
+    let geocodio = GeocodioProxy::new().unwrap();
+
+    let existing_address = sqlx::query!(
+        r#"
+        SELECT
+            id
+        FROM
+            address
+        WHERE
+            line_1 = $1 AND
+            line_2 = $2 AND
+            city = $3 AND
+            state = $4 AND
+            country = $5 AND
+            postal_code = $6
+        "#,
+        address.line_1,
+        address.line_2,
+        address.city,
+        address.state.to_string(),
+        address.country,
+        address.postal_code
+    )
+    .fetch_optional(db_pool)
+    .await?;
+
+    if let Some(address) = existing_address {
+        return Ok(address.id);
+    }
+
+    // Process address with geocodio
+    let geocode_result = geocodio
+        .geocode(
+            geocodio::AddressParams::AddressInput(geocodio::AddressInput {
+                line_1: address.line_1,
+                line_2: address.line_2,
+                city: address.city,
+                state: address.state.to_string(),
+                country: address.country,
+                postal_code: address.postal_code,
+            }),
+            Some(&["cd118", "stateleg-next"]),
+        )
+        .await;
+
+    if let Ok(geocodio_data) = geocode_result {
+        let city = geocodio_data.results[0]
+            .address_components
+            .city
+            .clone()
+            .unwrap_or(address_clone.city);
+        let coordinates = geocodio_data.results[0].location.clone();
+        let county = geocodio_data.results[0].address_components.county.clone();
+        let primary_result = geocodio_data.results[0].fields.as_ref().unwrap();
+        let congressional_district =
+            &primary_result.congressional_districts.as_ref().unwrap()[0].district_number;
+        let state_legislative_districts =
+            primary_result.state_legislative_districts.as_ref().unwrap();
+        let state_house_district = &state_legislative_districts.house[0].district_number;
+        let state_senate_district = &state_legislative_districts.senate[0].district_number;
+
+        let temp_address_record = sqlx::query!(r#"
+                    INSERT INTO address (line_1, line_2, city, state, county, country, postal_code, lon, lat, geog, geom, congressional_district, state_senate_district, state_house_district)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, ST_SetSRID(ST_MakePoint($8, $9), 4326), ST_GeomFromText($10, 4326), $11, $12, $13)
+                    ON CONFLICT (line_1, line_2, city, state, country, postal_code) -- adjust the conflict target columns as per your unique constraint
+                    DO UPDATE SET
+                        lon = EXCLUDED.lon,
+                        lat = EXCLUDED.lat,
+                        geog = EXCLUDED.geog,
+                        geom = EXCLUDED.geom,
+                        congressional_district = EXCLUDED.congressional_district,
+                        state_senate_district = EXCLUDED.state_senate_district,
+                        state_house_district = EXCLUDED.state_house_district
+                    RETURNING id
+
+            "#, 
+            address_clone.line_1,
+            address_clone.line_2,
+            city,
+            address_clone.state.to_string(),
+            county,
+            address_clone.country,
+            address_clone.postal_code,
+            coordinates.longitude,
+            coordinates.latitude,
+            format!("POINT({} {})", coordinates.longitude, coordinates.latitude), // A string we pass into ST_GeomFromText function
+            &congressional_district.to_string(),
+            state_senate_district,
+            state_house_district
+            ).fetch_one(db_pool).await?;
+
+        let address_id = temp_address_record.id;
+
+        // TODO - Clean up and delete temp address record in separate thread
+        // Need to determine if new address was created or existing address was updated so we
+        // don't delete an address that is still in use
+        // tokio::spawn(async move {
+        //     if let Err(err) = sqlx::query!(
+        //         r#"
+        //         DELETE FROM address
+        //         WHERE id = $1
+        //         "#,
+        //         address_id
+        //     )
+        //     .execute(&db_pool)
+        //     .await
+        //     {
+        //         tracing::error!("Failed to delete address: {:?}", err);
+        //     }
+        // });
+
+        Ok(address_id)
+    } else {
+        Err(Error::BadInput {
+            field: "address".to_string(),
+            message: "Invalid address".to_string(),
+        }
+        .into())
+    }
 }
 
 async fn get_races_by_address_id(
@@ -279,101 +409,11 @@ impl ElectionResult {
         ctx: &Context<'_>,
         address: AddressInput,
     ) -> Result<Vec<RaceResult>> {
+        let election_id = uuid::Uuid::parse_str(&self.id)?;
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
-        let address_clone = address.clone();
-        let geocodio = GeocodioProxy::new().unwrap();
-
-        // Process address with geocodio
-        let geocode_result = geocodio
-            .geocode(
-                geocodio::AddressParams::AddressInput(geocodio::AddressInput {
-                    line_1: address.line_1,
-                    line_2: address.line_2,
-                    city: address.city,
-                    state: address.state.to_string(),
-                    country: address.country,
-                    postal_code: address.postal_code,
-                }),
-                Some(&["cd118", "stateleg-next"]),
-            )
-            .await;
-
-        if let Ok(geocodio_data) = geocode_result {
-            let city = geocodio_data.results[0]
-                .address_components
-                .city
-                .clone()
-                .unwrap_or(address_clone.city);
-            let coordinates = geocodio_data.results[0].location.clone();
-            let county = geocodio_data.results[0].address_components.county.clone();
-            let primary_result = geocodio_data.results[0].fields.as_ref().unwrap();
-            let congressional_district =
-                &primary_result.congressional_districts.as_ref().unwrap()[0].district_number;
-            let state_legislative_districts =
-                primary_result.state_legislative_districts.as_ref().unwrap();
-            let state_house_district = &state_legislative_districts.house[0].district_number;
-            let state_senate_district = &state_legislative_districts.senate[0].district_number;
-
-            let temp_address_record = sqlx::query!(r#"
-                    INSERT INTO address (line_1, line_2, city, state, county, country, postal_code, lon, lat, geog, geom, congressional_district, state_senate_district, state_house_district)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, ST_SetSRID(ST_MakePoint($8, $9), 4326), ST_GeomFromText($10, 4326), $11, $12, $13)
-                    ON CONFLICT (line_1, line_2, city, state, country, postal_code) -- adjust the conflict target columns as per your unique constraint
-                    DO UPDATE SET
-                        lon = EXCLUDED.lon,
-                        lat = EXCLUDED.lat,
-                        geog = EXCLUDED.geog,
-                        geom = EXCLUDED.geom,
-                        congressional_district = EXCLUDED.congressional_district,
-                        state_senate_district = EXCLUDED.state_senate_district,
-                        state_house_district = EXCLUDED.state_house_district
-                    RETURNING id
-
-            "#, 
-            address_clone.line_1,
-            address_clone.line_2,
-            city,
-            address_clone.state.to_string(),
-            county,
-            address_clone.country,
-            address_clone.postal_code,
-            coordinates.longitude,
-            coordinates.latitude,
-            format!("POINT({} {})", coordinates.longitude, coordinates.latitude), // A string we pass into ST_GeomFromText function
-            &congressional_district.to_string(),
-            state_senate_district,
-            state_house_district
-            ).fetch_one(&db_pool).await?;
-
-            let election_id = uuid::Uuid::parse_str(&self.id)?;
-            let address_id = temp_address_record.id;
-            let races = get_races_by_address_id(&db_pool, &election_id, &address_id).await?;
-
-            // TODO - Clean up and delete temp address record in separate thread
-            // Need to determine if new address was created or existing address was updated so we
-            // don't delete an address that is still in use
-            // tokio::spawn(async move {
-            //     if let Err(err) = sqlx::query!(
-            //         r#"
-            //         DELETE FROM address
-            //         WHERE id = $1
-            //         "#,
-            //         address_id
-            //     )
-            //     .execute(&db_pool)
-            //     .await
-            //     {
-            //         tracing::error!("Failed to delete address: {:?}", err);
-            //     }
-            // });
-
-            Ok(races)
-        } else {
-            Err(Error::BadInput {
-                field: "address".to_string(),
-                message: "Invalid address".to_string(),
-            }
-            .into())
-        }
+        let address_id = process_address_with_geocodio(&db_pool, address).await?;
+        let races = get_races_by_address_id(&db_pool, &election_id, &address_id).await?;
+        Ok(races)
     }
 
     /// Show races relevant to the user based on their address
@@ -483,6 +523,69 @@ impl ElectionResult {
             .collect();
 
         Ok(results)
+    }
+
+    async fn ballot_measures_by_address(
+        &self,
+        ctx: &Context<'_>,
+        address: AddressInput,
+    ) -> Result<Vec<BallotMeasureResult>> {
+        let election_id = uuid::Uuid::parse_str(&self.id)?;
+        let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+        let address_id = process_address_with_geocodio(&db_pool, address).await?;
+        let user_address_data = sqlx::query!(
+            r#"
+            SELECT
+                a.congressional_district,
+                a.state_senate_district,
+                a.state_house_district,
+                a.state AS "state:State",
+                a.postal_code,
+                a.county,
+                a.city
+            FROM
+                address AS a
+            WHERE
+                
+                a.id = $1
+            "#,
+            address_id
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        // Only handling statewide ballot measures for now
+        let records = sqlx::query_as!(
+            BallotMeasure,
+            r#"
+            SELECT
+                bm.id,
+                bm.slug,
+                bm.title,
+                bm.description,
+                bm.status AS "status:BallotMeasureStatus",
+                bm.ballot_measure_code,
+                bm.measure_type,
+                bm.definitions,
+                bm.official_summary,
+                bm.populist_summary,
+                bm.full_text_url,
+                bm.election_id,
+                bm.state AS "state:State",
+                bm.created_at,
+                bm.updated_at
+            FROM
+                ballot_measure bm
+            WHERE
+                bm.election_id = $1
+                AND bm.state = $2::state
+            "#,
+            &election_id,
+            user_address_data.state as State
+        )
+        .fetch_all(&db_pool)
+        .await?;
+        Ok(records.into_iter().map(BallotMeasureResult::from).collect())
     }
 }
 
