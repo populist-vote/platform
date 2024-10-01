@@ -42,35 +42,35 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
     let mut results_file_paths: HashMap<&str, &str> = HashMap::new();
     results_file_paths.insert(
         "U.S. Senator Statewide",
-        "https://electionresultsfiles.sos.state.mn.us/20240813/ussenate.txt",
+        "https://electionresultsfiles.sos.state.mn.us/20241105/ussenate.txt",
     );
     results_file_paths.insert(
         "U.S. Representative by District",
-        "https://electionresultsfiles.sos.state.mn.us/20240813/ushouse.txt",
+        "https://electionresultsfiles.sos.state.mn.us/20241105/ushouse.txt",
     );
     results_file_paths.insert(
         "State Senator by District",
-        "https://electionresultsfiles.sos.state.mn.us/20240813/stsenate.txt",
+        "https://electionresultsfiles.sos.state.mn.us/20241105/stsenate.txt",
     );
     results_file_paths.insert(
         "County Races",
-        "https://electionresultsfiles.sos.state.mn.us/20240813/cntyRaces.txt",
+        "https://electionresultsfiles.sos.state.mn.us/20241105/cntyRaces.txt",
     );
     results_file_paths.insert(
         "Municipal Races and Questions",
-        "https://electionresultsfiles.sos.state.mn.us/20240813/local.txt",
+        "https://electionresultsfiles.sos.state.mn.us/20241105/local.txt",
     );
     results_file_paths.insert(
         "School Board Races",
-        "https://electionresultsfiles.sos.state.mn.us/20240813/sdrace.txt",
+        "https://electionresultsfiles.sos.state.mn.us/20241105/sdrace.txt",
     );
     results_file_paths.insert(
         "State Representative by District",
-        "https://electionresultsfiles.sos.mn.gov/20240813/LegislativeByDistrict.txt",
+        "https://electionresultsfiles.sos.mn.gov/20241105/LegislativeByDistrict.txt",
     );
     results_file_paths.insert(
         "District Court Judges",
-        "https://electionresultsfiles.sos.mn.gov/20240813/judicialdst.txt",
+        "https://electionresultsfiles.sos.mn.gov/20241105/judicialdst.txt",
     );
 
     let client = Client::new();
