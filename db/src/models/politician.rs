@@ -137,6 +137,50 @@ pub struct UpdatePoliticianInput {
     pub race_losses: Option<i32>,
 }
 
+#[serde_with::serde_as]
+#[derive(InputObject, Debug, Default, Serialize, Deserialize)]
+pub struct UpsertPoliticianInput {
+    pub id: Option<uuid::Uuid>,
+    pub slug: Option<String>,
+    pub first_name: Option<String>,
+    pub middle_name: Option<String>,
+    pub last_name: Option<String>,
+    pub suffix: Option<String>,
+    pub preferred_name: Option<String>,
+    pub full_name: Option<String>,
+    pub biography: Option<String>,
+    pub biography_source: Option<String>,
+    pub home_state: Option<State>,
+    pub date_of_birth: Option<NaiveDate>,
+    pub office_id: Option<uuid::Uuid>,
+    pub upcoming_race_id: Option<uuid::Uuid>,
+    pub thumbnail_image_url: Option<String>,
+    #[serde_as(as = "serde_with::json::JsonString")]
+    pub assets: Option<JSON>,
+    pub official_website_url: Option<String>,
+    pub campaign_website_url: Option<String>,
+    pub facebook_url: Option<String>,
+    pub twitter_url: Option<String>,
+    pub instagram_url: Option<String>,
+    pub youtube_url: Option<String>,
+    pub linkedin_url: Option<String>,
+    pub tiktok_url: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub party_id: Option<uuid::Uuid>,
+    pub issue_tags: Option<CreateOrConnectIssueTagInput>,
+    pub organization_endorsements: Option<CreateOrConnectOrganizationInput>,
+    pub politician_endorsements: Option<CreateOrConnectPoliticianInput>,
+    pub votesmart_candidate_id: Option<i32>,
+    pub votesmart_candidate_bio: Option<JSON>,
+    pub votesmart_candidate_ratings: Option<JSON>,
+    pub legiscan_people_id: Option<i32>,
+    pub crp_candidate_id: Option<String>,
+    pub fec_candidate_id: Option<String>,
+    pub race_wins: Option<i32>,
+    pub race_losses: Option<i32>,
+}
+
 pub enum PoliticianIdentifier {
     Uuid(uuid::Uuid),
     Slug(String),
@@ -255,6 +299,132 @@ impl Politician {
         ).fetch_one(db_pool).await?;
 
         Ok(record)
+    }
+
+    pub async fn upsert_from_source(
+        db_pool: &PgPool,
+        input: &UpsertPoliticianInput,
+    ) -> Result<Self, sqlx::Error> {
+        input
+            .slug
+            .as_ref()
+            .ok_or("slug is required")
+            .map_err(|err| sqlx::Error::AnyDriverError(err.into()))?;
+
+        sqlx::query_as!(
+            Politician,
+            r#"
+            INSERT INTO politician (slug, first_name, middle_name, last_name, suffix, preferred_name, full_name, biography, biography_source, home_state, date_of_birth, office_id, upcoming_race_id, thumbnail_image_url, assets, official_website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, phone, party_id, votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses)
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, COALESCE($15, '{}'::jsonb), $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, COALESCE($28, '{}'::jsonb), COALESCE($29, '{}'::jsonb), $30, $31, $32, $33, $34) 
+            ON CONFLICT (slug) DO UPDATE SET
+                first_name = COALESCE($2, politician.first_name),
+                middle_name = COALESCE($3, politician.middle_name),
+                last_name = COALESCE($4, politician.last_name),
+                suffix = COALESCE($5, politician.suffix),
+                preferred_name = COALESCE($6, politician.preferred_name),
+                full_name = COALESCE($7, politician.full_name),
+                biography = COALESCE($8, politician.biography),
+                biography_source = COALESCE($9, politician.biography_source),
+                home_state = COALESCE($10, politician.home_state),
+                date_of_birth = COALESCE($11, politician.date_of_birth),
+                office_id = COALESCE($12, politician.office_id),
+                upcoming_race_id = COALESCE($13, politician.upcoming_race_id),
+                thumbnail_image_url = COALESCE($14, politician.thumbnail_image_url),
+                assets = COALESCE($15, politician.assets),
+                official_website_url = COALESCE($16, politician.official_website_url),
+                campaign_website_url = COALESCE($17, politician.campaign_website_url),
+                facebook_url = COALESCE($18, politician.facebook_url),
+                twitter_url = COALESCE($19, politician.twitter_url),
+                instagram_url = COALESCE($20, politician.instagram_url),
+                youtube_url = COALESCE($21, politician.youtube_url),
+                linkedin_url = COALESCE($22, politician.linkedin_url),
+                tiktok_url = COALESCE($23, politician.tiktok_url),
+                email = COALESCE($24, politician.email),
+                phone = COALESCE($25, politician.phone),
+                party_id = COALESCE($26, politician.party_id),
+                votesmart_candidate_id = COALESCE($27, politician.votesmart_candidate_id),
+                votesmart_candidate_bio = COALESCE($28, politician.votesmart_candidate_bio),
+                votesmart_candidate_ratings = COALESCE($29, politician.votesmart_candidate_ratings),
+                legiscan_people_id = COALESCE($30, politician.legiscan_people_id),
+                crp_candidate_id = COALESCE($31, politician.crp_candidate_id),
+                fec_candidate_id = COALESCE($32, politician.fec_candidate_id),
+                race_wins = COALESCE($33, politician.race_wins),
+                race_losses = COALESCE($34, politician.race_losses)
+            RETURNING
+                id,
+                slug,
+                first_name,
+                middle_name,
+                last_name,
+                suffix,
+                preferred_name,
+                full_name,
+                biography,
+                biography_source,
+                home_state AS "home_state:State",
+                date_of_birth,
+                office_id,
+                upcoming_race_id,
+                thumbnail_image_url,
+                assets,
+                official_website_url,
+                campaign_website_url,
+                facebook_url,
+                twitter_url,
+                instagram_url,
+                youtube_url,
+                linkedin_url,
+                tiktok_url,
+                email,
+                phone,
+                party_id,
+                votesmart_candidate_id,
+                votesmart_candidate_bio,
+                votesmart_candidate_ratings,
+                legiscan_people_id,
+                crp_candidate_id,
+                fec_candidate_id,
+                race_wins,
+                race_losses,
+                created_at,
+                updated_at
+
+            "#, 
+            input.slug,
+            input.first_name,
+            input.middle_name,
+            input.last_name,
+            input.suffix,
+            input.preferred_name,
+            input.full_name,
+            input.biography,
+            input.biography_source,
+            input.home_state as Option<State>,
+            input.date_of_birth as Option<NaiveDate>,
+            input.office_id,
+            input.upcoming_race_id,
+            input.thumbnail_image_url,
+            input.assets,
+            input.official_website_url,
+            input.campaign_website_url,
+            input.facebook_url,
+            input.twitter_url,
+            input.instagram_url,
+            input.youtube_url,
+            input.linkedin_url,
+            input.tiktok_url,
+            input.email,
+            input.phone,
+            input.party_id,
+            input.votesmart_candidate_id,
+            input.votesmart_candidate_bio,
+            input.votesmart_candidate_ratings,
+            input.legiscan_people_id,
+            input.crp_candidate_id,
+            input.fec_candidate_id,
+            input.race_wins,
+            input.race_losses,
+        ).fetch_one(db_pool).await
     }
 
     pub async fn update(

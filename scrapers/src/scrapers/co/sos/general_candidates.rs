@@ -11,11 +11,16 @@ use crate::{
 
 const HTML_PATH: &str = "co/sos/general_candidates.html";
 const PAGE_URL: &str = "https://www.sos.state.co.us/pubs/elections/vote/generalCandidates.html";
+const SOURCE_ID: &str = "CO-SOS";
 
 #[derive(Default)]
 pub struct Scraper {}
 
 impl crate::Scraper for Scraper {
+    fn source_id(&self) -> &'static str {
+        SOURCE_ID
+    }
+
     async fn run(&self, context: &crate::ScraperContext<'_>) -> Result<(), Box<dyn Error>> {
         let html = reqwest::get(PAGE_URL).await?.text().await?;
         Self::scrape_html(html, context).await
@@ -84,6 +89,18 @@ impl Scraper {
             } else {
                 None
             };
+
+            let politician = Self::build_politician_input(&entry);
+            let _politician =
+                match db::Politician::upsert_from_source(&context.db.connection, &politician).await
+                {
+                    Ok(politician) => politician,
+                    Err(err) => {
+                        // TODO - Track/log error
+                        println!("Error upserting Politician: {err}");
+                        continue;
+                    }
+                };
         }
         Ok(())
     }
@@ -230,6 +247,18 @@ impl Scraper {
             slug: Some(slug),
             ..Default::default()
         })
+    }
+
+    fn build_politician_input(entry: &CandidateEntry) -> db::UpsertPoliticianInput {
+        let slug = PoliticianSlugGenerator::new(SOURCE_ID, entry.name.as_str()).generate();
+        db::UpsertPoliticianInput {
+            slug: Some(slug),
+            full_name: Some(entry.name.clone()),
+            first_name: Some("".into()), // TODO
+            last_name: Some("".into()),  // TODO
+            campaign_website_url: entry.website.clone(),
+            ..Default::default()
+        }
     }
 }
 
