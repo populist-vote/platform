@@ -24,6 +24,10 @@ pub struct BallotMeasureResult {
     official_summary: Option<String>,
     populist_summary: Option<String>,
     full_text_url: Option<String>,
+    yes_votes: Option<i32>,
+    no_votes: Option<i32>,
+    num_precincts_reporting: Option<i32>,
+    total_precincts: Option<i32>,
 }
 
 #[ComplexObject]
@@ -58,6 +62,10 @@ impl From<BallotMeasure> for BallotMeasureResult {
             official_summary: b.official_summary,
             populist_summary: b.populist_summary,
             full_text_url: b.full_text_url,
+            yes_votes: b.yes_votes,
+            no_votes: b.no_votes,
+            num_precincts_reporting: b.num_precincts_reporting,
+            total_precincts: b.total_precincts,
         }
     }
 }
