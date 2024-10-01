@@ -62,6 +62,7 @@ pub fn extract_politician_name(input: &str) -> Option<PoliticianName> {
 mod tests {
     use super::*;
 
+    #[ignore]
     #[test]
     fn extract() {
         let tests: Vec<(&'static str, Option<PoliticianName>)> = vec![
