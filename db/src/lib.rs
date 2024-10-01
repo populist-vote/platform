@@ -19,6 +19,7 @@ pub use models::issue_tag::*;
 pub use models::office::*;
 pub use models::organization::*;
 pub use models::organization_politician_note::*;
+pub use models::party::*;
 pub use models::politician::*;
 pub use models::poll::*;
 pub use models::question::*;

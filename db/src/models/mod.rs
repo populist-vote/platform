@@ -11,6 +11,7 @@ pub mod issue_tag;
 pub mod office;
 pub mod organization;
 pub mod organization_politician_note;
+pub mod party;
 pub mod politician;
 pub mod poll;
 pub mod question;

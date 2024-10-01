@@ -1,9 +1,11 @@
 mod election;
 mod office;
+mod party;
 mod race;
 
 pub use election::*;
 pub use office::*;
+pub use party::*;
 pub use race::*;
 
 #[inline]
