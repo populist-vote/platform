@@ -1,8 +1,12 @@
 use async_graphql::{ComplexObject, Context, Result, SimpleObject, ID};
-use db::models::{
-    ballot_measure::BallotMeasure,
-    enums::{BallotMeasureStatus, State},
+use db::{
+    models::{
+        ballot_measure::BallotMeasure,
+        enums::{BallotMeasureStatus, State},
+    },
+    PublicVotes,
 };
+use uuid::Uuid;
 
 use crate::context::ApiContext;
 
@@ -35,6 +39,24 @@ impl BallotMeasureResult {
     async fn arguments(&self, _ctx: &Context<'_>) -> Result<Vec<ArgumentResult>> {
         //Change to ArgumentResult once implemented
         todo!()
+    }
+
+    async fn public_votes(&self, ctx: &Context<'_>) -> Result<PublicVotes> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let results = sqlx::query_as!(
+            PublicVotes,
+            r#"
+                SELECT SUM(CASE WHEN position = 'support' THEN 1 ELSE 0 END) as support,
+                       SUM(CASE WHEN position = 'neutral' THEN 1 ELSE 0 END) as neutral,
+                       SUM(CASE WHEN position = 'oppose' THEN 1 ELSE 0 END) as oppose
+                FROM ballot_measure_public_votes WHERE ballot_measure_id = $1
+            "#,
+            Uuid::parse_str(&self.id).unwrap(),
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(results)
     }
 
     async fn issue_tags(&self, ctx: &Context<'_>) -> Result<Vec<IssueTagResult>> {
