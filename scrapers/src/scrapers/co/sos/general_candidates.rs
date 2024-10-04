@@ -77,7 +77,7 @@ impl Scraper {
             };
 
             let party = Self::build_party_input(&entry);
-            let _party = if let Some(party) = party {
+            let party = if let Some(party) = party {
                 match db::Party::upsert_from_source(&context.db.connection, &party).await {
                     Ok(party) => Some(party),
                     Err(err) => {
@@ -90,7 +90,7 @@ impl Scraper {
                 None
             };
 
-            let politician = Self::build_politician_input(&entry);
+            let politician = Self::build_politician_input(&entry, party);
             let _politician =
                 match db::Politician::upsert_from_source(&context.db.connection, &politician).await
                 {
@@ -249,13 +249,21 @@ impl Scraper {
         })
     }
 
-    fn build_politician_input(entry: &CandidateEntry) -> db::UpsertPoliticianInput {
+    fn build_politician_input(
+        entry: &CandidateEntry,
+        party: Option<db::Party>,
+    ) -> db::UpsertPoliticianInput {
         let slug = PoliticianSlugGenerator::new(SOURCE_ID, entry.name.as_str()).generate();
+        let party_id = match party {
+            Some(party) => Some(party.id),
+            None => None,
+        };
         db::UpsertPoliticianInput {
             slug: Some(slug),
             full_name: Some(entry.name.clone()),
             first_name: Some("".into()), // TODO
             last_name: Some("".into()),  // TODO
+            party_id,                    // TODO
             campaign_website_url: entry.website.clone(),
             ..Default::default()
         }
