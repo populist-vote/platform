@@ -1,4 +1,4 @@
-use crate::{DateTime, IssueTag};
+use crate::{DateTime, IssueTag, PoliticalScope, PopularitySort};
 use async_graphql::InputObject;
 use sqlx::postgres::PgPool;
 use sqlx::FromRow;
@@ -47,12 +47,19 @@ pub struct UpsertBallotMeasureInput {
     pub full_text_url: Option<String>,
 }
 
-#[derive(InputObject)]
-pub struct BallotMeasureSearch {
-    slug: Option<String>,
-    title: Option<String>,
+#[derive(InputObject, Default, Debug)]
+pub struct BallotMeasureFilter {
+    query: Option<String>,
+    political_scope: Option<PoliticalScope>,
     state: Option<State>,
+    year: Option<i32>,
     status: Option<BallotMeasureStatus>,
+    issue_tag: Option<String>,
+}
+
+#[derive(InputObject, Default, Debug)]
+pub struct BallotMeasureSort {
+    popularity: Option<PopularitySort>,
 }
 
 impl BallotMeasure {
@@ -111,33 +118,73 @@ impl BallotMeasure {
         Ok(())
     }
 
-    pub async fn index(db_pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
-        let records = sqlx::query_as!(BallotMeasure, r#"SELECT id, election_id, slug, title, status AS "status: BallotMeasureStatus", state AS "state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url,  yes_votes, no_votes, num_precincts_reporting, total_precincts, created_at, updated_at FROM ballot_measure"#,)
-            .fetch_all(db_pool)
-            .await?;
-        Ok(records)
-    }
-
-    pub async fn search(
+    pub async fn filter(
         db_pool: &PgPool,
-        search: &BallotMeasureSearch,
+        filter: &BallotMeasureFilter,
+        sort: &BallotMeasureSort,
     ) -> Result<Vec<Self>, sqlx::Error> {
-        let records = sqlx::query_as!(
-            BallotMeasure,
+        let query = format!(
             r#"
                 SELECT id, election_id, slug, title, status AS "status: BallotMeasureStatus", state AS "state:State", ballot_measure_code, measure_type, definitions, description, official_summary, populist_summary, full_text_url,  yes_votes, no_votes, num_precincts_reporting, total_precincts, created_at, updated_at FROM ballot_measure
-                WHERE ($1::text IS NULL OR slug = $1)
-                AND ($2::text IS NULL OR levenshtein($2, title) <=5)
-                AND ($3::state IS NULL OR state = $3)
-                AND ($4::ballot_measure_status IS NULL OR status = $4)
+                LEFT JOIN ballot_measure_public_votes bpv ON bpv.ballot_measure_id = ballot_measure.id
+                JOIN election e ON e.id = ballot_measure.election_id,
+                LATERAL (
+                    SELECT
+                    ARRAY (
+                        SELECT
+                        t.slug
+                        FROM
+                        ballot_measure_issue_tags bit
+                        JOIN issue_tag t ON t.id = bit.issue_tag_id
+                        WHERE
+                        bit.bill_id = bill.id
+                    ) AS tag_array
+                ) t,
+                to_tsvector(title || ' ' || ballot_measure_code || ' ' || COALESCE(bill.description, '') document,
+                websearch_to_tsquery ($1::text) query,
+                NULLIF(ts_rank(to_tsvector(ballot_measure_code), query), 0) rank_ballot_measure_code,
+                NULLIF(ts_rank(to_tsvector(title), query), 0) rank_title,
+                NULLIF(ts_rank(to_tsvector(ballot_measure.description), query), 0) rank_description
+                WHERE ($1::text IS NULL OR document @@ query)
+                AND($2::bill_status IS NULL OR status = $2)
+                AND($3::political_scope IS NULL OR political_scope = $3)
+                AND(
+                    ($4::state IS NULL OR bill.state = $4)
+                    OR $3::political_scope = 'federal'
+                )
+                AND ($5::integer IS NULL OR EXTRACT(YEAR FROM session.start_date) = $5)
+                AND ($6::text IS NULL OR $6::text = ANY(t.tag_array))
+                GROUP BY
+                (
+                    bill.id,
+                    rank_bill_number,
+                    rank_title,
+                    rank_description,
+                    t.tag_array
+                )
+                ORDER BY {order_by}
+                LIMIT 20
+                
             "#,
-            search.slug,
-            search.title,
-            search.state as Option<State>,
-            search.status as Option<BallotMeasureStatus>
-        )
-        .fetch_all(db_pool)
-        .await?;
+            order_by = match sort.popularity {
+                Some(PopularitySort::MostPopular) => "rank_bill_number, rank_title, rank_description, COUNT(bpv.*) DESC NULLS LAST",
+                Some(PopularitySort::MostSupported) =>
+                    "rank_bill_number, rank_title, rank_description, SUM(CASE WHEN bpv.position = 'support' THEN 1 ELSE 0 END)DESC NULLS LAST",
+                Some(PopularitySort::MostOpposed) =>
+                    "rank_bill_number, rank_title, rank_description, SUM(CASE WHEN bpv.position = 'oppose' THEN 1 ELSE 0 END) DESC NULLS LAST",
+                None => "rank_bill_number, rank_title, rank_description DESC NULLS LAST",
+            }
+        );
+
+        let records = sqlx::query_as::<_, BallotMeasure>(&query)
+            .bind(filter.query.to_owned())
+            .bind(filter.status)
+            .bind(filter.political_scope)
+            .bind(filter.state)
+            .bind(filter.year)
+            .bind(filter.issue_tag.to_owned())
+            .fetch_all(db_pool)
+            .await?;
         Ok(records)
     }
 

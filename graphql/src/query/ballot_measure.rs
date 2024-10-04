@@ -1,31 +1,36 @@
-use async_graphql::{Context, FieldResult, Object};
-use db::{BallotMeasure, BallotMeasureSearch};
+use async_graphql::{Context, Object};
+use db::{BallotMeasure, BallotMeasureFilter, BallotMeasureSort};
 
-use crate::{context::ApiContext, types::BallotMeasureResult};
+use crate::{context::ApiContext, relay, types::BallotMeasureResult};
 
 #[derive(Default)]
 pub struct BallotMeasureQuery;
 
 #[Object]
 impl BallotMeasureQuery {
-    async fn all_ballot_measures(
-        &self,
-        ctx: &Context<'_>,
-    ) -> FieldResult<Vec<BallotMeasureResult>> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let records = BallotMeasure::index(&db_pool).await?;
-        let results = records.into_iter().map(BallotMeasureResult::from).collect();
-        Ok(results)
-    }
-
     async fn ballot_measures(
         &self,
         ctx: &Context<'_>,
-        #[graphql(desc = "Search by voteStatus, name, or slug")] search: BallotMeasureSearch,
-    ) -> FieldResult<Vec<BallotMeasureResult>> {
+        filter: Option<BallotMeasureFilter>,
+        sort: Option<BallotMeasureSort>,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+    ) -> relay::ConnectionResult<BallotMeasureResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let records = BallotMeasure::search(&db_pool, &search).await?;
-        let results = records.into_iter().map(BallotMeasureResult::from).collect();
-        Ok(results)
+        let records = BallotMeasure::filter(
+            &db_pool,
+            &filter.unwrap_or_default(),
+            &sort.unwrap_or_default(),
+        )
+        .await?;
+
+        relay::query(
+            records.into_iter().map(BallotMeasureResult::from),
+            relay::Params::new(after, before, first, last),
+            10,
+        )
+        .await
     }
 }
