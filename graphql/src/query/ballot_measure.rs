@@ -1,4 +1,4 @@
-use async_graphql::{Context, Object};
+use async_graphql::{Context, Object, ID};
 use db::{BallotMeasure, BallotMeasureFilter, BallotMeasureSort};
 
 use crate::{context::ApiContext, relay, types::BallotMeasureResult};
@@ -8,6 +8,14 @@ pub struct BallotMeasureQuery;
 
 #[Object]
 impl BallotMeasureQuery {
+    async fn ballot_measure_by_id(&self, ctx: &Context<'_>, id: ID) -> Option<BallotMeasureResult> {
+        let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+        let record = BallotMeasure::find_by_id(&db_pool, uuid::Uuid::parse_str(&id).unwrap())
+            .await
+            .unwrap();
+        Some(BallotMeasureResult::from(record))
+    }
+
     async fn ballot_measures(
         &self,
         ctx: &Context<'_>,
