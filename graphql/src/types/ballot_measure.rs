@@ -4,13 +4,13 @@ use db::{
         ballot_measure::BallotMeasure,
         enums::{BallotMeasureStatus, State},
     },
-    PublicVotes,
+    Election, PublicVotes,
 };
 use uuid::Uuid;
 
 use crate::context::ApiContext;
 
-use super::{ArgumentResult, IssueTagResult};
+use super::{ArgumentResult, ElectionResult, IssueTagResult};
 
 #[derive(SimpleObject)]
 #[graphql(complex)]
@@ -65,6 +65,21 @@ impl BallotMeasureResult {
             BallotMeasure::issue_tags(&db_pool, uuid::Uuid::parse_str(&self.id).unwrap()).await?;
         let results = records.into_iter().map(IssueTagResult::from).collect();
         Ok(results)
+    }
+
+    async fn election(&self, ctx: &Context<'_>) -> Result<ElectionResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let record = sqlx::query_as!(
+            Election,
+            r#"
+            SELECT id, slug, title, description, state AS "state:State", municipality, election_date 
+            FROM election WHERE id = $1"#,
+            uuid::Uuid::parse_str(self.election_id.as_str()).unwrap()
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(record.into())
     }
 }
 
