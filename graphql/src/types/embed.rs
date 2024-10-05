@@ -6,8 +6,8 @@ use serde_json::Value as JSON;
 use crate::context::ApiContext;
 
 use super::{
-    BillResult, CandidateGuideRaceResult, CandidateGuideResult, ElectionResult, Error,
-    PoliticianResult, PollResult, QuestionResult, RaceResult, UserResult,
+    BallotMeasureResult, BillResult, CandidateGuideRaceResult, CandidateGuideResult,
+    ElectionResult, Error, PoliticianResult, PollResult, QuestionResult, RaceResult, UserResult,
 };
 
 #[derive(SimpleObject, Clone, Debug)]
@@ -89,6 +89,18 @@ impl EmbedResult {
         .await?;
 
         Ok(records)
+    }
+
+    async fn ballot_measure(&self, ctx: &Context<'_>) -> Result<Option<BallotMeasureResult>> {
+        let ballot_measure_id = self.attributes["ballotMeasureId"].as_str();
+        if let Some(ballot_measure_id) = ballot_measure_id {
+            let ballot_measure_id = uuid::Uuid::parse_str(ballot_measure_id)?;
+            let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+            let record = db::BallotMeasure::find_by_id(&db_pool, ballot_measure_id).await?;
+            Ok(Some(record.into()))
+        } else {
+            Ok(None)
+        }
     }
 
     async fn bill(&self, ctx: &Context<'_>) -> Result<Option<BillResult>> {

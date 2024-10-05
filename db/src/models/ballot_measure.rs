@@ -117,6 +117,40 @@ impl BallotMeasure {
         Ok(())
     }
 
+    pub async fn find_by_id(db_pool: &PgPool, id: uuid::Uuid) -> Result<Self, sqlx::Error> {
+        let record = sqlx::query_as!(
+            BallotMeasure,
+            r#"
+                SELECT 
+                    ballot_measure.id, 
+                    election_id, 
+                    ballot_measure.slug, 
+                    ballot_measure.title, 
+                    ballot_measure.status AS "status: BallotMeasureStatus", 
+                    ballot_measure.state AS "state:State", 
+                    ballot_measure_code, 
+                    measure_type, 
+                    definitions, 
+                    ballot_measure.description, 
+                    official_summary, 
+                    populist_summary, 
+                    full_text_url, 
+                    yes_votes, 
+                    no_votes, 
+                    num_precincts_reporting, 
+                    total_precincts, 
+                    ballot_measure.created_at, 
+                    ballot_measure.updated_at 
+                FROM ballot_measure 
+                WHERE id = $1
+            "#,
+            id
+        )
+        .fetch_one(db_pool)
+        .await?;
+        Ok(record)
+    }
+
     pub async fn filter(
         db_pool: &PgPool,
         filter: &BallotMeasureFilter,
