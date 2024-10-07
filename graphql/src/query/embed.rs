@@ -181,7 +181,7 @@ impl EmbedQuery {
                     question q ON cgq.question_id = q.id
                 LEFT JOIN
                     question_submission qs ON q.id = qs.question_id
-                WHERE cg.organization_id = $1
+                WHERE cg.organization_id = $1 AND TRIM(qs.response) != ''
                 GROUP BY
                     cg.id
             )
