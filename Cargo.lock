@@ -3609,6 +3609,7 @@ name = "scrapers"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "colored",
  "csv",
  "db",
  "project-root",
@@ -3616,6 +3617,7 @@ dependencies = [
  "reqwest 0.12.7",
  "scraper",
  "slugify",
+ "spinoff",
  "sqlx",
  "thirtyfour",
  "tokio",
@@ -4031,6 +4033,17 @@ dependencies = [
  "lazy_static",
  "maplit",
  "strum 0.24.1",
+]
+
+[[package]]
+name = "spinoff"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "20aa2ed67fbb202e7b716ff8bfc6571dd9301617767380197d701c31124e88f6"
+dependencies = [
+ "colored",
+ "once_cell",
+ "paste",
 ]
 
 [[package]]

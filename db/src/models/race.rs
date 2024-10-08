@@ -359,7 +359,7 @@ impl RaceCandidate {
     pub async fn upsert_from_source(
         db_pool: &PgPool,
         input: &UpsertRaceCandidateInput,
-    ) -> Result<Self, sqlx::Error> {
+    ) -> Result<Option<Self>, sqlx::Error> {
         sqlx::query_as!(
             RaceCandidate,
             r#"
@@ -371,7 +371,7 @@ impl RaceCandidate {
             input.race_id,
             input.candidate_id,
         )
-        .fetch_one(db_pool)
+        .fetch_optional(db_pool)
         .await
     }
 }
