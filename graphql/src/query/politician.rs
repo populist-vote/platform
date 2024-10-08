@@ -103,6 +103,7 @@ impl PoliticianQuery {
                 SELECT DISTINCT ON (p.id)
                         p.id,
                         p.slug,
+                        p.ref_key,
                         p.first_name,
                         p.middle_name,
                         last_name,

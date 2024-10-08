@@ -112,6 +112,7 @@ impl RaceResult {
                 SELECT
                     id,
                     slug,
+                    ref_key,
                     first_name,
                     middle_name,
                     last_name,

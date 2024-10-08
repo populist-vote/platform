@@ -264,6 +264,7 @@ impl PoliticianMutation {
             WHERE slug = $2
             RETURNING id,
             slug,
+            ref_key,
             first_name,
             middle_name,
             last_name,

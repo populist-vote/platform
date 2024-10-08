@@ -11,11 +11,16 @@ use crate::{
 
 const HTML_PATH: &str = "co/sos/general_candidates.html";
 const PAGE_URL: &str = "https://www.sos.state.co.us/pubs/elections/vote/generalCandidates.html";
+const SOURCE_ID: &str = "CO-SOS";
 
 #[derive(Default)]
 pub struct Scraper {}
 
 impl crate::Scraper for Scraper {
+    fn source_id(&self) -> &'static str {
+        SOURCE_ID
+    }
+
     async fn run(&self, context: &crate::ScraperContext<'_>) -> Result<(), Box<dyn Error>> {
         let html = reqwest::get(PAGE_URL).await?.text().await?;
         Self::scrape_html(html, context).await
@@ -72,7 +77,7 @@ impl Scraper {
             };
 
             let party = Self::build_party_input(&entry);
-            let _party = if let Some(party) = party {
+            let party = if let Some(party) = party {
                 match db::Party::upsert_from_source(&context.db.connection, &party).await {
                     Ok(party) => Some(party),
                     Err(err) => {
@@ -84,6 +89,18 @@ impl Scraper {
             } else {
                 None
             };
+
+            let politician = Self::build_politician_input(&entry, party);
+            let _politician =
+                match db::Politician::upsert_from_source(&context.db.connection, &politician).await
+                {
+                    Ok(politician) => politician,
+                    Err(err) => {
+                        // TODO - Track/log error
+                        println!("Error upserting Politician: {err}");
+                        continue;
+                    }
+                };
         }
         Ok(())
     }
@@ -230,6 +247,28 @@ impl Scraper {
             slug: Some(slug),
             ..Default::default()
         })
+    }
+
+    fn build_politician_input(
+        entry: &CandidateEntry,
+        party: Option<db::Party>,
+    ) -> db::UpsertPoliticianInput {
+        let slug = PoliticianSlugGenerator::new(entry.name.as_str()).generate();
+        let ref_key = PoliticianRefKeyGenerator::new(SOURCE_ID, entry.name.as_str()).generate();
+        let party_id = match party {
+            Some(party) => Some(party.id),
+            None => None,
+        };
+        db::UpsertPoliticianInput {
+            slug: Some(slug),
+            ref_key: Some(ref_key),
+            full_name: Some(entry.name.clone()),
+            first_name: Some("".into()), // TODO
+            last_name: Some("".into()),  // TODO
+            party_id,                    // TODO
+            campaign_website_url: entry.website.clone(),
+            ..Default::default()
+        }
     }
 }
 

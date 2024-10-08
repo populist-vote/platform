@@ -16,6 +16,7 @@ pub struct ScraperContext<'a> {
 }
 
 pub trait Scraper {
+    fn source_id(&self) -> &'static str;
     fn run(
         &self,
         context: &ScraperContext,
