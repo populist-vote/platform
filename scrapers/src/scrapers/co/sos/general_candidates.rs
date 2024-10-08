@@ -67,7 +67,7 @@ impl Scraper {
             };
 
             let race = Self::build_race_input(&election, &office);
-            let _race = match db::Race::upsert_from_source(&context.db.connection, &race).await {
+            let race = match db::Race::upsert_from_source(&context.db.connection, &race).await {
                 Ok(race) => race,
                 Err(err) => {
                     // TODO - Track/log error
@@ -90,8 +90,8 @@ impl Scraper {
                 None
             };
 
-            let politician = Self::build_politician_input(&entry, party);
-            let _politician =
+            let politician = Self::build_politician_input(&entry, &party);
+            let politician =
                 match db::Politician::upsert_from_source(&context.db.connection, &politician).await
                 {
                     Ok(politician) => politician,
@@ -101,6 +101,15 @@ impl Scraper {
                         continue;
                     }
                 };
+
+            let race_candidate = Self::build_race_candidate_input(&race, &politician);
+            if let Err(err) =
+                db::RaceCandidate::upsert_from_source(&context.db.connection, &race_candidate).await
+            {
+                // TODO - Track/log error
+                println!("Error upserting RaceCandidate: {err}");
+                continue;
+            }
         }
         Ok(())
     }
@@ -251,23 +260,30 @@ impl Scraper {
 
     fn build_politician_input(
         entry: &CandidateEntry,
-        party: Option<db::Party>,
+        party: &Option<db::Party>,
     ) -> db::UpsertPoliticianInput {
         let slug = PoliticianSlugGenerator::new(entry.name.as_str()).generate();
         let ref_key = PoliticianRefKeyGenerator::new(SOURCE_ID, entry.name.as_str()).generate();
-        let party_id = match party {
-            Some(party) => Some(party.id),
-            None => None,
-        };
+        let party_id = party.as_ref().map(|p| p.id);
         db::UpsertPoliticianInput {
             slug: Some(slug),
             ref_key: Some(ref_key),
             full_name: Some(entry.name.clone()),
             first_name: Some("".into()), // TODO
             last_name: Some("".into()),  // TODO
-            party_id,                    // TODO
+            party_id,
             campaign_website_url: entry.website.clone(),
             ..Default::default()
+        }
+    }
+
+    fn build_race_candidate_input(
+        race: &db::Race,
+        politician: &db::Politician,
+    ) -> db::UpsertRaceCandidateInput {
+        db::UpsertRaceCandidateInput {
+            race_id: race.id,
+            candidate_id: politician.id,
         }
     }
 }
