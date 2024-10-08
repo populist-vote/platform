@@ -9,7 +9,6 @@ use slugify::slugify;
 use sqlx::PgPool;
 
 #[derive(sqlx::FromRow, Debug, Clone)]
-
 pub struct Race {
     pub id: uuid::Uuid,
     pub slug: String,
@@ -65,6 +64,18 @@ pub struct RaceFilter {
     election_id: Option<uuid::Uuid>,
     race_type: Option<RaceType>,
     year: Option<i32>,
+}
+
+#[derive(sqlx::FromRow, Debug, Clone)]
+pub struct RaceCandidate {
+    pub race_id: uuid::Uuid,
+    pub candidate_id: uuid::Uuid,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize, InputObject)]
+pub struct UpsertRaceCandidateInput {
+    pub race_id: uuid::Uuid,
+    pub candidate_id: uuid::Uuid,
 }
 
 impl Race {
@@ -341,5 +352,26 @@ impl Race {
         let records = sqlx::query_as(query).fetch_all(db_pool).await?;
 
         Ok(records)
+    }
+}
+
+impl RaceCandidate {
+    pub async fn upsert_from_source(
+        db_pool: &PgPool,
+        input: &UpsertRaceCandidateInput,
+    ) -> Result<Self, sqlx::Error> {
+        sqlx::query_as!(
+            RaceCandidate,
+            r#"
+                INSERT INTO race_candidates (race_id, candidate_id)
+                VALUES ($1, $2)
+                ON CONFLICT (race_id, candidate_id) DO NOTHING
+                RETURNING race_id, candidate_id
+            "#,
+            input.race_id,
+            input.candidate_id,
+        )
+        .fetch_one(db_pool)
+        .await
     }
 }
