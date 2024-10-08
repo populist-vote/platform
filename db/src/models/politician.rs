@@ -15,6 +15,7 @@ use super::enums::{Chambers, PoliticalScope};
 pub struct Politician {
     pub id: uuid::Uuid,
     pub slug: String,
+    pub ref_key: Option<String>,
     pub first_name: String,
     pub middle_name: Option<String>,
     pub last_name: String,
@@ -226,6 +227,7 @@ impl Politician {
             RETURNING
                 id,
                 slug,
+                ref_key,
                 first_name,
                 middle_name,
                 last_name,
@@ -353,6 +355,7 @@ impl Politician {
             RETURNING
                 id,
                 slug,
+                ref_key,
                 first_name,
                 middle_name,
                 last_name,
@@ -473,6 +476,7 @@ impl Politician {
             RETURNING
                 id,
                 slug,
+                ref_key,
                 first_name,
                 middle_name,
                 last_name,
@@ -575,6 +579,7 @@ impl Politician {
             Politician,
             r#"SELECT id,
                         slug,
+                        ref_key,
                         first_name,
                         middle_name,
                         last_name,
@@ -622,6 +627,7 @@ impl Politician {
             r#"
                 SELECT id,
                         slug,
+                        ref_key,
                         first_name,
                         middle_name,
                         last_name,
@@ -672,6 +678,7 @@ impl Politician {
             r#"
                 SELECT id,
                         slug,
+                        ref_key,
                         first_name,
                         middle_name,
                         last_name,
@@ -726,6 +733,7 @@ impl Politician {
             r#"
                 SELECT id,
                         slug,
+                        ref_key,
                         first_name,
                         middle_name,
                         last_name,
@@ -781,6 +789,7 @@ impl Politician {
             r#"
                 SELECT  p.id,
                         p.slug,
+                        p.ref_key,
                         first_name,
                         middle_name,
                         last_name,
@@ -879,6 +888,7 @@ impl Politician {
             r#"
                 SELECT p.id,
                         slug,
+                        ref_key,
                         first_name,
                         middle_name,
                         last_name,
