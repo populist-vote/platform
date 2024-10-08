@@ -143,6 +143,7 @@ pub struct UpdatePoliticianInput {
 pub struct UpsertPoliticianInput {
     pub id: Option<uuid::Uuid>,
     pub slug: Option<String>,
+    pub ref_key: Option<String>,
     pub first_name: Option<String>,
     pub middle_name: Option<String>,
     pub last_name: Option<String>,
@@ -308,50 +309,94 @@ impl Politician {
         input: &UpsertPoliticianInput,
     ) -> Result<Self, sqlx::Error> {
         input
+            .ref_key
+            .as_ref()
+            .ok_or("ref_key is required")
+            .map_err(|err| sqlx::Error::AnyDriverError(err.into()))?;
+
+        input
             .slug
             .as_ref()
             .ok_or("slug is required")
             .map_err(|err| sqlx::Error::AnyDriverError(err.into()))?;
 
+        let slug = sqlx::query_scalar!(
+            r#"
+            SELECT CASE
+            WHEN EXISTS (
+                SELECT slug
+                FROM politician 
+                WHERE ref_key = $1 
+            ) THEN (
+                SELECT slug 
+                FROM politician 
+                WHERE ref_key = $1 
+            )
+            WHEN EXISTS (
+                SELECT 1 
+                FROM politician 
+                WHERE slug = $2 
+            ) THEN
+                $2 || '-' || COALESCE(
+                    (
+                        SELECT MAX(SUBSTRING(slug FROM LENGTH($2) + 2)::INT) 
+                        FROM politician 
+                        WHERE slug ~ ($2 || '-[0-9]+$')
+                    ), 0
+                ) + 1
+            ELSE
+                $2
+            END
+            "#,
+            input.ref_key,
+            input.slug,
+        )
+        .fetch_one(db_pool)
+        .await?
+        .ok_or_else(|| {
+            sqlx::Error::AnyDriverError("Failure determining slug for Politician".into())
+        })?;
+
         sqlx::query_as!(
             Politician,
             r#"
-            INSERT INTO politician (slug, first_name, middle_name, last_name, suffix, preferred_name, full_name, biography, biography_source, home_state, date_of_birth, office_id, upcoming_race_id, thumbnail_image_url, assets, official_website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, phone, party_id, votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses)
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, COALESCE($15, '{}'::jsonb), $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, COALESCE($28, '{}'::jsonb), COALESCE($29, '{}'::jsonb), $30, $31, $32, $33, $34) 
-            ON CONFLICT (slug) DO UPDATE SET
-                first_name = COALESCE($2, politician.first_name),
-                middle_name = COALESCE($3, politician.middle_name),
-                last_name = COALESCE($4, politician.last_name),
-                suffix = COALESCE($5, politician.suffix),
-                preferred_name = COALESCE($6, politician.preferred_name),
-                full_name = COALESCE($7, politician.full_name),
-                biography = COALESCE($8, politician.biography),
-                biography_source = COALESCE($9, politician.biography_source),
-                home_state = COALESCE($10, politician.home_state),
-                date_of_birth = COALESCE($11, politician.date_of_birth),
-                office_id = COALESCE($12, politician.office_id),
-                upcoming_race_id = COALESCE($13, politician.upcoming_race_id),
-                thumbnail_image_url = COALESCE($14, politician.thumbnail_image_url),
-                assets = COALESCE($15, politician.assets),
-                official_website_url = COALESCE($16, politician.official_website_url),
-                campaign_website_url = COALESCE($17, politician.campaign_website_url),
-                facebook_url = COALESCE($18, politician.facebook_url),
-                twitter_url = COALESCE($19, politician.twitter_url),
-                instagram_url = COALESCE($20, politician.instagram_url),
-                youtube_url = COALESCE($21, politician.youtube_url),
-                linkedin_url = COALESCE($22, politician.linkedin_url),
-                tiktok_url = COALESCE($23, politician.tiktok_url),
-                email = COALESCE($24, politician.email),
-                phone = COALESCE($25, politician.phone),
-                party_id = COALESCE($26, politician.party_id),
-                votesmart_candidate_id = COALESCE($27, politician.votesmart_candidate_id),
-                votesmart_candidate_bio = COALESCE($28, politician.votesmart_candidate_bio),
-                votesmart_candidate_ratings = COALESCE($29, politician.votesmart_candidate_ratings),
-                legiscan_people_id = COALESCE($30, politician.legiscan_people_id),
-                crp_candidate_id = COALESCE($31, politician.crp_candidate_id),
-                fec_candidate_id = COALESCE($32, politician.fec_candidate_id),
-                race_wins = COALESCE($33, politician.race_wins),
-                race_losses = COALESCE($34, politician.race_losses)
+            INSERT INTO politician (ref_key, slug, first_name, middle_name, last_name, suffix, preferred_name, full_name, biography, biography_source, home_state, date_of_birth, office_id, upcoming_race_id, thumbnail_image_url, assets, official_website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, phone, party_id, votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses)
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, COALESCE($16, '{}'::jsonb), $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, COALESCE($29, '{}'::jsonb), COALESCE($30, '{}'::jsonb), $31, $32, $33, $34, $35) 
+            ON CONFLICT (ref_key) DO UPDATE SET
+                slug = COALESCE($2, politician.slug),
+                first_name = COALESCE($3, politician.first_name),
+                middle_name = COALESCE($4, politician.middle_name),
+                last_name = COALESCE($5, politician.last_name),
+                suffix = COALESCE($6, politician.suffix),
+                preferred_name = COALESCE($7, politician.preferred_name),
+                full_name = COALESCE($8, politician.full_name),
+                biography = COALESCE($9, politician.biography),
+                biography_source = COALESCE($10, politician.biography_source),
+                home_state = COALESCE($11, politician.home_state),
+                date_of_birth = COALESCE($12, politician.date_of_birth),
+                office_id = COALESCE($13, politician.office_id),
+                upcoming_race_id = COALESCE($14, politician.upcoming_race_id),
+                thumbnail_image_url = COALESCE($15, politician.thumbnail_image_url),
+                assets = COALESCE($16, politician.assets),
+                official_website_url = COALESCE($17, politician.official_website_url),
+                campaign_website_url = COALESCE($18, politician.campaign_website_url),
+                facebook_url = COALESCE($19, politician.facebook_url),
+                twitter_url = COALESCE($20, politician.twitter_url),
+                instagram_url = COALESCE($21, politician.instagram_url),
+                youtube_url = COALESCE($22, politician.youtube_url),
+                linkedin_url = COALESCE($23, politician.linkedin_url),
+                tiktok_url = COALESCE($24, politician.tiktok_url),
+                email = COALESCE($25, politician.email),
+                phone = COALESCE($26, politician.phone),
+                party_id = COALESCE($27, politician.party_id),
+                votesmart_candidate_id = COALESCE($28, politician.votesmart_candidate_id),
+                votesmart_candidate_bio = COALESCE($29, politician.votesmart_candidate_bio),
+                votesmart_candidate_ratings = COALESCE($30, politician.votesmart_candidate_ratings),
+                legiscan_people_id = COALESCE($31, politician.legiscan_people_id),
+                crp_candidate_id = COALESCE($32, politician.crp_candidate_id),
+                fec_candidate_id = COALESCE($33, politician.fec_candidate_id),
+                race_wins = COALESCE($34, politician.race_wins),
+                race_losses = COALESCE($35, politician.race_losses)
             RETURNING
                 id,
                 slug,
@@ -393,7 +438,8 @@ impl Politician {
                 updated_at
 
             "#, 
-            input.slug,
+            input.ref_key,
+            &slug,
             input.first_name,
             input.middle_name,
             input.last_name,

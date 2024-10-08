@@ -253,13 +253,15 @@ impl Scraper {
         entry: &CandidateEntry,
         party: Option<db::Party>,
     ) -> db::UpsertPoliticianInput {
-        let slug = PoliticianSlugGenerator::new(SOURCE_ID, entry.name.as_str()).generate();
+        let slug = PoliticianSlugGenerator::new(entry.name.as_str()).generate();
+        let ref_key = PoliticianRefKeyGenerator::new(SOURCE_ID, entry.name.as_str()).generate();
         let party_id = match party {
             Some(party) => Some(party.id),
             None => None,
         };
         db::UpsertPoliticianInput {
             slug: Some(slug),
+            ref_key: Some(ref_key),
             full_name: Some(entry.name.clone()),
             first_name: Some("".into()), // TODO
             last_name: Some("".into()),  // TODO
