@@ -38,7 +38,6 @@ impl Scraper {
         context: &crate::ScraperContext<'_>,
     ) -> Result<(), Box<dyn Error>> {
         let data = Self::scrape_page_data(html)?;
-
         let election_year = Self::parse_election_year(&data.title)?;
         let election_date = GeneralElectionDateGenerator::new(election_year).generate()?;
         let (election_title, election_slug) =
