@@ -17,6 +17,5 @@ slugify = "0"
 sqlx = { version = "0", features = ["postgres", "macros"] }
 thirtyfour = "0"
 tokio = { version = "1", features = ["full"] }
-colored = "2.1.0"
 spinoff = { version = "0.8.0", features = [ "arc"] }
 
