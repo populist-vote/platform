@@ -65,8 +65,8 @@ pub struct CreateUserWithProfileInput {
 #[derive(
     Debug, Clone, strum_macros::Display, Type, Serialize, Deserialize, Copy, Eq, PartialEq, Enum,
 )]
-#[sqlx(type_name = "organization_role_type", rename_all = "lowercase")]
-#[serde(rename_all = "lowercase")]
+#[sqlx(type_name = "organization_role_type", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
 pub enum OrganizationRoleType {
     ReadOnly,
     Member,
@@ -77,8 +77,8 @@ pub enum OrganizationRoleType {
 #[derive(
     Debug, Clone, strum_macros::Display, Type, Serialize, Deserialize, Copy, Eq, PartialEq, Enum,
 )]
-#[sqlx(type_name = "system_role_type", rename_all = "lowercase")]
-#[serde(rename_all = "lowercase")]
+#[sqlx(type_name = "system_role_type", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
 pub enum SystemRoleType {
     User,
     Staff,

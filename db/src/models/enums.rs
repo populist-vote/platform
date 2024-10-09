@@ -325,7 +325,7 @@ pub enum Chambers {
 )]
 #[strum(ascii_case_insensitive)]
 #[serde(rename_all = "lowercase")]
-#[sqlx(type_name = "chamber", rename_all = "lowercase")]
+#[sqlx(type_name = "chamber", rename_all = "snake_case")]
 pub enum BillType {
     /// Most states have these types
     #[default]
