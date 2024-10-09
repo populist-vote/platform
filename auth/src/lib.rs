@@ -49,7 +49,7 @@ pub fn format_auth_cookie(token_type: TokenType, token: &str) -> String {
     };
 
     let expiry_duration = match token_type {
-        TokenType::Access => chrono::Duration::try_hours(24).unwrap(),
+        TokenType::Access => chrono::Duration::try_minutes(15).unwrap(),
         TokenType::Refresh => chrono::Duration::try_days(120).unwrap(),
     };
 

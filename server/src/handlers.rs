@@ -49,7 +49,7 @@ async fn refresh_token_check(cookies: &Cookies) -> Option<TokenData<AccessTokenC
                         let mut cookie =
                             tower_cookies::Cookie::new("access_token", access_token.clone());
                         cookie.set_expires(
-                            time::OffsetDateTime::now_utc() + time::Duration::hours(24),
+                            time::OffsetDateTime::now_utc() + time::Duration::minutes(15),
                         );
                         cookie.set_domain(root_domain);
                         cookie.set_same_site(same_site);

@@ -3609,7 +3609,6 @@ name = "scrapers"
 version = "0.1.0"
 dependencies = [
  "chrono",
- "colored",
  "csv",
  "db",
  "project-root",

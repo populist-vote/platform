@@ -57,7 +57,7 @@ pub fn create_access_token_for_user(
     let key = std::env::var("JWT_SECRET")?;
 
     let expiration = chrono::Utc::now()
-        .checked_add_signed(chrono::Duration::try_hours(24).unwrap())
+        .checked_add_signed(chrono::Duration::try_minutes(15).unwrap())
         .expect("valid timestamp")
         .timestamp();
 
