@@ -78,7 +78,7 @@ pub fn extract_office_meta(input: &str) -> Option<OfficeMeta> {
                     name: "Board of Regents".into(),
                     title: "Regent".into(),
                     chamber: None,
-                    district_type: Some(db::DistrictType::UsCongressional),
+                    district_type: Some(db::DistrictType::Transportation),
                     political_scope: db::PoliticalScope::Local,
                     election_scope: db::ElectionScope::District,
                 },
