@@ -205,21 +205,39 @@ impl Scraper {
             None
         };
 
-        let mut office = db::UpsertOfficeInput {
+        let (subtitle, subtitle_short) = OfficeSubtitleGenerator {
+            state: &db::State::CO,
+            county: county.as_str(),
+            district: district.as_str(),
+            seat: seat.as_str(),
+        }
+        .generate();
+
+        let slug = OfficeSlugGenerator {
+            state: &db::State::CO,
+            name: meta.name.as_str(),
+            county: county.as_str(),
+            district: district.as_str(),
+            seat: seat.as_str(),
+        }
+        .generate();
+
+        db::UpsertOfficeInput {
+            slug: Some(slug),
             name: Some(meta.name),
             title: Some(meta.title),
+            subtitle: Some(subtitle),
+            subtitle_short: Some(subtitle_short),
             chamber: meta.chamber,
-            seat,
+            state: Some(db::State::CO),
+            county,
             district,
             district_type: meta.district_type,
-            county,
-            state: Some(db::State::CO),
+            seat,
             political_scope: Some(meta.political_scope),
             election_scope: Some(meta.election_scope),
             ..Default::default()
-        };
-        office.slug = Some(OfficeSlugGenerator::from_source(&office).generate());
-        office
+        }
     }
 
     fn build_race_input(election: &db::Election, office: &db::Office) -> db::UpsertRaceInput {
