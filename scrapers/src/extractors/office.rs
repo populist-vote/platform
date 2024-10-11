@@ -2,6 +2,8 @@ use std::sync::OnceLock;
 
 use regex::Regex;
 
+use super::{default_capture, owned_capture};
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct OfficeMeta {
     pub name: String,
@@ -163,28 +165,13 @@ pub fn extract_office_meta(input: &str) -> Option<OfficeMeta> {
     None
 }
 
-pub enum OfficeQualifier {
-    District(String),
-    AtLarge,
-}
-
-impl AsRef<str> for OfficeQualifier {
-    fn as_ref(&self) -> &str {
-        match self {
-            OfficeQualifier::District(district) => district.as_ref(),
-            OfficeQualifier::AtLarge => "At Large",
-        }
-    }
-}
-
 static DISTRICT_EXTRACTORS: OnceLock<Vec<Regex>> = OnceLock::new();
 
-pub fn extract_office_qualifier(input: &str) -> Option<OfficeQualifier> {
+pub fn extract_office_district(input: &str) -> Option<String> {
     let extractors = DISTRICT_EXTRACTORS.get_or_init(|| {
         [
-            r"District (?<district>\d+[A-Z]?|[A-Z]+)(?:\W|$)",
-            r"(?<district>\d+)(?:st|nd|rd|th) (?:\w+ )?District",
-            r"(?:\W|^)(?<atlarge>(?i)At Large)(?:\W|$)",
+            r"District (\d+[A-Z]?|[A-Z]+)(?:\W|$)",
+            r"(\d+)(?:st|nd|rd|th) (?:\w+ )?District",
         ]
         .into_iter()
         .map(|r| Regex::new(r).unwrap())
@@ -192,12 +179,30 @@ pub fn extract_office_qualifier(input: &str) -> Option<OfficeQualifier> {
     });
 
     for extractor in extractors {
+        if let Some(district) = extractor.captures(input).map(default_capture).flatten() {
+            return Some(district);
+        }
+    }
+    None
+}
+
+static SEAT_EXTRACTORS: OnceLock<Vec<Regex>> = OnceLock::new();
+
+pub fn extract_office_seat(input: &str) -> Option<String> {
+    let extractors = SEAT_EXTRACTORS.get_or_init(|| {
+        [r"(?:\W|^)(?<atlarge>(?i)At Large)(?:\W|$)"]
+            .into_iter()
+            .map(|r| Regex::new(r).unwrap())
+            .collect()
+    });
+
+    for extractor in extractors {
         if let Some(captures) = extractor.captures(input) {
-            if let Some(capture) = captures.name("district") {
-                return Some(OfficeQualifier::District(capture.as_str().to_string()));
-            }
             if captures.name("atlarge").is_some() {
-                return Some(OfficeQualifier::AtLarge);
+                return Some("At Large".into());
+            }
+            if let Some(seat) = captures.get(1).map(owned_capture) {
+                return Some(seat);
             }
         }
     }
@@ -268,7 +273,7 @@ mod tests {
     }
 
     #[test]
-    fn extract_qualifier() {
+    fn extract_district() {
         let tests: Vec<(&'static str, Option<&'static str>)> = vec![
             ("District", None),
             ("District ", None),
@@ -290,7 +295,20 @@ mod tests {
             ("15th District", Some("15")),
             ("2nd Something District", Some("2")),
             (" 01th Something District ", Some("01")), // TODO weird edge case?
-            // ----
+        ];
+
+        for (input, expected) in tests {
+            assert_eq!(
+                extract_office_district(input).as_ref().map(String::as_str),
+                expected,
+                "\n\n  Test Case: '{input}'\n"
+            );
+        }
+    }
+
+    #[test]
+    fn extract_seat() {
+        let tests: Vec<(&'static str, Option<&'static str>)> = vec![
             ("fat largemouth bass", None),
             ("At Large.", Some("At Large")),
             (" at large", Some("At Large")),
@@ -298,7 +316,7 @@ mod tests {
 
         for (input, expected) in tests {
             assert_eq!(
-                extract_office_qualifier(input).as_ref().map(|q| q.as_ref()),
+                extract_office_seat(input).as_ref().map(String::as_str),
                 expected,
                 "\n\n  Test Case: '{input}'\n"
             );

@@ -191,17 +191,12 @@ impl Scraper {
             return db::UpsertOfficeInput::default();
         };
 
-        let (district, seat) = if meta.election_scope == db::ElectionScope::District {
-            if let Some(qualifier) = extract_office_qualifier(&entry.office) {
-                match qualifier {
-                    OfficeQualifier::District(district) => (Some(district.clone()), Some(district)),
-                    OfficeQualifier::AtLarge => (None, Some(qualifier.as_ref().to_string())),
-                }
-            } else {
-                (None, None)
-            }
+        let seat = extract_office_seat(&entry.office);
+
+        let district = if meta.election_scope == db::ElectionScope::District {
+            extract_office_district(&entry.office)
         } else {
-            (None, None)
+            None
         };
 
         let county = if meta.election_scope == db::ElectionScope::County {
@@ -246,7 +241,6 @@ impl Scraper {
         let party = entry.party.as_str()?;
         let Some(name) = extract_party_name(party) else {
             // TODO - Track/log failed scrape
-            println!("party: {:?}", entry.party);
             return None;
         };
         let slug = PartySlugGenerator::new(name.as_str()).generate();
