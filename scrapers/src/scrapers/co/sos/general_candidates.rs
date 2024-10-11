@@ -186,10 +186,20 @@ impl Scraper {
     }
 
     fn build_office_input(entry: &CandidateEntry) -> db::UpsertOfficeInput {
-        let Some(meta) = extract_office_meta(&entry.office) else {
+        let Some(mut meta) = extract_office_meta(&entry.office) else {
             // TODO - Track/log failed scrape
             return db::UpsertOfficeInput::default();
         };
+
+        if meta.name == "Board of Regents" {
+            if entry.office.contains("University of Colorado") {
+                meta.name = format!("CU {}", meta.name);
+                meta.title = format!("CU {}", meta.title);
+            } else {
+                // TODO - Track/log failed scrape
+                return db::UpsertOfficeInput::default();
+            }
+        }
 
         let seat = extract_office_seat(&entry.office);
 
