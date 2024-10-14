@@ -42,7 +42,11 @@ impl Default for Config {
 
 impl Config {
     pub fn is_allowed_origin(url: &str) -> bool {
-        let allowed_origins = ["https://www.mprnews.org", "https://mprnews.org"];
+        let allowed_origins = [
+            "https://www.mprnews.org",
+            "https://mprnews.org",
+            "https://sahanjournal.com/",
+        ];
         let excluded_origins = ["https://www.mprnews.org/preview/"];
 
         allowed_origins
