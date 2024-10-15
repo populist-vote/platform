@@ -275,55 +275,55 @@ async fn get_races_by_address_id(
     let records = sqlx::query_as!(
         Race,
         r#"
-    SELECT
-        r.id,
-        r.slug,
-        r.title,
-        r.office_id,
-        r.race_type AS "race_type:RaceType",
-        r.vote_type AS "vote_type:VoteType",
-        r.party_id,
-        r.state AS "state:State",
-        r.description,
-        r.ballotpedia_link,
-        r.early_voting_begins_date,
-        r.winner_ids,
-        r.total_votes,
-        r.num_precincts_reporting,
-        r.total_precincts,
-        r.official_website,
-        r.election_id,
-        r.is_special_election,
-        r.num_elect,
-        r.created_at,
-        r.updated_at
-    FROM
-        race r
-        JOIN office o ON office_id = o.id
-    WHERE
-        r.election_id = $1 AND (
-            o.election_scope = 'national'
-            OR (o.state = $2 AND o.election_scope = 'state')
-            OR (o.state = $2 AND (  
-                (o.election_scope = 'county' AND o.county = $4) OR
-                (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR
-                (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR
-                (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
-                (o.election_scope = 'district' AND o.district_type = 'judicial' AND o.district = $13) OR
-                (o.election_scope = 'district' AND o.district_type = 'county' AND o.county = $4 AND o.district = $8) OR
-                (o.election_scope = 'district' AND o.district_type = 'soil_and_water' AND o.county = $4 AND (REGEXP_REPLACE(o.district, '.*\(([^)]+)\).*', '\1') = $14 OR o.district = $14)) OR
-                (o.election_scope = 'district' AND o.district_type = 'city' AND o.municipality = $3 AND REGEXP_REPLACE(o.district, '^[^0-9]*', '') = $12) OR
-                (o.election_scope = 'city' AND o.municipality = $3) OR
-                (CASE 
-                  WHEN $10 = '01' THEN
-                    (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'ISD #', '') = $9) AND
-                    (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)
-                  WHEN $10 = '03' THEN
-                    (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'SSD #', '') = $9) AND
-                    (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)
-                END)
-            )))
-    ORDER BY o.priority ASC, title DESC
+            SELECT
+                r.id,
+                r.slug,
+                r.title,
+                r.office_id,
+                r.race_type AS "race_type:RaceType",
+                r.vote_type AS "vote_type:VoteType",
+                r.party_id,
+                r.state AS "state:State",
+                r.description,
+                r.ballotpedia_link,
+                r.early_voting_begins_date,
+                r.winner_ids,
+                r.total_votes,
+                r.num_precincts_reporting,
+                r.total_precincts,
+                r.official_website,
+                r.election_id,
+                r.is_special_election,
+                r.num_elect,
+                r.created_at,
+                r.updated_at
+            FROM
+                race r
+                JOIN office o ON office_id = o.id
+            WHERE
+                r.election_id = $1 AND (
+                    o.election_scope = 'national'
+                    OR (o.state = $2 AND o.election_scope = 'state')
+                    OR (o.state = $2 AND (  
+                        (o.election_scope = 'county' AND o.county = $4) OR
+                        (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR
+                        (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR
+                        (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
+                        (o.election_scope = 'district' AND o.district_type = 'judicial' AND o.district = $13) OR
+                        (o.election_scope = 'district' AND o.district_type = 'county' AND o.county = $4 AND o.district = $8) OR
+                        (o.election_scope = 'district' AND o.district_type = 'soil_and_water' AND o.county = $4 AND (REGEXP_REPLACE(o.district, '.*\(([^)]+)\).*', '\1') = $14 OR o.district = $14)) OR
+                        (o.election_scope = 'district' AND o.district_type = 'city' AND o.municipality = $3 AND REGEXP_REPLACE(o.district, '^[^0-9]*', '') = $12) OR
+                        (o.election_scope = 'city' AND o.municipality = $3) OR
+                        (CASE 
+                        WHEN $10 = '01' THEN
+                            (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'ISD #', '') = $9) AND
+                            (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)
+                        WHEN $10 = '03' THEN
+                            (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'SSD #', '') = $9) AND
+                            (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)
+                        END)
+                    )))
+            ORDER BY o.priority ASC, title DESC
         "#,
         &election_id,
         user_address_data.state as State,

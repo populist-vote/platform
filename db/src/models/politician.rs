@@ -1,6 +1,7 @@
 use crate::{
-    models::enums::State, CreateOrConnectIssueTagInput, CreateOrConnectOrganizationInput, DateTime,
-    IssueTag, Organization, OrganizationIdentifier,
+    models::{election, enums::State},
+    CreateOrConnectIssueTagInput, CreateOrConnectOrganizationInput, DateTime, IssueTag,
+    Organization, OrganizationIdentifier,
 };
 use async_graphql::InputObject;
 use chrono::NaiveDate;
@@ -909,9 +910,10 @@ impl Politician {
         Ok(records)
     }
 
-    pub async fn organization_endorsements(
+    pub async fn organization_endorsements_by_election(
         db_pool: &PgPool,
         politician_id: uuid::Uuid,
+        election_id: uuid::Uuid,
     ) -> Result<Vec<Organization>, sqlx::Error> {
         let records = sqlx::query_as!(Organization,
             r#"
@@ -919,15 +921,19 @@ impl Politician {
                 JOIN politician_organization_endorsements
                 ON politician_organization_endorsements.organization_id = o.id
                 WHERE politician_organization_endorsements.politician_id = $1
+                AND politician_organization_endorsements.election_id = $2
             "#, 
-        politician_id).fetch_all(db_pool).await?;
+        politician_id,
+        election_id
+          ).fetch_all(db_pool).await?;
 
         Ok(records)
     }
 
-    pub async fn politician_endorsements(
+    pub async fn politician_endorsements_by_election(
         db_pool: &PgPool,
         politician_id: uuid::Uuid,
+        election_id: uuid::Uuid,
     ) -> Result<Vec<Politician>, sqlx::Error> {
         let records = sqlx::query_as!(
             Politician,
@@ -973,8 +979,10 @@ impl Politician {
                 JOIN politician_politician_endorsements
                 ON politician_politician_endorsements.politician_endorsement_id = p.id
                 WHERE politician_politician_endorsements.politician_id = $1
+                AND politician_politician_endorsements.election_id = $2
             "#,
-            politician_id
+            politician_id,
+            election_id
         )
         .fetch_all(db_pool)
         .await?;
