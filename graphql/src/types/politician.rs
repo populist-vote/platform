@@ -401,21 +401,16 @@ impl PoliticianResult {
         }
     }
 
-    async fn endorsements_by_election(
-        &self,
-        ctx: &Context<'_>,
-        election_id: ID,
-    ) -> Result<Endorsements> {
+    async fn endorsements(&self, ctx: &Context<'_>) -> Result<Endorsements> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
 
         let mut politician_results: Vec<PoliticianResult> = vec![];
         let mut organization_results: Vec<OrganizationResult> = vec![];
 
         if ctx.look_ahead().field("organizations").exists() {
-            let organization_records = Politician::organization_endorsements_by_election(
+            let organization_records = Politician::organization_endorsements(
                 &db_pool,
                 uuid::Uuid::parse_str(&self.id).unwrap(),
-                uuid::Uuid::parse_str(&election_id).unwrap(),
             )
             .await?;
             organization_results = organization_records
@@ -425,10 +420,9 @@ impl PoliticianResult {
         }
 
         if ctx.look_ahead().field("politicians").exists() {
-            let politician_records = Politician::politician_endorsements_by_election(
+            let politician_records = Politician::politician_endorsements(
                 &db_pool,
                 uuid::Uuid::parse_str(&self.id).unwrap(),
-                uuid::Uuid::parse_str(&election_id).unwrap(),
             )
             .await?;
             politician_results = politician_records
