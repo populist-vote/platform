@@ -186,22 +186,27 @@ impl Scraper {
     }
 
     fn build_office_input(entry: &CandidateEntry) -> db::UpsertOfficeInput {
-        let Some(meta) = extract_office_meta(&entry.office) else {
+        let Some(mut meta) = extract_office_meta(&entry.office) else {
             // TODO - Track/log failed scrape
             return db::UpsertOfficeInput::default();
         };
 
-        let (district, seat) = if meta.election_scope == db::ElectionScope::District {
-            if let Some(qualifier) = extract_office_qualifier(&entry.office) {
-                match qualifier {
-                    OfficeQualifier::District(district) => (Some(district.clone()), Some(district)),
-                    OfficeQualifier::AtLarge => (None, Some(qualifier.as_ref().to_string())),
-                }
+        if meta.name == "Board of Regents" {
+            if entry.office.contains("University of Colorado") {
+                meta.name = format!("CU {}", meta.name);
+                meta.title = format!("CU {}", meta.title);
             } else {
-                (None, None)
+                // TODO - Track/log failed scrape
+                return db::UpsertOfficeInput::default();
             }
+        }
+
+        let seat = extract_office_seat(&entry.office);
+
+        let district = if meta.election_scope == db::ElectionScope::District {
+            extract_office_district(&entry.office)
         } else {
-            (None, None)
+            None
         };
 
         let county = if meta.election_scope == db::ElectionScope::County {
@@ -210,21 +215,39 @@ impl Scraper {
             None
         };
 
-        let mut office = db::UpsertOfficeInput {
+        let (subtitle, subtitle_short) = OfficeSubtitleGenerator {
+            state: &db::State::CO,
+            county: county.as_str(),
+            district: district.as_str(),
+            seat: seat.as_str(),
+        }
+        .generate();
+
+        let slug = OfficeSlugGenerator {
+            state: &db::State::CO,
+            name: meta.name.as_str(),
+            county: county.as_str(),
+            district: district.as_str(),
+            seat: seat.as_str(),
+        }
+        .generate();
+
+        db::UpsertOfficeInput {
+            slug: Some(slug),
             name: Some(meta.name),
             title: Some(meta.title),
+            subtitle: Some(subtitle),
+            subtitle_short: Some(subtitle_short),
             chamber: meta.chamber,
-            seat,
+            state: Some(db::State::CO),
+            county,
             district,
             district_type: meta.district_type,
-            county,
-            state: Some(db::State::CO),
+            seat,
             political_scope: Some(meta.political_scope),
             election_scope: Some(meta.election_scope),
             ..Default::default()
-        };
-        office.slug = Some(OfficeSlugGenerator::from_source(&office).generate());
-        office
+        }
     }
 
     fn build_race_input(election: &db::Election, office: &db::Office) -> db::UpsertRaceInput {
@@ -246,7 +269,6 @@ impl Scraper {
         let party = entry.party.as_str()?;
         let Some(name) = extract_party_name(party) else {
             // TODO - Track/log failed scrape
-            println!("party: {:?}", entry.party);
             return None;
         };
         let slug = PartySlugGenerator::new(name.as_str()).generate();

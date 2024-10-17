@@ -1,5 +1,3 @@
-use std::{thread::sleep, time::Duration};
-
 use scrapers::{util::run_with_timer, Scraper, ScraperContext};
 
 #[tokio::main]
