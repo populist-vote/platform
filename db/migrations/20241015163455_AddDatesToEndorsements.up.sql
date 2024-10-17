@@ -3,6 +3,23 @@ ALTER TABLE politician_politician_endorsements
 ADD COLUMN start_date DATE,
 ADD COLUMN end_date DATE;
 
+ALTER TABLE politician_politician_endorsements
+ADD CONSTRAINT unique_politician_endorsement_start
+UNIQUE (politician_id, politician_endorsement_id, start_date);
+
+ALTER TABLE politician_politician_endorsements
+DROP CONSTRAINT politician_politician_endorsements_pkey,
+DROP CONSTRAINT politician_politician_endorse_politician_id_politician_endo_key;
+
 ALTER TABLE politician_organization_endorsements
 ADD COLUMN start_date DATE,
 ADD COLUMN end_date DATE;
+
+ALTER TABLE politician_organization_endorsements
+DROP CONSTRAINT politician_organization_endorsements_pkey,
+DROP CONSTRAINT
+politician_organization_endor_politician_id_organization_id_key;
+
+ALTER TABLE politician_organization_endorsements
+ADD CONSTRAINT unique_politician_org_endorsement_start
+UNIQUE (politician_id, organization_id, start_date);
