@@ -919,7 +919,8 @@ impl Politician {
                 JOIN politician_organization_endorsements
                 ON politician_organization_endorsements.organization_id = o.id
                 WHERE politician_organization_endorsements.politician_id = $1
-                AND politician_organization_endorsements.end_date IS NULL
+                AND (NOW() BETWEEN politician_organization_endorsements.start_date AND politician_organization_endorsements.end_date
+                     OR (politician_organization_endorsements.start_date <= NOW() AND politician_organization_endorsements.end_date IS NULL))
             "#, 
         politician_id
           ).fetch_all(db_pool).await?;
@@ -976,7 +977,8 @@ impl Politician {
                 JOIN politician_politician_endorsements
                 ON politician_politician_endorsements.politician_endorsement_id = p.id
                 WHERE politician_politician_endorsements.politician_id = $1
-                AND politician_politician_endorsements.end_date IS NULL
+                AND (NOW() BETWEEN politician_politician_endorsements.start_date AND politician_politician_endorsements.end_date
+                     OR (politician_politician_endorsements.start_date <= NOW() AND politician_politician_endorsements.end_date IS NULL))
             "#,
             politician_id
         )
