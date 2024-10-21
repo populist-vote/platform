@@ -16,11 +16,10 @@ impl BallotMeasureMutation {
     async fn upsert_ballot_measure(
         &self,
         ctx: &Context<'_>,
-        election_id: uuid::Uuid,
         input: UpsertBallotMeasureInput,
     ) -> Result<BallotMeasureResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let new_record = BallotMeasure::upsert(&db_pool, election_id, &input).await?;
+        let new_record = BallotMeasure::upsert(&db_pool, &input).await?;
         Ok(BallotMeasureResult::from(new_record))
     }
 

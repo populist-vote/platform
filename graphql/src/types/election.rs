@@ -549,6 +549,25 @@ impl ElectionResult {
         .fetch_one(&db_pool)
         .await?;
 
+        let user_address_extended_mn =
+            Address::extended_mn_by_address_id(&db_pool, &address_id).await?;
+
+        let county_fips = user_address_extended_mn
+            .clone()
+            .and_then(|a| a.county_fips.clone());
+
+        let municipality_fips = user_address_extended_mn
+            .clone()
+            .and_then(|a| a.municipality_fips.clone());
+
+        let school_district = user_address_extended_mn
+            .clone()
+            .map(|a| {
+                a.school_district_number
+                    .map(|d| d.as_str().trim_start_matches('0').to_string())
+            })
+            .unwrap_or(None);
+
         // Only handling statewide ballot measures for now
         let records = sqlx::query_as!(
             BallotMeasure,
@@ -567,6 +586,11 @@ impl ElectionResult {
                 bm.full_text_url,
                 bm.election_id,
                 bm.state AS "state:State",
+                bm.county,
+                bm.municipality, 
+                bm.school_district,
+                bm.county_fips,
+                bm.municipality_fips,
                 bm.yes_votes,
                 bm.no_votes,
                 bm.num_precincts_reporting,
@@ -578,9 +602,15 @@ impl ElectionResult {
             WHERE
                 bm.election_id = $1
                 AND bm.state = $2::state
+                AND (bm.county_fips IS NULL OR bm.county_fips = $3)
+                AND (bm.municipality_fips IS NULL OR bm.municipality_fips = $4)
+                AND (bm.school_district IS NULL OR bm.school_district = $5)
             "#,
             &election_id,
-            user_address_data.state as State
+            user_address_data.state as State,
+            county_fips,
+            municipality_fips,
+            school_district
         )
         .fetch_all(&db_pool)
         .await?;
