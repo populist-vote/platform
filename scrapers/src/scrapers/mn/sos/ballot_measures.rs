@@ -110,20 +110,11 @@ impl Scraper {
             let (
                 county_id,
                 fips_code,
-                _school_district_code,
+                school_district_code,
                 ballot_question_number,
                 ballot_question_title,
                 ballot_question_body,
             ): (String, String, String, String, String, String) = result?;
-
-            // let entry = BallotMeasureEntry {
-            //     county_id,
-            //     fips_code: Some(fips_code),
-            //     school_district_code: Some(school_district_code),
-            //     ballot_question_number,
-            //     ballot_question_title,
-            //     ballot_question_body,
-            // };
 
             if ballot_question_number.is_empty()
                 || ballot_question_title.is_empty()
@@ -133,26 +124,41 @@ impl Scraper {
             }
 
             let slug = slugify!(&format!(
-                "mn-2024-{}", // TODO: make year dynamic
-                ballot_question_number.to_lowercase()
+                "mn-2024-{}-{}", // TODO: make year dynamic
+                ballot_question_number.to_lowercase(),
+                county_id
             ));
 
-            let county_fips = sqlx::query!(
-                r#"SELECT countyfips FROM p6t_state_mn.bdry_votingdistricts WHERE countycode = $1"#,
+            let county_data = sqlx::query!(
+                r#"SELECT countyname, countyfips FROM p6t_state_mn.bdry_votingdistricts WHERE countycode = $1"#,
                 county_id
             )
             .fetch_optional(&context.db.connection)
             .await?;
 
-            let county_fips = match county_fips {
-                Some(row) => Some(row.countyfips.unwrap()),
-                None => None,
+            let (county, county_fips) = match county_data {
+                Some(row) => (row.countyname, row.countyfips),
+                None => (None, None),
+            };
+
+            let school_district = match school_district_code.as_str() {
+                "no data" => None,
+                _ => Some(school_district_code),
             };
 
             let municipality_fips = match fips_code.as_str() {
                 "no data" => None,
                 _ => Some(fips_code),
             };
+
+            let ballot_measure_code = format!(
+                "{} {}",
+                ballot_question_number,
+                match county.clone() {
+                    Some(county) => county,
+                    None => "".to_string(),
+                }
+            );
 
             let input = UpsertBallotMeasureInput {
                 id: None,
@@ -161,19 +167,24 @@ impl Scraper {
                 title: Some(ballot_question_title),
                 status: Some(BallotMeasureStatus::InConsideration),
                 state: Some(db::State::MN),
-                ballot_measure_code: Some(ballot_question_number),
+                ballot_measure_code: Some(ballot_measure_code),
                 definitions: None,
                 official_summary: None,
                 populist_summary: None,
                 full_text_url: None,
                 description: Some(ballot_question_body),
                 measure_type: None,
+                county,
+                municipality: None,
+                school_district,
                 county_fips,
                 municipality_fips,
             };
 
             let _ballot_measure =
-                db::BallotMeasure::upsert_from_source(&context.db.connection, &input).await;
+                db::BallotMeasure::upsert_from_source(&context.db.connection, &input)
+                    .await
+                    .expect("Error upserting ballot measure");
         }
         Ok(())
     }
