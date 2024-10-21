@@ -18,6 +18,6 @@ serde = { version = "1", features = ["derive"] }
 sqlx = { version = "0", features = ["postgres", "macros"] }
 thirtyfour = "0"
 tokio = { version = "1", features = ["full"] }
-spinoff = { version = "0.8.0", features = [ "arc"] }
-calamine = "0.26.1"
+spinoff = { version = "0", features = [ "arc"] }
+calamine = "0"
 
