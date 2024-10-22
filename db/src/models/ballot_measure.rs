@@ -1,5 +1,5 @@
 use super::enums::{BallotMeasureStatus, State};
-use crate::{DateTime, IssueTag, PoliticalScope, PopularitySort};
+use crate::{DateTime, ElectionScope, IssueTag, PoliticalScope, PopularitySort};
 use async_graphql::InputObject;
 use sqlx::postgres::PgPool;
 use sqlx::FromRow;
@@ -29,6 +29,7 @@ pub struct BallotMeasure {
     pub official_summary: Option<String>,
     pub populist_summary: Option<String>,
     pub full_text_url: Option<String>,
+    pub election_scope: Option<ElectionScope>,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
@@ -53,6 +54,7 @@ pub struct UpsertBallotMeasureInput {
     pub full_text_url: Option<String>,
     pub county_fips: Option<String>,
     pub municipality_fips: Option<String>,
+    pub election_scope: Option<ElectionScope>,
 }
 
 #[derive(InputObject, Default, Debug)]
@@ -82,8 +84,8 @@ impl BallotMeasure {
                 INSERT INTO ballot_measure 
                 (id, election_id, slug, title, status, description, official_summary, 
                 populist_summary, full_text_url, state, ballot_measure_code, 
-                measure_type, definitions, county_fips, municipality_fips, county, school_district) 
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+                measure_type, definitions, county_fips, municipality_fips, county, school_district, election_scope) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
                 ON CONFLICT (id) DO UPDATE SET
                     slug = COALESCE($3, ballot_measure.slug),
                     title = COALESCE($4, ballot_measure.title),
@@ -99,8 +101,9 @@ impl BallotMeasure {
                     county_fips = COALESCE($14, ballot_measure.county_fips),
                     municipality_fips = COALESCE($15, ballot_measure.municipality_fips),
                     county = COALESCE($16, ballot_measure.county),
-                    school_district = COALESCE($17, ballot_measure.school_district)
-                RETURNING id, election_id, slug, title, status AS "status: BallotMeasureStatus", description, official_summary, populist_summary, full_text_url, state AS "state:State", county, municipality, school_district, ballot_measure_code, measure_type, definitions, yes_votes, no_votes, num_precincts_reporting, total_precincts, county_fips, municipality_fips, created_at, updated_at
+                    school_district = COALESCE($17, ballot_measure.school_district),
+                    election_scope = COALESCE($18, ballot_measure.election_scope)
+                RETURNING id, election_id, slug, title, status AS "status: BallotMeasureStatus", description, official_summary, populist_summary, full_text_url, state AS "state:State", county, municipality, school_district, ballot_measure_code, measure_type, definitions, yes_votes, no_votes, num_precincts_reporting, total_precincts, county_fips, municipality_fips, election_scope AS "election_scope:ElectionScope", created_at, updated_at
             "#,
             id,
             input.election_id,
@@ -118,7 +121,8 @@ impl BallotMeasure {
             input.county_fips,
             input.municipality_fips,
             input.county,
-            input.school_district
+            input.school_district,
+            input.election_scope as Option<ElectionScope>
         )
         .fetch_one(db_pool)
         .await?;
@@ -142,8 +146,8 @@ impl BallotMeasure {
                 INSERT INTO ballot_measure 
                 (slug, election_id, title, status, description, official_summary, 
                 populist_summary, full_text_url, state, ballot_measure_code, 
-                measure_type, definitions, county_fips, municipality_fips, county, municipality, school_district) 
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+                measure_type, definitions, county_fips, municipality_fips, county, municipality, school_district, election_scope) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
                 ON CONFLICT (slug) DO UPDATE SET
                     title = COALESCE($3, ballot_measure.title),
                     status = COALESCE($4, ballot_measure.status),
@@ -159,8 +163,9 @@ impl BallotMeasure {
                     municipality_fips = COALESCE($14, ballot_measure.municipality_fips),
                     county = COALESCE($15, ballot_measure.county),
                     municipality = COALESCE($16, ballot_measure.municipality),
-                    school_district = COALESCE($17, ballot_measure.school_district)
-                RETURNING id, election_id, slug, title, status AS "status: BallotMeasureStatus", description, official_summary, populist_summary, full_text_url, state AS "state:State", county, municipality, school_district, ballot_measure_code, measure_type, definitions, yes_votes, no_votes, num_precincts_reporting, total_precincts, county_fips, municipality_fips, created_at, updated_at
+                    school_district = COALESCE($17, ballot_measure.school_district),
+                    election_scope = COALESCE($18, ballot_measure.election_scope)
+                RETURNING id, election_id, slug, title, status AS "status: BallotMeasureStatus", description, official_summary, populist_summary, full_text_url, state AS "state:State", county, municipality, school_district, ballot_measure_code, measure_type, definitions, yes_votes, no_votes, num_precincts_reporting, total_precincts, county_fips, municipality_fips, election_scope AS "election_scope:ElectionScope", created_at, updated_at
             "#,
             input.slug,
             input.election_id,
@@ -178,7 +183,8 @@ impl BallotMeasure {
             input.municipality_fips,
             input.county,
             input.municipality,
-            input.school_district
+            input.school_district,
+            input.election_scope as Option<ElectionScope>
         )
         .fetch_one(db_pool)
         .await
@@ -218,6 +224,7 @@ impl BallotMeasure {
                     county, 
                     municipality,
                     school_district,
+                    election_scope AS "election_scope:ElectionScope",
                     ballot_measure.created_at, 
                     ballot_measure.updated_at 
                 FROM ballot_measure 

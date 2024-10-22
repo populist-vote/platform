@@ -4,7 +4,7 @@ use db::{
         ballot_measure::BallotMeasure,
         enums::{BallotMeasureStatus, State},
     },
-    Election, PublicVotes,
+    Election, ElectionScope, PublicVotes,
 };
 use uuid::Uuid;
 
@@ -32,6 +32,7 @@ pub struct BallotMeasureResult {
     no_votes: Option<i32>,
     num_precincts_reporting: Option<i32>,
     total_precincts: Option<i32>,
+    election_scope: Option<ElectionScope>,
 }
 
 #[ComplexObject]
@@ -103,6 +104,7 @@ impl From<BallotMeasure> for BallotMeasureResult {
             no_votes: b.no_votes,
             num_precincts_reporting: b.num_precincts_reporting,
             total_precincts: b.total_precincts,
+            election_scope: b.election_scope,
         }
     }
 }

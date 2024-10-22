@@ -1,7 +1,7 @@
 use std::{error::Error, fs::File, io::Read, path::PathBuf, sync::OnceLock};
 
 use calamine::{RangeDeserializerBuilder, Reader, Xlsx};
-use db::{BallotMeasureStatus, UpsertBallotMeasureInput};
+use db::{BallotMeasureStatus, ElectionScope, UpsertBallotMeasureInput};
 use project_root::get_project_root;
 use regex::Regex;
 use serde::Deserialize;
@@ -173,6 +173,18 @@ impl Scraper {
                 }
             );
 
+            let election_scope = match (
+                county_fips.clone(),
+                municipality_fips.clone(),
+                school_district.clone(),
+            ) {
+                (None, None, None) => ElectionScope::State,
+                (Some(_), None, None) => ElectionScope::County,
+                (Some(_), Some(_), None) => ElectionScope::City,
+                (Some(_), Some(_), Some(_)) => ElectionScope::District,
+                _ => ElectionScope::District,
+            };
+
             let input = UpsertBallotMeasureInput {
                 id: None,
                 slug: Some(slug),
@@ -192,6 +204,7 @@ impl Scraper {
                 school_district,
                 county_fips,
                 municipality_fips,
+                election_scope: Some(election_scope),
             };
 
             let _ballot_measure =

@@ -7,7 +7,7 @@ use db::{
         ballot_measure::BallotMeasure,
         enums::{BallotMeasureStatus, RaceType, State, VoteType},
     },
-    Address, AddressInput, Election, Race,
+    Address, AddressInput, Election, ElectionScope, Race,
 };
 use geocodio::GeocodioProxy;
 use jsonwebtoken::TokenData;
@@ -603,6 +603,7 @@ impl ElectionResult {
                 bm.no_votes,
                 bm.num_precincts_reporting,
                 bm.total_precincts,
+                bm.election_scope AS "election_scope:ElectionScope",
                 bm.created_at,
                 bm.updated_at
             FROM
