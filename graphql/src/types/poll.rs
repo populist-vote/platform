@@ -37,7 +37,7 @@ pub struct PollSubmissionResult {
     pub id: ID,
     pub poll_id: ID,
     pub respondent_id: Option<ID>,
-    pub poll_option_id: ID,
+    pub poll_option_id: Option<ID>,
     pub write_in_response: Option<String>,
     pub created_at: DateTime,
     pub updated_at: DateTime,
@@ -166,17 +166,21 @@ impl PollSubmissionResult {
     }
 
     async fn option(&self, ctx: &Context<'_>) -> Result<PollOptionResult> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-        let option = sqlx::query_as!(
-            PollOption,
-            r#"
+        if let Some(poll_option_id) = self.poll_option_id.clone() {
+            let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+            let option = sqlx::query_as!(
+                PollOption,
+                r#"
                 SELECT * FROM poll_option WHERE id = $1
-            "#,
-            uuid::Uuid::parse_str(&self.poll_option_id)?
-        )
-        .fetch_one(&db_pool)
-        .await?;
-        Ok(option.into())
+                "#,
+                uuid::Uuid::parse_str(&poll_option_id)?
+            )
+            .fetch_one(&db_pool)
+            .await?;
+            Ok(option.into())
+        } else {
+            Err("No poll option found".into())
+        }
     }
 }
 
@@ -214,7 +218,7 @@ impl From<PollSubmission> for PollSubmissionResult {
             id: p.id.into(),
             poll_id: p.poll_id.into(),
             respondent_id: p.respondent_id.map(|id| id.into()),
-            poll_option_id: p.poll_option_id.into(),
+            poll_option_id: p.poll_option_id.map(|id| id.into()),
             write_in_response: p.write_in_response,
             created_at: p.created_at,
             updated_at: p.updated_at,

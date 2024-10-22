@@ -33,7 +33,7 @@ pub struct PollSubmission {
     pub id: uuid::Uuid,
     pub poll_id: uuid::Uuid,
     pub respondent_id: Option<uuid::Uuid>,
-    pub poll_option_id: uuid::Uuid,
+    pub poll_option_id: Option<uuid::Uuid>,
     pub write_in_response: Option<String>,
     pub created_at: DateTime,
     pub updated_at: DateTime,
@@ -195,19 +195,23 @@ impl PollSubmission {
                 id,
                 poll_id,
                 poll_option_id,
+                write_in_response,
                 respondent_id
             ) VALUES (
                 $1,
                 $2,
                 $3,
-                $4
+                $4,
+                $5
             ) ON CONFLICT (id) DO UPDATE SET
-                poll_option_id = EXCLUDED.poll_option_id
+                poll_option_id = EXCLUDED.poll_option_id,
+                write_in_response = EXCLUDED.write_in_response
             RETURNING *
             "#,
             id,
             input.poll_id,
             input.poll_option_id,
+            input.write_in_response,
             input.respondent_id,
         )
         .fetch_one(db_pool)
