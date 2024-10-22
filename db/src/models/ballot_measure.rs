@@ -7,17 +7,20 @@ use uuid::Uuid;
 
 #[derive(FromRow, Debug, Clone)]
 pub struct BallotMeasure {
-    // required fields
     pub id: uuid::Uuid,
     pub slug: String,
     pub title: String,
     pub status: BallotMeasureStatus,
     pub election_id: uuid::Uuid,
     pub state: State,
+    pub county: Option<String>,
+    pub municipality: Option<String>,
+    pub school_district: Option<String>,
     pub ballot_measure_code: String,
-    pub measure_type: String, //perhaps make enum later
-    pub definitions: String,  // markdown list of bulleted items
-    //optional fields
+    pub county_fips: Option<String>,
+    pub municipality_fips: Option<String>,
+    pub measure_type: Option<String>, //perhaps make enum later
+    pub definitions: Option<String>,  // markdown list of bulleted items
     pub yes_votes: Option<i32>,
     pub no_votes: Option<i32>,
     pub num_precincts_reporting: Option<i32>,
@@ -34,9 +37,13 @@ pub struct BallotMeasure {
 pub struct UpsertBallotMeasureInput {
     pub id: Option<uuid::Uuid>,
     pub slug: Option<String>,
+    pub election_id: Option<uuid::Uuid>,
     pub title: Option<String>,
     pub status: Option<BallotMeasureStatus>,
     pub state: Option<State>,
+    pub county: Option<String>,
+    pub municipality: Option<String>,
+    pub school_district: Option<String>,
     pub ballot_measure_code: Option<String>,
     pub measure_type: Option<String>,
     pub definitions: Option<String>,
@@ -44,6 +51,8 @@ pub struct UpsertBallotMeasureInput {
     pub official_summary: Option<String>,
     pub populist_summary: Option<String>,
     pub full_text_url: Option<String>,
+    pub county_fips: Option<String>,
+    pub municipality_fips: Option<String>,
 }
 
 #[derive(InputObject, Default, Debug)]
@@ -64,7 +73,6 @@ pub struct BallotMeasureSort {
 impl BallotMeasure {
     pub async fn upsert(
         db_pool: &PgPool,
-        election_id: uuid::Uuid,
         input: &UpsertBallotMeasureInput,
     ) -> Result<Self, sqlx::Error> {
         let id = input.id.unwrap_or_else(Uuid::new_v4);
@@ -74,8 +82,8 @@ impl BallotMeasure {
                 INSERT INTO ballot_measure 
                 (id, election_id, slug, title, status, description, official_summary, 
                 populist_summary, full_text_url, state, ballot_measure_code, 
-                measure_type, definitions) 
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+                measure_type, definitions, county_fips, municipality_fips, county, school_district) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
                 ON CONFLICT (id) DO UPDATE SET
                     slug = COALESCE($3, ballot_measure.slug),
                     title = COALESCE($4, ballot_measure.title),
@@ -87,11 +95,15 @@ impl BallotMeasure {
                     state = COALESCE($10, ballot_measure.state),
                     ballot_measure_code = COALESCE($11, ballot_measure.ballot_measure_code),
                     measure_type = COALESCE($12, ballot_measure.measure_type),
-                    definitions = COALESCE($13, ballot_measure.definitions)
-                RETURNING id, election_id, slug, title, status AS "status: BallotMeasureStatus", description, official_summary, populist_summary, full_text_url, state AS "state:State", ballot_measure_code, measure_type, definitions, yes_votes, no_votes, num_precincts_reporting, total_precincts, created_at, updated_at
+                    definitions = COALESCE($13, ballot_measure.definitions),
+                    county_fips = COALESCE($14, ballot_measure.county_fips),
+                    municipality_fips = COALESCE($15, ballot_measure.municipality_fips),
+                    county = COALESCE($16, ballot_measure.county),
+                    school_district = COALESCE($17, ballot_measure.school_district)
+                RETURNING id, election_id, slug, title, status AS "status: BallotMeasureStatus", description, official_summary, populist_summary, full_text_url, state AS "state:State", county, municipality, school_district, ballot_measure_code, measure_type, definitions, yes_votes, no_votes, num_precincts_reporting, total_precincts, county_fips, municipality_fips, created_at, updated_at
             "#,
             id,
-            election_id,
+            input.election_id,
             input.slug,
             input.title,
             input.status as Option<BallotMeasureStatus>,
@@ -102,12 +114,74 @@ impl BallotMeasure {
             input.state as Option<State>,
             input.ballot_measure_code,
             input.measure_type,
-            input.definitions
+            input.definitions,
+            input.county_fips,
+            input.municipality_fips,
+            input.county,
+            input.school_district
         )
         .fetch_one(db_pool)
         .await?;
 
         Ok(record)
+    }
+
+    pub async fn upsert_from_source(
+        db_pool: &PgPool,
+        input: &UpsertBallotMeasureInput,
+    ) -> Result<Self, sqlx::Error> {
+        input
+            .slug
+            .as_ref()
+            .ok_or("slug is required")
+            .map_err(|err| sqlx::Error::AnyDriverError(err.into()))?;
+
+        sqlx::query_as!(
+            BallotMeasure,
+            r#"
+                INSERT INTO ballot_measure 
+                (slug, election_id, title, status, description, official_summary, 
+                populist_summary, full_text_url, state, ballot_measure_code, 
+                measure_type, definitions, county_fips, municipality_fips, county, municipality, school_district) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+                ON CONFLICT (slug) DO UPDATE SET
+                    title = COALESCE($3, ballot_measure.title),
+                    status = COALESCE($4, ballot_measure.status),
+                    description = COALESCE($5, ballot_measure.description),
+                    official_summary = COALESCE($6, ballot_measure.official_summary),
+                    populist_summary = COALESCE($7, ballot_measure.populist_summary),
+                    full_text_url = COALESCE($8, ballot_measure.full_text_url),
+                    state = COALESCE($9, ballot_measure.state),
+                    ballot_measure_code = COALESCE($10, ballot_measure.ballot_measure_code),
+                    measure_type = COALESCE($11, ballot_measure.measure_type),
+                    definitions = COALESCE($12, ballot_measure.definitions),
+                    county_fips = COALESCE($13, ballot_measure.county_fips),
+                    municipality_fips = COALESCE($14, ballot_measure.municipality_fips),
+                    county = COALESCE($15, ballot_measure.county),
+                    municipality = COALESCE($16, ballot_measure.municipality),
+                    school_district = COALESCE($17, ballot_measure.school_district)
+                RETURNING id, election_id, slug, title, status AS "status: BallotMeasureStatus", description, official_summary, populist_summary, full_text_url, state AS "state:State", county, municipality, school_district, ballot_measure_code, measure_type, definitions, yes_votes, no_votes, num_precincts_reporting, total_precincts, county_fips, municipality_fips, created_at, updated_at
+            "#,
+            input.slug,
+            input.election_id,
+            input.title,
+            input.status as Option<BallotMeasureStatus>,
+            input.description,
+            input.official_summary,
+            input.populist_summary,
+            input.full_text_url,
+            input.state as Option<State>,
+            input.ballot_measure_code,
+            input.measure_type,
+            input.definitions,
+            input.county_fips,
+            input.municipality_fips,
+            input.county,
+            input.municipality,
+            input.school_district
+        )
+        .fetch_one(db_pool)
+        .await
     }
 
     pub async fn delete(db_pool: &PgPool, id: uuid::Uuid) -> Result<(), sqlx::Error> {
@@ -139,6 +213,11 @@ impl BallotMeasure {
                     no_votes, 
                     num_precincts_reporting, 
                     total_precincts, 
+                    county_fips,
+                    municipality_fips,
+                    county, 
+                    municipality,
+                    school_district,
                     ballot_measure.created_at, 
                     ballot_measure.updated_at 
                 FROM ballot_measure 

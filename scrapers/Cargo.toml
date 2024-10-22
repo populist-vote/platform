@@ -14,8 +14,10 @@ regex = "1"
 reqwest = "0"
 scraper = "0"
 slugify = "0"
+serde = { version = "1", features = ["derive"] }
 sqlx = { version = "0", features = ["postgres", "macros"] }
 thirtyfour = "0"
 tokio = { version = "1", features = ["full"] }
-spinoff = { version = "0.8.0", features = [ "arc"] }
+spinoff = { version = "0", features = [ "arc"] }
+calamine = "0"
 
