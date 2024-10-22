@@ -44,7 +44,7 @@ pub struct UpsertPollSubmissionInput {
     pub id: Option<uuid::Uuid>,
     pub poll_id: uuid::Uuid,
     pub respondent_id: Option<uuid::Uuid>,
-    pub poll_option_id: uuid::Uuid,
+    pub poll_option_id: Option<uuid::Uuid>,
     pub write_in_response: Option<String>,
 }
 

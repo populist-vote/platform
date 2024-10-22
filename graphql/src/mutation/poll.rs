@@ -27,6 +27,15 @@ impl PollMutation {
         respondent_input: Option<UpsertRespondentInput>,
         poll_submission_input: UpsertPollSubmissionInput,
     ) -> Result<PollSubmissionResult> {
+        if (poll_submission_input.poll_option_id.is_none()
+            && poll_submission_input.write_in_response.is_none())
+            || (poll_submission_input.poll_option_id.is_some()
+                && poll_submission_input.write_in_response.is_some())
+        {
+            return Err(
+                "Exactly one of poll_option_id or write_in_response must be provided".into(),
+            );
+        }
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let respondent = match respondent_input {
             Some(respondent_input) => {
