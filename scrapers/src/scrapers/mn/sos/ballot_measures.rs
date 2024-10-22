@@ -133,10 +133,13 @@ impl Scraper {
             }
 
             let slug = slugify!(&format!(
-                "mn-{}-{}-{}",
+                "mn-{}-{}{}",
                 election_year,
                 ballot_question_number.to_lowercase(),
-                county_id
+                match county_id.as_str() {
+                    "no data" => "".to_string(),
+                    _ => format!("-{}", county_id.to_lowercase()),
+                }
             ));
 
             let county_data = sqlx::query!(

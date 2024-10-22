@@ -558,7 +558,11 @@ impl ElectionResult {
 
         let municipality_fips = user_address_extended_mn
             .clone()
-            .and_then(|a| a.municipality_fips.clone());
+            .map(|a| {
+                a.municipality_fips
+                    .map(|d| d.as_str().trim_start_matches('0').to_string())
+            })
+            .unwrap_or(None);
 
         let school_district = user_address_extended_mn
             .clone()
@@ -567,6 +571,10 @@ impl ElectionResult {
                     .map(|d| d.as_str().trim_start_matches('0').to_string())
             })
             .unwrap_or(None);
+
+        println!("county_fips = {:?}", county_fips);
+        println!("municipality_fips = {:?}", municipality_fips);
+        println!("school_district = {:?}", school_district);
 
         // Only handling statewide ballot measures for now
         let records = sqlx::query_as!(
