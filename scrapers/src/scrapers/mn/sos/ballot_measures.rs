@@ -133,7 +133,8 @@ impl Scraper {
             }
 
             let slug = slugify!(&format!(
-                "mn-2024-{}-{}", // TODO: make year dynamic
+                "mn-{}-{}-{}",
+                election_year,
                 ballot_question_number.to_lowercase(),
                 county_id
             ));
