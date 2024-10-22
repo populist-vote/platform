@@ -98,23 +98,32 @@ impl Scraper {
         .await?;
 
         let range = xlsx
+            // First row is informational text about the file
             .with_header_row(calamine::HeaderRow::Row(1))
             .worksheet_range_at(0)
             .unwrap()
             .unwrap();
 
-        let iter = RangeDeserializerBuilder::new().from_range(&range)?;
+        let iter = RangeDeserializerBuilder::new()
+            .has_headers(true)
+            .from_range(&range)?;
 
         for result in iter {
-            // TODO: Figure out how to deserialize this as a struct, not a tuple
-            let (
+            let entry: BallotMeasureEntry = match result {
+                Ok(entry) => entry,
+                Err(_e) => {
+                    continue;
+                }
+            };
+
+            let BallotMeasureEntry {
                 county_id,
                 fips_code,
                 school_district_code,
                 ballot_question_number,
                 ballot_question_title,
                 ballot_question_body,
-            ): (String, String, String, String, String, String) = result?;
+            } = entry;
 
             if ballot_question_number.is_empty()
                 || ballot_question_title.is_empty()
@@ -202,14 +211,18 @@ impl Scraper {
         Ok(year)
     }
 }
-
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "snake_case")]
 pub struct BallotMeasureEntry {
+    #[serde(rename = "County ID")]
     pub county_id: String,
-    pub fips_code: Option<String>,
-    pub school_district_code: Option<String>,
+    #[serde(rename = "FIPS Code")]
+    pub fips_code: String,
+    #[serde(rename = "School District Code")]
+    pub school_district_code: String,
+    #[serde(rename = "Ballot Question Number")]
     pub ballot_question_number: String,
+    #[serde(rename = "Ballot Question Title")]
     pub ballot_question_title: String,
+    #[serde(rename = "Ballot Question Body")]
     pub ballot_question_body: String,
 }
