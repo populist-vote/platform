@@ -228,6 +228,11 @@ async fn get_races_by_address_id(
     let parsed_soil_and_water_district =
         extract_district_or_direction(soil_and_water_district.clone());
 
+    let hospital_district = user_address_extended_mn_data
+        .clone()
+        .map(|a| a.hospital_district)
+        .unwrap_or(None);
+
     let school_district = user_address_extended_mn_data
         .clone()
         .map(|a| {
@@ -310,6 +315,7 @@ async fn get_races_by_address_id(
                         (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
                         (o.election_scope = 'district' AND o.district_type = 'judicial' AND o.district = $13) OR
                         (o.election_scope = 'district' AND o.district_type = 'county' AND o.county = $4 AND o.district = $8) OR
+                        (o.election_scope = 'district' AND o.district_type = 'hospital' AND o.hospital_district = $15) OR
                         (o.election_scope = 'district' AND o.district_type = 'soil_and_water' AND o.county = $4 AND (REGEXP_REPLACE(o.district, '.*\(([^)]+)\).*', '\1') = $14 OR o.district = $14)) OR
                         (o.election_scope = 'district' AND o.district_type = 'city' AND o.municipality ILIKE $3 AND REGEXP_REPLACE(o.district, '^[^0-9]*', '') = $12) OR
                         (o.election_scope = 'city' AND o.municipality ILIKE $3) OR
@@ -337,7 +343,8 @@ async fn get_races_by_address_id(
         school_subdistrict,
         ward,
         judicial_district,
-        parsed_soil_and_water_district
+        parsed_soil_and_water_district,
+        hospital_district
     )
     .fetch_all(db_pool)
     .await?;
