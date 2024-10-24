@@ -315,14 +315,14 @@ async fn get_races_by_address_id(
                         (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
                         (o.election_scope = 'district' AND o.district_type = 'judicial' AND o.district = $13) OR
                         (o.election_scope = 'district' AND o.district_type = 'county' AND o.county = $4 AND o.district = $8) OR
-                        (o.election_scope = 'district' AND o.district_type = 'hospital' AND o.hospital_district = $15) OR
                         -- Special case for MN Hospital subdistricts
                         (CASE
                             WHEN $15 = 'Cook County' THEN
                                 (o.election_scope = 'district' AND o.district_type = 'hospital' AND o.hospital_district = $15 AND o.district = $8)
                             WHEN $15 = 'Northern Itasca' THEN
                                 (o.election_scope = 'district' AND o.district_type = 'hospital' AND o.hospital_district = $15 AND o.county = $4)
-                            END) OR
+                            ELSE (o.election_scope = 'district' AND o.district_type = 'hospital' AND o.hospital_district = $15)
+                        END) OR
                         (o.election_scope = 'district' AND o.district_type = 'soil_and_water' AND o.county = $4 AND (REGEXP_REPLACE(o.district, '.*\(([^)]+)\).*', '\1') = $14 OR o.district = $14)) OR
                         (o.election_scope = 'district' AND o.district_type = 'city' AND o.municipality ILIKE $3 AND REGEXP_REPLACE(o.district, '^[^0-9]*', '') = $12) OR
                         (o.election_scope = 'city' AND o.municipality ILIKE $3) OR
