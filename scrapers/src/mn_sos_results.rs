@@ -190,12 +190,12 @@ async fn update_public_schema_with_results() {
         results AS (
             SELECT DISTINCT ON (office_name, candidate_name)
                 office_name,
+                source.office_id,
                 candidate_name,
                 votes_for_candidate,
                 total_number_of_votes_for_office_in_area,
                 number_of_precincts_reporting,
                 total_number_of_precincts_voting_for_the_office,
-                p.id AS politician_id,
                 rc.race_id AS race_id,
                 r.title AS race_title,
                 r.vote_type AS vote_type,
@@ -213,15 +213,7 @@ async fn update_public_schema_with_results() {
                 END AS total_first_choice_votes
             FROM
                 source
-            LEFT JOIN politician p ON p.full_name = source.candidate_name
-            LEFT JOIN race_candidates rc ON rc.candidate_id = p.id
-                AND rc.race_id IN(
-                    SELECT
-                        r.id FROM race r
-                    JOIN election e ON e.id = r.election_id
-                WHERE
-                    e.slug = 'general-election-2024')
-                LEFT JOIN race r ON r.id = rc.race_id
+            LEFT JOIN race_candidates rc ON rc.ref_key = SLUGIFY(CONCAT('mn-sos-', source.candidate_name, '-', source.office_id, '-', source.county_id))
             ORDER BY
                 office_name,
                 candidate_name,
