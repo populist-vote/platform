@@ -190,6 +190,7 @@ async fn update_public_schema_with_results() {
         results AS (
             SELECT DISTINCT ON (office_name, candidate_name)
                 office_name,
+                source.county_id,
                 source.office_id,
                 candidate_name,
                 votes_for_candidate,
@@ -213,7 +214,8 @@ async fn update_public_schema_with_results() {
                 END AS total_first_choice_votes
             FROM
                 source
-            LEFT JOIN race_candidates rc ON rc.ref_key = SLUGIFY(CONCAT('mn-sos-', source.candidate_name, '-', source.office_id, '-', source.county_id))
+            LEFT JOIN race_candidates rc ON rc.ref_key = SLUGIFY(CONCAT('mn-sos-', source.candidate_name, '-', source.office_id, '-', COALESCE(source.county_id, '88')))
+            LEFT JOIN race r ON r.id = rc.race_id
             ORDER BY
                 office_name,
                 candidate_name,
@@ -236,8 +238,7 @@ async fn update_public_schema_with_results() {
             FROM
                 results
             WHERE
-                rc.race_id = results.race_id
-                AND rc.candidate_id = results.politician_id
+                rc.ref_key = SLUGIFY(CONCAT('mn-sos-', results.candidate_name, '-', results.office_id, '-', COALESCE(results.county_id, '88')))
             RETURNING
                 *
         ),

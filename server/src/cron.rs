@@ -41,7 +41,7 @@ pub async fn init_job_schedule() {
     .unwrap();
 
     // Run job every 10 minutes on the load test Fridays for MN Sos results
-    let update_mn_results_job = Job::new_async("0 1/10 * 4/11/18/25 Oct * 2024", |uuid, mut l| {
+    let update_mn_results_job = Job::new_async("0 1/10 * * * * 2024", |uuid, mut l| {
         Box::pin(async move {
             tracing::warn!("Running update_mn_results job");
             scrapers::mn_sos_results::fetch_results()
