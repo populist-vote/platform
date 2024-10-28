@@ -524,11 +524,12 @@ impl PoliticianResult {
             SELECT
                 race_id as id
             FROM
-                race_candidates
+                race_candidates rc
                 JOIN race r ON r.id = race_id
                 JOIN election e ON e.id = r.election_id
             WHERE
                 candidate_id = $1
+                AND rc.is_running IS TRUE
             ORDER BY
                 CASE 
                     WHEN e.election_date >= CURRENT_DATE THEN 0 

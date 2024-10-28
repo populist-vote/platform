@@ -59,12 +59,12 @@ pub async fn get_mn_sos_candidate_filings_fed_state_county() -> Result<(), Box<d
     let csv_data_as_string = String::from_utf8(csv_string)?;
 
     sqlx::query!(
-        r#"DROP TABLE IF EXISTS p6t_state_mn.mn_candidate_filings_fed_state_county_2024_fri_sep_20 CASCADE;"#
+        r#"DROP TABLE IF EXISTS p6t_state_mn.mn_candidate_filings_fed_state_county_2024 CASCADE;"#
     )
     .execute(&pool.connection)
     .await?;
     let create_table_query = format!(
-        "CREATE TABLE p6t_state_mn.mn_candidate_filings_fed_state_county_2024_fri_sep_20 (
+        "CREATE TABLE p6t_state_mn.mn_candidate_filings_fed_state_county_2024 (
         {}
     );",
         HEADER_NAMES
@@ -78,7 +78,7 @@ pub async fn get_mn_sos_candidate_filings_fed_state_county() -> Result<(), Box<d
         .execute(&pool.connection)
         .await?;
     let mut tx = pool.connection.acquire().await?;
-    let copy_query = r#"COPY p6t_state_mn.mn_candidate_filings_fed_state_county_2024_fri_sep_20 FROM STDIN WITH CSV HEADER;"#;
+    let copy_query = r#"COPY p6t_state_mn.mn_candidate_filings_fed_state_county_2024 FROM STDIN WITH CSV HEADER;"#;
     let mut tx_copy = tx.copy_in_raw(copy_query).await?;
     tx_copy.send(csv_data_as_string.as_bytes()).await?;
     tx_copy.finish().await?;
