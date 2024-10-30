@@ -20,4 +20,5 @@ thirtyfour = "0"
 tokio = { version = "1", features = ["full"] }
 spinoff = { version = "0", features = [ "arc"] }
 calamine = "0"
+tracing = "0.1.40"
 

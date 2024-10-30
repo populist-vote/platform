@@ -3,9 +3,9 @@ use std::error::Error;
 use thirtyfour::prelude::*;
 
 static HEADER_NAMES: [&str; 21] = [
-    "office_id",
+    "office_id_long",
     "candidate_name",
-    "office_id_2",
+    "office_id",
     "office_title",
     "county_id",
     "other_id",
@@ -88,9 +88,9 @@ pub async fn get_mn_sos_candidate_filings_fed_state_county() -> Result<(), Box<d
 }
 
 static PRIMARY_HEADER_NAMES: [&str; 21] = [
-    "office_id",
+    "office_id_long",
     "candidate_name",
-    "office_id_2",
+    "office_id",
     "office_title",
     "county_id",
     "mn_party_id",

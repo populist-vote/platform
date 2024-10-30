@@ -49,6 +49,10 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
         "https://electionresultsfiles.sos.state.mn.us/20241105/ushouse.txt",
     );
     results_file_paths.insert(
+        "Supreme Court and Courts of Appeals",
+        "https://electionresultsfiles.sos.state.mn.us/20241105/judicial.txt",
+    );
+    results_file_paths.insert(
         "State Senator by District",
         "https://electionresultsfiles.sos.state.mn.us/20241105/stsenate.txt",
     );
@@ -76,7 +80,7 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
     let client = Client::new();
     for (name, url) in results_file_paths {
         let response = client.get(url).send().await?.text().await?;
-        let data = convert_text_to_csv(name, &response);
+        let data = convert_text_to_csv(name, &response)?;
         let csv_data_as_string = String::from_utf8(data.clone())?;
         let table_name = format!(
             "p6t_state_mn.results_2024_{}",
@@ -99,6 +103,7 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
         let mut tx_copy = tx.copy_in_raw(&copy_query).await?;
         tx_copy.send(csv_data_as_string.as_bytes()).await?;
         tx_copy.finish().await?;
+        // TODO: Refactor this scraper to fit the Scraper interface with run_local fn and remove below line
         // _write_to_csv_file(name, &data)?;
     }
     update_public_schema_with_results().await;
@@ -133,7 +138,7 @@ fn get_create_table_query(name: &str, table_name: &str) -> String {
     )
 }
 
-fn convert_text_to_csv(name: &str, text: &str) -> Vec<u8> {
+fn convert_text_to_csv(name: &str, text: &str) -> Result<Vec<u8>, Box<dyn Error>> {
     let mut reader = ReaderBuilder::new()
         .has_headers(false)
         .delimiter(b';')
@@ -143,34 +148,43 @@ fn convert_text_to_csv(name: &str, text: &str) -> Vec<u8> {
         let mut wtr = csv::Writer::from_writer(&mut csv_string);
         // Write the headers from the above struct
         if name == "Precinct Reporting Statistics" {
-            wtr.write_record(PRECINCT_STATS_HEADER_NAMES).unwrap();
+            wtr.write_record(PRECINCT_STATS_HEADER_NAMES)?;
         } else {
-            wtr.write_record(HEADER_NAMES).unwrap();
+            wtr.write_record(HEADER_NAMES)?;
         }
         for result in reader.records() {
             // test that record is valid
-            if result.is_err() {
-                println!("Error reading record: {:?}", result);
-                continue;
-            }
-            let record = result.unwrap();
+            let record = match result {
+                Ok(record) => record,
+                Err(e) => {
+                    println!("Error reading record: {:?}", e);
+                    continue;
+                }
+            };
             // test to ensure record has 16 parts
             if record.len() != 16 {
+                tracing::error!("Record has {} parts, expected 16: {:?}", record.len(), name);
                 continue;
             }
             wtr.write_record(&record)
                 .unwrap_or_else(|_| panic!("Error writing record: {:?}", record))
         }
-        wtr.flush().unwrap();
+        wtr.flush()?;
     }
 
-    csv_string
+    Ok(csv_string)
 }
 
 async fn update_public_schema_with_results() {
     let db_pool = db::pool().await;
     let query = r#"
         WITH source AS (
+            SELECT * FROM p6t_state_mn.results_2024_us_senator_statewide
+            UNION ALL
+            SELECT * FROM p6t_state_mn.results_2024_us_representative_by_district
+            UNION ALL
+            SELECT * FROM p6t_state_mn.results_2024_supreme_court_and_courts_of_appeals
+            UNION ALL
             SELECT * FROM p6t_state_mn.results_2024_county_races
             UNION ALL
             SELECT * FROM p6t_state_mn.results_2024_municipal_races_and_questions
@@ -178,10 +192,6 @@ async fn update_public_schema_with_results() {
             SELECT * FROM p6t_state_mn.results_2024_school_board_races
             UNION ALL
             SELECT * FROM p6t_state_mn.results_2024_state_senator_by_district
-            UNION ALL
-            SELECT * FROM p6t_state_mn.results_2024_us_representative_by_district
-            UNION ALL
-            SELECT * FROM p6t_state_mn.results_2024_us_senator_statewide
             UNION ALL
             SELECT * FROM p6t_state_mn.results_2024_state_representative_by_district
             UNION ALL
@@ -214,7 +224,7 @@ async fn update_public_schema_with_results() {
                 END AS total_first_choice_votes
             FROM
                 source
-            LEFT JOIN race_candidates rc ON rc.ref_key = SLUGIFY(CONCAT('mn-sos-', source.candidate_name, '-', source.office_id, '-', COALESCE(source.county_id, '88')))
+            LEFT JOIN race_candidates rc ON rc.ref_key = SLUGIFY(CONCAT('mn-sos-', source.office_name, '-', source.candidate_name))
             LEFT JOIN race r ON r.id = rc.race_id
             ORDER BY
                 office_name,
@@ -238,7 +248,7 @@ async fn update_public_schema_with_results() {
             FROM
                 results
             WHERE
-                rc.ref_key = SLUGIFY(CONCAT('mn-sos-', results.candidate_name, '-', results.office_id, '-', COALESCE(results.county_id, '88')))
+                rc.ref_key = SLUGIFY(CONCAT('mn-sos-', results.office_name, '-', results.candidate_name))
             RETURNING
                 *
         ),
