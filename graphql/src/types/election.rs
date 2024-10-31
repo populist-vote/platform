@@ -323,6 +323,13 @@ async fn get_races_by_address_id(
                                 (o.election_scope = 'district' AND o.district_type = 'hospital' AND o.hospital_district = $15 AND o.county = $4)
                             ELSE (o.election_scope = 'district' AND o.district_type = 'hospital' AND o.hospital_district = $15)
                         END) OR
+                        -- Special edge case for Unorg Hospital Municipalities
+                        (CASE 
+                            WHEN $3 = 'North Unorg' THEN 
+                            (o.election_scope = 'city' AND o.municipality LIKE '%' || $3 || '%')
+                            WHEN $3 = 'Long Lake Unorg' THEN 
+                            (o.election_scope = 'city' AND o.municipality LIKE '%' || $3 || '%')
+                        END) OR
                         (o.election_scope = 'district' AND o.district_type = 'soil_and_water' AND o.county = $4 AND (REGEXP_REPLACE(o.district, '.*\(([^)]+)\).*', '\1') = $14 OR o.district = $14)) OR
                         (o.election_scope = 'district' AND o.district_type = 'city' AND o.municipality ILIKE $3 AND REGEXP_REPLACE(o.district, '^[^0-9]*', '') = $12) OR
                         (o.election_scope = 'city' AND o.municipality ILIKE $3) OR
@@ -351,7 +358,7 @@ async fn get_races_by_address_id(
         ward,
         judicial_district,
         parsed_soil_and_water_district,
-        hospital_district
+        hospital_district //$15
     )
     .fetch_all(db_pool)
     .await?;
