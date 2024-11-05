@@ -40,7 +40,7 @@ pub async fn init_job_schedule() {
     })
     .unwrap();
 
-    // Run job every 10 minutes on the load test Fridays for MN Sos results
+    // Update MN SoS election results every 10 minutes
     let update_mn_results_job = Job::new_async("0 1/10 * * * * 2024", |uuid, mut l| {
         Box::pin(async move {
             tracing::warn!("Running update_mn_results job");
@@ -62,7 +62,7 @@ pub async fn init_job_schedule() {
         config::Environment::Production => {
             info!("Running cron jobs in production environment");
             sched.add(update_legiscan_bills_job).await.unwrap();
-            // sched.add(update_mn_results_job).await.unwrap(); // Uncomment after load tests are completed Nov 1, 2024
+            sched.add(update_mn_results_job).await.unwrap();
         }
         config::Environment::Staging => {
             info!("Running cron jobs in staging environment");
