@@ -47,6 +47,7 @@ impl Config {
             "https://mprnews.org",
             "https://sahanjournal.com",
             "https://wtip.org/",
+            "https://hamlineoracle.com/",
         ];
         let excluded_origins = ["https://www.mprnews.org/preview/"];
 
