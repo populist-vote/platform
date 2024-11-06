@@ -104,7 +104,7 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
         tx_copy.send(csv_data_as_string.as_bytes()).await?;
         tx_copy.finish().await?;
         // TODO: Refactor this scraper to fit the Scraper interface with run_local fn and remove below line
-        _write_to_csv_file(name, &data)?;
+        // _write_to_csv_file(name, &data)?;
     }
     update_public_schema_with_results().await;
 
