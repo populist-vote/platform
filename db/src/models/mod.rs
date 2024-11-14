@@ -4,6 +4,7 @@ pub mod ballot_measure;
 pub mod bill;
 pub mod candidate_guide;
 pub mod committee;
+pub mod conversation;
 pub mod election;
 pub mod embed;
 pub mod enums;

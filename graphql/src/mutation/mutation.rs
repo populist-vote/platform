@@ -4,6 +4,7 @@ use super::{
     ballot_measure::BallotMeasureMutation,
     bill::BillMutation,
     candidate_guide::CandidateGuideMutation,
+    conversation::ConversationMutation,
     election::ElectionMutation,
     embed::EmbedMutation,
     issue_tag::IssueTagMutation,
@@ -20,6 +21,7 @@ use async_graphql::MergedObject;
 #[derive(MergedObject, Default)]
 pub struct Mutation(
     ArgumentMutation,
+    ConversationMutation,
     PoliticianMutation,
     OrganizationMutation,
     BillMutation,
