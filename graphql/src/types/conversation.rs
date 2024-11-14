@@ -132,32 +132,55 @@ impl ConversationResult {
         let statements = sqlx::query!(
             r#"
             WITH statement_search AS (
-                SELECT 
-                    s.id,
-                    s.conversation_id,
-                    s.author_id,
-                    s.content,
-                    s.created_at,
-                    COALESCE(COUNT(v.id), 0) as "vote_count!: i64",
-                    COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'support'), 0) as "agree_count!: i64",
-                    COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'oppose'), 0) as "disagree_count!: i64",
-                    COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'neutral'), 0) as "pass_count!: i64",
-                    ts_rank_cd(
-                        setweight(to_tsvector('english', s.content), 'B'),
-                        to_tsquery('english', regexp_replace(trim($1), '\s+', ' & ', 'g')),
+            SELECT 
+                s.id,
+                s.conversation_id,
+                s.author_id,
+                s.content,
+                s.created_at,
+                COALESCE(COUNT(v.id), 0) as "vote_count!: i64",
+                COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'support'), 0) as "agree_count!: i64",
+                COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'oppose'), 0) as "disagree_count!: i64",
+                COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'neutral'), 0) as "pass_count!: i64",
+                (
+                    -- Combine different similarity metrics
+                    0.4 * similarity(lower(s.content), lower($1)) + -- Exact similarity
+                    0.4 * ts_rank_cd(
+                        setweight(to_tsvector('english', s.content), 'A'),
+                        to_tsquery('english', regexp_replace(
+                            trim(regexp_replace($1, '[^a-zA-Z0-9\s]', ' ', 'g')),
+                            '\s+',
+                            ' | ',
+                            'g'
+                        )),
                         32
-                    ) * (1 + ln(GREATEST(COUNT(v.id), 1))) as similarity_score
-                FROM statement s
-                LEFT JOIN statement_vote v ON s.id = v.statement_id
-                WHERE 
-                    s.conversation_id = $2 AND
-                    to_tsvector('english', s.content) @@ to_tsquery('english', regexp_replace(trim($1), '\s+', ' & ', 'g'))
-                GROUP BY s.id
-            )
-            SELECT *
-            FROM statement_search
-            ORDER BY similarity_score DESC
-            LIMIT $3
+                    ) +
+                    0.2 * (1 - word_similarity(lower(s.content), lower($1))) -- Word-level similarity
+                ) * (1 + ln(GREATEST(COUNT(v.id), 1))) as similarity_score -- Engagement boost
+            FROM statement s
+            LEFT JOIN statement_vote v ON s.id = v.statement_id
+            WHERE 
+                s.conversation_id = $2 AND
+                (
+                    -- Multiple matching conditions
+                    similarity(lower(s.content), lower($1)) > 0.1 OR -- Basic trigram similarity
+                    s.content ILIKE '%' || $1 || '%' OR -- Contains the search term
+                    to_tsvector('english', s.content) @@ to_tsquery('english', 
+                        regexp_replace(
+                            trim(regexp_replace($1, '[^a-zA-Z0-9\s]', ' ', 'g')),
+                            '\s+',
+                            ' | ',
+                            'g'
+                        )
+                    ) -- Full text search with OR instead of AND
+                )
+            GROUP BY s.id
+        )
+        SELECT *
+        FROM statement_search
+        WHERE similarity_score > 0.1
+        ORDER BY similarity_score DESC
+        LIMIT $3;
             "#,
             draft_content,
             uuid::Uuid::parse_str(&self.id)?,
