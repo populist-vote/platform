@@ -29,6 +29,7 @@ pub struct ConversationResult {
 struct StatementResult {
     id: ID,
     conversation_id: ID,
+    author_id: Option<ID>,
     content: String,
     created_at: DateTime<Utc>,
     vote_count: i64,
@@ -74,6 +75,7 @@ impl ConversationResult {
             SELECT 
                 s.id,
                 s.conversation_id,
+                s.author_id,
                 s.content,
                 s.created_at,
                 COALESCE(COUNT(v.id), 0) as "vote_count!: i64",
@@ -107,6 +109,7 @@ impl ConversationResult {
             .map(|row| StatementResult {
                 id: row.id.into(),
                 conversation_id: row.conversation_id.into(),
+                author_id: row.author_id.map(|id| id.into()),
                 content: row.content,
                 created_at: row.created_at,
                 vote_count: row.vote_count,
@@ -122,21 +125,25 @@ impl ConversationResult {
 impl StatementResult {
     async fn author(&self, ctx: &Context<'_>) -> async_graphql::Result<Option<UserResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        match &self.author_id {
+            Some(author_id) => {
+                let record = sqlx::query_as!(
+                    UserWithProfile,
+                    r#"
+                    SELECT u.id, u.username, u.email, first_name, last_name, profile_picture_url FROM user_profile up
+                    JOIN populist_user u ON up.user_id = u.id WHERE u.id = $1
+                "#,
+                    uuid::Uuid::parse_str(&author_id)?,
+                )
+                .fetch_optional(&db_pool)
+                .await?;
 
-        let author = sqlx::query_as!(
-            UserWithProfile,
-            r#"
-            SELECT u.id, u.username, p.first_name, p.last_name, u.email, p.profile_picture_url
-            FROM statement s
-            LEFT JOIN populist_user u ON s.author_id = u.id
-            LEFT JOIN user_profile p ON u.id = p.user_id
-            WHERE s.id = $1
-            "#,
-            uuid::Uuid::parse_str(&self.id.to_string())?
-        )
-        .fetch_optional(&db_pool)
-        .await?;
-
-        Ok(author.map(|u| u.into()))
+                match record {
+                    Some(user) => Ok(Some(user.into())),
+                    None => Ok(None),
+                }
+            }
+            None => Ok(None),
+        }
     }
 }
