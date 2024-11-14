@@ -1,8 +1,10 @@
 use async_graphql::{ComplexObject, Context, SimpleObject, ID};
 use chrono::{DateTime, Utc};
-use db::models::conversation::Conversation;
+use db::{models::conversation::Conversation, UserWithProfile};
 
 use crate::context::ApiContext;
+
+use super::UserResult;
 
 #[derive(async_graphql::Enum, Copy, Clone, Eq, PartialEq)]
 enum StatementSort {
@@ -23,6 +25,7 @@ pub struct ConversationResult {
 }
 
 #[derive(SimpleObject)]
+#[graphql(complex)]
 struct StatementResult {
     id: ID,
     conversation_id: ID,
@@ -112,5 +115,28 @@ impl ConversationResult {
                 pass_count: row.pass_count,
             })
             .collect())
+    }
+}
+
+#[ComplexObject]
+impl StatementResult {
+    async fn author(&self, ctx: &Context<'_>) -> async_graphql::Result<Option<UserResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+
+        let author = sqlx::query_as!(
+            UserWithProfile,
+            r#"
+            SELECT u.id, u.username, p.first_name, p.last_name, u.email, p.profile_picture_url
+            FROM statement s
+            LEFT JOIN populist_user u ON s.author_id = u.id
+            LEFT JOIN user_profile p ON u.id = p.user_id
+            WHERE s.id = $1
+            "#,
+            uuid::Uuid::parse_str(&self.id.to_string())?
+        )
+        .fetch_optional(&db_pool)
+        .await?;
+
+        Ok(author.map(|u| u.into()))
     }
 }
