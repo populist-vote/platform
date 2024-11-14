@@ -70,8 +70,14 @@ impl ConversationMutation {
             Some(user_id) => Some(
                 Uuid::parse_str(&user_id.to_string()).map_err(|_| Error::new("Invalid user ID"))?,
             ),
-            None => match ctx.data::<TokenData<AccessTokenClaims>>() {
-                Ok(token_data) => Some(token_data.claims.sub),
+            None => match ctx.data::<Option<TokenData<AccessTokenClaims>>>() {
+                Ok(token_data) => {
+                    let user_id = token_data.as_ref().map(|token_data| token_data.claims.sub);
+                    match user_id {
+                        Some(user_id) => Some(user_id),
+                        None => None,
+                    }
+                }
                 Err(_) => None,
             },
         };
