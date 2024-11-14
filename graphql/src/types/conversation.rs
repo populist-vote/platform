@@ -119,6 +119,68 @@ impl ConversationResult {
             })
             .collect())
     }
+
+    async fn related_statements(
+        &self,
+        ctx: &Context<'_>,
+        draft_content: String,
+        limit: Option<i32>,
+    ) -> async_graphql::Result<Vec<StatementResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let limit = limit.unwrap_or(5);
+
+        let statements = sqlx::query!(
+            r#"
+            WITH statement_search AS (
+                SELECT 
+                    s.id,
+                    s.conversation_id,
+                    s.author_id,
+                    s.content,
+                    s.created_at,
+                    COALESCE(COUNT(v.id), 0) as "vote_count!: i64",
+                    COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'support'), 0) as "agree_count!: i64",
+                    COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'oppose'), 0) as "disagree_count!: i64",
+                    COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'neutral'), 0) as "pass_count!: i64",
+                    ts_rank_cd(
+                        setweight(to_tsvector('english', s.content), 'B'),
+                        to_tsquery('english', regexp_replace(trim($1), '\s+', ' & ', 'g')),
+                        32
+                    ) * (1 + ln(GREATEST(COUNT(v.id), 1))) as similarity_score
+                FROM statement s
+                LEFT JOIN statement_vote v ON s.id = v.statement_id
+                WHERE 
+                    s.conversation_id = $2 AND
+                    to_tsvector('english', s.content) @@ to_tsquery('english', regexp_replace(trim($1), '\s+', ' & ', 'g'))
+                GROUP BY s.id
+            )
+            SELECT *
+            FROM statement_search
+            ORDER BY similarity_score DESC
+            LIMIT $3
+            "#,
+            draft_content,
+            uuid::Uuid::parse_str(&self.id)?,
+            limit as i64
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        Ok(statements
+            .into_iter()
+            .map(|row| StatementResult {
+                id: row.id.into(),
+                conversation_id: row.conversation_id.into(),
+                author_id: row.author_id.map(|id| id.into()),
+                content: row.content,
+                created_at: row.created_at,
+                vote_count: row.vote_count,
+                agree_count: row.agree_count,
+                disagree_count: row.disagree_count,
+                pass_count: row.pass_count,
+            })
+            .collect())
+    }
 }
 
 #[ComplexObject]
