@@ -18,7 +18,7 @@ enum StatementSort {
 #[graphql(complex)]
 pub struct ConversationResult {
     id: ID,
-    prompt: String,
+    topic: String,
     description: Option<String>,
     created_at: DateTime<Utc>,
     updated_at: DateTime<Utc>,
@@ -70,7 +70,7 @@ impl From<Conversation> for ConversationResult {
     fn from(conversation: Conversation) -> Self {
         Self {
             id: ID(conversation.id.to_string()),
-            prompt: conversation.prompt,
+            topic: conversation.topic,
             description: conversation.description,
             created_at: conversation.created_at,
             updated_at: conversation.updated_at,

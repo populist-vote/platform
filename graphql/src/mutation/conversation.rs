@@ -14,8 +14,9 @@ pub struct ConversationMutation;
 
 #[derive(InputObject)]
 struct CreateConversationInput {
-    prompt: String,
+    topic: String,
     description: Option<String>,
+    organization_id: ID,
 }
 
 #[derive(InputObject)]
@@ -38,16 +39,19 @@ impl ConversationMutation {
             Conversation,
             r#"
             INSERT INTO conversation (
-                prompt, 
+                topic, 
                 description, 
+                organization_id,
                 created_at, 
                 updated_at
             )
-            VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             RETURNING *
             "#,
-            input.prompt,
-            input.description
+            input.topic,
+            input.description,
+            Uuid::parse_str(&input.organization_id.to_string())
+                .map_err(|_| Error::new("Invalid organization ID"))?
         )
         .fetch_one(&db_pool)
         .await?;

@@ -7,8 +7,9 @@ use crate::ArgumentPosition;
 #[derive(FromRow, Clone)]
 pub struct Conversation {
     pub id: uuid::Uuid,
-    pub prompt: String,
+    pub topic: String,
     pub description: Option<String>,
+    pub organization_id: uuid::Uuid,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
