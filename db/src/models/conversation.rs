@@ -20,6 +20,7 @@ pub struct Statement {
     pub content: String,
     pub author_id: Option<uuid::Uuid>, // Optional author ID for anonymous statements
     pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(FromRow, SimpleObject, Clone)]

@@ -7,7 +7,7 @@ use db::{
 use jsonwebtoken::TokenData;
 use uuid::Uuid;
 
-use crate::{context::ApiContext, types::ConversationResult};
+use crate::{context::ApiContext, types::ConversationResult, SessionData};
 
 #[derive(Default)]
 pub struct ConversationMutation;
@@ -112,10 +112,13 @@ impl ConversationMutation {
     ) -> async_graphql::Result<StatementVote> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
 
+        let session_data = ctx.data::<SessionData>()?.clone();
+        let session_id = session_data.session_id;
+
         let statement_id = Uuid::parse_str(&statement_id.to_string())
             .map_err(|_| Error::new("Invalid statement ID"))?;
 
-        let participant_id = match user_id {
+        let user_id = match user_id {
             Some(user_id) => Some(
                 Uuid::parse_str(&user_id.to_string()).map_err(|_| Error::new("Invalid user ID"))?,
             ),
@@ -136,7 +139,8 @@ impl ConversationMutation {
             r#"
             INSERT INTO statement_vote (
                 statement_id,
-                participant_id,
+                user_id,
+                session_id,
                 vote_type,
                 created_at
             )
@@ -149,7 +153,8 @@ impl ConversationMutation {
             "#,
         )
         .bind(statement_id)
-        .bind(participant_id)
+        .bind(user_id)
+        .bind(uuid::Uuid::parse_str(&session_id.to_string())?)
         .bind(vote_type)
         .fetch_one(&db_pool)
         .await?;

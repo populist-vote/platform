@@ -38,6 +38,34 @@ struct StatementResult {
     pass_count: i64,
 }
 
+#[derive(SimpleObject)]
+struct ConversationStats {
+    total_participants: i64,
+    total_statements: i64,
+    total_votes: i64,
+    avg_votes_per_participant: f64,
+}
+
+#[derive(SimpleObject)]
+struct TimeSeriesPoint {
+    timestamp: DateTime<Utc>,
+    count: i64,
+}
+
+#[derive(SimpleObject)]
+struct ParticipationBucket {
+    vote_count: i64,
+    participant_count: i64,
+    percentage_of_total: f64,
+}
+
+#[derive(SimpleObject)]
+struct VoteDistributionBucket {
+    vote_count: i64,        // Number of votes in this bucket (e.g., "5 votes")
+    participant_count: i64, // How many participants cast this many votes
+    percentage: f64,        // What percentage of total participants this represents
+}
+
 impl From<Conversation> for ConversationResult {
     fn from(conversation: Conversation) -> Self {
         Self {
@@ -201,6 +229,277 @@ impl ConversationResult {
                 agree_count: row.agree_count,
                 disagree_count: row.disagree_count,
                 pass_count: row.pass_count,
+            })
+            .collect())
+    }
+
+    async fn stats(&self, ctx: &Context<'_>) -> async_graphql::Result<ConversationStats> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+
+        let stats = sqlx::query!(
+            r#"
+            WITH participant_stats AS (
+                SELECT 
+                    COUNT(DISTINCT COALESCE(user_id, session_id)) as unique_participants,
+                    COUNT(*) as total_votes
+                FROM statement_vote v
+                JOIN statement s ON v.statement_id = s.id
+                WHERE s.conversation_id = $1
+            ),
+            statement_stats AS (
+                SELECT COUNT(*) as total_statements
+                FROM statement
+                WHERE conversation_id = $1
+            )
+            SELECT 
+                p.unique_participants as "total_participants!",
+                s.total_statements as "total_statements!",
+                p.total_votes as "total_votes!",
+                CASE 
+                    WHEN p.unique_participants > 0 
+                    THEN p.total_votes::float / p.unique_participants::float 
+                    ELSE 0 
+                END as "avg_votes_per_participant!"
+            FROM participant_stats p, statement_stats s
+            "#,
+            uuid::Uuid::parse_str(&self.id)?
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(ConversationStats {
+            total_participants: stats.total_participants,
+            total_statements: stats.total_statements,
+            total_votes: stats.total_votes,
+            avg_votes_per_participant: stats.avg_votes_per_participant,
+        })
+    }
+
+    async fn statements_over_time(
+        &self,
+        ctx: &Context<'_>,
+        interval: Option<String>,
+    ) -> async_graphql::Result<Vec<TimeSeriesPoint>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let interval = interval.unwrap_or("1 day".to_string());
+        let interval_unit = match interval.split_whitespace().nth(1) {
+            Some(unit) => unit,
+            None => return Err(async_graphql::Error::new("Invalid interval format")),
+        };
+
+        let points = sqlx::query!(
+            r#"
+            WITH RECURSIVE timeline AS (
+                SELECT 
+                    date_trunc($2::text, MIN(created_at)) as time_bucket,
+                    date_trunc($2::text, MAX(created_at)) as max_time
+                FROM statement
+                WHERE conversation_id = $1
+                UNION ALL
+                SELECT 
+                    time_bucket + ($3::text::interval),
+                    max_time
+                FROM timeline
+                WHERE time_bucket < max_time
+            )
+            SELECT 
+                t.time_bucket as "timestamp!",
+                COUNT(s.id) as "count!"
+            FROM timeline t
+            LEFT JOIN statement s ON 
+                date_trunc($2::text, s.created_at) <= t.time_bucket AND
+                s.conversation_id = $1
+            GROUP BY t.time_bucket
+            ORDER BY t.time_bucket
+            "#,
+            uuid::Uuid::parse_str(&self.id)?,
+            interval_unit,
+            interval
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        Ok(points
+            .into_iter()
+            .map(|p| TimeSeriesPoint {
+                timestamp: p.timestamp,
+                count: p.count,
+            })
+            .collect())
+    }
+
+    async fn votes_over_time(
+        &self,
+        ctx: &Context<'_>,
+        interval: Option<String>,
+    ) -> async_graphql::Result<Vec<TimeSeriesPoint>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let interval = interval.unwrap_or("1 day".to_string());
+        let interval_unit = match interval.split_whitespace().nth(1) {
+            Some(unit) => unit,
+            None => return Err(async_graphql::Error::new("Invalid interval format")),
+        };
+
+        let points = sqlx::query!(
+            r#"
+            WITH RECURSIVE timeline AS (
+                SELECT 
+                    date_trunc($2::text, MIN(v.created_at)) as time_bucket,
+                    date_trunc($2::text, MAX(v.created_at)) as max_time
+                FROM statement_vote v
+                JOIN statement s ON v.statement_id = s.id
+                WHERE s.conversation_id = $1
+                UNION ALL
+                SELECT 
+                    time_bucket + ($3::text::interval),
+                    max_time
+                FROM timeline
+                WHERE time_bucket < max_time
+            )
+            SELECT 
+                t.time_bucket as "timestamp!",
+                COUNT(v.id) as "count!"
+            FROM timeline t
+            LEFT JOIN statement s ON s.conversation_id = $1
+            LEFT JOIN statement_vote v ON 
+                v.statement_id = s.id AND
+                date_trunc($2::text, v.created_at) <= t.time_bucket
+            GROUP BY t.time_bucket
+            ORDER BY t.time_bucket
+            "#,
+            uuid::Uuid::parse_str(&self.id)?,
+            interval_unit,
+            interval
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        Ok(points
+            .into_iter()
+            .map(|p| TimeSeriesPoint {
+                timestamp: p.timestamp,
+                count: p.count,
+            })
+            .collect())
+    }
+
+    /// Counts unique participants who voted in each time bucket
+    async fn participation_over_time(
+        &self,
+        ctx: &Context<'_>,
+        interval: Option<String>, // e.g., '1 hour', '1 day'
+    ) -> async_graphql::Result<Vec<TimeSeriesPoint>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let interval = interval.unwrap_or("1 day".to_string());
+        let interval_unit = match interval.split_whitespace().nth(1) {
+            Some(unit) => unit,
+            None => return Err(async_graphql::Error::new("Invalid interval format")),
+        };
+
+        let points = sqlx::query!(
+            r#"
+            WITH RECURSIVE timeline AS (
+                SELECT 
+                    date_trunc($2, MIN(v.created_at)) as time_bucket,
+                    date_trunc($2, MAX(v.created_at)) as max_time
+                FROM statement_vote v
+                JOIN statement s ON v.statement_id = s.id
+                WHERE s.conversation_id = $1
+                UNION ALL
+                SELECT 
+                    time_bucket + ($3::text::interval),
+                    max_time
+                FROM timeline
+                WHERE time_bucket < max_time
+            ),
+            participants AS (
+                SELECT DISTINCT
+                    COALESCE(user_id, session_id) as participant_id,
+                    date_trunc($2::text, v.created_at) as time_bucket
+                FROM statement_vote v
+                JOIN statement s ON v.statement_id = s.id
+                WHERE s.conversation_id = $1
+            )
+            SELECT 
+                t.time_bucket as "timestamp!",
+                COUNT(DISTINCT participant_id) as "count!"
+            FROM timeline t
+            LEFT JOIN participants p ON p.time_bucket <= t.time_bucket
+            GROUP BY t.time_bucket
+            ORDER BY t.time_bucket
+            "#,
+            uuid::Uuid::parse_str(&self.id)?,
+            interval_unit,
+            interval
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        Ok(points
+            .into_iter()
+            .map(|p| TimeSeriesPoint {
+                timestamp: p.timestamp,
+                count: p.count,
+            })
+            .collect())
+    }
+
+    /// Returns distribution of voting activity across participants.
+    /// Shows how many participants cast X number of votes.
+    async fn vote_distribution(
+        &self,
+        ctx: &Context<'_>,
+        bucket_size: Option<i32>, // Optional parameter to group votes into ranges
+    ) -> async_graphql::Result<Vec<VoteDistributionBucket>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let bucket_size = bucket_size.unwrap_or(1); // Default to exact counts
+
+        let distribution = sqlx::query!(
+            r#"
+            WITH participant_vote_counts AS (
+                -- First, count how many votes each participant cast
+                SELECT 
+                    session_id,
+                    COUNT(*) as vote_count
+                FROM statement_vote v
+                JOIN statement s ON v.statement_id = s.id
+                WHERE s.conversation_id = $1
+                GROUP BY session_id
+            ),
+            bucketed_counts AS (
+                -- Then bucket these counts and count participants per bucket
+                SELECT
+                    -- Round down to nearest bucket_size
+                    (vote_count / $2 * $2) as votes_cast,
+                    COUNT(*) as participant_count
+                FROM participant_vote_counts
+                GROUP BY (vote_count / $2 * $2)
+            ),
+            total_participants AS (
+                -- Get total participant count for percentage calculation
+                SELECT COUNT(*) as total
+                FROM participant_vote_counts
+            )
+            -- Finally, calculate percentages and return results
+            SELECT 
+                votes_cast as "votes_cast!",
+                participant_count as "participant_count!",
+                (participant_count::float / NULLIF(total, 0) * 100) as "percentage!"
+            FROM bucketed_counts, total_participants
+            ORDER BY votes_cast
+            "#,
+            uuid::Uuid::parse_str(&self.id)?,
+            bucket_size as i64
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        Ok(distribution
+            .into_iter()
+            .map(|row| VoteDistributionBucket {
+                vote_count: row.votes_cast,
+                participant_count: row.participant_count,
+                percentage: row.percentage,
             })
             .collect())
     }
