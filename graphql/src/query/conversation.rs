@@ -12,12 +12,17 @@ impl ConversationQuery {
         &self,
         ctx: &Context<'_>,
         organization_id: ID,
+        limit: Option<i64>,
     ) -> async_graphql::Result<Vec<ConversationResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let limit = limit.unwrap_or(10);
         let conversations = sqlx::query_as!(
             Conversation,
-            "SELECT * FROM conversation WHERE organization_id = $1",
-            uuid::Uuid::parse_str(&organization_id)?
+            "SELECT * FROM conversation WHERE organization_id = $1
+            ORDER BY created_at DESC
+            LIMIT $2",
+            uuid::Uuid::parse_str(&organization_id)?,
+            limit
         )
         .fetch_all(&db_pool)
         .await?;
