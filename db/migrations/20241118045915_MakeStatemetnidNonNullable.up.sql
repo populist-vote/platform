@@ -1,0 +1,11 @@
+-- Add up migration script here
+ALTER TABLE statement_vote ALTER COLUMN statement_id SET NOT NULL;
+
+ALTER TABLE statement_vote ADD COLUMN updated_at
+TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+CREATE TRIGGER set_updated_at
+BEFORE UPDATE
+ON statement_vote
+FOR EACH ROW
+EXECUTE PROCEDURE SET_UPDATED_AT();

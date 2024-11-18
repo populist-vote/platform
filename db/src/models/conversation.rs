@@ -26,9 +26,11 @@ pub struct Statement {
 
 #[derive(FromRow, SimpleObject, Clone)]
 pub struct StatementVote {
-    id: uuid::Uuid,
-    statement_id: uuid::Uuid,
-    participant_id: Option<uuid::Uuid>, // Optional participant ID for anonymous votes
-    vote_type: ArgumentPosition,
-    created_at: DateTime<Utc>,
+    pub id: uuid::Uuid,
+    pub statement_id: uuid::Uuid,
+    pub user_id: Option<uuid::Uuid>,
+    pub session_id: Option<uuid::Uuid>,
+    pub vote_type: ArgumentPosition,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }

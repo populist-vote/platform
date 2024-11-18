@@ -138,7 +138,7 @@ impl ConversationMutation {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
 
         let session_data = ctx.data::<SessionData>()?.clone();
-        let session_id = session_data.session_id;
+        let session_id = uuid::Uuid::parse_str(&session_data.session_id.to_string())?;
 
         let statement_id = Uuid::parse_str(&statement_id.to_string())
             .map_err(|_| Error::new("Invalid statement ID"))?;
@@ -160,27 +160,33 @@ impl ConversationMutation {
             .map_err(|_| Error::new("Statement not found"))?;
 
         // Upsert vote
-        let vote = sqlx::query_as::<_, StatementVote>(
+        let vote = sqlx::query_as!(
+            StatementVote,
             r#"
             INSERT INTO statement_vote (
                 statement_id,
                 user_id,
                 session_id,
-                vote_type,
-                created_at
+                vote_type
             )
-            VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
-            ON CONFLICT (statement_id, participant_id)
+            VALUES ($1, $2, $3, $4::argument_position)
+            ON CONFLICT (statement_id, user_id)
             DO UPDATE SET 
-                vote_type = EXCLUDED.vote_type,
-                created_at = CURRENT_TIMESTAMP
-            RETURNING *
+                vote_type = EXCLUDED.vote_type
+            RETURNING 
+                id,
+                statement_id,
+                user_id,
+                session_id,
+                vote_type AS "vote_type: ArgumentPosition", 
+                created_at,
+                updated_at
             "#,
+            statement_id,
+            user_id,
+            Some(session_id),
+            vote_type as ArgumentPosition
         )
-        .bind(statement_id)
-        .bind(user_id)
-        .bind(uuid::Uuid::parse_str(&session_id.to_string())?)
-        .bind(vote_type)
         .fetch_one(&db_pool)
         .await?;
 
