@@ -17,6 +17,7 @@ struct CreateConversationInput {
     topic: String,
     description: Option<String>,
     organization_id: ID,
+    seed_statements: Option<Vec<String>>,
 }
 
 #[derive(InputObject)]
@@ -34,24 +35,44 @@ impl ConversationMutation {
         input: CreateConversationInput,
     ) -> async_graphql::Result<ConversationResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
-
         let conversation = sqlx::query_as!(
             Conversation,
             r#"
-            INSERT INTO conversation (
-                topic, 
-                description, 
-                organization_id,
-                created_at, 
-                updated_at
+            WITH new_conversation AS (
+                INSERT INTO conversation (
+                    topic, 
+                    description, 
+                    organization_id,
+                    created_at, 
+                    updated_at
+                )
+                VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                RETURNING *
+            ),
+            statement_insert AS (
+                INSERT INTO statement (
+                    conversation_id,
+                    content,
+                    created_at,
+                    updated_at
+                )
+                SELECT 
+                    (SELECT id FROM new_conversation),
+                    unnest($4::text[]),
+                    CURRENT_TIMESTAMP,
+                    CURRENT_TIMESTAMP
+                WHERE array_length($4::text[], 1) > 0
             )
-            VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-            RETURNING *
+            SELECT * FROM new_conversation
             "#,
             input.topic,
             input.description,
             Uuid::parse_str(&input.organization_id.to_string())
-                .map_err(|_| Error::new("Invalid organization ID"))?
+                .map_err(|_| Error::new("Invalid organization ID"))?,
+            input
+                .seed_statements
+                .as_ref()
+                .map(|seed_statements| seed_statements.as_slice()),
         )
         .fetch_one(&db_pool)
         .await?;
