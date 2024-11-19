@@ -1,8 +1,11 @@
-use async_graphql::{ComplexObject, Context, SimpleObject, ID};
+use async_graphql::{ComplexObject, Context, Error, Result, SimpleObject, ID};
+use auth::AccessTokenClaims;
 use chrono::{DateTime, Utc};
-use db::{models::conversation::Conversation, UserWithProfile};
+use db::{models::conversation::Conversation, ArgumentPosition, UserWithProfile};
+use jsonwebtoken::TokenData;
+use uuid::Uuid;
 
-use crate::context::ApiContext;
+use crate::{context::ApiContext, SessionData};
 
 use super::UserResult;
 
@@ -529,5 +532,45 @@ impl StatementResult {
             }
             None => Ok(None),
         }
+    }
+
+    async fn vote_by_user_or_session(
+        &self,
+        ctx: &Context<'_>,
+        user_id: Option<ID>,
+    ) -> Result<Option<ArgumentPosition>> {
+        let session_data = ctx.data::<SessionData>()?.clone();
+        let session_id = uuid::Uuid::parse_str(&session_data.session_id.to_string())?;
+
+        let user_id = match user_id {
+            Some(user_id) => Some(
+                Uuid::parse_str(&user_id.to_string()).map_err(|_| Error::new("Invalid user ID"))?,
+            ),
+            None => match ctx.data::<TokenData<AccessTokenClaims>>() {
+                Ok(token_data) => Some(token_data.claims.sub),
+                Err(_) => None,
+            },
+        };
+
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+
+        let vote = sqlx::query!(
+            r#"
+            SELECT vote_type as "vote_type: ArgumentPosition"
+            FROM statement_vote
+            WHERE statement_id = $1 AND (
+                user_id = $2 OR session_id = $3
+            )
+            "#,
+            Uuid::parse_str(&self.id.to_string())?,
+            user_id,
+            session_id
+        )
+        .fetch_optional(&db_pool)
+        .await?;
+
+        let vote = vote.map(|v| v.vote_type);
+
+        Ok(vote)
     }
 }
