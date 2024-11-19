@@ -159,36 +159,73 @@ impl ConversationMutation {
             .await
             .map_err(|_| Error::new("Statement not found"))?;
 
-        // Upsert vote
-        let vote = sqlx::query_as!(
-            StatementVote,
-            r#"
-            INSERT INTO statement_vote (
+        // Use different queries based on whether we have a user_id
+        let vote = if let Some(user_id) = user_id {
+            // Use user_id for conflict
+            sqlx::query_as!(
+                StatementVote,
+                r#"
+                INSERT INTO statement_vote (
+                    statement_id,
+                    user_id,
+                    session_id,
+                    vote_type
+                )
+                VALUES ($1, $2, $3, $4::argument_position)
+                ON CONFLICT (statement_id, user_id)
+                DO UPDATE SET 
+                    vote_type = EXCLUDED.vote_type,
+                    session_id = EXCLUDED.session_id,
+                    updated_at = CURRENT_TIMESTAMP
+                RETURNING 
+                    id,
+                    statement_id,
+                    user_id,
+                    session_id,
+                    vote_type AS "vote_type: ArgumentPosition",
+                    created_at,
+                    updated_at
+                "#,
                 statement_id,
                 user_id,
-                session_id,
-                vote_type
+                Some(session_id),
+                vote_type as ArgumentPosition
             )
-            VALUES ($1, $2, $3, $4::argument_position)
-            ON CONFLICT (statement_id, user_id)
-            DO UPDATE SET 
-                vote_type = EXCLUDED.vote_type
-            RETURNING 
-                id,
+            .fetch_one(&db_pool)
+            .await?
+        } else {
+            // Use session_id for conflict
+            sqlx::query_as!(
+                StatementVote,
+                r#"
+                INSERT INTO statement_vote (
+                    statement_id,
+                    user_id,
+                    session_id,
+                    vote_type
+                )
+                VALUES ($1, $2, $3, $4::argument_position)
+                ON CONFLICT (statement_id, session_id)
+                DO UPDATE SET 
+                    vote_type = EXCLUDED.vote_type,
+                    updated_at = CURRENT_TIMESTAMP
+                RETURNING 
+                    id,
+                    statement_id,
+                    user_id,
+                    session_id,
+                    vote_type AS "vote_type: ArgumentPosition",
+                    created_at,
+                    updated_at
+                "#,
                 statement_id,
-                user_id,
+                None::<Uuid>,
                 session_id,
-                vote_type AS "vote_type: ArgumentPosition", 
-                created_at,
-                updated_at
-            "#,
-            statement_id,
-            user_id,
-            Some(session_id),
-            vote_type as ArgumentPosition
-        )
-        .fetch_one(&db_pool)
-        .await?;
+                vote_type as ArgumentPosition
+            )
+            .fetch_one(&db_pool)
+            .await?
+        };
 
         Ok(vote)
     }
