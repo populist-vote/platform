@@ -1,8 +1,16 @@
+use std::collections::HashSet;
+
 use async_graphql::{ComplexObject, Context, Error, Result, SimpleObject, ID};
 use auth::AccessTokenClaims;
 use chrono::{DateTime, Utc};
-use db::{models::conversation::Conversation, ArgumentPosition, UserWithProfile};
+use db::{
+    models::conversation::{Conversation, StatementVote},
+    ArgumentPosition, UserWithProfile,
+};
+use itertools::Itertools;
 use jsonwebtoken::TokenData;
+use kmeans::*;
+use ndarray::Array2;
 use uuid::Uuid;
 
 use crate::{context::ApiContext, SessionData};
@@ -79,6 +87,20 @@ impl From<Conversation> for ConversationResult {
             updated_at: conversation.updated_at,
         }
     }
+}
+
+#[derive(SimpleObject)]
+struct OpinionGroup {
+    id: ID,
+    users: Vec<i32>,
+    characteristic_votes: Vec<CharacteristicVote>,
+}
+
+#[derive(SimpleObject)]
+struct CharacteristicVote {
+    statement_id: ID,
+    mean_sentiment: f64,
+    consensus_level: f64,
 }
 
 #[ComplexObject]
@@ -506,6 +528,48 @@ impl ConversationResult {
             })
             .collect())
     }
+
+    async fn opinion_groups(
+        &self,
+        ctx: &Context<'_>,
+        num_groups: i32,
+    ) -> Result<Vec<OpinionGroup>, Error> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+
+        // Fetch all votes
+        let votes = sqlx::query_as!(
+            StatementVote,
+            r#"
+            SELECT v.id, statement_id, user_id, session_id, vote_type AS "vote_type: ArgumentPosition", v.created_at, v.updated_at
+            FROM statement_vote v
+            JOIN statement s ON v.statement_id = s.id
+            WHERE s.conversation_id = $1
+            "#,
+            uuid::Uuid::parse_str(&self.id)?
+        )
+        .fetch_all(&db_pool)
+        .await?;
+
+        // Convert votes to numerical matrix
+        let (matrix, user_ids, statement_ids) = prepare_voting_matrix(&votes);
+
+        // Perform k-means clustering
+        let groups = cluster_opinions(&matrix, num_groups as usize);
+
+        // Analyze groups
+        let mut opinion_groups = Vec::new();
+        for (group_id, group_users) in groups.iter().enumerate() {
+            let characteristic_votes = analyze_group_votes(&matrix, group_users, &statement_ids);
+
+            opinion_groups.push(OpinionGroup {
+                id: ID::from(group_id.to_string()),
+                users: group_users.clone(),
+                characteristic_votes,
+            });
+        }
+
+        Ok(opinion_groups)
+    }
 }
 
 #[ComplexObject]
@@ -573,4 +637,127 @@ impl StatementResult {
 
         Ok(vote)
     }
+}
+
+fn cluster_opinions(matrix: &Array2<f64>, k: usize) -> Vec<Vec<i32>> {
+    // Convert ndarray matrix to flat vector
+    let samples: Vec<f64> = matrix.iter().cloned().collect();
+    let sample_cnt = matrix.nrows();
+    let sample_dims = matrix.ncols();
+
+    // Create KMeans instance
+    let kmean: KMeans<f64, 8, EuclideanDistance> =
+        KMeans::new(samples, sample_cnt, sample_dims, EuclideanDistance);
+
+    // Run clustering
+    let result = kmean.kmeans_lloyd(
+        k,
+        100, // max iterations
+        KMeans::init_kmeanplusplus,
+        &KMeansConfig::default(),
+    );
+
+    // Convert assignments back to our group format
+    let mut groups: Vec<Vec<i32>> = vec![Vec::new(); k];
+    for (idx, &cluster) in result.assignments.iter().enumerate() {
+        groups[cluster].push(idx as i32);
+    }
+
+    groups
+}
+
+fn analyze_group_votes(
+    matrix: &Array2<f64>,
+    group_user_indices: &[i32],
+    statement_ids: &[Uuid],
+) -> Vec<CharacteristicVote> {
+    let mut characteristic_votes = Vec::new();
+
+    for (stmt_idx, &stmt_id) in statement_ids.iter().enumerate() {
+        // Get all votes for this statement
+        let votes = matrix.column(stmt_idx);
+
+        // Calculate statistics for this group
+        let group_votes: Vec<f64> = group_user_indices
+            .iter()
+            .map(|&user_idx| votes[user_idx as usize])
+            .collect();
+
+        // Calculate mean
+        let mean = group_votes.iter().sum::<f64>() / group_votes.len() as f64;
+
+        // Calculate standard deviation
+        let variance =
+            group_votes.iter().map(|&x| (x - mean).powi(2)).sum::<f64>() / group_votes.len() as f64;
+        let std_dev = variance.sqrt();
+
+        // Calculate consensus (1 - normalized std dev)
+        let consensus = 1.0 - (std_dev / 2.0).min(1.0);
+
+        characteristic_votes.push(CharacteristicVote {
+            statement_id: ID::from(stmt_id.to_string()),
+            mean_sentiment: mean,
+            consensus_level: consensus,
+        });
+    }
+
+    characteristic_votes
+}
+
+fn prepare_voting_matrix(votes: &[StatementVote]) -> (Array2<f64>, Vec<Option<Uuid>>, Vec<Uuid>) {
+    let user_ids: Vec<_> = votes
+        .iter()
+        .map(|v| v.user_id)
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .sorted() // ensure consistent ordering
+        .collect();
+
+    let statement_ids: Vec<_> = votes
+        .iter()
+        .map(|v| v.statement_id)
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .sorted()
+        .collect();
+
+    // Create a 2D array filled with zeros
+    let mut matrix = Array2::zeros((user_ids.len(), statement_ids.len()));
+
+    // Fill the matrix with votes
+    for vote in votes {
+        let user_idx = user_ids.iter().position(|&id| id == vote.user_id).unwrap();
+        let stmt_idx = statement_ids
+            .iter()
+            .position(|&id| id == vote.statement_id)
+            .unwrap();
+
+        matrix[[user_idx, stmt_idx]] = match vote.vote_type {
+            ArgumentPosition::Support => 1.0,
+            ArgumentPosition::Oppose => -1.0,
+            ArgumentPosition::Neutral => 0.0,
+        };
+    }
+
+    (matrix, user_ids, statement_ids)
+}
+
+#[test]
+fn test_clustering() {
+    // Create a simple test matrix where we expect clear clusters
+    let mut matrix = Array2::zeros((10, 3));
+
+    // First group: all support
+    matrix.slice_mut(ndarray::s![0..3, ..]).fill(1.0);
+
+    // Second group: all oppose
+    matrix.slice_mut(ndarray::s![3..6, ..]).fill(-1.0);
+
+    // Third group: all neutral
+    matrix.slice_mut(ndarray::s![6..10, ..]).fill(0.0);
+
+    let groups = cluster_opinions(&matrix, 3);
+
+    assert_eq!(groups.len(), 3);
+    // Further assertions about group composition...
 }
