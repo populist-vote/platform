@@ -645,6 +645,9 @@ fn cluster_opinions(matrix: &Array2<f64>, k: usize) -> Vec<Vec<i32>> {
     let sample_cnt = matrix.nrows();
     let sample_dims = matrix.ncols();
 
+    // Guard against k being larger than sample count
+    let k = k.min(sample_cnt);
+
     // Create KMeans instance
     let kmean: KMeans<f64, 8, EuclideanDistance> =
         KMeans::new(samples, sample_cnt, sample_dims, EuclideanDistance);
