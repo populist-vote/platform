@@ -92,7 +92,7 @@ impl From<Conversation> for ConversationResult {
 #[derive(SimpleObject)]
 struct OpinionGroup {
     id: ID,
-    users: Vec<i32>,
+    users: Vec<ID>, // Using String to represent UUIDs
     characteristic_votes: Vec<CharacteristicVote>,
 }
 
@@ -551,19 +551,30 @@ impl ConversationResult {
         .await?;
 
         // Convert votes to numerical matrix
-        let (matrix, user_ids, statement_ids) = prepare_voting_matrix(&votes);
+        let (matrix, voter_ids, statement_ids) = prepare_voting_matrix(&votes);
 
         // Perform k-means clustering
         let groups = cluster_opinions(&matrix, num_groups as usize);
 
         // Analyze groups
         let mut opinion_groups = Vec::new();
-        for (group_id, group_users) in groups.iter().enumerate() {
-            let characteristic_votes = analyze_group_votes(&matrix, group_users, &statement_ids);
+        for (group_id, group_indices) in groups.iter().enumerate() {
+            // Convert indices back to user IDs for this group
+            let users: Vec<ID> = group_indices
+                .iter()
+                .filter_map(|&idx| {
+                    match &voter_ids[idx as usize] {
+                        VoterId::User(uuid) => Some(uuid.into()),
+                        VoterId::Session(_) => None, // Skip session IDs in the output
+                    }
+                })
+                .collect();
+
+            let characteristic_votes = analyze_group_votes(&matrix, group_indices, &statement_ids);
 
             opinion_groups.push(OpinionGroup {
                 id: ID::from(group_id.to_string()),
-                users: group_users.clone(),
+                users,
                 characteristic_votes,
             });
         }
@@ -707,42 +718,60 @@ fn analyze_group_votes(
     characteristic_votes
 }
 
-fn prepare_voting_matrix(votes: &[StatementVote]) -> (Array2<f64>, Vec<Option<Uuid>>, Vec<Uuid>) {
-    let user_ids: Vec<_> = votes
+#[derive(Hash, Eq, PartialEq, Clone, Ord, PartialOrd)]
+enum VoterId {
+    User(Uuid),
+    Session(Uuid),
+}
+
+fn prepare_voting_matrix(votes: &[StatementVote]) -> (Array2<f64>, Vec<VoterId>, Vec<Uuid>) {
+    // Collect voter IDs, preferring user_id over session_id
+    let voter_ids: Vec<VoterId> = votes
         .iter()
-        .map(|v| v.user_id)
-        .collect::<HashSet<_>>()
+        .filter_map(|v| match (v.user_id, v.session_id) {
+            (Some(user_id), _) => Some(VoterId::User(user_id)),
+            (None, Some(session_id)) => Some(VoterId::Session(session_id)),
+            (None, None) => None,
+        })
+        .collect::<HashSet<VoterId>>()
         .into_iter()
-        .sorted() // ensure consistent ordering
+        .sorted()
         .collect();
 
-    let statement_ids: Vec<_> = votes
+    let statement_ids: Vec<Uuid> = votes
         .iter()
         .map(|v| v.statement_id)
-        .collect::<HashSet<_>>()
+        .collect::<HashSet<Uuid>>()
         .into_iter()
         .sorted()
         .collect();
 
     // Create a 2D array filled with zeros
-    let mut matrix = Array2::zeros((user_ids.len(), statement_ids.len()));
+    let mut matrix = Array2::zeros((voter_ids.len(), statement_ids.len()));
 
     // Fill the matrix with votes
     for vote in votes {
-        let user_idx = user_ids.iter().position(|&id| id == vote.user_id).unwrap();
-        let stmt_idx = statement_ids
-            .iter()
-            .position(|&id| id == vote.statement_id)
-            .unwrap();
-
-        matrix[[user_idx, stmt_idx]] = match vote.vote_type {
-            ArgumentPosition::Support => 1.0,
-            ArgumentPosition::Oppose => -1.0,
-            ArgumentPosition::Neutral => 0.0,
+        let voter_id = match (vote.user_id, vote.session_id) {
+            (Some(user_id), _) => Some(VoterId::User(user_id)),
+            (None, Some(session_id)) => Some(VoterId::Session(session_id)),
+            (None, None) => None,
         };
+
+        if let Some(voter_id) = voter_id {
+            if let Some(voter_idx) = voter_ids.iter().position(|id| id == &voter_id) {
+                if let Some(stmt_idx) = statement_ids.iter().position(|&id| id == vote.statement_id)
+                {
+                    matrix[[voter_idx, stmt_idx]] = match vote.vote_type {
+                        ArgumentPosition::Support => 1.0,
+                        ArgumentPosition::Oppose => -1.0,
+                        ArgumentPosition::Neutral => 0.0,
+                    };
+                }
+            }
+        }
     }
 
-    (matrix, user_ids, statement_ids)
+    (matrix, voter_ids, statement_ids)
 }
 
 #[test]
