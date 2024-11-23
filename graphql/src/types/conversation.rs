@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use async_graphql::{ComplexObject, Context, Error, Result, SimpleObject, ID};
 use auth::AccessTokenClaims;
@@ -11,6 +11,7 @@ use itertools::Itertools;
 use jsonwebtoken::TokenData;
 use kmeans::*;
 use ndarray::Array2;
+use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::{context::ApiContext, SessionData};
@@ -87,6 +88,23 @@ impl From<Conversation> for ConversationResult {
             updated_at: conversation.updated_at,
         }
     }
+}
+
+#[derive(SimpleObject)]
+struct OpinionScore {
+    id: String,
+    content: String,
+    score: f64,
+    total_votes: i32,
+    support_count: i32,
+    oppose_count: i32,
+    neutral_count: i32,
+}
+
+#[derive(SimpleObject)]
+struct OpinionAnalysis {
+    consensus_opinions: Vec<OpinionScore>,
+    divisive_opinions: Vec<OpinionScore>,
 }
 
 #[derive(SimpleObject)]
@@ -529,11 +547,80 @@ impl ConversationResult {
             .collect())
     }
 
+    async fn opinion_analysis(&self, ctx: &Context<'_>, limit: i32) -> Result<OpinionAnalysis> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+
+        let statements_with_votes = fetch_statements_with_votes(&db_pool, &self.id).await?;
+
+        // Process statements once to get both consensus and divisive opinions
+        let mut consensus_statements: Vec<(StatementWithVotes, f64)> = Vec::new();
+        let mut divisive_statements: Vec<(StatementWithVotes, f64)> = Vec::new();
+
+        for statement in statements_with_votes
+            .into_iter()
+            .filter(|s| !s.votes.is_empty())
+        {
+            let vote_counts = count_votes(&statement.votes);
+            let total_votes = statement.votes.len() as f64;
+
+            let consensus_score = calculate_consensus_score(&vote_counts, total_votes);
+            let divisiveness_score = calculate_divisiveness_score(&vote_counts, total_votes);
+
+            consensus_statements.push((statement.clone(), consensus_score));
+            divisive_statements.push((statement, divisiveness_score));
+        }
+
+        // Sort and truncate both lists
+        consensus_statements.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+        divisive_statements.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+
+        let consensus_opinions = consensus_statements
+            .into_iter()
+            .take(limit as usize)
+            .map(|(statement, score)| {
+                let counts = count_votes(&statement.votes);
+                OpinionScore {
+                    id: statement.id.to_string(),
+                    content: statement.content,
+                    score,
+                    total_votes: statement.votes.len() as i32,
+                    support_count: counts.get(&ArgumentPosition::Support).copied().unwrap_or(0),
+                    oppose_count: counts.get(&ArgumentPosition::Oppose).copied().unwrap_or(0),
+                    neutral_count: counts.get(&ArgumentPosition::Neutral).copied().unwrap_or(0),
+                }
+            })
+            .collect();
+
+        let divisive_opinions = divisive_statements
+            .into_iter()
+            .take(limit as usize)
+            .map(|(statement, score)| {
+                let counts = count_votes(&statement.votes);
+                OpinionScore {
+                    id: statement.id.to_string(),
+                    content: statement.content,
+                    score,
+                    total_votes: statement.votes.len() as i32,
+                    support_count: counts.get(&ArgumentPosition::Support).copied().unwrap_or(0),
+                    oppose_count: counts.get(&ArgumentPosition::Oppose).copied().unwrap_or(0),
+                    neutral_count: counts.get(&ArgumentPosition::Neutral).copied().unwrap_or(0),
+                }
+            })
+            .collect();
+
+        Ok(OpinionAnalysis {
+            consensus_opinions,
+            divisive_opinions,
+        })
+    }
+
     async fn opinion_groups(
         &self,
         ctx: &Context<'_>,
         num_groups: i32,
     ) -> Result<Vec<OpinionGroup>, Error> {
+        todo!("Buggy implementation, needs to be fixed and optimized");
+
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
 
         // Fetch all votes
@@ -772,6 +859,102 @@ fn prepare_voting_matrix(votes: &[StatementVote]) -> (Array2<f64>, Vec<VoterId>,
     }
 
     (matrix, voter_ids, statement_ids)
+}
+
+#[derive(Clone)]
+struct StatementWithVotes {
+    id: Uuid,
+    content: String,
+    votes: Vec<StatementVote>,
+}
+
+async fn fetch_statements_with_votes(
+    db_pool: &PgPool,
+    conversation_id: &str,
+) -> Result<Vec<StatementWithVotes>> {
+    let statements = sqlx::query!(
+        r#"
+        SELECT id, content
+        FROM statement
+        WHERE conversation_id = $1
+        "#,
+        Uuid::parse_str(conversation_id)?
+    )
+    .fetch_all(db_pool)
+    .await?;
+
+    let votes = sqlx::query_as!(
+        StatementVote,
+        r#"
+        SELECT v.id, statement_id, user_id, session_id, vote_type AS "vote_type: ArgumentPosition", v.created_at, v.updated_at
+        FROM statement_vote v
+        JOIN statement s ON v.statement_id = s.id
+        WHERE s.conversation_id = $1
+        "#,
+        Uuid::parse_str(conversation_id)?
+    )
+    .fetch_all(db_pool)
+    .await?;
+
+    let mut votes_by_statement: HashMap<Uuid, Vec<StatementVote>> = HashMap::new();
+    for vote in votes {
+        votes_by_statement
+            .entry(vote.statement_id)
+            .or_default()
+            .push(vote);
+    }
+
+    Ok(statements
+        .into_iter()
+        .map(|statement| StatementWithVotes {
+            id: statement.id,
+            content: statement.content,
+            votes: votes_by_statement.remove(&statement.id).unwrap_or_default(),
+        })
+        .collect())
+}
+
+fn count_votes(votes: &[StatementVote]) -> HashMap<ArgumentPosition, i32> {
+    let mut counts = HashMap::new();
+    for vote in votes {
+        *counts.entry(vote.vote_type.clone()).or_insert(0) += 1;
+    }
+    counts
+}
+
+fn calculate_consensus_score(
+    vote_counts: &HashMap<ArgumentPosition, i32>,
+    total_votes: f64,
+) -> f64 {
+    let support = *vote_counts.get(&ArgumentPosition::Support).unwrap_or(&0) as f64;
+    let oppose = *vote_counts.get(&ArgumentPosition::Oppose).unwrap_or(&0) as f64;
+    let neutral = *vote_counts.get(&ArgumentPosition::Neutral).unwrap_or(&0) as f64;
+
+    let max_votes = support.max(oppose).max(neutral);
+    let max_vote_ratio = max_votes / total_votes;
+
+    // Penalize statements with few votes
+    let vote_volume_factor = (total_votes / 10.0).min(1.0);
+
+    max_vote_ratio * vote_volume_factor
+}
+
+fn calculate_divisiveness_score(
+    vote_counts: &HashMap<ArgumentPosition, i32>,
+    total_votes: f64,
+) -> f64 {
+    let support = *vote_counts.get(&ArgumentPosition::Support).unwrap_or(&0) as f64;
+    let oppose = *vote_counts.get(&ArgumentPosition::Oppose).unwrap_or(&0) as f64;
+
+    let support_ratio = support / total_votes;
+    let oppose_ratio = oppose / total_votes;
+
+    let balance_score = 1.0 - (support_ratio - oppose_ratio).abs();
+    let engagement_score = support_ratio + oppose_ratio;
+
+    let vote_volume_factor = (total_votes / 10.0).min(1.0);
+
+    balance_score * engagement_score * vote_volume_factor
 }
 
 #[test]

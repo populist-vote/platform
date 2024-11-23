@@ -204,7 +204,7 @@ pub enum AuthorType {
     Organization,
 }
 
-#[derive(Enum, Display, Debug, Copy, Clone, Eq, PartialEq, sqlx::Type)]
+#[derive(Enum, Display, Debug, Copy, Clone, Eq, PartialEq, sqlx::Type, Hash)]
 #[sqlx(type_name = "argument_position", rename_all = "lowercase")]
 pub enum ArgumentPosition {
     Support,
