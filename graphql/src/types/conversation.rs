@@ -563,11 +563,16 @@ impl ConversationResult {
             let vote_counts = count_votes(&statement.votes);
             let total_votes = statement.votes.len() as f64;
 
-            let consensus_score = calculate_consensus_score(&vote_counts, total_votes);
-            let divisiveness_score = calculate_divisiveness_score(&vote_counts, total_votes);
+            // Only add to divisive if there's actually a mix of votes
+            let has_vote_variety = vote_counts.values().filter(|&&count| count > 0).count() > 1;
 
+            let consensus_score = calculate_consensus_score(&vote_counts, total_votes);
             consensus_statements.push((statement.clone(), consensus_score));
-            divisive_statements.push((statement, divisiveness_score));
+
+            if has_vote_variety {
+                let divisiveness_score = calculate_divisiveness_score(&vote_counts, total_votes);
+                divisive_statements.push((statement, divisiveness_score));
+            }
         }
 
         // Sort and truncate both lists
