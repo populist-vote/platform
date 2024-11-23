@@ -943,18 +943,36 @@ fn calculate_divisiveness_score(
     vote_counts: &HashMap<ArgumentPosition, i32>,
     total_votes: f64,
 ) -> f64 {
-    let support = *vote_counts.get(&ArgumentPosition::Support).unwrap_or(&0) as f64;
-    let oppose = *vote_counts.get(&ArgumentPosition::Oppose).unwrap_or(&0) as f64;
+    let support = vote_counts
+        .get(&ArgumentPosition::Support)
+        .copied()
+        .unwrap_or(0) as f64;
+    let oppose = vote_counts
+        .get(&ArgumentPosition::Oppose)
+        .copied()
+        .unwrap_or(0) as f64;
 
-    let support_ratio = support / total_votes;
-    let oppose_ratio = oppose / total_votes;
+    // Ignore neutral votes for divisiveness calculation
+    let active_votes = support + oppose;
+    if active_votes == 0.0 {
+        return 0.0;
+    }
 
-    let balance_score = 1.0 - (support_ratio - oppose_ratio).abs();
-    let engagement_score = support_ratio + oppose_ratio;
+    // Calculate the proportion of support vs oppose among non-neutral votes
+    let support_ratio = support / active_votes;
 
+    // Score is highest when support_ratio is close to 0.5 (perfect split)
+    // and lowest when it's close to 0.0 or 1.0 (consensus)
+    let balance_score = 1.0 - (support_ratio - 0.5).abs() * 2.0;
+
+    // Consider total engagement (non-neutral votes) as a factor
+    let engagement_ratio = active_votes / total_votes;
+
+    // Penalize low vote counts
     let vote_volume_factor = (total_votes / 10.0).min(1.0);
 
-    balance_score * engagement_score * vote_volume_factor
+    // Combine factors with more weight on the balance score
+    balance_score * engagement_ratio * vote_volume_factor
 }
 
 #[test]
