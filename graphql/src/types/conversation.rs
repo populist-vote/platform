@@ -4,7 +4,7 @@ use async_graphql::{ComplexObject, Context, Error, Result, SimpleObject, ID};
 use auth::AccessTokenClaims;
 use chrono::{DateTime, Utc};
 use db::{
-    models::conversation::{Conversation, StatementVote},
+    models::conversation::{Conversation, StatementView, StatementVote},
     ArgumentPosition, UserWithProfile,
 };
 use itertools::Itertools;
@@ -96,9 +96,11 @@ struct OpinionScore {
     content: String,
     score: f64,
     total_votes: i32,
-    support_count: i32,
-    oppose_count: i32,
-    neutral_count: i32,
+    support_votes: i32,
+    oppose_votes: i32,
+    neutral_votes: i32,
+    total_views: i32,
+    non_voting_views: i32,
 }
 
 #[derive(SimpleObject)]
@@ -553,8 +555,8 @@ impl ConversationResult {
         let statements_with_votes = fetch_statements_with_votes(&db_pool, &self.id).await?;
 
         // Process statements once to get both consensus and divisive opinions
-        let mut consensus_statements: Vec<(StatementWithVotes, f64)> = Vec::new();
-        let mut divisive_statements: Vec<(StatementWithVotes, f64)> = Vec::new();
+        let mut consensus_statements: Vec<(StatementWithMeta, f64)> = Vec::new();
+        let mut divisive_statements: Vec<(StatementWithMeta, f64)> = Vec::new();
 
         for statement in statements_with_votes
             .into_iter()
@@ -584,14 +586,29 @@ impl ConversationResult {
             .take(limit as usize)
             .map(|(statement, score)| {
                 let counts = count_votes(&statement.votes);
+                // Get unique voting sessions
+                let voting_sessions: HashSet<_> = statement
+                    .votes
+                    .iter()
+                    .filter_map(|v| v.session_id.as_ref())
+                    .collect();
+
+                // Get unique viewing sessions
+                let viewing_sessions: HashSet<_> =
+                    statement.views.iter().map(|v| &v.session_id).collect();
+
+                // Calculate non-voting views
+                let non_voting_views = viewing_sessions.difference(&voting_sessions).count();
                 OpinionScore {
                     id: statement.id.to_string(),
                     content: statement.content,
                     score,
                     total_votes: statement.votes.len() as i32,
-                    support_count: counts.get(&ArgumentPosition::Support).copied().unwrap_or(0),
-                    oppose_count: counts.get(&ArgumentPosition::Oppose).copied().unwrap_or(0),
-                    neutral_count: counts.get(&ArgumentPosition::Neutral).copied().unwrap_or(0),
+                    support_votes: counts.get(&ArgumentPosition::Support).copied().unwrap_or(0),
+                    oppose_votes: counts.get(&ArgumentPosition::Oppose).copied().unwrap_or(0),
+                    neutral_votes: counts.get(&ArgumentPosition::Neutral).copied().unwrap_or(0),
+                    total_views: viewing_sessions.len() as i32,
+                    non_voting_views: non_voting_views as i32,
                 }
             })
             .collect();
@@ -601,14 +618,29 @@ impl ConversationResult {
             .take(limit as usize)
             .map(|(statement, score)| {
                 let counts = count_votes(&statement.votes);
+                // Get unique voting sessions
+                let voting_sessions: HashSet<_> = statement
+                    .votes
+                    .iter()
+                    .filter_map(|v| v.session_id.as_ref())
+                    .collect();
+
+                // Get unique viewing sessions
+                let viewing_sessions: HashSet<_> =
+                    statement.views.iter().map(|v| &v.session_id).collect();
+
+                // Calculate non-voting views
+                let non_voting_views = viewing_sessions.difference(&voting_sessions).count();
                 OpinionScore {
                     id: statement.id.to_string(),
                     content: statement.content,
                     score,
                     total_votes: statement.votes.len() as i32,
-                    support_count: counts.get(&ArgumentPosition::Support).copied().unwrap_or(0),
-                    oppose_count: counts.get(&ArgumentPosition::Oppose).copied().unwrap_or(0),
-                    neutral_count: counts.get(&ArgumentPosition::Neutral).copied().unwrap_or(0),
+                    support_votes: counts.get(&ArgumentPosition::Support).copied().unwrap_or(0),
+                    oppose_votes: counts.get(&ArgumentPosition::Oppose).copied().unwrap_or(0),
+                    neutral_votes: counts.get(&ArgumentPosition::Neutral).copied().unwrap_or(0),
+                    total_views: viewing_sessions.len() as i32,
+                    non_voting_views: non_voting_views as i32,
                 }
             })
             .collect();
@@ -867,16 +899,17 @@ fn prepare_voting_matrix(votes: &[StatementVote]) -> (Array2<f64>, Vec<VoterId>,
 }
 
 #[derive(Clone)]
-struct StatementWithVotes {
+struct StatementWithMeta {
     id: Uuid,
     content: String,
     votes: Vec<StatementVote>,
+    views: Vec<StatementView>,
 }
 
 async fn fetch_statements_with_votes(
     db_pool: &PgPool,
     conversation_id: &str,
-) -> Result<Vec<StatementWithVotes>> {
+) -> Result<Vec<StatementWithMeta>> {
     let statements = sqlx::query!(
         r#"
         SELECT id, content
@@ -901,6 +934,19 @@ async fn fetch_statements_with_votes(
     .fetch_all(db_pool)
     .await?;
 
+    let views = sqlx::query_as!(
+        StatementView,
+        r#"
+        SELECT sv.id, statement_id, session_id, user_id, sv.created_at, sv.updated_at
+        FROM statement_view sv
+        JOIN statement s ON sv.statement_id = s.id
+        WHERE s.conversation_id = $1
+        "#,
+        Uuid::parse_str(conversation_id)?
+    )
+    .fetch_all(db_pool)
+    .await?;
+
     let mut votes_by_statement: HashMap<Uuid, Vec<StatementVote>> = HashMap::new();
     for vote in votes {
         votes_by_statement
@@ -909,12 +955,21 @@ async fn fetch_statements_with_votes(
             .push(vote);
     }
 
+    let mut views_by_statement: HashMap<Uuid, Vec<StatementView>> = HashMap::new();
+    for view in views {
+        views_by_statement
+            .entry(view.statement_id)
+            .or_default()
+            .push(view);
+    }
+
     Ok(statements
         .into_iter()
-        .map(|statement| StatementWithVotes {
+        .map(|statement| StatementWithMeta {
             id: statement.id,
             content: statement.content,
             votes: votes_by_statement.remove(&statement.id).unwrap_or_default(),
+            views: views_by_statement.remove(&statement.id).unwrap_or_default(),
         })
         .collect())
 }

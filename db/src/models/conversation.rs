@@ -34,3 +34,13 @@ pub struct StatementVote {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
+
+#[derive(Debug, SimpleObject, sqlx::FromRow, Clone)]
+pub struct StatementView {
+    pub id: uuid::Uuid,
+    pub statement_id: uuid::Uuid,
+    pub session_id: uuid::Uuid,
+    pub user_id: Option<uuid::Uuid>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
