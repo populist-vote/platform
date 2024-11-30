@@ -4,6 +4,7 @@ pub mod mutation;
 pub mod query;
 pub mod relay;
 pub mod subscription;
+pub mod test;
 pub mod types;
 
 use std::{fmt, net::SocketAddr};

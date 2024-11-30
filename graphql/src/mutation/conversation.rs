@@ -7,7 +7,7 @@ use db::{
 use jsonwebtoken::TokenData;
 use uuid::Uuid;
 
-use crate::{context::ApiContext, types::ConversationResult, SessionData};
+use crate::{context::ApiContext, test::TestHarness, types::ConversationResult, SessionData};
 
 #[derive(Default)]
 pub struct ConversationMutation;
@@ -241,10 +241,11 @@ impl StatementMutation {
         &self,
         ctx: &Context<'_>,
         statement_id: ID,
-        session_id: ID,
         user_id: Option<ID>,
     ) -> Result<StatementView> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let session_data = ctx.data::<SessionData>()?.clone();
+        let session_id = session_data.session_id;
         // Using ON CONFLICT DO NOTHING since we only want one view per session
         let view = sqlx::query_as!(
             StatementView,
@@ -255,7 +256,7 @@ impl StatementMutation {
             RETURNING id, statement_id, session_id, user_id, created_at, updated_at
             "#,
             uuid::Uuid::parse_str(&statement_id)?,
-            uuid::Uuid::parse_str(&session_id)?,
+            uuid::Uuid::parse_str(&session_id.to_string())?,
             user_id.map(|id| uuid::Uuid::parse_str(&id)).transpose()?
         )
         .fetch_optional(&db_pool)
@@ -273,11 +274,49 @@ impl StatementMutation {
                 WHERE statement_id = $1 AND session_id = $2
                 "#,
                     uuid::Uuid::parse_str(&statement_id)?,
-                    uuid::Uuid::parse_str(&session_id)?
+                    uuid::Uuid::parse_str(&session_id.to_string())?
                 )
                 .fetch_one(&db_pool)
                 .await?
             }
         })
     }
+}
+
+#[tokio::test]
+async fn test_create_conversation() -> anyhow::Result<()> {
+    // Setup test harness
+    let harness = TestHarness::new().await?;
+
+    // Create test organization
+    let organization_id = harness.create_organization("Test Organization").await?;
+
+    // Test create_conversation mutation
+    let create_conversation_query = r#"
+        mutation CreateConversation($input: CreateConversationInput!) {
+            createConversation(input: $input) {
+                id
+                topic
+            }
+        }
+    "#;
+
+    let variables = serde_json::json!({
+        "input": {
+            "topic": "Test Topic",
+            "organizationId": organization_id.to_string()
+        }
+    });
+
+    let response: serde_json::Value = harness
+        .execute_query(
+            create_conversation_query,
+            Some(async_graphql::Variables::from_json(variables)),
+        )
+        .await?;
+
+    // Verify we got an ID back
+    assert!(response["createConversation"]["id"].as_str().is_some());
+
+    Ok(())
 }

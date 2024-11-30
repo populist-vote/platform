@@ -29,7 +29,7 @@ enum StatementSort {
 #[derive(SimpleObject)]
 #[graphql(complex)]
 pub struct ConversationResult {
-    id: ID,
+    pub id: ID,
     topic: String,
     description: Option<String>,
     created_at: DateTime<Utc>,

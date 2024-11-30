@@ -21,6 +21,15 @@ impl DatabasePool {
         Ok(DatabasePool { connection: pool })
     }
 
+    pub async fn new_from_url(db_url: &str) -> Result<DatabasePool, Error> {
+        let pool = PgPoolOptions::new()
+            .max_connections(16)
+            .connect(db_url)
+            .await?;
+
+        Ok(DatabasePool { connection: pool })
+    }
+
     pub async fn acquire(&self) -> Result<DatabaseConnection, Error> {
         Ok(self.connection.acquire().await?)
     }
