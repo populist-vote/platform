@@ -212,6 +212,16 @@ pub enum ArgumentPosition {
     Oppose,
 }
 
+impl ArgumentPosition {
+    pub fn as_f64(&self) -> f64 {
+        match self {
+            ArgumentPosition::Support => 1.0,
+            ArgumentPosition::Neutral => 0.0,
+            ArgumentPosition::Oppose => -1.0,
+        }
+    }
+}
+
 #[derive(Enum, Debug, Copy, Clone, Eq, PartialEq, sqlx::Type, Default)]
 #[sqlx(type_name = "bill_status", rename_all = "snake_case")]
 pub enum BillStatus {

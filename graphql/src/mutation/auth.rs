@@ -273,7 +273,7 @@ impl AuthMutation {
                             email: input.email.clone(),
                             username: temp_username,
                             password: input.password,
-                            address: AddressInput {
+                            address: Some(AddressInput {
                                 coordinates: Some(Coordinates {
                                     latitude: coordinates.latitude,
                                     longitude: coordinates.longitude,
@@ -284,7 +284,7 @@ impl AuthMutation {
                                 state_house_district: Some(state_house_district.to_string()),
                                 state_senate_district: Some(state_senate_district.to_string()),
                                 ..address
-                            },
+                            }),
                             confirmation_token: confirmation_token.clone(),
                         };
 
