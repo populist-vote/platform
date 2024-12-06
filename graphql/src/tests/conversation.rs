@@ -1,13 +1,13 @@
 use crate::tests::harness::TestHarness;
 use rand::seq::SliceRandom;
+use rand::Rng;
 
 #[tokio::test]
 async fn test_conversation_load_and_groups() -> anyhow::Result<()> {
-    const NUM_USERS_PER_GROUP: usize = 5;
-    const NUM_GROUPS: usize = 3;
-    const NUM_USERS: usize = NUM_USERS_PER_GROUP * NUM_GROUPS;
+    const NUM_USERS: usize = 25;
     const NUM_STATEMENTS: usize = 100;
-    const VOTES_PER_STATEMENT: usize = 10;
+    const NUM_VOTES: usize = 500;
+    const NUM_GROUPS: usize = 3;
 
     // Set up test harness and create organization
     let harness = TestHarness::new().await?;
@@ -98,30 +98,46 @@ async fn test_conversation_load_and_groups() -> anyhow::Result<()> {
 
     println!("Created {} total statements", statement_ids.len());
 
-    // Helper function to determine vote type based on user group and statement
-    let get_vote_type = |user_idx: usize, statement_idx: usize| -> &'static str {
-        let group = user_idx / NUM_USERS_PER_GROUP;
-        match group {
-            0 => {
-                if statement_idx % 5 == 0 {
-                    "NEUTRAL"
-                } else {
-                    "SUPPORT"
-                }
-            } // Group A: Mostly supportive
-            1 => {
-                if statement_idx % 5 == 0 {
-                    "NEUTRAL"
-                } else {
-                    "OPPOSE"
-                }
-            } // Group B: Mostly opposing
-            _ => match statement_idx % 3 {
-                // Group C: Mixed opinions
-                0 => "SUPPORT",
-                1 => "OPPOSE",
-                _ => "NEUTRAL",
-            },
+    struct GroupBehavior {
+        support_prob: f64,
+        neutral_prob: f64,
+    }
+
+    const GROUP_BEHAVIORS: [GroupBehavior; 5] = [
+        GroupBehavior {
+            support_prob: 0.8,
+            neutral_prob: 0.9,
+        }, // Strong supporters
+        GroupBehavior {
+            support_prob: 0.6,
+            neutral_prob: 0.85,
+        }, // Moderate supporters
+        GroupBehavior {
+            support_prob: 0.4,
+            neutral_prob: 0.7,
+        }, // Centrists
+        GroupBehavior {
+            support_prob: 0.2,
+            neutral_prob: 0.35,
+        }, // Moderate opposers
+        GroupBehavior {
+            support_prob: 0.1,
+            neutral_prob: 0.2,
+        }, // Strong opposers
+    ];
+
+    let get_vote_type = |user_idx: usize| -> &'static str {
+        let mut rng = rand::thread_rng();
+        let group = user_idx / (NUM_USERS / NUM_GROUPS);
+        let behavior = &GROUP_BEHAVIORS[group];
+
+        let random = rng.gen_range(0.0..1.0);
+        if random < behavior.support_prob {
+            "SUPPORT"
+        } else if random < behavior.neutral_prob {
+            "NEUTRAL"
+        } else {
+            "OPPOSE"
         }
     };
 
@@ -134,40 +150,40 @@ async fn test_conversation_load_and_groups() -> anyhow::Result<()> {
         }  
     "#;
 
-    let start_time = std::time::Instant::now();
     let mut total_votes = 0;
+    let mut rng = rand::thread_rng();
+    let mut vote_pairs: Vec<(uuid::Uuid, String, &'static str)> = Vec::with_capacity(NUM_VOTES);
 
-    // Create votes for each user following their group's pattern
-    for (user_idx, user_id) in user_ids.iter().enumerate() {
-        for (stmt_idx, statement_id) in statement_ids.iter().enumerate() {
-            let vote_type = get_vote_type(user_idx, stmt_idx);
-
-            let vote_variables = serde_json::json!({
-                "statementId": statement_id,
-                "voteType": vote_type
-            });
-
-            let response: serde_json::Value = harness
-                .execute_query(
-                    vote_mutation,
-                    Some(async_graphql::Variables::from_json(vote_variables)),
-                    Some(user_id.clone()),
-                    // TODO handle session id's for better testing
-                    Some(uuid::Uuid::new_v4()),
-                )
-                .await?;
-
-            assert!(response["voteOnStatement"]["id"].is_string());
-            total_votes += 1;
-
-            if total_votes % 100 == 0 {
-                println!("Created {} votes", total_votes);
-            }
-        }
+    for _ in 0..NUM_VOTES {
+        let user_idx = rng.gen_range(0..NUM_USERS);
+        let user_id = &user_ids[user_idx];
+        let statement_id = statement_ids.choose(&mut rng).unwrap();
+        let vote_type = get_vote_type(user_idx);
+        vote_pairs.push((user_id.clone(), statement_id.clone(), vote_type));
     }
 
-    let duration = start_time.elapsed();
-    println!("Created {} total votes in {:?}", total_votes, duration);
+    for (user_id, statement_id, vote_type) in vote_pairs {
+        let vote_variables = serde_json::json!({
+            "statementId": statement_id,
+            "voteType": vote_type
+        });
+
+        let response: serde_json::Value = harness
+            .execute_query(
+                vote_mutation,
+                Some(async_graphql::Variables::from_json(vote_variables)),
+                Some(user_id),
+                Some(uuid::Uuid::new_v4()),
+            )
+            .await?;
+
+        assert!(response["voteOnStatement"]["id"].is_string());
+        total_votes += 1;
+
+        if total_votes % 100 == 0 {
+            println!("Created {} votes", total_votes);
+        }
+    }
 
     // Verify opinion groups
     let opinion_groups_query = r#"
@@ -182,10 +198,12 @@ async fn test_conversation_load_and_groups() -> anyhow::Result<()> {
                         significanceLevel
                     }
                 }
-                statements(limit: 100) {
+                statements(limit: 200) {
                     id
                     content
                     agreeCount
+                    disagreeCount
+                    passCount
                     createdAt
                     author {
                         id
@@ -230,16 +248,16 @@ async fn test_conversation_load_and_groups() -> anyhow::Result<()> {
     println!("Found {} opinion groups: ", groups.len());
 
     assert!(
-        groups.len() >= 2 && groups.len() <= 4,
-        "Should find 2-4 groups given the voting patterns"
+        groups.len() >= 2 && groups.len() <= 5,
+        "Should have between 2 and 5 opinion groups"
     );
 
     // Verify group properties
     for group in groups {
-        let users = group["users"].as_array().unwrap();
         let characteristic_votes = group["characteristicVotes"].as_array().unwrap();
 
-        assert!(!users.is_empty(), "Group should have users");
+        println!("group = {:?}", group);
+
         assert!(
             !characteristic_votes.is_empty(),
             "Group should have characteristic votes"

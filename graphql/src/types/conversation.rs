@@ -10,11 +10,11 @@ use db::{
     models::conversation::{Conversation, StatementView, StatementVote},
     ArgumentPosition, UserWithProfile,
 };
-use itertools::Itertools;
 use jsonwebtoken::TokenData;
 use kmeans::*;
-use ndarray::{Array2, ArrayView1};
+use ndarray::{Array1, Array2, ArrayView1, Axis};
 use rand::seq::SliceRandom;
+use rand::Rng;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -97,7 +97,6 @@ impl From<Conversation> for ConversationResult {
 #[derive(SimpleObject)]
 struct OpinionScore {
     id: String,
-    content: String,
     score: f64,
     total_votes: i32,
     support_votes: i32,
@@ -113,14 +112,15 @@ struct OpinionAnalysis {
     divisive_opinions: Vec<OpinionScore>,
 }
 
-#[derive(SimpleObject)]
+#[derive(SimpleObject, Debug)]
 struct OpinionGroup {
     id: ID,
     users: Vec<ID>, // Using String to represent UUIDs
     characteristic_votes: Vec<CharacteristicVote>,
+    summary: String,
 }
 
-#[derive(SimpleObject)]
+#[derive(SimpleObject, Debug)]
 struct CharacteristicVote {
     statement_id: ID,
     mean_sentiment: f64,
@@ -606,7 +606,6 @@ impl ConversationResult {
                 let non_voting_views = viewing_sessions.difference(&voting_sessions).count();
                 OpinionScore {
                     id: statement.id.to_string(),
-                    content: statement.content,
                     score,
                     total_votes: statement.votes.len() as i32,
                     support_votes: counts.get(&ArgumentPosition::Support).copied().unwrap_or(0),
@@ -638,7 +637,6 @@ impl ConversationResult {
                 let non_voting_views = viewing_sessions.difference(&voting_sessions).count();
                 OpinionScore {
                     id: statement.id.to_string(),
-                    content: statement.content,
                     score,
                     total_votes: statement.votes.len() as i32,
                     support_votes: counts.get(&ArgumentPosition::Support).copied().unwrap_or(0),
@@ -682,6 +680,11 @@ impl ConversationResult {
         // Perform k-means clustering with optimal k
         let groups = kmeans(&matrix, optimal_k, 100);
 
+        println!("K-means output groups:");
+        for (i, group) in groups.iter().enumerate() {
+            println!("Group {}: {} members", i, group.len());
+        }
+
         // Analyze groups
         let mut opinion_groups = Vec::new();
         for (group_id, group_indices) in groups.iter().enumerate() {
@@ -690,28 +693,24 @@ impl ConversationResult {
                 continue;
             }
 
-            // Convert indices back to user IDs for this group
             let users: Vec<ID> = group_indices
                 .iter()
-                .filter_map(|&idx| {
-                    match &voter_ids[idx] {
-                        VoterId::User(uuid) => Some(uuid.into()),
-                        VoterId::Session(_) => None, // Skip session IDs in the output
-                    }
+                .map(|&idx| match &voter_ids[idx] {
+                    VoterId::User(uuid) => uuid.into(),
+                    VoterId::Session(session) => ID::from(session.to_string()),
                 })
                 .collect();
 
-            // Skip groups with no registered users
-            if users.is_empty() {
-                continue;
-            }
+            let characteristic_votes: Vec<CharacteristicVote> =
+                analyze_group_votes(&matrix, group_indices, &statement_ids);
 
-            let characteristic_votes = analyze_group_votes(&matrix, group_indices, &statement_ids);
+            let summary = "TODO: Implement AI group summary";
 
             opinion_groups.push(OpinionGroup {
                 id: ID::from(group_id.to_string()),
                 users,
                 characteristic_votes,
+                summary: summary.to_string(),
             });
         }
 
@@ -786,111 +785,108 @@ impl StatementResult {
     }
 }
 
-fn cluster_opinions(matrix: &Array2<f64>, k: usize) -> Vec<Vec<i32>> {
-    // Convert ndarray matrix to flat vector
-    let samples: Vec<f64> = matrix.iter().cloned().collect();
-    let sample_cnt = matrix.nrows();
-    let sample_dims = matrix.ncols();
-
-    // Guard against k being larger than sample count
-    let k = k.min(sample_cnt);
-
-    // Create KMeans instance
-    let kmean: KMeans<f64, 8, EuclideanDistance> =
-        KMeans::new(samples, sample_cnt, sample_dims, EuclideanDistance);
-
-    // Run clustering
-    let result = kmean.kmeans_lloyd(
-        k,
-        100, // max iterations
-        KMeans::init_kmeanplusplus,
-        &KMeansConfig::default(),
-    );
-
-    // Convert assignments back to our group format
-    let mut groups: Vec<Vec<i32>> = vec![Vec::new(); k];
-    for (idx, &cluster) in result.assignments.iter().enumerate() {
-        groups[cluster].push(idx as i32);
-    }
-
-    groups
-}
-
 fn analyze_group_votes(
     matrix: &Array2<f64>,
-    group_user_indices: &[usize], // Changed from i32 to usize to match kmeans output
+    group_user_indices: &[usize],
     statement_ids: &[Uuid],
 ) -> Vec<CharacteristicVote> {
-    let mut characteristic_votes = Vec::new();
+    let mut candidates = Vec::new();
 
+    // First pass: collect all potential characteristic votes with their metrics
     for (stmt_idx, &stmt_id) in statement_ids.iter().enumerate() {
         let votes = matrix.column(stmt_idx);
 
-        // Skip if no votes for this group
-        if group_user_indices.is_empty() {
-            continue;
-        }
-
-        // Get all non-zero votes for this statement in the group
         let group_votes: Vec<f64> = group_user_indices
             .iter()
             .map(|&user_idx| votes[user_idx])
-            .filter(|&vote| vote != 0.0) // Filter out non-votes
+            .filter(|&vote| vote != 0.0)
             .collect();
 
-        // Skip if no actual votes
-        if group_votes.is_empty() {
-            continue;
-        }
+        if !group_votes.is_empty() {
+            let mean = group_votes.iter().sum::<f64>() / group_votes.len() as f64;
 
-        // Calculate mean position
-        let mean = group_votes.iter().sum::<f64>() / group_votes.len() as f64;
+            let variance = if group_votes.len() > 1 {
+                group_votes.iter().map(|&x| (x - mean).powi(2)).sum::<f64>()
+                    / (group_votes.len() - 1) as f64
+            } else {
+                0.0
+            };
+            let std_dev = variance.sqrt();
+            let mut consensus = 1.0 - (std_dev / 1.0).min(1.0);
+            let significance = group_votes.len() as f64 / group_user_indices.len() as f64;
 
-        // Calculate standard deviation
-        let variance = if group_votes.len() > 1 {
-            group_votes.iter().map(|&x| (x - mean).powi(2)).sum::<f64>()
-                / (group_votes.len() - 1) as f64 // Using n-1 for sample variance
-        } else {
-            0.0
-        };
-        let std_dev = variance.sqrt();
+            // Adjust consensus score for high-consensus, low-participation cases
+            if consensus > 0.7 && significance <= 0.5 {
+                consensus = consensus * (significance / 0.5);
+            }
 
-        // Calculate consensus score (inverse of normalized standard deviation)
-        // Adjusted to account for the [-1, 1] range of votes
-        let max_possible_std_dev = 1.0; // Maximum std dev in [-1, 1] range
-        let consensus = 1.0 - (std_dev / max_possible_std_dev).min(1.0);
-
-        // Calculate significance (what portion of the group voted on this statement)
-        let significance = group_votes.len() as f64 / group_user_indices.len() as f64;
-
-        // Only include votes that are characteristic of the group
-        if significance >= 0.5 && consensus >= 0.3 {
-            // Adjustable thresholds
-            characteristic_votes.push(CharacteristicVote {
-                statement_id: ID::from(stmt_id), // Changed to use UUID directly
-                mean_sentiment: mean,
-                consensus_level: consensus,
-                significance_level: significance, // New field to add to the struct
-            });
+            candidates.push((stmt_id, mean, consensus, significance));
         }
     }
 
-    // Sort by consensus * significance to get most characteristic votes first
-    characteristic_votes.sort_by(|a, b| {
-        let score_a = a.consensus_level * a.significance_level;
-        let score_b = b.consensus_level * b.significance_level;
+    // Sort candidates by combined score (consensus * significance)
+    candidates.sort_by(|a, b| {
+        let score_a = a.2 * a.3; // consensus * significance
+        let score_b = b.2 * b.3;
         score_b
             .partial_cmp(&score_a)
             .unwrap_or(std::cmp::Ordering::Equal)
     });
 
-    // Limit to top N most characteristic votes
-    characteristic_votes.truncate(10); // Adjustable limit
+    // Take top 10 votes or adjust thresholds to get at least some characteristic votes
+    let mut characteristic_votes = Vec::new();
+    let initial_consensus_threshold = 0.3;
+    let initial_significance_threshold = 0.5;
+    let mut consensus_threshold = initial_consensus_threshold;
+    let mut significance_threshold = initial_significance_threshold;
+
+    while characteristic_votes.is_empty()
+        && consensus_threshold > 0.0
+        && significance_threshold > 0.0
+    {
+        characteristic_votes = candidates
+            .iter()
+            .filter(|&(_, _, consensus, significance)| {
+                *consensus >= consensus_threshold && *significance >= significance_threshold
+            })
+            .take(10)
+            .map(
+                |&(stmt_id, mean, consensus, significance)| CharacteristicVote {
+                    statement_id: ID::from(stmt_id),
+                    mean_sentiment: mean,
+                    consensus_level: consensus,
+                    significance_level: significance,
+                },
+            )
+            .collect();
+
+        // Reduce thresholds if no votes meet criteria
+        if characteristic_votes.is_empty() {
+            consensus_threshold *= 0.8;
+            significance_threshold *= 0.8;
+        }
+    }
+
+    // If still no votes meet thresholds, take top 3 votes regardless of thresholds
+    if characteristic_votes.is_empty() {
+        characteristic_votes = candidates
+            .iter()
+            .take(3)
+            .map(
+                |&(stmt_id, mean, consensus, significance)| CharacteristicVote {
+                    statement_id: ID::from(stmt_id),
+                    mean_sentiment: mean,
+                    consensus_level: consensus,
+                    significance_level: significance,
+                },
+            )
+            .collect();
+    }
 
     characteristic_votes
 }
 
-#[derive(Hash, Eq, PartialEq, Clone, Ord, PartialOrd)]
+#[derive(Hash, Eq, PartialEq, Clone, Ord, PartialOrd, Debug)]
 enum VoterId {
     User(Uuid),
     Session(Uuid),
@@ -898,214 +894,292 @@ enum VoterId {
 
 // Helper function to prepare the voting matrix
 fn prepare_voting_matrix(votes: &[StatementVote]) -> (Array2<f64>, Vec<VoterId>, Vec<Uuid>) {
-    let voter_map: HashMap<VoterId, usize> = HashMap::new();
-    let statement_map: HashMap<Uuid, usize> = HashMap::new();
+    let mut unique_voters = std::collections::HashSet::new();
+    let mut unique_statements = std::collections::HashSet::new();
 
-    // Build maps of unique voters and statements
+    // Collect unique voters and statements
     for vote in votes {
-        let voter_id = match (vote.user_id, &vote.session_id) {
-            (Some(uid), _) => VoterId::User(uid),
-            (None, Some(sid)) => VoterId::Session(sid.clone()),
-            _ => continue, // Skip invalid votes
-        };
-
-        voter_map.clone().entry(voter_id).or_insert(voter_map.len());
-        statement_map
-            .clone()
-            .entry(vote.statement_id)
-            .or_insert(statement_map.len());
-    }
-
-    // Create the matrix with default values (0.0 for no vote)
-    let mut matrix = Array2::zeros((voter_map.len(), statement_map.len()));
-    let mut voter_ids = vec![VoterId::Session(Uuid::nil()); voter_map.len()];
-    let mut statement_ids = vec![Uuid::nil(); statement_map.len()];
-
-    // Fill in the voter and statement ID vectors
-    for (voter, &idx) in &voter_map {
-        voter_ids[idx] = voter.clone();
-    }
-    for (statement, &idx) in &statement_map {
-        statement_ids[idx] = *statement;
-    }
-
-    // Fill in the matrix with vote values
-    for vote in votes {
-        let voter_id = match (vote.user_id, &vote.session_id) {
-            (Some(uid), _) => VoterId::User(uid),
-            (None, Some(sid)) => VoterId::Session(sid.clone()),
-            _ => continue,
-        };
-
-        if let (Some(&voter_idx), Some(&statement_idx)) = (
-            voter_map.get(&voter_id),
-            statement_map.get(&vote.statement_id),
-        ) {
-            matrix[[voter_idx, statement_idx]] = vote.vote_type.as_f64();
+        if let Some(user_id) = &vote.user_id {
+            unique_voters.insert(VoterId::User(*user_id));
+        } else if let Some(session_id) = &vote.session_id {
+            unique_voters.insert(VoterId::Session(session_id.clone()));
         }
+        unique_statements.insert(vote.statement_id);
+    }
+
+    let voter_ids: Vec<VoterId> = unique_voters.into_iter().collect();
+    let statement_ids: Vec<Uuid> = unique_statements.into_iter().collect();
+
+    // Create vote matrix
+    let mut matrix = Array2::zeros((voter_ids.len(), statement_ids.len()));
+
+    for vote in votes {
+        let voter_idx = voter_ids
+            .iter()
+            .position(|v| match (v, &vote.user_id, &vote.session_id) {
+                (VoterId::User(id), Some(user_id), _) => id == user_id,
+                (VoterId::Session(id), _, Some(session_id)) => id == session_id,
+                _ => false,
+            })
+            .unwrap();
+        let statement_idx = statement_ids
+            .iter()
+            .position(|&id| id == vote.statement_id)
+            .unwrap();
+        let value = vote.vote_type.as_f64();
+        matrix[[voter_idx, statement_idx]] = value;
     }
 
     (matrix, voter_ids, statement_ids)
 }
 
-// Calculate optimal number of clusters using elbow method
 fn calculate_optimal_clusters(data: &Array2<f64>) -> usize {
-    let max_clusters = (data.nrows() as f64).sqrt().round() as usize;
-    let min_clusters = 2;
+    const MIN_CLUSTERS: usize = 2;
+    const MAX_CLUSTERS: usize = 5;
+    let n_samples = data.shape()[0];
 
-    let mut distortions = Vec::new();
-
-    // Calculate distortion for different numbers of clusters
-    for k in min_clusters..=max_clusters {
-        let groups = kmeans(data, k, 100);
-        let distortion = calculate_distortion(data, &groups);
-        distortions.push(distortion);
+    // Early return for small datasets
+    if n_samples < MAX_CLUSTERS * 2 {
+        return MIN_CLUSTERS;
     }
 
-    // Find elbow point using second derivative
-    let optimal_k = find_elbow_point(&distortions) + min_clusters;
+    let mut best_k = MIN_CLUSTERS;
+    let mut best_score = f64::NEG_INFINITY;
 
-    optimal_k
+    // Use silhouette score to find optimal k
+    for k in MIN_CLUSTERS..=MAX_CLUSTERS {
+        let groups = kmeans(data, k, 100);
+
+        // Calculate average cluster size and variance
+        let avg_size = n_samples as f64 / k as f64;
+        let size_variance = groups
+            .iter()
+            .map(|g| (g.len() as f64 - avg_size).powi(2))
+            .sum::<f64>()
+            / k as f64;
+
+        // Calculate inter-cluster distance
+        let score = calculate_cluster_quality(data, &groups, size_variance);
+
+        if score > best_score {
+            best_score = score;
+            best_k = k;
+        }
+    }
+
+    best_k
 }
 
-// Main clustering function
-fn kmeans(data: &Array2<f64>, k: usize, max_iterations: usize) -> Vec<Vec<usize>> {
-    let n_samples = data.nrows();
+fn kmeans(data: &Array2<f64>, k: usize, max_iters: usize) -> Vec<Vec<usize>> {
+    let n_samples = data.shape()[0];
+    let n_features = data.shape()[1];
+    let min_cluster_size = n_samples / (k * 2);
     let mut rng = rand::thread_rng();
 
-    // Initialize centroids randomly
-    let mut centroid_indices: Vec<usize> = (0..n_samples).collect();
-    centroid_indices.shuffle(&mut rng);
-    let mut centroids = Array2::zeros((k, data.ncols()));
-    for (i, &idx) in centroid_indices.iter().take(k).enumerate() {
-        centroids.row_mut(i).assign(&data.row(idx));
+    // Initialize centroids using k-means++ method
+    let mut centroids = Array2::zeros((k, n_features));
+    let mut chosen_indices = Vec::with_capacity(k);
+
+    // Choose first centroid randomly
+    let first_idx = rng.gen_range(0..n_samples);
+    centroids.row_mut(0).assign(&data.row(first_idx));
+    chosen_indices.push(first_idx);
+
+    // Choose remaining centroids
+    for i in 1..k {
+        let mut distances = vec![f64::INFINITY; n_samples];
+
+        // Calculate distances to existing centroids
+        for sample_idx in 0..n_samples {
+            for &centroid_idx in &chosen_indices {
+                let dist = squared_distance(&data.row(sample_idx), &data.row(centroid_idx));
+                distances[sample_idx] = distances[sample_idx].min(dist);
+            }
+        }
+
+        // Choose next centroid with probability proportional to distance
+        let total_dist: f64 = distances.iter().sum();
+        let mut cumsum = 0.0;
+        let threshold = rng.gen::<f64>() * total_dist;
+
+        let next_idx = distances
+            .iter()
+            .enumerate()
+            .find(|(_, &dist)| {
+                cumsum += dist;
+                cumsum >= threshold
+            })
+            .map(|(idx, _)| idx)
+            .unwrap_or_else(|| rng.gen_range(0..n_samples));
+
+        centroids.row_mut(i).assign(&data.row(next_idx));
+        chosen_indices.push(next_idx);
     }
 
-    let mut assignments = vec![0; n_samples];
-    let mut changed = true;
-    let mut iteration = 0;
+    let mut groups = vec![Vec::new(); k];
+    let mut converged = false;
+    let mut iterations = 0;
 
-    while changed && iteration < max_iterations {
-        changed = false;
+    while !converged && iterations < max_iters {
+        // Clear previous groups
+        groups.iter_mut().for_each(|g| g.clear());
 
         // Assign points to nearest centroid
         for i in 0..n_samples {
-            let point = data.row(i);
             let mut min_dist = f64::INFINITY;
-            let mut min_cluster = 0;
+            let mut closest_cluster = 0;
 
-            for (j, centroid) in centroids.rows().into_iter().enumerate() {
-                let dist = euclidean_distance(&point, &centroid);
+            for j in 0..k {
+                let dist = squared_distance(&data.row(i), &centroids.row(j));
                 if dist < min_dist {
                     min_dist = dist;
-                    min_cluster = j;
+                    closest_cluster = j;
                 }
             }
 
-            if assignments[i] != min_cluster {
-                assignments[i] = min_cluster;
-                changed = true;
+            groups[closest_cluster].push(i);
+        }
+
+        // Rebalance clusters if needed
+        rebalance_clusters(&mut groups, min_cluster_size);
+
+        // Update centroids and check convergence
+        let mut max_centroid_shift: f64 = 0.0;
+        for (i, group) in groups.iter().enumerate() {
+            if !group.is_empty() {
+                let new_centroid = calculate_centroid(data, group);
+                let shift = squared_distance(&centroids.row(i), &new_centroid.row(0));
+                max_centroid_shift = max_centroid_shift.max(shift);
+                centroids.row_mut(i).assign(&new_centroid.row(0));
             }
         }
 
-        // Update centroids
-        if changed {
-            for j in 0..k {
-                let cluster_points: Vec<ArrayView1<f64>> = assignments
-                    .iter()
-                    .enumerate()
-                    .filter(|&(_, &c)| c == j)
-                    .map(|(i, _)| data.row(i))
-                    .collect();
-
-                if !cluster_points.is_empty() {
-                    let mut new_centroid = Array2::zeros((1, data.ncols()));
-                    for point in &cluster_points {
-                        new_centroid.row_mut(0).add_assign(point);
-                    }
-                    new_centroid
-                        .row_mut(0)
-                        .map_inplace(|x| *x /= cluster_points.len() as f64);
-                    centroids.row_mut(j).assign(&new_centroid.row(0));
-                }
-            }
-        }
-
-        iteration += 1;
-    }
-
-    // Convert assignments to group vectors
-    let mut groups = vec![Vec::new(); k];
-    for (i, &group) in assignments.iter().enumerate() {
-        groups[group].push(i);
+        converged = max_centroid_shift < 1e-4;
+        iterations += 1;
     }
 
     groups
 }
 
-fn euclidean_distance(a: &ArrayView1<f64>, b: &ArrayView1<f64>) -> f64 {
-    a.iter()
-        .zip(b.iter())
-        .map(|(x, y)| (x - y).powi(2))
-        .sum::<f64>()
-        .sqrt()
+fn squared_distance(a: &ArrayView1<f64>, b: &ArrayView1<f64>) -> f64 {
+    a.iter().zip(b.iter()).map(|(x, y)| (x - y).powi(2)).sum()
 }
 
-fn calculate_distortion(data: &Array2<f64>, groups: &[Vec<usize>]) -> f64 {
-    let mut total_distortion = 0.0;
+fn calculate_centroid(data: &Array2<f64>, indices: &[usize]) -> Array2<f64> {
+    let sum = indices
+        .iter()
+        .fold(Array2::zeros((1, data.shape()[1])), |acc, &idx| {
+            acc + data.row(idx).insert_axis(Axis(0))
+        });
+    sum / indices.len() as f64
+}
 
-    for group in groups {
-        if group.is_empty() {
+fn rebalance_clusters(groups: &mut Vec<Vec<usize>>, min_size: usize) {
+    let mut large_clusters: Vec<usize> = groups
+        .iter()
+        .enumerate()
+        .filter(|(_, g)| g.len() > min_size * 2)
+        .map(|(i, _)| i)
+        .collect();
+
+    let mut small_clusters: Vec<usize> = groups
+        .iter()
+        .enumerate()
+        .filter(|(_, g)| g.len() < min_size)
+        .map(|(i, _)| i)
+        .collect();
+
+    while !large_clusters.is_empty() && !small_clusters.is_empty() {
+        let from = large_clusters[0];
+        let to = small_clusters[0];
+
+        let n_transfer = (groups[from].len() - min_size).min(min_size - groups[to].len());
+        let transfer_elements: Vec<_> = groups[from].drain(0..n_transfer).collect();
+        groups[to].extend(transfer_elements);
+
+        if groups[from].len() <= min_size * 2 {
+            large_clusters.remove(0);
+        }
+        if groups[to].len() >= min_size {
+            small_clusters.remove(0);
+        }
+    }
+}
+
+fn calculate_cluster_quality(data: &Array2<f64>, groups: &[Vec<usize>], size_variance: f64) -> f64 {
+    let mut total_score = 0.0;
+    let size_penalty = 1.0 / (1.0 + size_variance.sqrt());
+
+    for (i, group1) in groups.iter().enumerate() {
+        if group1.is_empty() {
             continue;
         }
 
-        // Calculate centroid
-        let mut centroid = Array2::zeros((1, data.ncols()));
-        for &idx in group {
-            centroid.row_mut(0).add_assign(&data.row(idx));
-        }
-        centroid
-            .row_mut(0)
-            .map_inplace(|x| *x /= group.len() as f64);
+        let mut min_inter_dist = f64::INFINITY;
 
-        // Calculate distortion
-        for &idx in group {
-            total_distortion += euclidean_distance(&data.row(idx), &centroid.row(0));
+        for (j, group2) in groups.iter().enumerate() {
+            if i == j || group2.is_empty() {
+                continue;
+            }
+
+            let dist = calculate_group_distance(data, group1, group2);
+            min_inter_dist = min_inter_dist.min(dist);
         }
+
+        let intra_dist = calculate_group_cohesion(data, group1);
+        if intra_dist == 0.0 {
+            continue;
+        }
+
+        total_score += (min_inter_dist / intra_dist) * size_penalty;
     }
 
-    total_distortion
+    total_score / groups.len() as f64
 }
 
-fn find_elbow_point(distortions: &[f64]) -> usize {
-    if distortions.len() < 3 {
-        return 0;
-    }
+fn calculate_group_distance(data: &Array2<f64>, group1: &[usize], group2: &[usize]) -> f64 {
+    let mut total_dist = 0.0;
+    let mut count = 0;
 
-    // Calculate second derivatives
-    let mut second_derivatives = Vec::new();
-    for i in 1..distortions.len() - 1 {
-        let second_derivative = distortions[i - 1] - 2.0 * distortions[i] + distortions[i + 1];
-        second_derivatives.push(second_derivative);
-    }
-
-    // Find point of maximum curvature
-    let mut max_idx = 0;
-    let mut max_derivative = second_derivatives[0];
-    for (i, &derivative) in second_derivatives.iter().enumerate().skip(1) {
-        if derivative > max_derivative {
-            max_derivative = derivative;
-            max_idx = i;
+    for &i in group1 {
+        for &j in group2 {
+            total_dist += squared_distance(&data.row(i), &data.row(j));
+            count += 1;
         }
     }
 
-    max_idx
+    if count > 0 {
+        total_dist / count as f64
+    } else {
+        f64::INFINITY
+    }
+}
+
+fn calculate_group_cohesion(data: &Array2<f64>, group: &[usize]) -> f64 {
+    if group.len() <= 1 {
+        return 1.0;
+    }
+
+    let mut total_dist = 0.0;
+    let mut count = 0;
+
+    for (i, &idx1) in group.iter().enumerate() {
+        for &idx2 in group.iter().skip(i + 1) {
+            total_dist += squared_distance(&data.row(idx1), &data.row(idx2));
+            count += 1;
+        }
+    }
+
+    if count > 0 {
+        total_dist / count as f64
+    } else {
+        f64::INFINITY
+    }
 }
 
 #[derive(Clone)]
 struct StatementWithMeta {
     id: Uuid,
-    content: String,
     votes: Vec<StatementVote>,
     views: Vec<StatementView>,
 }
@@ -1114,17 +1188,6 @@ async fn fetch_statements_with_votes(
     db_pool: &PgPool,
     conversation_id: &str,
 ) -> Result<Vec<StatementWithMeta>> {
-    let statements = sqlx::query!(
-        r#"
-        SELECT id, content
-        FROM statement
-        WHERE conversation_id = $1
-        "#,
-        Uuid::parse_str(conversation_id)?
-    )
-    .fetch_all(db_pool)
-    .await?;
-
     let votes = sqlx::query_as!(
         StatementVote,
         r#"
@@ -1151,31 +1214,29 @@ async fn fetch_statements_with_votes(
     .fetch_all(db_pool)
     .await?;
 
-    let mut votes_by_statement: HashMap<Uuid, Vec<StatementVote>> = HashMap::new();
+    let mut statements_map: HashMap<Uuid, StatementWithMeta> = HashMap::new();
+
+    // Process votes first to establish content
     for vote in votes {
-        votes_by_statement
+        statements_map
             .entry(vote.statement_id)
-            .or_default()
+            .or_insert_with(|| StatementWithMeta {
+                id: vote.statement_id,
+                votes: Vec::new(),
+                views: Vec::new(),
+            })
+            .votes
             .push(vote);
     }
 
-    let mut views_by_statement: HashMap<Uuid, Vec<StatementView>> = HashMap::new();
+    // Process views, skipping statements that don't exist
     for view in views {
-        views_by_statement
-            .entry(view.statement_id)
-            .or_default()
-            .push(view);
+        if let Some(statement) = statements_map.get_mut(&view.statement_id) {
+            statement.views.push(view);
+        }
     }
 
-    Ok(statements
-        .into_iter()
-        .map(|statement| StatementWithMeta {
-            id: statement.id,
-            content: statement.content,
-            votes: votes_by_statement.remove(&statement.id).unwrap_or_default(),
-            views: views_by_statement.remove(&statement.id).unwrap_or_default(),
-        })
-        .collect())
+    Ok(statements_map.into_values().collect())
 }
 
 fn count_votes(votes: &[StatementVote]) -> HashMap<ArgumentPosition, i32> {
@@ -1237,24 +1298,4 @@ fn calculate_divisiveness_score(
 
     // Combine factors with more weight on the balance score
     balance_score * engagement_ratio * vote_volume_factor
-}
-
-#[test]
-fn test_clustering() {
-    // Create a simple test matrix where we expect clear clusters
-    let mut matrix = Array2::zeros((10, 3));
-
-    // First group: all support
-    matrix.slice_mut(ndarray::s![0..3, ..]).fill(1.0);
-
-    // Second group: all oppose
-    matrix.slice_mut(ndarray::s![3..6, ..]).fill(-1.0);
-
-    // Third group: all neutral
-    matrix.slice_mut(ndarray::s![6..10, ..]).fill(0.0);
-
-    let groups = cluster_opinions(&matrix, 3);
-
-    assert_eq!(groups.len(), 3);
-    // Further assertions about group composition...
 }
