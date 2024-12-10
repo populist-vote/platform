@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    ops::AddAssign,
-};
+use std::collections::{HashMap, HashSet};
 
 use async_graphql::{ComplexObject, Context, Error, Result, SimpleObject, ID};
 use async_openai::{
@@ -15,9 +12,9 @@ use db::{
     ArgumentPosition, UserWithProfile,
 };
 use jsonwebtoken::TokenData;
-use kmeans::*;
-use ndarray::{Array1, Array2, ArrayView1, Axis};
-use rand::seq::SliceRandom;
+
+use ndarray::{Array2, ArrayView1, Axis};
+
 use rand::Rng;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -25,7 +22,6 @@ use uuid::Uuid;
 use crate::{context::ApiContext, SessionData};
 
 use super::UserResult;
-use std::env;
 
 #[derive(async_graphql::Enum, Copy, Clone, Eq, PartialEq)]
 enum StatementSort {
@@ -102,7 +98,6 @@ impl From<Conversation> for ConversationResult {
 #[derive(SimpleObject)]
 struct OpinionScore {
     id: String,
-    content: String,
     score: f64,
     total_votes: i32,
     support_votes: i32,
@@ -612,7 +607,6 @@ impl ConversationResult {
                 let non_voting_views = viewing_sessions.difference(&voting_sessions).count();
                 OpinionScore {
                     id: statement.id.to_string(),
-                    content: statement.content,
                     score,
                     total_votes: statement.votes.len() as i32,
                     support_votes: counts.get(&ArgumentPosition::Support).copied().unwrap_or(0),
@@ -644,7 +638,6 @@ impl ConversationResult {
                 let non_voting_views = viewing_sessions.difference(&voting_sessions).count();
                 OpinionScore {
                     id: statement.id.to_string(),
-                    content: statement.content,
                     score,
                     total_votes: statement.votes.len() as i32,
                     support_votes: counts.get(&ArgumentPosition::Support).copied().unwrap_or(0),
@@ -1194,7 +1187,6 @@ fn calculate_group_cohesion(data: &Array2<f64>, group: &[usize]) -> f64 {
 #[derive(Clone)]
 struct StatementWithMeta {
     id: Uuid,
-    content: String,
     votes: Vec<StatementVote>,
     views: Vec<StatementView>,
 }
@@ -1219,7 +1211,7 @@ async fn fetch_statements_with_votes(
     let views = sqlx::query_as!(
         StatementView,
         r#"
-        SELECT sv.id, s.content, statement_id, session_id, user_id, sv.created_at, sv.updated_at
+        SELECT sv.id, statement_id, session_id, user_id, sv.created_at, sv.updated_at
         FROM statement_view sv
         JOIN statement s ON sv.statement_id = s.id
         WHERE s.conversation_id = $1
@@ -1237,7 +1229,6 @@ async fn fetch_statements_with_votes(
             .entry(vote.statement_id)
             .or_insert_with(|| StatementWithMeta {
                 id: vote.statement_id,
-                content: vote.content,
                 votes: Vec::new(),
                 views: Vec::new(),
             })

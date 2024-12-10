@@ -38,7 +38,6 @@ pub struct StatementVote {
 #[derive(Debug, SimpleObject, sqlx::FromRow, Clone)]
 pub struct StatementView {
     pub id: uuid::Uuid,
-    pub content: String,
     pub statement_id: uuid::Uuid,
     pub session_id: uuid::Uuid,
     pub user_id: Option<uuid::Uuid>,
