@@ -58,7 +58,7 @@ pub struct CreateUserWithProfileInput {
     pub email: String,
     pub username: String,
     pub password: String,
-    pub address: AddressInput,
+    pub address: Option<AddressInput>,
     pub confirmation_token: String,
 }
 
@@ -135,66 +135,80 @@ impl User {
         input: &CreateUserWithProfileInput,
     ) -> Result<Self, Error> {
         let hash = bcrypt::hash(&input.password).unwrap();
-        let lon = input
-            .address
-            .coordinates
-            .as_ref()
-            .map(|c| c.longitude)
-            .unwrap();
-        let lat = input
-            .address
-            .coordinates
-            .as_ref()
-            .map(|c| c.latitude)
-            .unwrap();
-        let record = sqlx::query_as!(
-            User,
-            r#"
-                WITH ins_user AS (
+
+        let record = if let Some(address) = &input.address {
+            // Extract coordinates if they exist
+            let (lon, lat) = address
+                .coordinates
+                .as_ref()
+                .map(|c| (c.longitude, c.latitude))
+                .unwrap_or((0.0, 0.0)); // Or appropriate default/error handling
+
+            sqlx::query_as!(
+                User,
+                r#"
+                    WITH ins_user AS (
+                        INSERT INTO populist_user (email, username, password, confirmation_token)
+                        VALUES (LOWER($1), LOWER($2), $3, $4)
+                        RETURNING id, email, username, system_role AS "system_role: SystemRoleType", password, invited_at, refresh_token, created_at, confirmed_at, updated_at
+                    ),
+                    ins_address AS (
+                        INSERT INTO address (line_1, line_2, city, state, county, country, postal_code, lon, lat, geog, geom, congressional_district, state_senate_district, state_house_district)
+                        VALUES ($5, $6, $7, $8, $9, $10, $11, $12, $13, ST_SetSRID(ST_MakePoint($12, $13), 4326), ST_GeomFromText($14, 4326), $15, $16, $17)
+                        ON CONFLICT (line_1, line_2, city, state, country, postal_code)
+                        DO UPDATE SET
+                            lon = EXCLUDED.lon,
+                            lat = EXCLUDED.lat,
+                            geog = EXCLUDED.geog,
+                            geom = EXCLUDED.geom,
+                            congressional_district = EXCLUDED.congressional_district,
+                            state_senate_district = EXCLUDED.state_senate_district,
+                            state_house_district = EXCLUDED.state_house_district
+                        RETURNING id
+                    ),
+                    ins_profile AS (
+                        INSERT INTO user_profile (address_id, user_id)
+                        VALUES ((SELECT id FROM ins_address), (SELECT id FROM ins_user))
+                    )
+                    SELECT ins_user.* FROM ins_user
+                "#,
+                input.email,
+                input.username,
+                hash,
+                input.confirmation_token,
+                address.line_1,
+                address.line_2,
+                address.city,
+                address.state.to_string(),
+                address.county,
+                address.country,
+                address.postal_code,
+                lon,
+                lat,
+                format!("POINT({} {})", lon, lat),
+                address.congressional_district,
+                address.state_senate_district,
+                address.state_house_district,
+            )
+            .fetch_one(db_pool)
+            .await?
+        } else {
+            sqlx::query_as!(
+                User,
+                r#"
                     INSERT INTO populist_user (email, username, password, confirmation_token)
                     VALUES (LOWER($1), LOWER($2), $3, $4)
-                    RETURNING id, email, username, system_role AS "system_role: SystemRoleType", password, invited_at, refresh_token, created_at, confirmed_at, updated_at
-                ),
-                ins_address AS (
-                    INSERT INTO address (line_1, line_2, city, state, county, country, postal_code, lon, lat, geog, geom, congressional_district, state_senate_district, state_house_district)
-                    VALUES ($5, $6, $7, $8, $9, $10, $11, $12, $13, ST_SetSRID(ST_MakePoint($12, $13), 4326), ST_GeomFromText($14, 4326), $15, $16, $17)
-                    ON CONFLICT (line_1, line_2, city, state, country, postal_code) -- adjust the conflict target columns as per your unique constraint
-                    DO UPDATE SET
-                        lon = EXCLUDED.lon,
-                        lat = EXCLUDED.lat,
-                        geog = EXCLUDED.geog,
-                        geom = EXCLUDED.geom,
-                        congressional_district = EXCLUDED.congressional_district,
-                        state_senate_district = EXCLUDED.state_senate_district,
-                        state_house_district = EXCLUDED.state_house_district
-                    RETURNING id
-                ),
-                ins_profile AS (
-                    INSERT INTO user_profile (address_id, user_id)
-                    VALUES ((SELECT id FROM ins_address), (SELECT id FROM ins_user))
-                )
-                SELECT ins_user.* FROM ins_user
-            "#,
-            input.email,
-            input.username,
-            hash,
-            input.confirmation_token,
-            input.address.line_1,
-            input.address.line_2,
-            input.address.city,
-            input.address.state.to_string(),
-            input.address.county,
-            input.address.country,
-            input.address.postal_code,
-            lon,
-            lat,
-            format!("POINT({} {})", lon, lat), // A string we pass into ST_GeomFromText function
-            input.address.congressional_district,
-            input.address.state_senate_district,
-            input.address.state_house_district,
-        ).fetch_one(db_pool).await?;
-
-        // Need to handle case of existing user
+                    RETURNING id, email, username, system_role AS "system_role: SystemRoleType", 
+                             password, invited_at, refresh_token, created_at, confirmed_at, updated_at
+                "#,
+                input.email,
+                input.username,
+                hash,
+                input.confirmation_token,
+            )
+            .fetch_one(db_pool)
+            .await?
+        };
 
         Ok(record)
     }

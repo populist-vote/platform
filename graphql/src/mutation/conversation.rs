@@ -1,5 +1,6 @@
 use async_graphql::{Context, Error, InputObject, Object, Result, ID};
 use auth::AccessTokenClaims;
+
 use db::{
     models::conversation::{Conversation, Statement, StatementView, StatementVote},
     ArgumentPosition,
@@ -7,7 +8,7 @@ use db::{
 use jsonwebtoken::TokenData;
 use uuid::Uuid;
 
-use crate::{context::ApiContext, test::TestHarness, types::ConversationResult, SessionData};
+use crate::{context::ApiContext, types::ConversationResult, SessionData};
 
 #[derive(Default)]
 pub struct ConversationMutation;
@@ -81,6 +82,40 @@ impl ConversationMutation {
         .await?;
 
         Ok(conversation.into())
+    }
+
+    async fn update_conversation(
+        &self,
+        ctx: &Context<'_>,
+        conversation_id: ID,
+        topic: Option<String>,
+        description: Option<String>,
+    ) -> async_graphql::Result<ConversationResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+
+        let conversation_id = Uuid::parse_str(&conversation_id.to_string())
+            .map_err(|_| Error::new("Invalid conversation ID"))?;
+
+        let conversation = sqlx::query_as!(
+            Conversation,
+            r#"
+            UPDATE conversation
+            SET
+                topic = COALESCE($2, topic),
+                description = COALESCE($3, description),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = $1
+            RETURNING *
+            "#,
+            conversation_id,
+            topic,
+            description
+        )
+        .fetch_one(&db_pool)
+        .await?
+        .into();
+
+        Ok(conversation)
     }
 
     async fn add_statement(
@@ -281,42 +316,4 @@ impl StatementMutation {
             }
         })
     }
-}
-
-#[tokio::test]
-async fn test_create_conversation() -> anyhow::Result<()> {
-    // Setup test harness
-    let harness = TestHarness::new().await?;
-
-    // Create test organization
-    let organization_id = harness.create_organization("Test Organization").await?;
-
-    // Test create_conversation mutation
-    let create_conversation_query = r#"
-        mutation CreateConversation($input: CreateConversationInput!) {
-            createConversation(input: $input) {
-                id
-                topic
-            }
-        }
-    "#;
-
-    let variables = serde_json::json!({
-        "input": {
-            "topic": "Test Topic",
-            "organizationId": organization_id.to_string()
-        }
-    });
-
-    let response: serde_json::Value = harness
-        .execute_query(
-            create_conversation_query,
-            Some(async_graphql::Variables::from_json(variables)),
-        )
-        .await?;
-
-    // Verify we got an ID back
-    assert!(response["createConversation"]["id"].as_str().is_some());
-
-    Ok(())
 }

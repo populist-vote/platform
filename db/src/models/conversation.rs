@@ -24,7 +24,7 @@ pub struct Statement {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(FromRow, SimpleObject, Clone)]
+#[derive(FromRow, SimpleObject, Clone, Debug)]
 pub struct StatementVote {
     pub id: uuid::Uuid,
     pub statement_id: uuid::Uuid,

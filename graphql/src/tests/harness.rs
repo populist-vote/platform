@@ -1,13 +1,15 @@
-use async_graphql::{Data, Variables};
+use std::net::SocketAddr;
+
+use async_graphql::Variables;
+use auth::{create_random_token, create_temporary_username, AccessTokenClaims};
+use db::{AddressInput, CreateUserWithProfileInput};
+use jsonwebtoken::{Header, TokenData};
 use sqlx::PgPool;
-use std::{any::TypeId, net::SocketAddr};
 use uuid::Uuid;
 
-use crate::{
-    context::{ApiContext, DataLoaders},
-    new_schema, PopulistSchema, SessionData,
-};
+use crate::{context::ApiContext, new_schema, SessionData};
 
+#[derive(Clone)]
 pub struct TestHarness {
     pub pool: PgPool,
 }
@@ -33,6 +35,27 @@ impl TestHarness {
         harness.clear_tables().await?;
 
         Ok(harness)
+    }
+
+    /// Creates a new user with the given permissions and returns their ID
+    pub async fn create_user(
+        &self,
+        email: &str,
+        address: Option<AddressInput>,
+    ) -> anyhow::Result<Uuid> {
+        let confirmation_token = create_random_token().unwrap();
+        let temp_username = create_temporary_username(email.to_string());
+        let input = CreateUserWithProfileInput {
+            address,
+            email: email.to_string(),
+            username: temp_username,
+            password: "password".to_string(),
+            confirmation_token,
+        };
+
+        let user = db::User::create_with_profile(&self.pool, &input).await?;
+
+        Ok(user.id)
     }
 
     /// Creates a test organization and returns its ID
@@ -83,11 +106,12 @@ impl TestHarness {
         Ok(())
     }
 
-    /// Executes a GraphQL query with a fresh context
     pub async fn execute_query<T: serde::de::DeserializeOwned>(
         &self,
         query: &str,
         variables: Option<Variables>,
+        user_id: Option<Uuid>,
+        session_id: Option<Uuid>,
     ) -> anyhow::Result<T> {
         let context = self.create_context();
 
@@ -97,7 +121,32 @@ impl TestHarness {
             async_graphql::Request::new(query)
         };
 
-        let schema = new_schema().data(context).finish();
+        let mut schema = new_schema().data(context);
+
+        if let Some(uid) = user_id {
+            let claims = AccessTokenClaims {
+                sub: uid,
+                username: "test_user".to_string(),
+                email: "test@example.com".to_string(),
+                system_role: db::SystemRoleType::User,
+                organizations: vec![],
+                exp: usize::MAX,
+            };
+            schema = schema.data(Some(TokenData {
+                header: Header::default(),
+                claims,
+            }));
+        }
+
+        if let Some(sid) = session_id {
+            let test_socket_addr = SocketAddr::from(([127, 0, 0, 1], 8080));
+            schema = schema.data(SessionData {
+                session_id: crate::SessionID(sid.to_string()),
+                ip: test_socket_addr,
+            });
+        }
+
+        let schema = schema.finish();
         let response = schema.execute(request).await;
 
         if let Some(error) = response.errors.first() {
