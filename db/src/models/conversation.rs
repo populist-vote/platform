@@ -27,6 +27,7 @@ pub struct Statement {
 #[derive(FromRow, SimpleObject, Clone, Debug)]
 pub struct StatementVote {
     pub id: uuid::Uuid,
+    pub content: String,
     pub statement_id: uuid::Uuid,
     pub user_id: Option<uuid::Uuid>,
     pub session_id: Option<uuid::Uuid>,

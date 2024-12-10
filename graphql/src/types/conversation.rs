@@ -98,6 +98,7 @@ impl From<Conversation> for ConversationResult {
 #[derive(SimpleObject)]
 struct OpinionScore {
     id: String,
+    content: String,
     score: f64,
     total_votes: i32,
     support_votes: i32,
@@ -607,6 +608,7 @@ impl ConversationResult {
                 let non_voting_views = viewing_sessions.difference(&voting_sessions).count();
                 OpinionScore {
                     id: statement.id.to_string(),
+                    content: statement.content,
                     score,
                     total_votes: statement.votes.len() as i32,
                     support_votes: counts.get(&ArgumentPosition::Support).copied().unwrap_or(0),
@@ -638,6 +640,7 @@ impl ConversationResult {
                 let non_voting_views = viewing_sessions.difference(&voting_sessions).count();
                 OpinionScore {
                     id: statement.id.to_string(),
+                    content: statement.content,
                     score,
                     total_votes: statement.votes.len() as i32,
                     support_votes: counts.get(&ArgumentPosition::Support).copied().unwrap_or(0),
@@ -662,7 +665,7 @@ impl ConversationResult {
         let votes = sqlx::query_as!(
             StatementVote,
             r#"
-            SELECT v.id, statement_id, user_id, session_id, vote_type AS "vote_type: ArgumentPosition", v.created_at, v.updated_at
+            SELECT v.id, statement_id, s.content, user_id, session_id, vote_type AS "vote_type: ArgumentPosition", v.created_at, v.updated_at
             FROM statement_vote v
             JOIN statement s ON v.statement_id = s.id
             WHERE s.conversation_id = $1
@@ -1187,6 +1190,7 @@ fn calculate_group_cohesion(data: &Array2<f64>, group: &[usize]) -> f64 {
 #[derive(Clone)]
 struct StatementWithMeta {
     id: Uuid,
+    content: String,
     votes: Vec<StatementVote>,
     views: Vec<StatementView>,
 }
@@ -1198,7 +1202,7 @@ async fn fetch_statements_with_votes(
     let votes = sqlx::query_as!(
         StatementVote,
         r#"
-        SELECT v.id, statement_id, user_id, session_id, vote_type AS "vote_type: ArgumentPosition", v.created_at, v.updated_at
+        SELECT v.id, statement_id, s.content, user_id, session_id, vote_type AS "vote_type: ArgumentPosition", v.created_at, v.updated_at
         FROM statement_vote v
         JOIN statement s ON v.statement_id = s.id
         WHERE s.conversation_id = $1
@@ -1229,6 +1233,7 @@ async fn fetch_statements_with_votes(
             .entry(vote.statement_id)
             .or_insert_with(|| StatementWithMeta {
                 id: vote.statement_id,
+                content: vote.content.clone(),
                 votes: Vec::new(),
                 views: Vec::new(),
             })

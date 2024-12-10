@@ -203,26 +203,33 @@ impl ConversationMutation {
             sqlx::query_as!(
                 StatementVote,
                 r#"
-                INSERT INTO statement_vote (
-                    statement_id,
-                    user_id,
-                    session_id,
-                    vote_type
-                )
-                VALUES ($1, $2, $3, $4::argument_position)
-                ON CONFLICT (statement_id, user_id)
-                DO UPDATE SET 
-                    vote_type = EXCLUDED.vote_type,
-                    session_id = EXCLUDED.session_id,
-                    updated_at = CURRENT_TIMESTAMP
-                RETURNING 
-                    id,
-                    statement_id,
-                    user_id,
-                    session_id,
-                    vote_type AS "vote_type: ArgumentPosition",
-                    created_at,
-                    updated_at
+                    WITH upsert AS (
+                        INSERT INTO statement_vote (
+                            statement_id,
+                            user_id,
+                            session_id,
+                            vote_type
+                        )
+                        VALUES ($1, $2, $3, $4::argument_position)
+                        ON CONFLICT (statement_id, user_id)
+                        DO UPDATE SET 
+                            vote_type = EXCLUDED.vote_type,
+                            session_id = EXCLUDED.session_id,
+                            updated_at = CURRENT_TIMESTAMP
+                        RETURNING 
+                            id,
+                            statement_id,
+                            user_id,
+                            session_id,
+                            vote_type AS "vote_type: ArgumentPosition",
+                            created_at,
+                            updated_at
+                    )
+                    SELECT 
+                        upsert.*,
+                        s.content AS content
+                    FROM upsert
+                    JOIN statement s ON s.id = upsert.statement_id
                 "#,
                 statement_id,
                 user_id,
@@ -236,25 +243,32 @@ impl ConversationMutation {
             sqlx::query_as!(
                 StatementVote,
                 r#"
-                INSERT INTO statement_vote (
-                    statement_id,
-                    user_id,
-                    session_id,
-                    vote_type
-                )
-                VALUES ($1, $2, $3, $4::argument_position)
-                ON CONFLICT (statement_id, session_id)
-                DO UPDATE SET 
-                    vote_type = EXCLUDED.vote_type,
-                    updated_at = CURRENT_TIMESTAMP
-                RETURNING 
-                    id,
-                    statement_id,
-                    user_id,
-                    session_id,
-                    vote_type AS "vote_type: ArgumentPosition",
-                    created_at,
-                    updated_at
+                    WITH upsert AS (
+                        INSERT INTO statement_vote (
+                            statement_id,
+                            user_id,
+                            session_id,
+                            vote_type
+                        )
+                        VALUES ($1, $2, $3, $4::argument_position)
+                        ON CONFLICT (statement_id, session_id)
+                        DO UPDATE SET 
+                            vote_type = EXCLUDED.vote_type,
+                            updated_at = CURRENT_TIMESTAMP
+                        RETURNING 
+                            id,
+                            statement_id,
+                            user_id,
+                            session_id,
+                            vote_type AS "vote_type: ArgumentPosition",
+                            created_at,
+                            updated_at
+                    )
+                    SELECT 
+                        upsert.*,
+                        s.content AS content
+                    FROM upsert
+                    JOIN statement s ON s.id = upsert.statement_id
                 "#,
                 statement_id,
                 None::<Uuid>,
