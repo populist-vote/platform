@@ -2,7 +2,7 @@ use async_graphql::SimpleObject;
 use chrono::{DateTime, Utc};
 use sqlx::prelude::FromRow;
 
-use crate::ArgumentPosition;
+use crate::{ArgumentPosition, StatementModerationStatus};
 
 #[derive(FromRow, Clone)]
 pub struct Conversation {
@@ -20,6 +20,7 @@ pub struct Statement {
     pub conversation_id: uuid::Uuid,
     pub content: String,
     pub author_id: Option<uuid::Uuid>, // Optional author ID for anonymous statements
+    pub moderation_status: StatementModerationStatus,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }

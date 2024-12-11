@@ -365,3 +365,12 @@ pub enum BillType {
 
     None,
 }
+
+#[derive(sqlx::Type, Enum, Copy, Clone, Eq, PartialEq)]
+#[sqlx(type_name = "statement_moderation_status", rename_all = "lowercase")]
+pub enum StatementModerationStatus {
+    Unmoderated,
+    Accepted,
+    Rejected,
+    Seed,
+}
