@@ -9,7 +9,7 @@ use auth::AccessTokenClaims;
 use chrono::{DateTime, Utc};
 use db::{
     models::conversation::{Conversation, StatementView, StatementVote},
-    ArgumentPosition, UserWithProfile,
+    ArgumentPosition, StatementModerationStatus, UserWithProfile,
 };
 use jsonwebtoken::TokenData;
 
@@ -29,6 +29,11 @@ enum StatementSort {
     MostVotes,
     MostAgree,
     Controversial,
+}
+
+#[derive(async_graphql::InputObject, Copy, Clone, Eq, PartialEq, Default)]
+struct StatementFilter {
+    moderation_status: Option<StatementModerationStatus>,
 }
 
 #[derive(SimpleObject)]
@@ -138,10 +143,12 @@ impl ConversationResult {
         limit: Option<i32>,
         offset: Option<i32>,
         sort: Option<StatementSort>,
+        filter: Option<StatementFilter>,
     ) -> async_graphql::Result<Vec<StatementResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let limit = limit.unwrap_or(50);
         let offset = offset.unwrap_or(0);
+        let moderation_status = filter.unwrap_or_default().moderation_status;
 
         let order_by = match sort.unwrap_or(StatementSort::Newest) {
             StatementSort::Newest => "s.created_at DESC",
@@ -165,6 +172,7 @@ impl ConversationResult {
             FROM statement s
             LEFT JOIN statement_vote v ON s.id = v.statement_id
             WHERE s.conversation_id = $1
+            AND s.moderation_status = $5::statement_moderation_status
             GROUP BY s.id
             ORDER BY 
             CASE WHEN $4 = 's.created_at DESC' THEN s.created_at END DESC,
@@ -179,7 +187,8 @@ impl ConversationResult {
             uuid::Uuid::parse_str(&self.id)?,
             limit as i64,
             offset as i64,
-            order_by
+            order_by,
+            moderation_status as _,
         )
         .fetch_all(&db_pool)
         .await?;

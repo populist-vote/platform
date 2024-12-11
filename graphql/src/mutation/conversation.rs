@@ -3,7 +3,7 @@ use auth::AccessTokenClaims;
 
 use db::{
     models::conversation::{Conversation, Statement, StatementView, StatementVote},
-    ArgumentPosition,
+    ArgumentPosition, StatementModerationStatus,
 };
 use jsonwebtoken::TokenData;
 use uuid::Uuid;
@@ -29,6 +29,7 @@ struct AddStatementInput {
     conversation_id: ID,
     content: String,
     user_id: Option<ID>,
+    moderation_status: Option<StatementModerationStatus>,
 }
 
 #[Object]
@@ -46,23 +47,23 @@ impl ConversationMutation {
                 INSERT INTO conversation (
                     topic, 
                     description, 
-                    organization_id,
-                    created_at, 
-                    updated_at
+                    organization_id
                 )
-                VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                VALUES ($1, $2, $3)
                 RETURNING *
             ),
             statement_insert AS (
                 INSERT INTO statement (
                     conversation_id,
                     content,
+                    moderation_status,
                     created_at,
                     updated_at
                 )
                 SELECT 
                     (SELECT id FROM new_conversation),
                     unnest($4::text[]),
+                    'seed',
                     CURRENT_TIMESTAMP,
                     CURRENT_TIMESTAMP
                 WHERE array_length($4::text[], 1) > 0
@@ -145,20 +146,71 @@ impl ConversationMutation {
             },
         };
 
+        let moderation_status = match input.moderation_status {
+            Some(status) => status,
+            None => StatementModerationStatus::Unmoderated,
+        };
+
         let statement = sqlx::query_as!(
             Statement,
             r#"
             INSERT INTO statement (
                 conversation_id,
                 content,
-                author_id
+                author_id,
+                moderation_status
             )
-            VALUES ($1, $2, $3)
-            RETURNING *
+            VALUES ($1, $2, $3, $4::statement_moderation_status)
+            RETURNING 
+                id,
+                conversation_id,
+                content,
+                author_id,
+                moderation_status AS "moderation_status: StatementModerationStatus",
+                created_at,
+                updated_at
             "#,
             conversation_id,
             input.content,
-            author_id
+            author_id,
+            moderation_status as StatementModerationStatus
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(statement)
+    }
+
+    async fn moderate_statement(
+        &self,
+        ctx: &Context<'_>,
+        statement_id: ID,
+        moderation_status: StatementModerationStatus,
+    ) -> async_graphql::Result<Statement> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+
+        let statement_id = Uuid::parse_str(&statement_id.to_string())
+            .map_err(|_| Error::new("Invalid statement ID"))?;
+
+        let statement = sqlx::query_as!(
+            Statement,
+            r#"
+            UPDATE statement
+            SET
+                moderation_status = $2::statement_moderation_status,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = $1
+            RETURNING 
+                id,
+                conversation_id,
+                content,
+                author_id,
+                moderation_status AS "moderation_status: StatementModerationStatus",
+                created_at,
+                updated_at
+            "#,
+            statement_id,
+            moderation_status as StatementModerationStatus
         )
         .fetch_one(&db_pool)
         .await?;
