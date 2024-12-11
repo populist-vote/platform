@@ -174,7 +174,7 @@ impl ConversationResult {
             FROM statement s
             LEFT JOIN statement_vote v ON s.id = v.statement_id
             WHERE s.conversation_id = $1
-            AND s.moderation_status = $5::statement_moderation_status
+            AND ($5::statement_moderation_status IS NULL OR s.moderation_status = $5::statement_moderation_status)
             GROUP BY s.id
             ORDER BY 
             CASE WHEN $4 = 's.created_at DESC' THEN s.created_at END DESC,
