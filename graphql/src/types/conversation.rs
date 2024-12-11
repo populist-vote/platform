@@ -58,6 +58,7 @@ struct StatementResult {
     agree_count: i64,
     disagree_count: i64,
     pass_count: i64,
+    moderation_status: StatementModerationStatus,
 }
 
 #[derive(SimpleObject)]
@@ -164,6 +165,7 @@ impl ConversationResult {
                 s.conversation_id,
                 s.author_id,
                 s.content,
+                s.moderation_status as "moderation_status: StatementModerationStatus",
                 s.created_at,
                 COALESCE(COUNT(v.id), 0) as "vote_count!: i64",
                 COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'support'), 0) as "agree_count!: i64",
@@ -200,6 +202,7 @@ impl ConversationResult {
                 conversation_id: row.conversation_id.into(),
                 author_id: row.author_id.map(|id| id.into()),
                 content: row.content,
+                moderation_status: row.moderation_status.into(),
                 created_at: row.created_at,
                 vote_count: row.vote_count,
                 agree_count: row.agree_count,
@@ -226,6 +229,7 @@ impl ConversationResult {
                     s.conversation_id,
                     s.author_id,
                     s.content,
+                    s.moderation_status as "moderation_status: StatementModerationStatus",
                     s.created_at,
                     COALESCE(COUNT(v.id), 0) as "vote_count!: i64",
                     COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'support'), 0) as "agree_count!: i64",
@@ -285,6 +289,7 @@ impl ConversationResult {
                 conversation_id: row.conversation_id.into(),
                 author_id: row.author_id.map(|id| id.into()),
                 content: row.content,
+                moderation_status: row.moderation_status.into(),
                 created_at: row.created_at,
                 vote_count: row.vote_count,
                 agree_count: row.agree_count,
