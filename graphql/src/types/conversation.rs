@@ -175,10 +175,8 @@ impl ConversationResult {
             FROM statement s
             LEFT JOIN statement_vote v ON s.id = v.statement_id
             WHERE s.conversation_id = $1
-            AND ($5::statement_moderation_status[] IS NULL 
-                OR s.moderation_status IN (
-                    SELECT unnest($5::statement_moderation_status[])
-                ))
+            AND ($5::_statement_moderation_status IS NULL OR 
+                 s.moderation_status = ANY($5::_statement_moderation_status))
             GROUP BY s.id
             ORDER BY 
             CASE WHEN $4 = 's.created_at DESC' THEN s.created_at END DESC,
@@ -263,10 +261,8 @@ impl ConversationResult {
                 LEFT JOIN statement_vote v ON s.id = v.statement_id
                 WHERE 
                     s.conversation_id = $2 AND
-                    ($4::statement_moderation_status[] IS NULL 
-                        OR s.moderation_status IN (
-                            SELECT unnest($4::statement_moderation_status[])
-                        )) AND
+                    ($4::_statement_moderation_status IS NULL OR 
+                     s.moderation_status = ANY($4::_statement_moderation_status)) AND
                     (
                         -- Multiple matching conditions
                         similarity(lower(s.content), lower($1)) > 0.1 OR -- Basic trigram similarity

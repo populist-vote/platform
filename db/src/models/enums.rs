@@ -379,6 +379,6 @@ pub enum StatementModerationStatus {
 // Implement PgHasArrayType to allow the enum to be used in arrays
 impl PgHasArrayType for StatementModerationStatus {
     fn array_type_info() -> sqlx::postgres::PgTypeInfo {
-        sqlx::postgres::PgTypeInfo::with_name("statement_moderation_status")
+        sqlx::postgres::PgTypeInfo::with_name("_statement_moderation_status")
     }
 }
