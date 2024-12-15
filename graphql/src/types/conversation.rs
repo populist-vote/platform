@@ -31,9 +31,9 @@ enum StatementSort {
     Controversial,
 }
 
-#[derive(async_graphql::InputObject, Copy, Clone, Eq, PartialEq, Default)]
+#[derive(async_graphql::InputObject, Clone, Eq, PartialEq, Default)]
 struct StatementFilter {
-    moderation_status: Option<StatementModerationStatus>,
+    moderation_statuses: Option<Vec<StatementModerationStatus>>,
 }
 
 #[derive(SimpleObject)]
@@ -149,9 +149,10 @@ impl ConversationResult {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let limit = limit.unwrap_or(50);
         let offset = offset.unwrap_or(0);
-        let moderation_status = filter.unwrap_or_default().moderation_status;
+        let moderation_statuses: Option<Vec<StatementModerationStatus>> =
+            filter.unwrap_or_default().moderation_statuses;
 
-        let order_by = match sort.unwrap_or(StatementSort::Newest) {
+        let order_by: &str = match sort.unwrap_or(StatementSort::Newest) {
             StatementSort::Newest => "s.created_at DESC",
             StatementSort::MostVotes => "vote_count DESC, s.created_at DESC",
             StatementSort::MostAgree => "agree_count DESC, s.created_at DESC",
@@ -174,7 +175,10 @@ impl ConversationResult {
             FROM statement s
             LEFT JOIN statement_vote v ON s.id = v.statement_id
             WHERE s.conversation_id = $1
-            AND ($5::statement_moderation_status IS NULL OR s.moderation_status = $5::statement_moderation_status)
+            AND ($5::statement_moderation_status[] IS NULL 
+                OR s.moderation_status IN (
+                    SELECT unnest($5::statement_moderation_status[])
+                ))
             GROUP BY s.id
             ORDER BY 
             CASE WHEN $4 = 's.created_at DESC' THEN s.created_at END DESC,
@@ -190,7 +194,7 @@ impl ConversationResult {
             limit as i64,
             offset as i64,
             order_by,
-            moderation_status as _,
+            moderation_statuses as _,
         )
         .fetch_all(&db_pool)
         .await?;
@@ -217,9 +221,14 @@ impl ConversationResult {
         ctx: &Context<'_>,
         draft_content: String,
         limit: Option<i32>,
+        offset: Option<i32>,
+        filter: Option<StatementFilter>,
     ) -> async_graphql::Result<Vec<StatementResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let limit = limit.unwrap_or(5);
+        let offset = offset.unwrap_or(0);
+        let moderation_statuses: Option<Vec<StatementModerationStatus>> =
+            filter.unwrap_or_default().moderation_statuses;
 
         let statements = sqlx::query!(
             r#"
@@ -254,6 +263,10 @@ impl ConversationResult {
                 LEFT JOIN statement_vote v ON s.id = v.statement_id
                 WHERE 
                     s.conversation_id = $2 AND
+                    ($4::statement_moderation_status[] IS NULL 
+                        OR s.moderation_status IN (
+                            SELECT unnest($4::statement_moderation_status[])
+                        )) AND
                     (
                         -- Multiple matching conditions
                         similarity(lower(s.content), lower($1)) > 0.1 OR -- Basic trigram similarity
@@ -273,11 +286,14 @@ impl ConversationResult {
             FROM statement_search
             WHERE similarity_score > 0.1
             ORDER BY similarity_score DESC
-            LIMIT $3;
+            LIMIT $3
+            OFFSET $5;
             "#,
             draft_content,
             uuid::Uuid::parse_str(&self.id)?,
-            limit as i64
+            limit as i64,
+            moderation_statuses as _,
+            offset as i64,
         )
         .fetch_all(&db_pool)
         .await?;
