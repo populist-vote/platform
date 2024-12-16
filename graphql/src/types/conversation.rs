@@ -819,6 +819,36 @@ impl StatementResult {
 
         Ok(vote)
     }
+
+    async fn percent_voted(&self, ctx: &Context<'_>) -> Result<f64> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+
+        let total_votes = sqlx::query!(
+            r#"
+            SELECT COUNT(*) as "count!"
+            FROM statement_vote
+            WHERE statement_id = $1
+            "#,
+            Uuid::parse_str(&self.id.to_string())?
+        )
+        .fetch_one(&db_pool)
+        .await?
+        .count;
+
+        let total_participants = sqlx::query!(
+            r#"
+            SELECT COUNT(DISTINCT COALESCE(user_id, session_id)) as "count!"
+            FROM statement_vote
+            WHERE statement_id = $1
+            "#,
+            Uuid::parse_str(&self.id.to_string())?
+        )
+        .fetch_one(&db_pool)
+        .await?
+        .count;
+
+        Ok((total_votes as f64 / total_participants as f64) * 100.0)
+    }
 }
 
 fn analyze_group_votes(
