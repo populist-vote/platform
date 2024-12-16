@@ -101,7 +101,7 @@ impl From<Conversation> for ConversationResult {
     }
 }
 
-#[derive(SimpleObject)]
+#[derive(SimpleObject, Clone)]
 struct OpinionScore {
     id: String,
     content: String,
@@ -116,6 +116,7 @@ struct OpinionScore {
 
 #[derive(SimpleObject)]
 struct OpinionAnalysis {
+    overview: Option<String>,
     consensus_opinions: Vec<OpinionScore>,
     divisive_opinions: Vec<OpinionScore>,
 }
@@ -614,7 +615,7 @@ impl ConversationResult {
         consensus_statements.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
         divisive_statements.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
 
-        let consensus_opinions = consensus_statements
+        let consensus_opinions: Vec<OpinionScore> = consensus_statements
             .into_iter()
             .take(limit as usize)
             .map(|(statement, score)| {
@@ -646,7 +647,7 @@ impl ConversationResult {
             })
             .collect();
 
-        let divisive_opinions = divisive_statements
+        let divisive_opinions: Vec<OpinionScore> = divisive_statements
             .into_iter()
             .take(limit as usize)
             .map(|(statement, score)| {
@@ -677,8 +678,17 @@ impl ConversationResult {
                 }
             })
             .collect();
+
+        let overview =
+            match generate_opinion_summary(consensus_opinions.clone(), divisive_opinions.clone())
+                .await
+            {
+                Ok(summary) => Some(summary),
+                Err(_) => None,
+            };
 
         Ok(OpinionAnalysis {
+            overview,
             consensus_opinions,
             divisive_opinions,
         })
@@ -1436,5 +1446,70 @@ async fn generate_group_summary(
             Ok(summary)
         }
         Err(err) => Err(Error::new(format!("OpenAI API error: {:?}", err)))?,
+    }
+}
+
+async fn generate_opinion_summary(
+    consensus_opinions: Vec<OpinionScore>,
+    divisive_opinions: Vec<OpinionScore>,
+) -> Result<String, Error> {
+    if consensus_opinions.is_empty() && divisive_opinions.is_empty() {
+        return Ok("No opinions to summarize.".to_string());
+    }
+
+    let mut opinion_details = Vec::new();
+
+    // Format consensus opinions
+    for opinion in consensus_opinions {
+        opinion_details.push(format!(
+            "Consensus Opinion: '{}'\nSupport: {}\nOppose: {}\nNeutral: {}\nTotal Votes: {}\n",
+            opinion.content,
+            opinion.support_votes,
+            opinion.oppose_votes,
+            opinion.neutral_votes,
+            opinion.total_votes
+        ));
+    }
+
+    // Format divisive opinions
+    for opinion in divisive_opinions {
+        opinion_details.push(format!(
+            "Divisive Opinion: '{}'\nSupport: {}\nOppose: {}\nNeutral: {}\nTotal Votes: {}\n",
+            opinion.content,
+            opinion.support_votes,
+            opinion.oppose_votes,
+            opinion.neutral_votes,
+            opinion.total_votes
+        ));
+    }
+
+    let prompt = format!(
+        "You are analyzing voting patterns on various opinions. Here are the most notable consensus and divisive opinions:\n\n{}{}",
+        opinion_details.join("\n"),
+        "\nWrite a 2-3 sentence summary describing the overall patterns in these opinions. Focus on what unites and divides the community, without directly quoting the statements. Highlight any particularly strong consensus or notable divisions."
+    );
+
+    dotenv::dotenv().ok();
+    let client = Client::new();
+
+    let response = client
+        .chat()
+        .create(
+            CreateChatCompletionRequestArgs::default()
+                .model("gpt-4")
+                .messages([ChatCompletionRequestMessage {
+                    role: Role::User,
+                    content: prompt,
+                    name: None,
+                }])
+                .temperature(0.7)
+                .max_tokens(320_u16)
+                .build()?,
+        )
+        .await;
+
+    match response {
+        Ok(response) => Ok(response.choices[0].message.content.clone()),
+        Err(err) => Err(Error::new(format!("OpenAI API error: {:?}", err))),
     }
 }
