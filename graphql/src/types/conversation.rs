@@ -130,11 +130,42 @@ struct OpinionGroup {
 }
 
 #[derive(SimpleObject, Debug)]
+#[graphql(complex)]
 struct CharacteristicVote {
     statement_id: ID,
     mean_sentiment: f64,
     consensus_level: f64,
     significance_level: f64,
+}
+
+#[ComplexObject]
+impl CharacteristicVote {
+    async fn statement(&self, ctx: &Context<'_>) -> async_graphql::Result<StatementResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let statement = sqlx::query!(
+            r#"
+            SELECT id, conversation_id, author_id, content, moderation_status as "moderation_status: StatementModerationStatus", created_at
+            FROM statement
+            WHERE id = $1
+            "#,
+            Uuid::parse_str(&self.statement_id.to_string())?
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(StatementResult {
+            id: statement.id.into(),
+            conversation_id: statement.conversation_id.into(),
+            author_id: statement.author_id.map(|id| id.into()),
+            content: statement.content,
+            moderation_status: statement.moderation_status.into(),
+            created_at: statement.created_at,
+            vote_count: 0,
+            agree_count: 0,
+            disagree_count: 0,
+            pass_count: 0,
+        })
+    }
 }
 
 #[ComplexObject]
