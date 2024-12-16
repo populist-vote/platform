@@ -144,9 +144,21 @@ impl CharacteristicVote {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let statement = sqlx::query!(
             r#"
-            SELECT id, conversation_id, author_id, content, moderation_status as "moderation_status: StatementModerationStatus", created_at
-            FROM statement
-            WHERE id = $1
+            SELECT 
+                s.id,
+                s.conversation_id,
+                s.author_id,
+                s.content,
+                s.moderation_status as "moderation_status: StatementModerationStatus",
+                s.created_at,
+                COALESCE(COUNT(v.id), 0) as "vote_count!: i64",
+                COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'support'), 0) as "agree_count!: i64",
+                COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'oppose'), 0) as "disagree_count!: i64",
+                COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'neutral'), 0) as "pass_count!: i64"
+            FROM statement s
+            LEFT JOIN statement_vote v ON s.id = v.statement_id
+            WHERE s.id = $1
+            GROUP BY s.id
             "#,
             Uuid::parse_str(&self.statement_id.to_string())?
         )
@@ -160,10 +172,10 @@ impl CharacteristicVote {
             content: statement.content,
             moderation_status: statement.moderation_status.into(),
             created_at: statement.created_at,
-            vote_count: 0,
-            agree_count: 0,
-            disagree_count: 0,
-            pass_count: 0,
+            vote_count: statement.vote_count,
+            agree_count: statement.agree_count,
+            disagree_count: statement.disagree_count,
+            pass_count: statement.pass_count,
         })
     }
 }
