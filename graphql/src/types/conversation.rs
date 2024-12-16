@@ -54,10 +54,10 @@ struct StatementResult {
     author_id: Option<ID>,
     content: String,
     created_at: DateTime<Utc>,
-    vote_count: i64,
-    agree_count: i64,
-    disagree_count: i64,
-    pass_count: i64,
+    total_votes: i64,
+    support_votes: i64,
+    oppose_votes: i64,
+    neutral_votes: i64,
     moderation_status: StatementModerationStatus,
 }
 
@@ -152,9 +152,9 @@ impl CharacteristicVote {
                 s.moderation_status as "moderation_status: StatementModerationStatus",
                 s.created_at,
                 COALESCE(COUNT(v.id), 0) as "vote_count!: i64",
-                COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'support'), 0) as "agree_count!: i64",
-                COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'oppose'), 0) as "disagree_count!: i64",
-                COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'neutral'), 0) as "pass_count!: i64"
+                COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'support'), 0) as "support_votes!: i64",
+                COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'oppose'), 0) as "oppose_votes!: i64",
+                COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'neutral'), 0) as "neutral_votes!: i64"
             FROM statement s
             LEFT JOIN statement_vote v ON s.id = v.statement_id
             WHERE s.id = $1
@@ -172,10 +172,10 @@ impl CharacteristicVote {
             content: statement.content,
             moderation_status: statement.moderation_status.into(),
             created_at: statement.created_at,
-            vote_count: statement.vote_count,
-            agree_count: statement.agree_count,
-            disagree_count: statement.disagree_count,
-            pass_count: statement.pass_count,
+            total_votes: statement.vote_count,
+            support_votes: statement.support_votes,
+            oppose_votes: statement.oppose_votes,
+            neutral_votes: statement.neutral_votes,
         })
     }
 }
@@ -198,9 +198,9 @@ impl ConversationResult {
 
         let order_by: &str = match sort.unwrap_or(StatementSort::Newest) {
             StatementSort::Newest => "s.created_at DESC",
-            StatementSort::MostVotes => "vote_count DESC, s.created_at DESC",
-            StatementSort::MostAgree => "agree_count DESC, s.created_at DESC",
-            StatementSort::Controversial => "(agree_count * disagree_count)::float / NULLIF(vote_count * vote_count, 0) DESC, s.created_at DESC",
+            StatementSort::MostVotes => "total_votes DESC, s.created_at DESC",
+            StatementSort::MostAgree => "support_votes DESC, s.created_at DESC",
+            StatementSort::Controversial => "(support_votes * oppose_votes)::float / NULLIF(total_votes * total_votes, 0) DESC, s.created_at DESC",
         };
 
         let statements = sqlx::query!(
@@ -212,10 +212,10 @@ impl ConversationResult {
                 s.content,
                 s.moderation_status as "moderation_status: StatementModerationStatus",
                 s.created_at,
-                COALESCE(COUNT(v.id), 0) as "vote_count!: i64",
-                COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'support'), 0) as "agree_count!: i64",
-                COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'oppose'), 0) as "disagree_count!: i64",
-                COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'neutral'), 0) as "pass_count!: i64"
+                COALESCE(COUNT(v.id), 0) as "total_votes!: i64",
+                COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'support'), 0) as "support_votes!: i64",
+                COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'oppose'), 0) as "oppose_votes!: i64",
+                COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'neutral'), 0) as "neutral_votes!: i64"
             FROM statement s
             LEFT JOIN statement_vote v ON s.id = v.statement_id
             WHERE s.conversation_id = $1
@@ -224,9 +224,9 @@ impl ConversationResult {
             GROUP BY s.id
             ORDER BY 
             CASE WHEN $4 = 's.created_at DESC' THEN s.created_at END DESC,
-            CASE WHEN $4 = 'vote_count DESC, s.created_at DESC' THEN COUNT(v.id) END DESC,
-            CASE WHEN $4 = 'agree_count DESC, s.created_at DESC' THEN COUNT(*) FILTER (WHERE v.vote_type = 'support') END DESC,
-            CASE WHEN $4 = '(agree_count * disagree_count)::float / NULLIF(vote_count * vote_count, 0) DESC, s.created_at DESC' 
+            CASE WHEN $4 = 'total_votes DESC, s.created_at DESC' THEN COUNT(v.id) END DESC,
+            CASE WHEN $4 = 'support_votes DESC, s.created_at DESC' THEN COUNT(*) FILTER (WHERE v.vote_type = 'support') END DESC,
+            CASE WHEN $4 = '(support_votes * oppose_votes)::float / NULLIF(total_votes * total_votes, 0) DESC, s.created_at DESC' 
                 THEN (COUNT(*) FILTER (WHERE v.vote_type = 'oppose') * COUNT(*) FILTER (WHERE v.vote_type = 'oppose'))::float / 
                      NULLIF(COUNT(v.id) * COUNT(v.id), 0) 
             END DESC
@@ -250,10 +250,10 @@ impl ConversationResult {
                 content: row.content,
                 moderation_status: row.moderation_status.into(),
                 created_at: row.created_at,
-                vote_count: row.vote_count,
-                agree_count: row.agree_count,
-                disagree_count: row.disagree_count,
-                pass_count: row.pass_count,
+                total_votes: row.total_votes,
+                support_votes: row.support_votes,
+                oppose_votes: row.oppose_votes,
+                neutral_votes: row.neutral_votes,
             })
             .collect())
     }
@@ -283,9 +283,9 @@ impl ConversationResult {
                     s.moderation_status as "moderation_status: StatementModerationStatus",
                     s.created_at,
                     COALESCE(COUNT(v.id), 0) as "vote_count!: i64",
-                    COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'support'), 0) as "agree_count!: i64",
-                    COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'oppose'), 0) as "disagree_count!: i64",
-                    COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'neutral'), 0) as "pass_count!: i64",
+                    COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'support'), 0) as "support_votes!: i64",
+                    COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'oppose'), 0) as "oppose_votes!: i64",
+                    COALESCE(COUNT(*) FILTER (WHERE v.vote_type = 'neutral'), 0) as "neutral_votes!: i64",
                     (
                         -- Combine different similarity metrics
                         0.4 * similarity(lower(s.content), lower($1)) + -- Exact similarity
@@ -347,10 +347,10 @@ impl ConversationResult {
                 content: row.content,
                 moderation_status: row.moderation_status.into(),
                 created_at: row.created_at,
-                vote_count: row.vote_count,
-                agree_count: row.agree_count,
-                disagree_count: row.disagree_count,
-                pass_count: row.pass_count,
+                total_votes: row.vote_count,
+                support_votes: row.support_votes,
+                oppose_votes: row.oppose_votes,
+                neutral_votes: row.neutral_votes,
             })
             .collect())
     }

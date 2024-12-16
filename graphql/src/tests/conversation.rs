@@ -202,9 +202,9 @@ async fn test_conversation_load_and_groups() -> anyhow::Result<()> {
                 statements(limit: 200) {
                     id
                     content
-                    agreeCount
-                    disagreeCount
-                    passCount
+                    supportVotes
+                    opposeVotes
+                    neutralVotes
                     createdAt
                     author {
                         id
