@@ -48,7 +48,12 @@ pub async fn run() {
 
     let context = ApiContext::new(pool.clone().connection);
 
-    let schema = new_schema().data(context).extension(ApolloTracing).finish();
+    let environment = config::Config::default().environment;
+    let schema = if environment != config::Environment::Production {
+        new_schema().data(context).extension(ApolloTracing).finish()
+    } else {
+        new_schema().data(context).finish()
+    };
 
     let app = axum::Router::new()
         .route("/", get(graphql_playground).post(graphql_handler))
