@@ -1,6 +1,4 @@
-use async_openai::types::{
-    ChatCompletionRequestSystemMessageArgs, CreateChatCompletionRequestArgs,
-};
+use async_openai::types::{ChatCompletionRequestMessage, CreateChatCompletionRequestArgs, Role};
 use colored::*;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::error::Error;
@@ -58,20 +56,20 @@ async fn categorize_bills() -> Result<(), Box<dyn Error>> {
             title = bill.title.unwrap()
         );
         let request = CreateChatCompletionRequestArgs::default()
-            .max_tokens(512u16)
-            .model("gpt-3.5-turbo")
-            .messages([ChatCompletionRequestSystemMessageArgs::default()
-                .content(prompt)
-                .build()?
-                .into()])
+            .model("gpt-4")
+            .messages([ChatCompletionRequestMessage {
+                role: Role::User,
+                content: prompt,
+                name: None,
+            }])
+            .temperature(0.7)
+            .max_tokens(40_u16)
             .build()?;
 
         let response = client.chat().create(request).await?;
         let suggested_slugs: Vec<&str> = response.choices[0]
             .message
             .content
-            .as_deref()
-            .unwrap_or_default()
             .split(",")
             .map(str::trim)
             .collect();
