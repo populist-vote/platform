@@ -76,6 +76,7 @@ impl AuthMutation {
         Ok(CreateUserResult::from(new_record))
     }
 
+    #[graphql(visible = "is_admin")]
     async fn invite_user(
         &self,
         ctx: &Context<'_>,

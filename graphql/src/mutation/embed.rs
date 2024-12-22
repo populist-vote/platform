@@ -62,6 +62,7 @@ impl EmbedMutation {
         Ok(EmbedResult::from(upserted_record))
     }
 
+    #[graphql(visible = "is_admin")]
     async fn ping_embed_origin(
         &self,
         ctx: &Context<'_>,

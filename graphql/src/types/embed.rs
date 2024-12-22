@@ -73,6 +73,7 @@ impl EmbedResult {
         }
     }
 
+    #[graphql(visible = "is_admin")]
     async fn origins(&self, ctx: &Context<'_>) -> Result<Vec<EmbedOriginResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let records = sqlx::query_as!(

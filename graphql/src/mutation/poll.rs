@@ -51,6 +51,7 @@ impl PollMutation {
         Ok(poll.into())
     }
 
+    #[graphql(visible = "is_admin")]
     async fn delete_poll(&self, ctx: &Context<'_>, id: ID) -> Result<DeletePollResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         sqlx::query!(

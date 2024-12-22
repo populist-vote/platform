@@ -32,6 +32,7 @@ impl QuestionMutation {
         Ok(new_question.into())
     }
 
+    #[graphql(visible = "is_admin")]
     async fn delete_question(&self, ctx: &Context<'_>, id: ID) -> Result<DeleteQuestionResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         sqlx::query!(
