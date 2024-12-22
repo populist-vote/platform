@@ -75,7 +75,17 @@ pub enum OrganizationRoleType {
 }
 
 #[derive(
-    Debug, Clone, strum_macros::Display, Type, Serialize, Deserialize, Copy, Eq, PartialEq, Enum,
+    Debug,
+    Clone,
+    strum_macros::Display,
+    Type,
+    Serialize,
+    Deserialize,
+    Copy,
+    Eq,
+    PartialEq,
+    Enum,
+    clap::ValueEnum,
 )]
 #[sqlx(type_name = "system_role_type", rename_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
