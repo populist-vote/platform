@@ -8,7 +8,7 @@ use db::{
 use jsonwebtoken::TokenData;
 use uuid::Uuid;
 
-use crate::{context::ApiContext, types::ConversationResult, SessionData};
+use crate::{context::ApiContext, is_admin, types::ConversationResult, SessionData};
 
 #[derive(Default)]
 pub struct ConversationMutation;
@@ -17,6 +17,7 @@ pub struct ConversationMutation;
 pub struct StatementMutation;
 
 #[derive(InputObject)]
+#[graphql(visible = "is_admin")]
 struct CreateConversationInput {
     topic: String,
     description: Option<String>,
@@ -25,6 +26,7 @@ struct CreateConversationInput {
 }
 
 #[derive(InputObject)]
+#[graphql(visible = "is_admin")]
 struct AddStatementInput {
     conversation_id: ID,
     content: String,
@@ -34,6 +36,7 @@ struct AddStatementInput {
 
 #[Object]
 impl ConversationMutation {
+    #[graphql(visible = "is_admin")]
     async fn create_conversation(
         &self,
         ctx: &Context<'_>,
@@ -85,6 +88,7 @@ impl ConversationMutation {
         Ok(conversation.into())
     }
 
+    #[graphql(visible = "is_admin")]
     async fn update_conversation(
         &self,
         ctx: &Context<'_>,
@@ -119,6 +123,7 @@ impl ConversationMutation {
         Ok(conversation)
     }
 
+    #[graphql(visible = "is_admin")]
     async fn add_statement(
         &self,
         ctx: &Context<'_>,

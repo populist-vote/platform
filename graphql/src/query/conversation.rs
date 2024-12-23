@@ -1,13 +1,17 @@
 use async_graphql::{Context, Object, ID};
-use db::models::conversation::Conversation;
+use db::{models::conversation::Conversation, OrganizationRoleType};
 
-use crate::{context::ApiContext, types::ConversationResult};
+use crate::{context::ApiContext, guard::OrganizationGuard, is_admin, types::ConversationResult};
 
 #[derive(Default)]
 pub struct ConversationQuery;
 
 #[Object]
 impl ConversationQuery {
+    #[graphql(
+        guard = "OrganizationGuard::new(&organization_id, &OrganizationRoleType::ReadOnly)",
+        visible = "is_admin"
+    )]
     async fn conversations_by_organization(
         &self,
         ctx: &Context<'_>,
@@ -30,6 +34,7 @@ impl ConversationQuery {
         Ok(conversations.into_iter().map(|c| c.into()).collect())
     }
 
+    #[graphql(visible = "is_admin")]
     async fn conversation_by_id(
         &self,
         ctx: &Context<'_>,
