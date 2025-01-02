@@ -52,6 +52,7 @@ pub struct QuestionSubmissionMutation;
 
 #[Object]
 impl QuestionSubmissionMutation {
+    #[graphql(visible = "is_admin")]
     async fn upsert_question_submission(
         &self,
         ctx: &Context<'_>,
@@ -116,6 +117,7 @@ impl QuestionSubmissionMutation {
         Ok(question.into())
     }
 
+    #[graphql(visible = "is_admin")]
     async fn copy_question_submission(
         &self,
         ctx: &Context<'_>,

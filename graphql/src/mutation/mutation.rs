@@ -20,7 +20,7 @@ use super::{
 use crate::is_admin;
 use async_graphql::MergedObject;
 #[derive(MergedObject, Default)]
-// Hide all mutations from public API
+// Hide all mutations unless the user is an admin
 #[graphql(visible = "is_admin")]
 pub struct Mutation(
     ArgumentMutation,
