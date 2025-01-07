@@ -7,7 +7,8 @@ use crate::context::ApiContext;
 
 use super::{
     BallotMeasureResult, BillResult, CandidateGuideRaceResult, CandidateGuideResult,
-    ElectionResult, Error, PoliticianResult, PollResult, QuestionResult, RaceResult, UserResult,
+    ConversationResult, ElectionResult, Error, PoliticianResult, PollResult, QuestionResult,
+    RaceResult, UserResult,
 };
 
 #[derive(SimpleObject, Clone, Debug)]
@@ -301,6 +302,26 @@ impl EmbedResult {
                 0
             };
             Ok(Some(count))
+        } else {
+            Ok(None)
+        }
+    }
+
+    async fn conversation(&self, ctx: &Context<'_>) -> Result<Option<ConversationResult>> {
+        let conversation_id = self.attributes["conversationId"].as_str();
+        if let Some(conversation_id) = conversation_id {
+            let conversation_id = uuid::Uuid::parse_str(conversation_id)?;
+            let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+            let record = sqlx::query_as!(
+                db::Conversation,
+                r#"
+                SELECT * FROM conversation WHERE id = $1
+                "#,
+                conversation_id
+            )
+            .fetch_one(&db_pool)
+            .await?;
+            Ok(Some(record.into()))
         } else {
             Ok(None)
         }

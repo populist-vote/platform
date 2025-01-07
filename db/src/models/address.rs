@@ -1,8 +1,7 @@
+use super::enums::State;
 use async_graphql::InputObject;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
-
-use super::enums::State;
 
 #[derive(Debug, Clone, Serialize, Deserialize, InputObject)]
 pub struct Address {

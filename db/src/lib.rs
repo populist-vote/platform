@@ -12,6 +12,7 @@ pub use models::address::*;
 pub use models::argument::*;
 pub use models::ballot_measure::*;
 pub use models::bill::*;
+pub use models::conversation::*;
 pub use models::election::*;
 pub use models::embed::*;
 pub use models::enums::*;
