@@ -9,7 +9,7 @@ use auth::AccessTokenClaims;
 use chrono::{DateTime, Utc};
 use db::{
     models::conversation::{Conversation, StatementView, StatementVote},
-    ArgumentPosition, StatementModerationStatus, UserWithProfile,
+    ArgumentPosition, EmbedType, StatementModerationStatus, UserWithProfile,
 };
 use jsonwebtoken::TokenData;
 
@@ -21,7 +21,7 @@ use uuid::Uuid;
 
 use crate::{context::ApiContext, SessionData};
 
-use super::UserResult;
+use super::{EmbedResult, UserResult};
 
 #[derive(async_graphql::Enum, Copy, Clone, Eq, PartialEq)]
 enum StatementSort {
@@ -804,6 +804,34 @@ impl ConversationResult {
         }
 
         Ok(opinion_groups)
+    }
+
+    async fn embed(&self, ctx: &Context<'_>) -> async_graphql::Result<EmbedResult> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let embed = sqlx::query_as!(
+            EmbedResult,
+            r#"            
+            SELECT 
+                id,
+                organization_id,
+                name,
+                description,
+                embed_type AS "embed_type:EmbedType",
+                attributes,
+                created_at,
+                created_by as "created_by_id",
+                updated_at,
+                updated_by as "updated_by_id"
+            FROM embed
+            WHERE embed_type = 'conversation' 
+            AND attributes->>'conversationId' = $1
+            LIMIT 1"#,
+            self.id.to_string()
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(embed)
     }
 }
 
