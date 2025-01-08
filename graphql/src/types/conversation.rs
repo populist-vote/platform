@@ -806,7 +806,7 @@ impl ConversationResult {
         Ok(opinion_groups)
     }
 
-    async fn embed(&self, ctx: &Context<'_>) -> async_graphql::Result<EmbedResult> {
+    async fn embed(&self, ctx: &Context<'_>) -> async_graphql::Result<Option<EmbedResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let embed = sqlx::query_as!(
             EmbedResult,
@@ -828,7 +828,7 @@ impl ConversationResult {
             LIMIT 1"#,
             self.id.to_string()
         )
-        .fetch_one(&db_pool)
+        .fetch_optional(&db_pool)
         .await?;
 
         Ok(embed)
