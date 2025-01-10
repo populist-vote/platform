@@ -1054,8 +1054,10 @@ fn prepare_voting_matrix(votes: &[StatementVote]) -> (Array2<f64>, Vec<VoterId>,
         unique_statements.insert(vote.statement_id);
     }
 
-    let voter_ids: Vec<VoterId> = unique_voters.into_iter().collect();
-    let statement_ids: Vec<Uuid> = unique_statements.into_iter().collect();
+    let mut voter_ids: Vec<VoterId> = unique_voters.into_iter().collect();
+    let mut statement_ids: Vec<Uuid> = unique_statements.into_iter().collect();
+    voter_ids.sort();
+    statement_ids.sort();
 
     // Create vote matrix
     let mut matrix = Array2::zeros((voter_ids.len(), statement_ids.len()));
