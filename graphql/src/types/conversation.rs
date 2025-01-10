@@ -737,7 +737,11 @@ impl ConversationResult {
         })
     }
 
-    async fn opinion_groups(&self, ctx: &Context<'_>) -> Result<Vec<OpinionGroup>, Error> {
+    async fn opinion_groups(
+        &self,
+        ctx: &Context<'_>,
+        num_groups: Option<usize>,
+    ) -> Result<Vec<OpinionGroup>, Error> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
 
         // Fetch all votes
@@ -758,7 +762,7 @@ impl ConversationResult {
         let (matrix, voter_ids, statement_ids) = prepare_voting_matrix(&votes);
 
         // Determine optimal number of clusters
-        let optimal_k = calculate_optimal_clusters(&matrix);
+        let optimal_k = num_groups.unwrap_or(calculate_optimal_clusters(&matrix));
 
         // Perform k-means clustering with optimal k
         let groups = kmeans(&matrix, optimal_k, 100);
