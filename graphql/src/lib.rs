@@ -1,3 +1,4 @@
+pub mod cache;
 pub mod context;
 pub mod guard;
 pub mod mutation;

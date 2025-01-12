@@ -16,10 +16,11 @@ use jsonwebtoken::TokenData;
 use ndarray::{Array2, ArrayView1, Axis};
 
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::{context::ApiContext, SessionData};
+use crate::{cache::Cache, context::ApiContext, SessionData};
 
 use super::{EmbedResult, UserResult};
 
@@ -101,7 +102,7 @@ impl From<Conversation> for ConversationResult {
     }
 }
 
-#[derive(SimpleObject, Clone)]
+#[derive(SimpleObject, Clone, Serialize, Deserialize)]
 struct OpinionScore {
     id: String,
     content: String,
@@ -114,7 +115,7 @@ struct OpinionScore {
     non_voting_views: i32,
 }
 
-#[derive(SimpleObject)]
+#[derive(SimpleObject, Serialize, Deserialize)]
 struct OpinionAnalysis {
     overview: Option<String>,
     consensus_opinions: Vec<OpinionScore>,
@@ -627,8 +628,15 @@ impl ConversationResult {
     }
 
     async fn opinion_analysis(&self, ctx: &Context<'_>, limit: i32) -> Result<OpinionAnalysis> {
-        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let cache_key = format!("conversation:{}:opinion_analysis", self.id.to_string());
+        let cache = ctx.data::<Cache<String, serde_json::Value>>().unwrap();
+        if let Some(cached) = cache.get(&cache_key) {
+            let data: OpinionAnalysis = serde_json::from_value(cached.clone())
+                .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+            return Ok(data);
+        }
 
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let statements_with_votes = fetch_statements_with_votes(&db_pool, &self.id).await?;
 
         // Process statements once to get both consensus and divisive opinions
@@ -730,11 +738,15 @@ impl ConversationResult {
                 Err(_) => None,
             };
 
-        Ok(OpinionAnalysis {
+        let analysis = OpinionAnalysis {
             overview,
             consensus_opinions,
             divisive_opinions,
-        })
+        };
+
+        cache.set(cache_key, serde_json::to_value(&analysis)?);
+
+        Ok(analysis)
     }
 
     async fn opinion_groups(

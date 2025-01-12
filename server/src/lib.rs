@@ -1,14 +1,13 @@
 use async_graphql::extensions::ApolloTracing;
 use axum::routing::get;
 use dotenv::dotenv;
-use graphql::{context::ApiContext, new_schema};
+use graphql::{cache::Cache, context::ApiContext, new_schema};
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tower_cookies::CookieManagerLayer;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
-
 mod cron;
 pub mod jobs;
 mod postgres;
@@ -50,9 +49,16 @@ pub async fn run() {
 
     let environment = config::Config::default().environment;
     let schema = if environment != config::Environment::Production {
-        new_schema().data(context).extension(ApolloTracing).finish()
+        new_schema()
+            .data(context)
+            .data(Cache::<String, serde_json::Value>::new())
+            .extension(ApolloTracing)
+            .finish()
     } else {
-        new_schema().data(context).finish()
+        new_schema()
+            .data(context)
+            .data(Cache::<String, serde_json::Value>::new())
+            .finish()
     };
 
     let app = axum::Router::new()
