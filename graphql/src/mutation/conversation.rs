@@ -45,7 +45,9 @@ impl ConversationMutation {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let user_id = match ctx.data::<TokenData<AccessTokenClaims>>() {
             Ok(token_data) => Some(token_data.claims.sub),
-            Err(_) => None,
+            Err(_) => {
+                return Err(Error::new("Unauthorized"));
+            }
         };
         let conversation = sqlx::query_as!(
             Conversation,

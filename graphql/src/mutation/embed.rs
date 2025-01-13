@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use async_graphql::{Context, InputObject, Object, Result, SimpleObject};
+use async_graphql::{Context, Error, InputObject, Object, Result, SimpleObject};
 use auth::AccessTokenClaims;
 use config::Config;
 use db::{DateTime, Embed, UpsertEmbedInput};
@@ -50,15 +50,14 @@ impl EmbedMutation {
                 return Err("Unauthorized".into());
             }
         }
-        let updated_by = ctx
-            .data::<Option<TokenData<AccessTokenClaims>>>()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .claims
-            .sub;
+        let updated_by = match ctx.data::<TokenData<AccessTokenClaims>>() {
+            Ok(token_data) => Some(token_data.claims.sub),
+            Err(_) => {
+                return Err(Error::new("Unauthorized"));
+            }
+        };
 
-        let upserted_record = Embed::upsert(&db_pool, &input, &updated_by).await?;
+        let upserted_record = Embed::upsert(&db_pool, &input, &updated_by.unwrap()).await?;
         Ok(EmbedResult::from(upserted_record))
     }
 
