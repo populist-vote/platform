@@ -831,6 +831,8 @@ impl ConversationResult {
             });
         }
 
+        cache.set(cache_key, serde_json::to_value(&opinion_groups)?);
+
         Ok(opinion_groups)
     }
 
