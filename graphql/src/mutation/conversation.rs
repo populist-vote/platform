@@ -70,6 +70,16 @@ impl ConversationMutation {
                     CURRENT_TIMESTAMP,
                     CURRENT_TIMESTAMP
                 WHERE array_length($4::text[], 1) > 0
+            ),
+            embed_insert AS (
+                INSERT INTO embed (
+                    name,
+                    description,
+                    organization_id,
+                embed_type,
+                attributes
+                )
+                SELECT $1, $2, $3, 'conversation', jsonb_build_object('conversationId', id) FROM new_conversation
             )
             SELECT * FROM new_conversation
             "#,
