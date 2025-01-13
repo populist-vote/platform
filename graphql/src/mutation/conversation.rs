@@ -43,6 +43,10 @@ impl ConversationMutation {
         input: CreateConversationInput,
     ) -> async_graphql::Result<ConversationResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let user_id = match ctx.data::<TokenData<AccessTokenClaims>>() {
+            Ok(token_data) => Some(token_data.claims.sub),
+            Err(_) => None,
+        };
         let conversation = sqlx::query_as!(
             Conversation,
             r#"
@@ -76,10 +80,11 @@ impl ConversationMutation {
                     name,
                     description,
                     organization_id,
-                embed_type,
-                attributes
+                    embed_type,
+                    created_by,
+                    attributes
                 )
-                SELECT $1, $2, $3, 'conversation', jsonb_build_object('conversationId', id) FROM new_conversation
+                SELECT $1, $2, $3, 'conversation', $5, jsonb_build_object('conversationId', id) FROM new_conversation
             )
             SELECT * FROM new_conversation
             "#,
@@ -91,6 +96,7 @@ impl ConversationMutation {
                 .seed_statements
                 .as_ref()
                 .map(|seed_statements| seed_statements.as_slice()),
+            user_id,
         )
         .fetch_one(&db_pool)
         .await?;
