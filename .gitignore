@@ -2,6 +2,7 @@
 */target
 
 .env
+.envrc
 .env.staging
 .env.production
 
