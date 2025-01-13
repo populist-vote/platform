@@ -122,7 +122,7 @@ struct OpinionAnalysis {
     divisive_opinions: Vec<OpinionScore>,
 }
 
-#[derive(SimpleObject, Debug)]
+#[derive(SimpleObject, Debug, Serialize, Deserialize)]
 struct OpinionGroup {
     id: ID,
     users: Vec<ID>, // Using String to represent UUIDs
@@ -130,7 +130,7 @@ struct OpinionGroup {
     summary: String,
 }
 
-#[derive(SimpleObject, Debug)]
+#[derive(SimpleObject, Debug, Serialize, Deserialize)]
 #[graphql(complex)]
 struct CharacteristicVote {
     statement_id: ID,
@@ -754,6 +754,18 @@ impl ConversationResult {
         ctx: &Context<'_>,
         num_groups: Option<usize>,
     ) -> Result<Vec<OpinionGroup>, Error> {
+        let cache_key = format!(
+            "conversation:{}:opinion_groups:num_groups:{}",
+            self.id.to_string(),
+            num_groups.unwrap_or(0)
+        );
+        let cache = ctx.data::<Cache<String, serde_json::Value>>().unwrap();
+        if let Some(cached) = cache.get(&cache_key) {
+            let data: Vec<OpinionGroup> = serde_json::from_value(cached.clone())
+                .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+            return Ok(data);
+        }
+
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
 
         // Fetch all votes
@@ -806,7 +818,7 @@ impl ConversationResult {
             let summary = match generate_group_summary(&db_pool, &characteristic_votes).await {
                 Ok(summary) => summary,
                 Err(e) => {
-                    eprintln!("Error generating group summary: {:?}", e);
+                    tracing::debug!("Error generating group summary: {:?}", e);
                     "Group summary unavailable.".to_string()
                 }
             };
@@ -1585,7 +1597,7 @@ async fn generate_opinion_summary(
         .chat()
         .create(
             CreateChatCompletionRequestArgs::default()
-                .model("gpt-4")
+                .model("gpt-3.5-turbo-0125")
                 .messages([ChatCompletionRequestMessage {
                     role: Role::User,
                     content: prompt,
@@ -1599,6 +1611,9 @@ async fn generate_opinion_summary(
 
     match response {
         Ok(response) => Ok(response.choices[0].message.content.clone()),
-        Err(err) => Err(Error::new(format!("OpenAI API error: {:?}", err))),
+        Err(err) => {
+            tracing::debug!("OpenAI API error: {:?}", err);
+            Err(Error::new(format!("OpenAI API error: {:?}", err)))
+        }
     }
 }

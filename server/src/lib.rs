@@ -2,7 +2,7 @@ use async_graphql::extensions::ApolloTracing;
 use axum::routing::get;
 use dotenv::dotenv;
 use graphql::{cache::Cache, context::ApiContext, new_schema};
-use std::net::SocketAddr;
+use std::{net::SocketAddr, time::Duration};
 use tokio::net::TcpListener;
 use tower_cookies::CookieManagerLayer;
 use tower_http::cors::CorsLayer;
@@ -51,13 +51,17 @@ pub async fn run() {
     let schema = if environment != config::Environment::Production {
         new_schema()
             .data(context)
-            .data(Cache::<String, serde_json::Value>::new())
+            .data(Cache::<String, serde_json::Value>::new(
+                Duration::from_secs(10),
+            ))
             .extension(ApolloTracing)
             .finish()
     } else {
         new_schema()
             .data(context)
-            .data(Cache::<String, serde_json::Value>::new())
+            .data(Cache::<String, serde_json::Value>::new(
+                Duration::from_secs(60 * 30),
+            ))
             .finish()
     };
 
