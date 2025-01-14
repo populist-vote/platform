@@ -40,50 +40,62 @@ static PRECINCT_STATS_HEADER_NAMES: [&str; 12] = [
 
 pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
     let mut results_file_paths: HashMap<&str, &str> = HashMap::new();
-    results_file_paths.insert(
-        "U.S. Senator Statewide",
-        "https://electionresultsfiles.sos.state.mn.us/20241105/ussenate.txt",
-    );
-    results_file_paths.insert(
-        "U.S. Representative by District",
-        "https://electionresultsfiles.sos.state.mn.us/20241105/ushouse.txt",
-    );
-    results_file_paths.insert(
-        "Supreme Court and Courts of Appeals",
-        "https://electionresultsfiles.sos.state.mn.us/20241105/judicial.txt",
-    );
+
+    // results_file_paths.insert(
+    //     "U.S. Senator Statewide",
+    //     "https://electionresultsfiles.sos.state.mn.us/20241105/ussenate.txt",
+    // );
+    // results_file_paths.insert(
+    //     "U.S. Representative by District",
+    //     "https://electionresultsfiles.sos.state.mn.us/20241105/ushouse.txt",
+    // );
+    // results_file_paths.insert(
+    //     "Supreme Court and Courts of Appeals",
+    //     "https://electionresultsfiles.sos.state.mn.us/20241105/judicial.txt",
+    // );
+    // results_file_paths.insert(
+    //     "State Senator by District",
+    //     "https://electionresultsfiles.sos.state.mn.us/20241105/stsenate.txt",
+    // );
+    // results_file_paths.insert(
+    //     "County Races",
+    //     "https://electionresultsfiles.sos.state.mn.us/20241105/cntyRaces.txt",
+    // );
+    // results_file_paths.insert(
+    //     "Municipal Races and Questions",
+    //     "https://electionresultsfiles.sos.state.mn.us/20241105/local.txt",
+    // );
+    // results_file_paths.insert(
+    //     "School Board Races",
+    //     "https://electionresultsfiles.sos.state.mn.us/20241105/sdrace.txt",
+    // );
+    // results_file_paths.insert(
+    //     "State Representative by District",
+    //     "https://electionresultsfiles.sos.mn.gov/20241105/LegislativeByDistrict.txt",
+    // );
+    // results_file_paths.insert(
+    //     "District Court Judges",
+    //     "https://electionresultsfiles.sos.mn.gov/20241105/judicialdst.txt",
+    // );
+
     results_file_paths.insert(
         "State Senator by District",
-        "https://electionresultsfiles.sos.state.mn.us/20241105/stsenate.txt",
-    );
-    results_file_paths.insert(
-        "County Races",
-        "https://electionresultsfiles.sos.state.mn.us/20241105/cntyRaces.txt",
-    );
-    results_file_paths.insert(
-        "Municipal Races and Questions",
-        "https://electionresultsfiles.sos.state.mn.us/20241105/local.txt",
-    );
-    results_file_paths.insert(
-        "School Board Races",
-        "https://electionresultsfiles.sos.state.mn.us/20241105/sdrace.txt",
-    );
-    results_file_paths.insert(
-        "State Representative by District",
-        "https://electionresultsfiles.sos.mn.gov/20241105/LegislativeByDistrict.txt",
-    );
-    results_file_paths.insert(
-        "District Court Judges",
-        "https://electionresultsfiles.sos.mn.gov/20241105/judicialdst.txt",
+        "https://electionresultsfiles.sos.mn.gov/20250114/stsenate.txt",
     );
 
     let client = Client::new();
     for (name, url) in results_file_paths {
-        let response = client.get(url).send().await?.text().await?;
+        let response = client
+            .get(url)
+            .send()
+            .await?
+            // Very important MN SoS uses windows-1252 encoding, not UTF-8
+            .text_with_charset("windows-1252")
+            .await?;
         let data = convert_text_to_csv(name, &response)?;
         let csv_data_as_string = String::from_utf8(data.clone())?;
         let table_name = format!(
-            "p6t_state_mn.results_2024_{}",
+            "p6t_state_mn.results_2025_{}",
             name.replace(['.', ','], "")
                 .replace(' ', "_")
                 .to_lowercase()
@@ -146,6 +158,7 @@ fn convert_text_to_csv(name: &str, text: &str) -> Result<Vec<u8>, Box<dyn Error>
     let mut csv_string = Vec::new();
     {
         let mut wtr = csv::Writer::from_writer(&mut csv_string);
+
         // Write the headers from the above struct
         if name == "Precinct Reporting Statistics" {
             wtr.write_record(PRECINCT_STATS_HEADER_NAMES)?;
@@ -179,23 +192,7 @@ async fn update_public_schema_with_results() {
     let db_pool = db::pool().await;
     let query = r#"
         WITH source AS (
-            SELECT * FROM p6t_state_mn.results_2024_us_senator_statewide
-            UNION ALL
-            SELECT * FROM p6t_state_mn.results_2024_us_representative_by_district
-            UNION ALL
-            SELECT * FROM p6t_state_mn.results_2024_supreme_court_and_courts_of_appeals
-            UNION ALL
-            SELECT * FROM p6t_state_mn.results_2024_county_races
-            UNION ALL
-            SELECT * FROM p6t_state_mn.results_2024_municipal_races_and_questions
-            UNION ALL
-            SELECT * FROM p6t_state_mn.results_2024_school_board_races
-            UNION ALL
-            SELECT * FROM p6t_state_mn.results_2024_state_senator_by_district
-            UNION ALL
-            SELECT * FROM p6t_state_mn.results_2024_state_representative_by_district
-            UNION ALL
-            SELECT * FROM p6t_state_mn.results_2024_district_court_judges
+            SELECT * FROM p6t_state_mn.results_2025_state_senator_by_district
         ),
         results AS (
             SELECT DISTINCT ON (office_name, candidate_name)
