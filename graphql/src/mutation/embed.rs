@@ -50,14 +50,14 @@ impl EmbedMutation {
                 return Err("Unauthorized".into());
             }
         }
-        let updated_by = match ctx.data::<TokenData<AccessTokenClaims>>() {
-            Ok(token_data) => Some(token_data.claims.sub),
-            Err(_) => {
-                return Err(Error::new("Unauthorized"));
-            }
+
+        let user = ctx.data::<Option<TokenData<AccessTokenClaims>>>()?;
+        let user_id = match user {
+            Some(u) => Some(u.claims.sub),
+            None => return Err("Unauthorized".into()),
         };
 
-        let upserted_record = Embed::upsert(&db_pool, &input, &updated_by.unwrap()).await?;
+        let upserted_record = Embed::upsert(&db_pool, &input, &user_id.unwrap()).await?;
         Ok(EmbedResult::from(upserted_record))
     }
 

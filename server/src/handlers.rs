@@ -92,6 +92,7 @@ pub async fn graphql_handler(
     let bearer_token_data = if let Some(token) = bearer_token {
         let token_data = jwt::validate_access_token(token);
         if let Ok(token_data) = token_data {
+            tracing::debug!("{:?}", token_data);
             Some(token_data)
         } else {
             None
