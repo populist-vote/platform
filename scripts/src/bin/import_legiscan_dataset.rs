@@ -109,13 +109,22 @@ async fn import_legiscan_dataset(
     );
 
     for (_, bill) in new_bills.iter() {
+        let legiscan_last_action = match bill.history.last() {
+            Some(action) => action,
+            None => {
+                println!("Warning: No history found for bill {}", bill.bill_id);
+                continue;
+            }
+        };
+        let committee = bill.committee.clone();
+
         let input = UpsertBillInput {
             id: None,
             slug: Some(slugify!(&format!(
                 "{}{}{}",
                 &bill.state.clone(),
                 &bill.bill_number,
-                "-2023" // Need to make this dynamic, fetch session from db
+                format!("-{}", year) // Make the year dynamic
             ))),
             title: Some(bill.title.clone()),
             populist_title: Some(bill.title.clone()),
@@ -133,10 +142,13 @@ async fn import_legiscan_dataset(
             full_text_url: Some(bill.state_link.clone()),
             legiscan_bill_id: Some(bill.bill_id),
             legiscan_session_id: Some(bill.session_id),
-            legiscan_committee_id: None,
-            legiscan_committee: None,
-            legiscan_last_action: None,
-            legiscan_last_action_date: None,
+            legiscan_committee_id: committee["committee_id"].as_i64().map(|id| id as i32),
+            legiscan_committee: committee["name"].as_str().map(|s| s.to_string()),
+            legiscan_last_action: Some(legiscan_last_action.action.clone()),
+            legiscan_last_action_date: Some(
+                chrono::NaiveDate::parse_from_str(legiscan_last_action.date.as_str(), "%m/%d/%Y")
+                    .unwrap_or_default(),
+            ),
             history: Some(serde_json::to_value(bill.history.clone()).unwrap()),
             state: Some(State::from_str(&bill.state).unwrap()),
             legiscan_data: Some(serde_json::to_value(bill).unwrap()),
