@@ -24,7 +24,7 @@ WITH ranked_candidates AS (
 		FROM
 			election
 		WHERE
-			slug = 'minnesota-primaries-2024')
+			slug = 'special-primary-for-sd-60-2025')
 ),
 winners AS (
 -- Select the winners based on num_elect and most votes
@@ -110,32 +110,35 @@ FROM
 	JOIN election ge ON gr.election_id = ge.id
 	JOIN office o ON gr.office_id = o.id
 WHERE
-	ge.slug = 'general-election-2024'
+	ge.slug = 'minnesota-special-election-jan-28-2025'
+),
+insert_general_race_candidates AS (
+    -- New CTE to insert general race candidates for winners
+    INSERT INTO race_candidates (
+        race_id, 
+        candidate_id, 
+        votes, 
+        created_at, 
+        updated_at
+    )
+    SELECT DISTINCT
+        gr.general_race_id,
+        unnest(w.winner_ids),  -- Explode the winner_ids array
+        0 AS votes,
+        NOW() AS created_at,
+        NOW() AS updated_at
+    FROM 
+        winners w
+        CROSS JOIN general_races gr
+        JOIN race pr ON pr.id = w.race_id
+        JOIN office po ON pr.office_id = po.id
+        JOIN office go ON gr.office_id = go.id
+    WHERE 
+        -- Match offices in primary and general races
+        po.id = go.id
+    ON CONFLICT (race_id, candidate_id) DO NOTHING
+    RETURNING *
 )
--- Get general race candidates to be deleted
-SELECT DISTINCT ON (rc.race_id,
-	rc.candidate_id)
-	rc.*
-FROM
-	race_candidates rc
-	JOIN race r ON r.id = rc.race_id
-	JOIN ranked_candidates rnk ON rnk.candidate_id = rc.candidate_id
-	JOIN general_races general_r ON general_r.office_id = r.office_id
-WHERE
-	rc.candidate_id = rnk.candidate_id
-	AND rnk.rank > CASE WHEN political_scope = 'local'
-		AND r.num_elect IS NULL THEN
-		2
-	WHEN r.num_elect IS NOT NULL THEN
-		r.num_elect * 2
-	ELSE
-		1
-	END
-	AND r.election_id = (
-	SELECT
-		id
-	FROM
-		election
-	WHERE
-		slug = 'general-election-2024');
+SELECT * FROM insert_general_race_candidates;
+
 ```

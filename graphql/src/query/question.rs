@@ -44,17 +44,17 @@ impl QuestionSubmissionQuery {
             QuestionSubmission,
             r#"
                 SELECT
-                  qs.id,
-                  qs.question_id,
-                  qs.respondent_id,
-                  qs.candidate_id,
-                  qs.response,
-                  qs.editorial,
-                  qs.translations,
-                  qs.sentiment AS "sentiment: Sentiment",
-                  qs.copied_from_id,
-                  qs.created_at,
-                  qs.updated_at
+                    qs.id,
+                    qs.question_id,
+                    qs.respondent_id,
+                    qs.candidate_id,
+                    qs.response,
+                    qs.editorial,
+                    qs.translations,
+                    qs.sentiment AS "sentiment: Sentiment",
+                    qs.copied_from_id,
+                    qs.created_at,
+                    qs.updated_at
                 FROM
                     question_submission qs
                     JOIN question q ON q.id = qs.question_id
@@ -64,6 +64,7 @@ impl QuestionSubmissionQuery {
                         OR SIMILARITY (q.prompt,  (SELECT prompt FROM question WHERE id = $2)) > 0.95)
                     AND q.organization_id = $3
                     AND q.id != $2
+                ORDER BY qs.created_at DESC
                 LIMIT 1;
             "#,
             uuid::Uuid::parse_str(candidate_id.as_str())?,
