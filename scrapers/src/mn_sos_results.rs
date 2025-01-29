@@ -80,7 +80,7 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
 
     results_file_paths.insert(
         "State Senator by District",
-        "https://electionresultsfiles.sos.mn.gov/20250114/stsenate.txt",
+        "https://electionresultsfiles.sos.mn.gov/20250128_27/stsenate.txt",
     );
 
     let client = Client::new();
