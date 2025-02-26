@@ -11,6 +11,7 @@ use tracing_subscriber::EnvFilter;
 mod cron;
 pub mod jobs;
 mod postgres;
+pub mod slack;
 pub use cron::init_job_schedule;
 pub use jobs::*;
 mod handlers;

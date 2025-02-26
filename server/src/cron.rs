@@ -1,22 +1,24 @@
+use std::env;
+
+use serde_json::json;
 use tokio_cron_scheduler::{Job, JobScheduler};
 use tracing::{error, info, warn};
 
 use crate::{
     import_legiscan_dataset::{self, ImportSessionDataParams},
+    slack::send_slack_notification,
     update_legiscan_bill_data,
 };
 
 // Creates a new job scheduler and adds an async job to update legiscan bill data
 pub async fn init_job_schedule() {
     let environment = config::Config::default().environment;
+
     if environment != config::Environment::Production && environment != config::Environment::Staging
     {
         warn!(
-            "{}",
-            format!(
-                "Not running cron jobs in non-production environment: {}",
-                environment
-            )
+            "Not running cron jobs in non-production environment: {}",
+            environment
         );
         return;
     } else {
@@ -33,15 +35,40 @@ pub async fn init_job_schedule() {
                 state: db::State::MN,
                 year: 2025,
             };
-            import_legiscan_dataset::run(params)
-                .await
-                .map_err(|e| error!("Failed to import bill data: {}", e))
-                .ok();
 
-            let next_tick = l.next_tick_for_job(uuid).await;
-            match next_tick {
-                Ok(Some(ts)) => info!("Next time for import_legiscan_data is {:?}", ts),
-                _ => warn!("Could not get next tick for import_legiscan_data job"),
+            let mut ok = true;
+            match import_legiscan_dataset::run(params).await {
+                Ok(_) => {
+                    info!("Successfully imported bill data");
+                }
+                Err(e) => {
+                    ok = false;
+                    error!("Failed to import bill data: {}", e);
+                }
+            }
+
+            if !ok {
+                let title = "❌ Cron Job Failed:";
+                let description = "Failed to import bill data";
+                let metadata = None;
+
+                if let Err(e) = send_slack_notification(title, description, metadata).await {
+                    error!("Failed to send Slack notification: {}", e);
+                }
+            } else {
+                let title = "💾 Cron Job:";
+                let description = "Imported bill data from Legiscan successfully.";
+                let metadata = None;
+
+                if let Err(e) = send_slack_notification(title, description, metadata).await {
+                    error!("Failed to send Slack notification: {}", e);
+                }
+            }
+
+            if let Ok(Some(ts)) = l.next_tick_for_job(uuid).await {
+                info!("Next time for import_legiscan_data job is {:?}", ts);
+            } else {
+                warn!("Could not get next tick for import_legiscan_data job");
             }
         })
     })
@@ -51,10 +78,34 @@ pub async fn init_job_schedule() {
     let update_legiscan_bills_job = Job::new_async("0 0 1/4 * * * *", |uuid, mut l| {
         Box::pin(async move {
             tracing::warn!("Running update_legiscan_bill_data job");
-            update_legiscan_bill_data::run()
-                .await
-                .map_err(|e| error!("Failed to update bill data: {}", e))
-                .ok();
+            let mut ok = true;
+            match update_legiscan_bill_data::run().await {
+                Ok(_) => {
+                    info!("Successfully updated bill data");
+                }
+                Err(e) => {
+                    ok = false;
+                    error!("Failed to update bill data: {}", e);
+                }
+            }
+
+            if !ok {
+                let title = "❌ Cron Job Failed:";
+                let description = "Failed to update bill data";
+                let metadata = None;
+
+                if let Err(e) = send_slack_notification(title, description, metadata).await {
+                    error!("Failed to send Slack notification: {}", e);
+                }
+            } else {
+                let title = "💾 Cron Job:";
+                let description = "Imported bill data from Legiscan successfully.";
+                let metadata = None;
+
+                if let Err(e) = send_slack_notification(title, description, metadata).await {
+                    error!("Failed to send Slack notification: {}", e);
+                }
+            }
 
             let next_tick = l.next_tick_for_job(uuid).await;
             match next_tick {
