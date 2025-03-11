@@ -35,6 +35,7 @@ pub struct Bill {
     pub bill_type: String,
     pub chamber: Option<Chamber>,
     pub attributes: JSON,
+    pub pdf_url: Option<String>,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
@@ -217,6 +218,7 @@ impl Bill {
                 bill_type,
                 chamber AS "chamber: Chamber",
                 attributes,
+                pdf_url,
                 created_at,
                 updated_at
             "#,
@@ -366,7 +368,7 @@ impl Bill {
         let record = sqlx::query_as!(
             Bill,
             r#"
-                SELECT id, slug, title, populist_title, bill_number, status AS "status: BillStatus", description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill 
+                SELECT id, slug, title, populist_title, bill_number, status AS "status: BillStatus", description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, pdf_url, created_at, updated_at FROM bill 
                 WHERE id = $1
             "#,
             id
@@ -383,7 +385,7 @@ impl Bill {
         let records = sqlx::query_as!(
             Bill,
             r#"
-                SELECT id, slug, title, populist_title, bill_number, status AS "status: BillStatus", description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill 
+                SELECT id, slug, title, populist_title, bill_number, status AS "status: BillStatus", description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, pdf_url, created_at, updated_at FROM bill 
                 WHERE id = ANY($1)
             "#,
             &ids
@@ -397,7 +399,7 @@ impl Bill {
         let record = sqlx::query_as!(
             Bill,
             r#"
-                SELECT id, slug, title, populist_title, bill_number, status AS "status: BillStatus", description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes, created_at, updated_at FROM bill
+                SELECT id, slug, title, populist_title, bill_number, status AS "status: BillStatus", description, session_id, official_summary, populist_summary, full_text_url, legiscan_bill_id, legiscan_committee, legiscan_last_action, legiscan_last_action_date, legiscan_data, history, state AS "state: State", votesmart_bill_id, political_scope AS "political_scope: PoliticalScope", bill_type, chamber AS "chamber: Chamber", attributes,  pdf_url, created_at, updated_at FROM bill
                 WHERE slug = $1
             "#,
             slug

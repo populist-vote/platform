@@ -45,7 +45,7 @@ impl BillContext {
         db::init_pool().await.unwrap();
         let db_pool = &db::pool().await.connection;
         let bill = db::Bill::find_by_slug(db_pool, slug).await?;
-        let pdf_url = bill.full_text_url;
+        let pdf_url = bill.pdf_url;
 
         if pdf_url.is_none() {
             return Ok(Self {

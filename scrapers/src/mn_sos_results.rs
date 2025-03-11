@@ -69,19 +69,14 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
     //     "School Board Races",
     //     "https://electionresultsfiles.sos.state.mn.us/20241105/sdrace.txt",
     // );
-    // results_file_paths.insert(
-    //     "State Representative by District",
-    //     "https://electionresultsfiles.sos.mn.gov/20241105/LegislativeByDistrict.txt",
-    // );
+    results_file_paths.insert(
+        "State Representative by District",
+        "https://electionresultsfiles.sos.mn.gov/20250311/LegislativeByDistrict.txt",
+    );
     // results_file_paths.insert(
     //     "District Court Judges",
     //     "https://electionresultsfiles.sos.mn.gov/20241105/judicialdst.txt",
     // );
-
-    results_file_paths.insert(
-        "State Senator by District",
-        "https://electionresultsfiles.sos.mn.gov/20250128_27/stsenate.txt",
-    );
 
     let client = Client::new();
     for (name, url) in results_file_paths {
@@ -192,7 +187,7 @@ async fn update_public_schema_with_results() {
     let db_pool = db::pool().await;
     let query = r#"
         WITH source AS (
-            SELECT * FROM p6t_state_mn.results_2025_state_senator_by_district
+            SELECT * FROM p6t_state_mn.results_2025_state_representative_by_district
         ),
         results AS (
             SELECT DISTINCT ON (office_name, candidate_name)
