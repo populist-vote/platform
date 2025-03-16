@@ -8,6 +8,7 @@ use std::time::Instant;
 struct Bill {
     id: Option<uuid::Uuid>,
     title: Option<String>,
+    pdf_url: Option<String>,
 }
 
 async fn categorize_bills() -> Result<(), Box<dyn Error>> {
@@ -18,7 +19,7 @@ async fn categorize_bills() -> Result<(), Box<dyn Error>> {
     let bill_records = sqlx::query_as!(
         Bill,
         r#"
-        SELECT b.id, b.title FROM bill b 
+        SELECT b.id, b.title, b.pdf_url FROM bill b 
         LEFT JOIN bill_issue_tags ON b.id = bill_issue_tags.bill_id
         WHERE (attributes->>'categorized')::boolean IS NOT true
         AND bill_issue_tags.issue_tag_id IS NULL;

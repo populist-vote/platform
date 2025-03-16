@@ -288,6 +288,7 @@ impl Bill {
                 legiscan_data,
                 history,
                 bill.state,
+                bill.pdf_url,
                 votesmart_bill_id,
                 political_scope,
                 bill_type,
