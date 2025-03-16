@@ -10,6 +10,7 @@ use tracing::info;
 use tracing_subscriber::EnvFilter;
 mod cron;
 pub mod jobs;
+pub mod metrics;
 mod postgres;
 pub mod slack;
 pub use cron::init_job_schedule;
@@ -27,6 +28,9 @@ pub async fn run() {
 
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
+
+    metrics::init_metrics();
+    metrics::update_db_connections("main", pool.connection.size() as i64);
 
     // Run cron jobs in separate thread
     tokio::spawn(cron::init_job_schedule());
@@ -56,6 +60,7 @@ pub async fn run() {
                 Duration::from_secs(10),
             ))
             .extension(ApolloTracing)
+            .extension(metrics::PrometheusMetricsExtension) // Add this line
             .finish()
     } else {
         new_schema()
@@ -68,7 +73,9 @@ pub async fn run() {
 
     let app = axum::Router::new()
         .route("/", get(graphql_playground).post(graphql_handler))
+        .route("/metrics", get(metrics::metrics_handler))
         .with_state(schema)
+        .layer(axum::middleware::from_fn(metrics::track_metrics))
         .layer(CorsLayer::very_permissive())
         .layer(CookieManagerLayer::new());
 
