@@ -1,7 +1,6 @@
 use async_graphql::extensions::{Extension, ExtensionContext, ExtensionFactory, NextExecute};
 use axum::http::Request;
 use axum::middleware::Next;
-use http::{header, StatusCode};
 use lazy_static::lazy_static;
 use prometheus::{
     Encoder, HistogramOpts, HistogramVec, IntCounterVec, IntGaugeVec, Registry, TextEncoder,
@@ -161,21 +160,16 @@ impl Extension for PrometheusMetricsExtensionImpl {
         operation_name: Option<&str>,
         next: NextExecute<'_>,
     ) -> async_graphql::Response {
-        let operation_name = operation_name.as_deref();
+        // Safely handle potentially null operation names
+        let op_name = operation_name.unwrap_or("unknown");
 
-        tracing::info!(
-            "GraphQL operation: {})",
-            operation_name.unwrap_or("unknown")
-        );
+        // Log the operation for debugging
+        tracing::info!("GraphQL operation: {}", op_name);
 
-        // Record GraphQL operation
-        GRAPHQL_OPERATIONS
-            .with_label_values(&[operation_name.unwrap_or("unknown")])
-            .inc();
+        // Increment the counter for this operation
+        GRAPHQL_OPERATIONS.with_label_values(&[op_name]).inc();
 
-        // Execute the operation
-        let result = next.run(ctx, operation_name).await;
-        // After resolving the whole query
-        result
+        // Execute the GraphQL operation
+        next.run(ctx, operation_name).await
     }
 }

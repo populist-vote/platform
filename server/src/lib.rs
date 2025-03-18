@@ -54,23 +54,22 @@ pub async fn run() {
     let context = ApiContext::new(pool.clone().connection);
 
     let environment = config::Config::default().environment;
-    let schema = if environment != config::Environment::Production {
-        new_schema()
-            .data(context)
-            .data(Cache::<String, serde_json::Value>::new(
-                Duration::from_secs(10),
-            ))
-            .extension(ApolloTracing)
-            .extension(metrics::PrometheusMetricsExtension) // Add this line
-            .finish()
+    let cache_duration = if environment != config::Environment::Production {
+        Duration::from_secs(10)
     } else {
-        new_schema()
-            .data(context)
-            .data(Cache::<String, serde_json::Value>::new(
-                Duration::from_secs(60 * 30),
-            ))
-            .finish()
+        Duration::from_secs(60 * 30)
     };
+
+    let mut schema_builder = new_schema()
+        .data(context)
+        .data(Cache::<String, serde_json::Value>::new(cache_duration))
+        .extension(metrics::PrometheusMetricsExtension);
+
+    if environment != config::Environment::Production {
+        schema_builder = schema_builder.extension(ApolloTracing);
+    }
+
+    let schema = schema_builder.finish();
 
     let app = axum::Router::new()
         .route("/", get(graphql_playground).post(graphql_handler))
