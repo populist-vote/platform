@@ -74,8 +74,12 @@ pub async fn run() {
 
     let app = axum::Router::new()
         .route("/", get(graphql_playground).post(graphql_handler))
-        .route("/metrics", get(metrics::metrics_handler))
-        .route_layer(axum::middleware::from_fn(metrics_auth))
+        .nest(
+            "/metrics",
+            axum::Router::new()
+                .route("/", get(metrics::metrics_handler))
+                .layer(axum::middleware::from_fn(metrics_auth)),
+        )
         .with_state(schema)
         .layer(axum::middleware::from_fn(metrics::track_metrics))
         .layer(CorsLayer::very_permissive())

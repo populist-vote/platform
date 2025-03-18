@@ -106,7 +106,6 @@ pub async fn track_metrics(req: Request<axum::body::Body>, next: Next) -> axum::
     response
 }
 
-// Simple middleware for bearer token authentication
 pub async fn metrics_auth(req: Request<axum::body::Body>, next: Next) -> axum::response::Response {
     // Get token from environment
     let expected_token = match env::var("METRICS_TOKEN") {
@@ -114,39 +113,34 @@ pub async fn metrics_auth(req: Request<axum::body::Body>, next: Next) -> axum::r
         Err(_) => {
             tracing::error!("METRICS_TOKEN environment variable not set");
             return axum::response::Response::builder()
-                .status(502)
+                .status(401)
                 .body(axum::body::Body::empty())
                 .unwrap();
         }
     };
 
     // Check Authorization header
-    let bearer_token = req
+    let auth_header = req
         .headers()
         .get("authorization")
-        .and_then(|header| header.to_str().ok())
-        .and_then(|header| header.split_whitespace().nth(1));
+        .and_then(|header| header.to_str().ok());
 
-    match bearer_token {
-        Some(token) if token.starts_with("Bearer ") => {
-            let token = &token[7..]; // Skip "Bearer " prefix
+    match auth_header {
+        Some(header) if header.starts_with("Bearer ") => {
+            let token = &header[7..]; // Skip "Bearer " prefix
 
             if token == expected_token {
                 return next.run(req).await;
-            } else {
-                return axum::response::Response::builder()
-                    .status(502)
-                    .body(axum::body::Body::empty())
-                    .unwrap();
             }
         }
-        _ => {
-            return axum::response::Response::builder()
-                .status(502)
-                .body(axum::body::Body::empty())
-                .unwrap()
-        }
+        _ => {}
     }
+
+    // Return 401 Unauthorized for any authorization failure
+    axum::response::Response::builder()
+        .status(401) // Using 401 instead of 502 for authentication failures
+        .body(axum::body::Body::empty())
+        .unwrap()
 }
 
 pub struct PrometheusMetricsExtension;
