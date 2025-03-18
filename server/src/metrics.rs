@@ -1,10 +1,12 @@
 use async_graphql::extensions::{Extension, ExtensionContext, ExtensionFactory, NextExecute};
 use axum::http::Request;
 use axum::middleware::Next;
+use db::DatabasePool;
 use lazy_static::lazy_static;
 use prometheus::{
     Encoder, HistogramOpts, HistogramVec, IntCounterVec, IntGaugeVec, Registry, TextEncoder,
 };
+use sqlx::{Pool, Postgres};
 use std::{env, sync::Arc, time::Instant};
 
 // Create a global registry
@@ -43,12 +45,10 @@ lazy_static! {
 
     // Database connections
     pub static ref DB_CONNECTIONS: IntGaugeVec = IntGaugeVec::new(
-        prometheus::opts!("db_connections", "Number of active database connections"),
-        &["pool_name"],
+        prometheus::opts!("db_connections", "Database connection metrics"),
+        &["pool_name", "state"] // Added 'state' label to differentiate metrics
     )
     .expect("metric can be created");
-
-    // NEW METRICS FOR WEB SERVER PERFORMANCE
 
     // Active requests (saturation)
     pub static ref HTTP_REQUESTS_IN_FLIGHT: IntGaugeVec = IntGaugeVec::new(
@@ -147,10 +147,11 @@ pub fn init_metrics() {
 }
 
 // Update database connection metrics
-pub fn update_db_connections(pool_name: &str, connections: i64) {
+pub fn update_db_connections(pool_name: &str, pool: &DatabasePool) {
+    // Track total pool size
     DB_CONNECTIONS
-        .with_label_values(&[pool_name])
-        .set(connections);
+        .with_label_values(&[pool_name, "total"])
+        .set(pool.connection.size() as i64);
 }
 
 // Function to expose metrics

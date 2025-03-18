@@ -27,11 +27,19 @@ pub async fn run() {
         .with_writer(std::io::stderr)
         .init();
 
+    metrics::init_metrics();
+
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
-
-    metrics::init_metrics();
-    metrics::update_db_connections("main", pool.connection.size() as i64);
+    metrics::update_db_connections("main", pool);
+    tokio::spawn(async move {
+        let update_interval = Duration::from_secs(15);
+        let pool = db::pool().await;
+        loop {
+            metrics::update_db_connections("main", &pool);
+            tokio::time::sleep(update_interval).await;
+        }
+    });
 
     // Run cron jobs in separate thread
     tokio::spawn(cron::init_job_schedule());
