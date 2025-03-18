@@ -1,11 +1,12 @@
 use async_graphql::extensions::{Extension, ExtensionContext, ExtensionFactory, NextExecute};
 use axum::http::Request;
 use axum::middleware::Next;
+use http::{header, StatusCode};
 use lazy_static::lazy_static;
 use prometheus::{
     Encoder, HistogramOpts, HistogramVec, IntCounterVec, IntGaugeVec, Registry, TextEncoder,
 };
-use std::{sync::Arc, time::Instant};
+use std::{env, sync::Arc, time::Instant};
 
 // Create a global registry
 lazy_static! {
@@ -103,6 +104,49 @@ pub async fn track_metrics(req: Request<axum::body::Body>, next: Next) -> axum::
         .inc();
 
     response
+}
+
+// Simple middleware for bearer token authentication
+pub async fn metrics_auth(req: Request<axum::body::Body>, next: Next) -> axum::response::Response {
+    // Get token from environment
+    let expected_token = match env::var("METRICS_TOKEN") {
+        Ok(token) => token,
+        Err(_) => {
+            tracing::error!("METRICS_TOKEN environment variable not set");
+            return axum::response::Response::builder()
+                .status(502)
+                .body(axum::body::Body::empty())
+                .unwrap();
+        }
+    };
+
+    // Check Authorization header
+    let bearer_token = req
+        .headers()
+        .get("authorization")
+        .and_then(|header| header.to_str().ok())
+        .and_then(|header| header.split_whitespace().nth(1));
+
+    match bearer_token {
+        Some(token) if token.starts_with("Bearer ") => {
+            let token = &token[7..]; // Skip "Bearer " prefix
+
+            if token == expected_token {
+                return next.run(req).await;
+            } else {
+                return axum::response::Response::builder()
+                    .status(502)
+                    .body(axum::body::Body::empty())
+                    .unwrap();
+            }
+        }
+        _ => {
+            return axum::response::Response::builder()
+                .status(502)
+                .body(axum::body::Body::empty())
+                .unwrap()
+        }
+    }
 }
 
 pub struct PrometheusMetricsExtension;

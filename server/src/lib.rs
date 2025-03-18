@@ -2,6 +2,7 @@ use async_graphql::extensions::ApolloTracing;
 use axum::routing::get;
 use dotenv::dotenv;
 use graphql::{cache::Cache, context::ApiContext, new_schema};
+use metrics::metrics_auth;
 use std::{net::SocketAddr, time::Duration};
 use tokio::net::TcpListener;
 use tower_cookies::CookieManagerLayer;
@@ -74,6 +75,7 @@ pub async fn run() {
     let app = axum::Router::new()
         .route("/", get(graphql_playground).post(graphql_handler))
         .route("/metrics", get(metrics::metrics_handler))
+        .route_layer(axum::middleware::from_fn(metrics_auth))
         .with_state(schema)
         .layer(axum::middleware::from_fn(metrics::track_metrics))
         .layer(CorsLayer::very_permissive())
