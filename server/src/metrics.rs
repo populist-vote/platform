@@ -25,6 +25,12 @@ lazy_static! {
     )
     .expect("metric can be created");
 
+    pub static ref GRAPHQL_ERRORS: IntCounterVec = IntCounterVec::new(
+        prometheus::opts!("graphql_errors_total", "Total number of GraphQL errors"),
+        &["operation_name", "error_type"]
+    )
+    .expect("metric can be created");
+
     // Request duration
     pub static ref HTTP_REQUEST_DURATION: HistogramVec = HistogramVec::new(
         HistogramOpts::new(
@@ -104,6 +110,10 @@ pub fn init_metrics() {
 
     REGISTRY
         .register(Box::new(GRAPHQL_OPERATIONS.clone()))
+        .expect("collector can be registered");
+
+    REGISTRY
+        .register(Box::new(GRAPHQL_ERRORS.clone()))
         .expect("collector can be registered");
 
     REGISTRY
@@ -282,16 +292,49 @@ impl Extension for PrometheusMetricsExtensionImpl {
         operation_name: Option<&str>,
         next: NextExecute<'_>,
     ) -> async_graphql::Response {
-        // Safely handle potentially null operation names
         let op_name = operation_name.unwrap_or("unknown");
 
-        // Log the operation for debugging
+        // Log and count the operation
         tracing::info!("GraphQL operation: {}", op_name);
-
-        // Increment the counter for this operation
         GRAPHQL_OPERATIONS.with_label_values(&[op_name]).inc();
 
         // Execute the GraphQL operation
-        next.run(ctx, operation_name).await
+        let response = next.run(ctx, operation_name).await;
+
+        // Track errors if they exist
+        if !response.errors.is_empty() {
+            for error in &response.errors {
+                // Extract error type from the extension data
+                if let Some(extensions) = &error.extensions {
+                    if let Some(error_type) = extensions.get("type") {
+                        let error_type_str = error_type.to_string();
+                        // Increment counter with the enum variant name
+                        GRAPHQL_ERRORS
+                            .with_label_values(&[op_name, &error_type_str])
+                            .inc();
+
+                        tracing::error!(
+                            "GraphQL error in operation {}: {} (type: {})",
+                            op_name,
+                            error.message,
+                            error_type_str
+                        );
+                    }
+                } else {
+                    // Fallback for errors without extension data
+                    GRAPHQL_ERRORS
+                        .with_label_values(&[op_name, "unknown"])
+                        .inc();
+
+                    tracing::error!(
+                        "GraphQL error in operation {} without type: {}",
+                        op_name,
+                        error.message
+                    );
+                }
+            }
+        }
+
+        response
     }
 }
