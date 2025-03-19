@@ -7,7 +7,7 @@ publish = false
 [dependencies]
 geocodio = { path = "../geocodio" }
 chrono = { version = "0.4.19", features = ["serde"] }
-sqlx = { version = "0.7", features = [
+sqlx = { version = "0.8.3", features = [
     "runtime-tokio-rustls",
     "postgres",
     "chrono",

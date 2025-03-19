@@ -19,7 +19,7 @@ jsonwebtoken = "7.2.0"
 time = "0.3.36"
 dotenv = "*"
 anyhow = "1.0.45"
-sqlx = { version = "0.7", features = ["postgres"] }
+sqlx = { version = "0.8.3", features = ["postgres"] }
 thiserror = "1.0.30"
 tracing = "0.1.35"
 tracing-subscriber = { version = "0.3.11", features = ["fmt", "env-filter"] }
