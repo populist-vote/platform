@@ -1,7 +1,6 @@
 use async_graphql::Enum;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use sqlx::postgres::PgHasArrayType;
 use strum_macros::{AsRefStr, Display, EnumIter, EnumString};
 
 #[derive(
@@ -374,11 +373,4 @@ pub enum StatementModerationStatus {
     Accepted,
     Rejected,
     Seed,
-}
-
-// Implement PgHasArrayType to allow the enum to be used in arrays
-impl PgHasArrayType for StatementModerationStatus {
-    fn array_type_info() -> sqlx::postgres::PgTypeInfo {
-        sqlx::postgres::PgTypeInfo::with_name("_statement_moderation_status")
-    }
 }
