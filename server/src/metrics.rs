@@ -6,7 +6,6 @@ use lazy_static::lazy_static;
 use prometheus::{
     Encoder, HistogramOpts, HistogramVec, IntCounterVec, IntGaugeVec, Registry, TextEncoder,
 };
-use sqlx::{Pool, Postgres};
 use std::{env, sync::Arc, time::Instant};
 
 // Create a global registry

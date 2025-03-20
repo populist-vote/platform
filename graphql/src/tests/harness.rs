@@ -10,10 +10,12 @@ use uuid::Uuid;
 use crate::{context::ApiContext, new_schema, SessionData};
 
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct TestHarness {
     pub pool: PgPool,
 }
 
+#[allow(dead_code)]
 impl TestHarness {
     /// Creates a new test harness with a fresh database
     pub async fn new() -> anyhow::Result<Self> {
@@ -77,9 +79,7 @@ impl TestHarness {
 
     /// Creates a fresh context for GraphQL operations
     fn create_context(&self) -> ApiContext {
-        let context = ApiContext::new(self.pool.clone());
-
-        context
+        ApiContext::new(self.pool.clone())
     }
 
     /// Clears all tables in the database

@@ -171,7 +171,7 @@ impl CharacteristicVote {
             conversation_id: statement.conversation_id.into(),
             author_id: statement.author_id.map(|id| id.into()),
             content: statement.content,
-            moderation_status: statement.moderation_status.into(),
+            moderation_status: statement.moderation_status,
             created_at: statement.created_at,
             total_votes: statement.vote_count,
             support_votes: statement.support_votes,
@@ -249,7 +249,7 @@ impl ConversationResult {
                 conversation_id: row.conversation_id.into(),
                 author_id: row.author_id.map(|id| id.into()),
                 content: row.content,
-                moderation_status: row.moderation_status.into(),
+                moderation_status: row.moderation_status,
                 created_at: row.created_at,
                 total_votes: row.total_votes,
                 support_votes: row.support_votes,
@@ -346,7 +346,7 @@ impl ConversationResult {
                 conversation_id: row.conversation_id.into(),
                 author_id: row.author_id.map(|id| id.into()),
                 content: row.content,
-                moderation_status: row.moderation_status.into(),
+                moderation_status: row.moderation_status,
                 created_at: row.created_at,
                 total_votes: row.vote_count,
                 support_votes: row.support_votes,
@@ -628,7 +628,7 @@ impl ConversationResult {
     }
 
     async fn opinion_analysis(&self, ctx: &Context<'_>, limit: i32) -> Result<OpinionAnalysis> {
-        let cache_key = format!("conversation:{}:opinion_analysis", self.id.to_string());
+        let cache_key = format!("conversation:{}:opinion_analysis", *self.id);
         let cache = ctx.data::<Cache<String, serde_json::Value>>().unwrap();
         if let Some(cached) = cache.get(&cache_key) {
             let data: OpinionAnalysis = serde_json::from_value(cached.clone())
@@ -756,7 +756,7 @@ impl ConversationResult {
     ) -> Result<Vec<OpinionGroup>, Error> {
         let cache_key = format!(
             "conversation:{}:opinion_groups:num_groups:{}",
-            self.id.to_string(),
+            *self.id,
             num_groups.unwrap_or(0)
         );
         let cache = ctx.data::<Cache<String, serde_json::Value>>().unwrap();
@@ -994,7 +994,7 @@ fn analyze_group_votes(
 
             // Adjust consensus score for high-consensus, low-participation cases
             if consensus > 0.7 && significance <= 0.5 {
-                consensus = consensus * (significance / 0.5);
+                consensus *= significance / 0.5;
             }
 
             candidates.push((stmt_id, mean, consensus, significance));
@@ -1079,7 +1079,7 @@ fn prepare_voting_matrix(votes: &[StatementVote]) -> (Array2<f64>, Vec<VoterId>,
         if let Some(user_id) = &vote.user_id {
             unique_voters.insert(VoterId::User(*user_id));
         } else if let Some(session_id) = &vote.session_id {
-            unique_voters.insert(VoterId::Session(session_id.clone()));
+            unique_voters.insert(VoterId::Session(*session_id));
         }
         unique_statements.insert(vote.statement_id);
     }
@@ -1169,10 +1169,10 @@ fn kmeans(data: &Array2<f64>, k: usize, max_iters: usize) -> Vec<Vec<usize>> {
         let mut distances = vec![f64::INFINITY; n_samples];
 
         // Calculate distances to existing centroids
-        for sample_idx in 0..n_samples {
+        for (sample_idx, distance) in distances.iter_mut().enumerate() {
             for &centroid_idx in &chosen_indices {
                 let dist = squared_distance(&data.row(sample_idx), &data.row(centroid_idx));
-                distances[sample_idx] = distances[sample_idx].min(dist);
+                *distance = distance.min(dist);
             }
         }
 
@@ -1253,7 +1253,7 @@ fn calculate_centroid(data: &Array2<f64>, indices: &[usize]) -> Array2<f64> {
     sum / indices.len() as f64
 }
 
-fn rebalance_clusters(groups: &mut Vec<Vec<usize>>, min_size: usize) {
+fn rebalance_clusters(groups: &mut [Vec<usize>], min_size: usize) {
     let mut large_clusters: Vec<usize> = groups
         .iter()
         .enumerate()
@@ -1423,7 +1423,7 @@ async fn fetch_statements_with_votes(
 fn count_votes(votes: &[StatementVote]) -> HashMap<ArgumentPosition, i32> {
     let mut counts = HashMap::new();
     for vote in votes {
-        *counts.entry(vote.vote_type.clone()).or_insert(0) += 1;
+        *counts.entry(vote.vote_type).or_insert(0) += 1;
     }
     counts
 }

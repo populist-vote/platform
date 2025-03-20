@@ -7,6 +7,7 @@ use crate::{context::ApiContext, relay, types::BallotMeasureResult};
 pub struct BallotMeasureQuery;
 
 #[Object]
+#[allow(clippy::too_many_arguments)]
 impl BallotMeasureQuery {
     async fn ballot_measure_by_id(&self, ctx: &Context<'_>, id: ID) -> Option<BallotMeasureResult> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();

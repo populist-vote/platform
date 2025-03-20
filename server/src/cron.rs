@@ -1,6 +1,3 @@
-use std::env;
-
-use serde_json::json;
 use tokio_cron_scheduler::{Job, JobScheduler};
 use tracing::{error, info, warn};
 

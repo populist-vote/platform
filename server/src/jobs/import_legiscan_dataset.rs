@@ -92,7 +92,7 @@ pub async fn run(params: ImportSessionDataParams) -> Result<(), Box<dyn Error>> 
         }
     }
 
-    let bill_ids = bills_hash_map.keys().map(|&k| k).collect::<Vec<i32>>();
+    let bill_ids = bills_hash_map.keys().copied().collect::<Vec<i32>>();
     // Filter down the hashmap to bills that do not yet exist in the database
     let existing_bills = sqlx::query!(
         r#"
@@ -129,12 +129,13 @@ pub async fn run(params: ImportSessionDataParams) -> Result<(), Box<dyn Error>> 
 
         let input = UpsertBillInput {
             id: None,
-            slug: Some(slugify!(&format!(
+            slug: Some(slugify!(&format_args!(
                 "{}{}{}",
                 &bill.state.clone(),
                 &bill.bill_number,
-                format!("-{}", params.year) // Using params.year instead of hardcoded year
-            ))),
+                format_args!("-{}", params.year) // Using params.year instead of hardcoded year
+            )
+            .to_string())),
             title: Some(bill.title.clone()),
             populist_title: Some(bill.title.clone()),
             bill_number: bill.bill_number.clone(),

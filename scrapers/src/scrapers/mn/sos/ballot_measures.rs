@@ -38,7 +38,7 @@ impl crate::Scraper for Scraper {
     // Run for local sources (file path)
     async fn run_local(&self, context: &crate::ScraperContext<'_>) -> Result<(), Box<dyn Error>> {
         let path = get_project_root()?.join("scrapers/html").join(FILE_PATH);
-        let xlsx_source = XlsxSource::Path(path.into());
+        let xlsx_source = XlsxSource::Path(path);
 
         // Open and scrape the XLSX file
         let xlsx = xlsx_source.open_xlsx()?;

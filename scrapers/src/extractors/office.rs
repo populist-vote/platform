@@ -179,7 +179,7 @@ pub fn extract_office_district(input: &str) -> Option<String> {
     });
 
     for extractor in extractors {
-        if let Some(district) = extractor.captures(input).map(default_capture).flatten() {
+        if let Some(district) = extractor.captures(input).and_then(default_capture) {
             return Some(district);
         }
     }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use async_graphql::{Context, Error, InputObject, Object, Result, SimpleObject};
+use async_graphql::{Context, InputObject, Object, Result, SimpleObject};
 use auth::AccessTokenClaims;
 use config::Config;
 use db::{DateTime, Embed, UpsertEmbedInput};

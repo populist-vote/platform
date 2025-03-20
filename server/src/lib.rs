@@ -36,7 +36,7 @@ pub async fn run() {
         let update_interval = Duration::from_secs(15);
         let pool = db::pool().await;
         loop {
-            metrics::update_db_connections("main", &pool);
+            metrics::update_db_connections("main", pool);
             tokio::time::sleep(update_interval).await;
         }
     });
