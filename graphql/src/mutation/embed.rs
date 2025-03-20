@@ -89,7 +89,10 @@ impl EmbedMutation {
 
                 Ok(record)
             }
-            _ => Err("URL is not an allowed Populist origin".into()),
+            _ => {
+                tracing::warn!("Rejected URL: {}", cleaned);
+                Err("URL is not an allowed Populist origin".into())
+            }
         }
     }
 
