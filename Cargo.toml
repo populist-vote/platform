@@ -16,4 +16,3 @@ members = [
     "open-secrets",
 ]
 resolver = "2"
-cargo-features = ["portable_simd"]
