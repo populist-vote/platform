@@ -53,14 +53,14 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
     //     "Supreme Court and Courts of Appeals",
     //     "https://electionresultsfiles.sos.state.mn.us/20241105/judicial.txt",
     // );
-    // results_file_paths.insert(
-    //     "State Senator by District",
-    //     "https://electionresultsfiles.sos.state.mn.us/20241105/stsenate.txt",
-    // );
-    // results_file_paths.insert(
-    //     "County Races",
-    //     "https://electionresultsfiles.sos.state.mn.us/20241105/cntyRaces.txt",
-    // );
+    results_file_paths.insert(
+        "State Senator by District",
+        "https://electionresultsfiles.sos.mn.gov/20250415/stsenate.txt",
+    );
+    results_file_paths.insert(
+        "County Races",
+        "https://electionresultsfiles.sos.mn.gov/20250408/cntyRaces.txt",
+    );
     // results_file_paths.insert(
     //     "Municipal Races and Questions",
     //     "https://electionresultsfiles.sos.state.mn.us/20241105/local.txt",
@@ -69,32 +69,48 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
     //     "School Board Races",
     //     "https://electionresultsfiles.sos.state.mn.us/20241105/sdrace.txt",
     // );
-    results_file_paths.insert(
-        "State Representative by District",
-        "https://electionresultsfiles.sos.mn.gov/20250311/LegislativeByDistrict.txt",
-    );
+    // results_file_paths.insert(
+    //     "State Representative by District",
+    //     "https://electionresultsfiles.sos.mn.gov/20250311/LegislativeByDistrict.txt",
+    // );
     // results_file_paths.insert(
     //     "District Court Judges",
     //     "https://electionresultsfiles.sos.mn.gov/20241105/judicialdst.txt",
     // );
 
     let client = Client::new();
+    let mut table_names = Vec::new();
     for (name, url) in results_file_paths {
         let response = client
             .get(url)
             .send()
             .await?
             // Very important MN SoS uses windows-1252 encoding, not UTF-8
-            .text_with_charset("windows-1252")
+            // .text_with_charset("windows-1252")
+            .text()
             .await?;
         let data = convert_text_to_csv(name, &response)?;
         let csv_data_as_string = String::from_utf8(data.clone())?;
         let table_name = format!(
-            "p6t_state_mn.results_2025_{}",
+            "p6t_state_mn.results_{}_{}",
+            url.split('/')
+                .filter_map(|segment| {
+                    if segment.len() == 8 && segment.chars().all(|c| c.is_numeric()) {
+                        Some(segment)
+                    } else {
+                        None
+                    }
+                })
+                .next()
+                .unwrap_or_else(|| {
+                    tracing::warn!("No valid date segment found in URL: {}", url);
+                    "unknown"
+                }),
             name.replace(['.', ','], "")
                 .replace(' ', "_")
                 .to_lowercase()
         );
+        table_names.push(table_name.clone());
         let copy_query = format!("COPY {} FROM STDIN WITH CSV HEADER;", table_name);
         let pool = db::pool().await;
         sqlx::query(format!(r#"DROP TABLE IF EXISTS {} CASCADE;"#, table_name).as_str())
@@ -113,7 +129,7 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
         // TODO: Refactor this scraper to fit the Scraper interface with run_local fn and remove below line
         _write_to_csv_file(name, &data)?;
     }
-    update_public_schema_with_results().await;
+    update_public_schema_with_results(table_names).await;
 
     Ok(())
 }
@@ -183,11 +199,20 @@ fn convert_text_to_csv(name: &str, text: &str) -> Result<Vec<u8>, Box<dyn Error>
     Ok(csv_string)
 }
 
-async fn update_public_schema_with_results() {
+async fn update_public_schema_with_results(table_names: Vec<String>) {
     let db_pool = db::pool().await;
-    let query = r#"
+
+    // Build the source CTE dynamically from the provided table names
+    let source_tables = table_names
+        .iter()
+        .map(|table| format!("SELECT * FROM {}", table))
+        .collect::<Vec<String>>()
+        .join(" UNION ALL ");
+
+    let query = format!(
+        r#"
         WITH source AS (
-            SELECT * FROM p6t_state_mn.results_2025_state_representative_by_district
+            {}
         ),
         results AS (
             SELECT DISTINCT ON (office_name, candidate_name)
@@ -264,9 +289,11 @@ async fn update_public_schema_with_results() {
             results
         WHERE
             office_name NOT ILIKE '%question%';
-    "#;
+    "#,
+        source_tables
+    );
 
-    let result = sqlx::query(query)
+    let result = sqlx::query(&query)
         .execute(&db_pool.connection)
         .await
         .map_err(|e| {
