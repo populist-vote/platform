@@ -117,6 +117,13 @@ pub async fn init_job_schedule() {
     let update_mn_results_job = Job::new_async("0 1/10 * * * * 2025", |uuid, mut l| {
         Box::pin(async move {
             tracing::warn!("Running update_mn_results job");
+            let title = "🔄 Cron Job:";
+            let description = "Updating Minnesota SoS election results.";
+            let metadata = None;
+
+            if let Err(e) = send_slack_notification(title, description, metadata).await {
+                error!("Failed to send Slack notification: {}", e);
+            }
             scrapers::mn_sos_results::fetch_results()
                 .await
                 .map_err(|e| warn!("Failed to update Minnesota SoS results: {}", e))
