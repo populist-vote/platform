@@ -114,7 +114,7 @@ pub async fn init_job_schedule() {
     .unwrap();
 
     // Update MN SoS election results every 10 minutes
-    let update_mn_results_job = Job::new_async("0 1/10 * * * * 2025", |uuid, mut l| {
+    let update_mn_results_job = Job::new_async("0 1/10 * 15,16 4 * 2025", |uuid, mut l| {
         Box::pin(async move {
             tracing::warn!("Running update_mn_results job");
             let title = "🔄 Cron Job:";
