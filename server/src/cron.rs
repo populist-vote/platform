@@ -24,7 +24,7 @@ pub async fn init_job_schedule() {
 
     let sched = JobScheduler::new().await.unwrap();
 
-    let import_legiscan_data_job = Job::new_async("0 0 8 * * Tue *", |uuid, mut l| {
+    let import_legiscan_data_job = Job::new_async("0 0 8 * * * *", |uuid, mut l| {
         Box::pin(async move {
             tracing::warn!("Running import_legiscan_data job");
             let params = ImportSessionDataParams {
@@ -54,7 +54,7 @@ pub async fn init_job_schedule() {
                 }
             } else {
                 let title = "💾 Cron Job:";
-                let description = "Imported bill data from Legiscan successfully.";
+                let description = "Imported new bill data from Legiscan successfully.";
                 let metadata = None;
 
                 if let Err(e) = send_slack_notification(title, description, metadata).await {
@@ -96,7 +96,7 @@ pub async fn init_job_schedule() {
                 }
             } else {
                 let title = "💾 Cron Job:";
-                let description = "Imported bill data from Legiscan successfully.";
+                let description = "Updated existing bill data from Legiscan successfully.";
                 let metadata = None;
 
                 if let Err(e) = send_slack_notification(title, description, metadata).await {
