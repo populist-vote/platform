@@ -1,4 +1,5 @@
 pub mod errors;
+pub mod filters;
 pub mod loaders;
 pub mod models;
 pub mod pool;
