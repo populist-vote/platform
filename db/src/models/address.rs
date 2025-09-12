@@ -273,3 +273,77 @@ impl Address {
         Ok(record)
     }
 }
+
+impl AddressExtendedMN {
+    pub fn county_commissioner_district_norm(&self) -> Option<String> {
+        self.county_commissioner_district
+            .as_ref()
+            .map(|d| d.trim_start_matches('0').to_string())
+    }
+
+    pub fn judicial_district_norm(&self) -> Option<String> {
+        self.judicial_district
+            .as_ref()
+            .map(|d| d.trim_start_matches('0').to_string())
+    }
+
+    pub fn parsed_soil_and_water_district(&self) -> Option<String> {
+        extract_district_or_direction(
+            self.soil_and_water_district
+                .as_ref()
+                .map(|d| d.trim_start_matches('0').to_string()),
+        )
+    }
+
+    pub fn hospital_district_norm(&self) -> Option<String> {
+        self.hospital_district.clone()
+    }
+
+    pub fn school_district_norm(&self) -> Option<String> {
+        self.school_district_number
+            .as_ref()
+            .map(|d| d.trim_start_matches('0').to_string())
+    }
+
+    pub fn school_district_type_norm(&self) -> Option<String> {
+        self.school_district_type.clone()
+    }
+
+    pub fn school_subdistrict_norm(&self) -> Option<String> {
+        self.school_subdistrict_code
+            .as_ref()
+            .map(|d| d.trim_start_matches('0').to_string())
+    }
+
+    pub fn ward_norm(&self) -> Option<String> {
+        self.ward.as_ref().map(|d| {
+            if let Some(pos) = d.find('-') {
+                d[(pos + 1)..].trim_start_matches('0').to_string()
+            } else {
+                d.trim_start_matches('0').to_string()
+            }
+        })
+    }
+
+    pub fn city_norm(&self, base_city: &str) -> String {
+        self.municipality_name
+            .as_ref()
+            .map(|m| m.replace("Twp", "Township"))
+            .unwrap_or_else(|| base_city.to_string())
+    }
+}
+
+fn extract_district_or_direction(input: Option<String>) -> Option<String> {
+    let re = regex::Regex::new(r"(District\s*(\d+)|(East|West|North|South))").unwrap();
+
+    input.and_then(|d| {
+        re.captures(&d).and_then(|cap| {
+            if let Some(district) = cap.get(2) {
+                // Extract district number, remove leading zeros
+                Some(district.as_str().trim_start_matches('0').to_string())
+            } else {
+                cap.get(3).map(|direction| direction.as_str().to_string())
+            }
+        })
+    })
+}

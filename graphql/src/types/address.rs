@@ -1,6 +1,7 @@
 use async_graphql::SimpleObject;
 use db::{models::enums::State, Address, AddressExtendedMN};
 
+/// Base address object exposed to GraphQL
 #[derive(SimpleObject, Debug, Clone)]
 pub struct AddressResult {
     line_1: String,
@@ -24,6 +25,7 @@ impl From<Address> for AddressResult {
     }
 }
 
+/// Minnesota-specific extended address object exposed to GraphQL
 #[derive(SimpleObject, Debug, Clone)]
 pub struct AddressExtendedMNResult {
     voting_tabulation_district_id: Option<String>,
@@ -33,6 +35,7 @@ pub struct AddressExtendedMNResult {
     precinct_name: Option<String>,
     county_commissioner_district: Option<String>,
     judicial_district: Option<String>,
+    soil_and_water_district: Option<String>,
     school_district_number: Option<String>,
     school_district_name: Option<String>,
     school_subdistrict_code: Option<String>,
@@ -47,6 +50,7 @@ impl From<AddressExtendedMN> for AddressExtendedMNResult {
             county_name: address_extended_mn.county_name,
             precinct_code: address_extended_mn.precinct_code,
             precinct_name: address_extended_mn.precinct_name,
+            soil_and_water_district: address_extended_mn.soil_and_water_district,
             county_commissioner_district: address_extended_mn.county_commissioner_district,
             judicial_district: address_extended_mn.judicial_district,
             school_district_number: address_extended_mn.school_district_number,

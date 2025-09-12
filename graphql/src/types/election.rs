@@ -3,6 +3,7 @@ use crate::{context::ApiContext, Error};
 use async_graphql::{ComplexObject, Context, InputObject, Result, SimpleObject, ID};
 use auth::AccessTokenClaims;
 use db::{
+    filters::mn::apply_mn_filters,
     models::{
         ballot_measure::BallotMeasure,
         enums::{BallotMeasureStatus, RaceType, State, VoteType},
@@ -11,7 +12,7 @@ use db::{
 };
 use geocodio::GeocodioProxy;
 use jsonwebtoken::TokenData;
-use regex::Regex;
+use sqlx::{Postgres, QueryBuilder};
 use uuid::Uuid;
 
 #[derive(SimpleObject, Clone, Debug)]
@@ -28,21 +29,6 @@ pub struct ElectionResult {
 #[derive(InputObject, Default, Debug)]
 pub struct ElectionRaceFilter {
     state: Option<State>,
-}
-
-fn extract_district_or_direction(input: Option<String>) -> Option<String> {
-    let re = Regex::new(r"(District\s*(\d+)|(East|West|North|South))").unwrap();
-
-    input.and_then(|d| {
-        re.captures(&d).and_then(|cap| {
-            if let Some(district) = cap.get(2) {
-                // Extract district number, remove leading zeros
-                Some(district.as_str().trim_start_matches('0').to_string())
-            } else {
-                cap.get(3).map(|direction| direction.as_str().to_string())
-            }
-        })
-    })
 }
 
 pub async fn process_address_with_geocodio(
@@ -172,9 +158,10 @@ pub async fn process_address_with_geocodio(
 
 async fn get_races_by_address_id(
     db_pool: &sqlx::PgPool,
-    election_id: &uuid::Uuid,
-    address_id: &uuid::Uuid,
+    election_id: &Uuid,
+    address_id: &Uuid,
 ) -> Result<Vec<RaceResult>, Error> {
+    // 1. Fetch base address info
     let user_address_data = sqlx::query!(
         r#"
         SELECT
@@ -185,185 +172,125 @@ async fn get_races_by_address_id(
             a.postal_code,
             a.county,
             a.city
-        FROM
-            address AS a
-        WHERE
-            a.id = $1
+        FROM address AS a
+        WHERE a.id = $1
         "#,
         address_id
     )
     .fetch_one(db_pool)
     .await?;
 
-    let user_address_extended_mn_data = if user_address_data.state == State::MN {
+    // 2. Fetch extended state info if applicable
+    let extended_address = if user_address_data.state == State::MN {
         Address::extended_mn_by_address_id(db_pool, address_id).await?
     } else {
         None
     };
 
-    let county_commissioner_district = user_address_extended_mn_data
-        .clone()
-        .map(|a| {
-            a.county_commissioner_district
-                .map(|d| d.as_str().trim_start_matches('0').to_string())
-        })
-        .unwrap_or(None);
-
-    let judicial_district = user_address_extended_mn_data
-        .clone()
-        .map(|a| {
-            a.judicial_district
-                .map(|d| d.as_str().trim_start_matches('0').to_string())
-        })
-        .unwrap_or(None);
-
-    let soil_and_water_district = user_address_extended_mn_data
-        .clone()
-        .map(|a| {
-            a.soil_and_water_district
-                .map(|d| d.as_str().trim_start_matches('0').to_string())
-        })
-        .unwrap_or(None);
-
-    let parsed_soil_and_water_district =
-        extract_district_or_direction(soil_and_water_district.clone());
-
-    let hospital_district = user_address_extended_mn_data
-        .clone()
-        .map(|a| a.hospital_district)
-        .unwrap_or(None);
-
-    let school_district = user_address_extended_mn_data
-        .clone()
-        .map(|a| {
-            a.school_district_number
-                .map(|d| d.as_str().trim_start_matches('0').to_string())
-        })
-        .unwrap_or(None);
-
-    let school_district_type = user_address_extended_mn_data
-        .clone()
-        .map(|a| a.school_district_type)
-        .unwrap_or(None);
-
-    let school_subdistrict = user_address_extended_mn_data
-        .clone()
-        .map(|a| {
-            a.school_subdistrict_code
-                .map(|d| d.as_str().trim_start_matches('0').to_string())
-        })
-        .unwrap_or(None);
-
-    let ward = user_address_extended_mn_data
-        .clone()
-        .map(|a: db::AddressExtendedMN| {
-            a.ward.map(|d| {
-                // Remove non-numeric prefix and then trim leading zeros
-                if let Some(pos) = d.find('-') {
-                    d[(pos + 1)..].trim_start_matches('0').to_string()
-                } else {
-                    d.trim_start_matches('0').to_string()
-                }
-            })
-        })
-        .unwrap_or(None);
-
-    let city = user_address_extended_mn_data
-        .and_then(|a| {
-            a.municipality_name
-                .clone()
-                .map(|m| m.replace("Twp", "Township"))
-        })
-        .unwrap_or_else(|| user_address_data.city.clone());
-
-    let records = sqlx::query_as!(
-        Race,
-        r#"
-            SELECT
-                r.id,
-                r.slug,
-                r.title,
-                r.office_id,
-                r.race_type AS "race_type:RaceType",
-                r.vote_type AS "vote_type:VoteType",
-                r.party_id,
-                r.state AS "state:State",
-                r.description,
-                r.ballotpedia_link,
-                r.early_voting_begins_date,
-                r.winner_ids,
-                r.total_votes,
-                r.num_precincts_reporting,
-                r.total_precincts,
-                r.official_website,
-                r.election_id,
-                r.is_special_election,
-                r.num_elect,
-                r.created_at,
-                r.updated_at
-            FROM
-                race r
-                JOIN office o ON office_id = o.id
-            WHERE
-                r.election_id = $1 AND (
-                    o.election_scope = 'national'
-                    OR (o.state = $2 AND o.election_scope = 'state')
-                    OR (o.state = $2 AND (  
-                        (o.election_scope = 'county' AND o.county = $4) OR
-                        (o.election_scope = 'district' AND o.district_type = 'us_congressional' AND o.district = $5) OR
-                        (o.election_scope = 'district' AND o.district_type = 'state_senate' AND o.district = $6) OR
-                        (o.election_scope = 'district' AND o.district_type = 'state_house' AND o.district = $7) OR
-                        (o.election_scope = 'district' AND o.district_type = 'judicial' AND o.district = $13) OR
-                        (o.election_scope = 'district' AND o.district_type = 'county' AND o.county = $4 AND o.district = $8) OR
-                        -- Special case for MN Hospital subdistricts
-                        (CASE
-                            WHEN $15 = 'Cook County' THEN
-                                (o.election_scope = 'district' AND o.district_type = 'hospital' AND o.hospital_district = $15 AND o.district = $8)
-                            WHEN $15 = 'Northern Itasca' THEN
-                                (o.election_scope = 'district' AND o.district_type = 'hospital' AND o.hospital_district = $15 AND o.county = $4)
-                            ELSE (o.election_scope = 'district' AND o.district_type = 'hospital' AND o.hospital_district = $15)
-                        END) OR
-                        -- Special edge case for Unorg Hospital Municipalities
-                        (CASE 
-                            WHEN $3 = 'North Unorg' THEN 
-                            (o.election_scope = 'city' AND o.municipality LIKE '%' || $3 || '%')
-                            WHEN $3 = 'Long Lake Unorg' THEN 
-                            (o.election_scope = 'city' AND o.municipality LIKE '%' || $3 || '%')
-                        END) OR
-                        (o.election_scope = 'district' AND o.district_type = 'soil_and_water' AND o.county = $4 AND (REGEXP_REPLACE(o.district, '.*\(([^)]+)\).*', '\1') = $14 OR o.district = $14)) OR
-                        (o.election_scope = 'district' AND o.district_type = 'city' AND o.municipality ILIKE $3 AND REGEXP_REPLACE(o.district, '^[^0-9]*', '') = $12) OR
-                        (o.election_scope = 'city' AND o.municipality ILIKE $3) OR
-                        (CASE 
-                        WHEN $10 = '01' THEN
-                            (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'ISD #', '') = $9) AND
-                            (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)
-                        WHEN $10 = '03' THEN
-                            (o.election_scope = 'district' AND o.district_type = 'school' AND REPLACE(o.school_district, 'SSD #', '') = $9) AND
-                            (o.election_scope = 'district' AND o.district_type = 'school' AND o.district IS NULL OR o.district = $11)
-                        END)
-                    )))
-            ORDER BY o.priority ASC, title DESC
-        "#,
-        &election_id,
-        user_address_data.state as State,
-        city,
-        user_address_data.county.map(|c| c.to_string().replace(" County", "")),
-        user_address_data.congressional_district,
-        user_address_data.state_senate_district,
-        user_address_data.state_house_district,
+    // 3. Normalize extended / fallback fields
+    // For MN, use helper methods on AddressExtendedMN
+    let (
         county_commissioner_district,
+        judicial_district,
+        parsed_soil_and_water_district,
+        hospital_district,
         school_district,
         school_district_type,
         school_subdistrict,
         ward,
-        judicial_district,
-        parsed_soil_and_water_district,
-        hospital_district //$15
-    )
-    .fetch_all(db_pool)
-    .await?;
-    let results = records.into_iter().map(RaceResult::from).collect();
-    Ok(results)
+        city,
+    ) = match &extended_address {
+        Some(ext) if user_address_data.state == State::MN => (
+            ext.county_commissioner_district_norm(),
+            ext.judicial_district_norm(),
+            ext.parsed_soil_and_water_district(),
+            ext.hospital_district_norm(),
+            ext.school_district_norm(),
+            ext.school_district_type_norm(),
+            ext.school_subdistrict_norm(),
+            ext.ward_norm(),
+            ext.city_norm(&user_address_data.city),
+        ),
+        _ => (
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            user_address_data.city.clone(),
+        ),
+    };
+
+    // 4. Build query
+    let mut builder: QueryBuilder<Postgres> = QueryBuilder::new(
+        r#"
+        SELECT
+            r.id,
+            r.slug,
+            r.title,
+            r.office_id,
+            r.race_type,
+            r.vote_type,
+            r.party_id,
+            r.state,
+            r.description,
+            r.ballotpedia_link,
+            r.early_voting_begins_date,
+            r.winner_ids,
+            r.total_votes,
+            r.num_precincts_reporting,
+            r.total_precincts,
+            r.official_website,
+            r.election_id,
+            r.is_special_election,
+            r.num_elect,
+            r.created_at,
+            r.updated_at
+        FROM race r
+        JOIN office o ON office_id = o.id
+        WHERE r.election_id =
+        "#,
+    );
+
+    builder.push_bind(election_id);
+
+    // Always include national + state scope
+    builder.push(" AND (o.election_scope = 'national'");
+    builder.push(" OR (o.state = ");
+    builder.push_bind(user_address_data.state);
+    builder.push(" AND o.election_scope = 'state')");
+
+    // Add Minnesota‑specific filters
+    if user_address_data.state == State::MN {
+        apply_mn_filters(
+            &mut builder,
+            user_address_data.state.clone(),
+            user_address_data.county.as_deref(),
+            city.clone(),
+            user_address_data.congressional_district.clone(),
+            user_address_data.state_senate_district.clone(),
+            user_address_data.state_house_district.clone(),
+            county_commissioner_district.clone(),
+            judicial_district.clone(),
+            school_district.clone(),
+            school_district_type.clone(),
+            school_subdistrict.clone(),
+            ward.clone(),
+            parsed_soil_and_water_district.clone(),
+            hospital_district.clone(),
+        );
+    }
+
+    builder.push(") ORDER BY o.priority ASC, title DESC");
+
+    // 5. Run query
+    let query = builder.build_query_as::<Race>();
+    let records = query.fetch_all(db_pool).await?;
+
+    Ok(records.into_iter().map(RaceResult::from).collect())
 }
 
 #[ComplexObject]

@@ -35,3 +35,4 @@ async-openai = "0.19.0"
 rand = "0.8.5"
 tracing = "*"
 clap = { version = "4.5.23", features = ["derive"] }
+regex = "1.11.2"
