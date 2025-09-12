@@ -1,5 +1,6 @@
 use crate::State;
 use sqlx::{Postgres, QueryBuilder};
+use tracing::debug;
 
 pub fn apply_mn_filters(
     builder: &mut QueryBuilder<Postgres>,
@@ -92,6 +93,11 @@ pub fn apply_mn_filters(
 
     // Soil & water
     if let (Some(swd), Some(clean)) = (soil_and_water_district.clone(), county_cleaned.clone()) {
+        debug!(
+            "Applying soil_and_water filter: county_cleaned={:?}, soil_and_water_district={:?}",
+            clean,
+            swd
+        );
         builder.push(
             " OR (o.election_scope = 'district' \
                       AND o.district_type = 'soil_and_water' \
