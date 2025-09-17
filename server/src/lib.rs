@@ -7,6 +7,7 @@ use metrics::metrics_auth;
 use rustls::crypto::ring::default_provider;
 use rustls::crypto::CryptoProvider;
 use std::{net::SocketAddr, path::PathBuf, time::Duration};
+use tokio::net::TcpListener;
 use tower_cookies::CookieManagerLayer;
 use tower_http::cors::CorsLayer;
 use tracing::info;
@@ -83,12 +84,8 @@ pub async fn run() {
 
     let schema = schema_builder.finish();
 
-    let rustls_config = RustlsConfig::from_pem_file(
-        PathBuf::from("server/src/certs/fullchain.pem"),
-        PathBuf::from("server/src/certs/localhost+2-key.pem"),
-    )
-    .await
-    .unwrap();
+    let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
+    let addr: SocketAddr = format!("0.0.0.0:{}", port).parse().unwrap();
 
     let app = axum::Router::new()
         .route("/", get(graphql_playground).post(graphql_handler))
@@ -103,12 +100,35 @@ pub async fn run() {
         .layer(CorsLayer::very_permissive())
         .layer(CookieManagerLayer::new());
 
-    let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
-    let https_addr: SocketAddr = format!("0.0.0.0:{}", port).parse().unwrap();
+    info!(
+        "GraphQL Playground live at {}://localhost:{}",
+        if environment == config::Environment::Development {
+            "https"
+        } else {
+            "http"
+        },
+        &port
+    );
 
-    info!("GraphQL Playground live at https://localhost:{}", &port);
-    axum_server::bind_rustls(https_addr, rustls_config)
-        .serve(app.into_make_service_with_connect_info::<SocketAddr>())
+    if environment == config::Environment::Development {
+        let rustls_config = RustlsConfig::from_pem_file(
+            PathBuf::from("server/src/certs/fullchain.pem"),
+            PathBuf::from("server/src/certs/localhost+2-key.pem"),
+        )
         .await
         .unwrap();
+
+        axum_server::bind_rustls(addr, rustls_config)
+            .serve(app.into_make_service_with_connect_info::<SocketAddr>())
+            .await
+            .unwrap();
+    } else {
+        let address = format!("0.0.0.0:{}", port);
+        axum::serve(
+            TcpListener::bind(address).await.unwrap(),
+            app.into_make_service_with_connect_info::<SocketAddr>(),
+        )
+        .await
+        .unwrap();
+    }
 }
