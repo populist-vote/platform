@@ -11,3 +11,5 @@
 # IDE
 *.sublime-project
 *.sublime-workspace
+
+/server/src/certs/*
