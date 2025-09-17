@@ -22,4 +22,5 @@ spinoff = { version = "0", features = [ "arc"] }
 calamine = "0"
 tracing = "0.1.40"
 encoding_rs = "0.8.35"
+once_cell = "1.19"
 

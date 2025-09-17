@@ -1,10 +1,7 @@
-mod office;
-mod party;
-mod politician;
+pub mod party;
+pub mod politician;
 
-pub use office::*;
-pub use party::*;
-pub use politician::*;
+pub mod co;
 
 #[inline]
 fn owned_capture(capture: regex::Match) -> String {

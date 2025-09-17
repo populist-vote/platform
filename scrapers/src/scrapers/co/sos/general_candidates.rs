@@ -4,8 +4,8 @@ use regex::Regex;
 use scraper::{Html, Selector};
 
 use crate::{
-    extractors::*,
-    generators::*,
+    extractors::co::*,
+    generators::co::*,
     util::{self, extensions::*},
 };
 
