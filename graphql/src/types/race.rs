@@ -9,6 +9,7 @@ use db::{
     },
     Election, Embed, EmbedType,
 };
+use sqlx::QueryBuilder;
 
 use super::{ElectionResult, EmbedResult, PoliticalParty, PoliticianResult};
 
@@ -103,68 +104,88 @@ impl RaceResult {
         Ok(party)
     }
 
-    async fn candidates(&self, ctx: &Context<'_>) -> Result<Vec<PoliticianResult>> {
+    async fn candidates(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(
+            desc = "Filter candidates endorsed by a specific organization who endorses them"
+        )]
+        endorser_id: Option<uuid::Uuid>,
+    ) -> Result<Vec<PoliticianResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
 
-        let politician_records = sqlx::query_as!(
-            Politician,
+        let mut builder: QueryBuilder<sqlx::Postgres> = QueryBuilder::new(
             r#"
-                SELECT
-                    id,
-                    slug,
-                    p.ref_key,
-                    first_name,
-                    middle_name,
-                    last_name,
-                    suffix,
-                    preferred_name,
-                    full_name,
-                    biography,
-                    biography_source,
-                    home_state AS "home_state:State",
-                    date_of_birth,
-                    office_id,
-                    party_id,
-                    upcoming_race_id,
-                    thumbnail_image_url,
-                    assets,
-                    official_website_url,
-                    campaign_website_url,
-                    facebook_url,
-                    twitter_url,
-                    instagram_url,
-                    youtube_url,
-                    linkedin_url,
-                    tiktok_url,
-                    email,
-                    phone,
-                    votesmart_candidate_id,
-                    votesmart_candidate_bio,
-                    votesmart_candidate_ratings,
-                    legiscan_people_id,
-                    crp_candidate_id,
-                    fec_candidate_id,
-                    race_wins,
-                    race_losses,
-                    p.created_at,
-                    p.updated_at
-                FROM
-                    politician p
-                    JOIN race_candidates rc ON race_id = $1
-                WHERE
-                    p.id = rc.candidate_id
-                    AND rc.is_running = TRUE
+            SELECT
+                p.id,
+                p.slug,
+                p.ref_key,
+                p.first_name,
+                p.middle_name,
+                p.last_name,
+                p.suffix,
+                p.preferred_name,
+                p.full_name,
+                p.biography,
+                p.biography_source,
+                p.home_state,
+                p.date_of_birth,
+                p.office_id,
+                p.party_id,
+                p.upcoming_race_id,
+                p.thumbnail_image_url,
+                p.assets,
+                p.official_website_url,
+                p.campaign_website_url,
+                p.facebook_url,
+                p.twitter_url,
+                p.instagram_url,
+                p.youtube_url,
+                p.linkedin_url,
+                p.tiktok_url,
+                p.email,
+                p.phone,
+                p.votesmart_candidate_id,
+                p.votesmart_candidate_bio,
+                p.votesmart_candidate_ratings,
+                p.legiscan_people_id,
+                p.crp_candidate_id,
+                p.fec_candidate_id,
+                p.race_wins,
+                p.race_losses,
+                p.created_at,
+                p.updated_at
+            FROM
+                politician p
+                JOIN race_candidates rc ON rc.candidate_id = p.id
             "#,
-            uuid::Uuid::parse_str(&self.id).unwrap()
-        )
-        .fetch_all(&db_pool)
-        .await?;
+        );
 
-        let results = politician_records
+        // Add JOIN on endorsements table only if a filter is used
+        if endorser_id.is_some() {
+            builder
+                .push(" JOIN politician_organization_endorsements poe ON poe.candidate_id = p.id ");
+        }
+
+        // Always apply the race + active filter
+        builder.push(" WHERE rc.race_id = ");
+        builder.push_bind(uuid::Uuid::parse_str(&self.id)?);
+        builder.push(" AND rc.is_running = TRUE ");
+
+        // If we got an endorser filter, apply it
+        if let Some(endorser_id) = endorser_id {
+            builder.push(" AND poe.endorser_id = ");
+            builder.push_bind(endorser_id);
+        }
+
+        // Build and run
+        let query = builder.build_query_as::<Politician>();
+        let politician_records = query.fetch_all(&db_pool).await?;
+
+        Ok(politician_records
             .into_iter()
             .map(PoliticianResult::from)
-            .collect();
-        Ok(results)
+            .collect())
     }
 
     async fn results(&self, ctx: &Context<'_>) -> Result<RaceResultsResult> {
