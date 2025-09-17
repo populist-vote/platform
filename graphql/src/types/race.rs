@@ -163,8 +163,9 @@ impl RaceResult {
 
         // Add JOIN on endorsements table only if a filter is used
         if endorser_id.is_some() {
-            builder
-                .push(" JOIN politician_organization_endorsements poe ON poe.candidate_id = p.id ");
+            builder.push(
+                " JOIN politician_organization_endorsements poe ON poe.politician_id = p.id ",
+            );
         }
 
         // Always apply the race + active filter
@@ -174,7 +175,7 @@ impl RaceResult {
 
         // If we got an endorser filter, apply it
         if let Some(endorser_id) = endorser_id {
-            builder.push(" AND poe.endorser_id = ");
+            builder.push(" AND poe.organization_id = ");
             builder.push_bind(endorser_id);
         }
 
