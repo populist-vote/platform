@@ -33,7 +33,6 @@ Prior to pushing to staging, if you have any migrations you will want to run `DA
 
 ## API Server
 
-Locally, we need to generate self-signed TLS certificates to run the server in https mode. You can do so by running `mkcert localhost 127.0.0.1 ::1` in the /server/src/certs directory (which is gitignored).
 To start the api server, run `cargo watch -x run` which will type check, compile, and run your code. The GraphQL playground will then be live at https://localhost:1234 for you to execute queries and mutations against the specified database.
 
 To run certain mutations and queries which require staff or superuser permissions, you can add an `Authorization` token to the HTTP headers section of the playground. You can login to `https://staging.populist.us` or `https://populist.us` and grab the value from the `access_token` cookie in your browsers developer tools. Add this to the http headers like so: `"Authorization" : "Bearer <TOKEN>"`
