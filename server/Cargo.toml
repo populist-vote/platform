@@ -24,6 +24,7 @@ thiserror = "1.0.30"
 tracing = "0.1.35"
 tracing-subscriber = { version = "0.3.11", features = ["fmt", "env-filter"] }
 axum = { version = "0.7.4", features = ["ws", "macros"] }
+axum-server = { version = "0.7", features = ["tls-rustls"] }
 async-graphql-axum = "7.0.3"
 tower-http = { version = "0.5.2", features = ["cors"] }
 tower-cookies = { version = "0.10.0" }
@@ -42,3 +43,4 @@ prometheus = "0.13.4"
 axum-prometheus = "0.8.0"
 lazy_static = "1.5.0"
 async-trait = "0.1.88"
+rustls = "0.23.31"
