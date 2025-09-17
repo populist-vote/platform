@@ -24,8 +24,6 @@ pub use handlers::{graphql_handler, graphql_playground};
 
 pub async fn run() {
     dotenv().ok();
-    CryptoProvider::install_default(default_provider())
-        .expect("Failed to install default crypto provider");
 
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
@@ -111,6 +109,8 @@ pub async fn run() {
     );
 
     if environment == config::Environment::Development {
+        CryptoProvider::install_default(default_provider())
+            .expect("Failed to install default crypto provider");
         let rustls_config = RustlsConfig::from_pem_file(
             PathBuf::from("server/src/certs/fullchain.pem"),
             PathBuf::from("server/src/certs/localhost+2-key.pem"),
