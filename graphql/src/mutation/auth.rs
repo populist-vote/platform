@@ -18,6 +18,7 @@ use jsonwebtoken::TokenData;
 use mailers::EmailClient;
 use pwhash::bcrypt;
 use serde::{Deserialize, Serialize};
+use tracing::{instrument, warn};
 
 #[derive(InputObject)]
 #[graphql(visible = "is_admin")]
@@ -203,6 +204,11 @@ impl AuthMutation {
     }
 
     #[graphql(visible = "is_admin")]
+    #[instrument(
+        name = "begin_user_registration",
+        skip_all,
+        fields(email = %input.email)
+    )]
     async fn begin_user_registration(
         &self,
         ctx: &Context<'_>,
@@ -210,13 +216,11 @@ impl AuthMutation {
     ) -> Result<LoginResult, Error> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
 
-        // Can call validate_email query prior to this mutation for UX purposes
-        // Ensure email is not already in database
-        // TODO: handle email aliases
+        // Check if email already exists
         let existing_user = sqlx::query!(
             r#"
-            SELECT id FROM populist_user WHERE email = $1
-        "#,
+        SELECT id FROM populist_user WHERE email = $1
+    "#,
             input.email
         )
         .fetch_optional(&db_pool)
@@ -224,53 +228,65 @@ impl AuthMutation {
 
         if let Some(_user) = existing_user {
             return Err(Error::UserExistsError);
-        };
+        }
 
-        // Create a temporary username to be changed later
+        // Create a temporary username and confirmation token
         let temp_username = create_temporary_username(input.email.clone());
-
-        // Create confirmation token so user can securely confirm their email is legitimate
         let confirmation_token = create_random_token().unwrap();
 
+        // Optional address/geocoding handling block
         let new_user_result = match input.address {
             Some(address) => {
                 let address_clone = address.clone();
                 let geocodio = GeocodioProxy::new().unwrap();
+
+                // Attempt geocoding and log warnings on failure
                 let geocode_result = geocodio
                     .geocode(
                         geocodio::AddressParams::AddressInput(geocodio::AddressInput {
-                            line_1: address_clone.line_1,
-                            line_2: address_clone.line_2,
-                            city: address_clone.city,
+                            line_1: address_clone.line_1.clone(),
+                            line_2: address_clone.line_2.clone(),
+                            city: address_clone.city.clone(),
                             state: address_clone.state.to_string(),
-                            country: address_clone.country,
-                            postal_code: address_clone.postal_code,
+                            country: address_clone.country.clone(),
+                            postal_code: address_clone.postal_code.clone(),
                         }),
                         Some(&["cd118", "stateleg-next"]),
                     )
                     .await;
 
-                let t = match geocode_result {
+                let new_user_input = match geocode_result {
                     Ok(geocodio_data) => {
-                        let city = geocodio_data.results[0]
+                        let res = &geocodio_data.results[0];
+                        let coordinates = res.location.clone();
+                        let city = res
                             .address_components
                             .city
                             .clone()
-                            .unwrap_or(address.city);
-                        let coordinates = geocodio_data.results[0].location.clone();
-                        let county = geocodio_data.results[0].address_components.county.clone();
-                        let primary_result = geocodio_data.results[0].fields.as_ref().unwrap();
-                        let congressional_district =
-                            &primary_result.congressional_districts.as_ref().unwrap()[0]
-                                .district_number;
-                        let state_legislative_districts =
-                            primary_result.state_legislative_districts.as_ref().unwrap();
-                        let state_house_district =
-                            &state_legislative_districts.house[0].district_number;
-                        let state_senate_district =
-                            &state_legislative_districts.senate[0].district_number;
+                            .unwrap_or(address_clone.city.clone());
+                        let county = res.address_components.county.clone();
 
-                        let new_user_input = CreateUserWithProfileInput {
+                        let primary_result = res.fields.as_ref().unwrap();
+
+                        let congressional_district = primary_result
+                            .congressional_districts
+                            .as_ref()
+                            .and_then(|cds| cds.get(0))
+                            .map(|cd| cd.district_number.to_string());
+
+                        let state_house_district = primary_result
+                            .state_legislative_districts
+                            .as_ref()
+                            .and_then(|sld| sld.house.get(0))
+                            .map(|d| d.district_number.to_string());
+
+                        let state_senate_district = primary_result
+                            .state_legislative_districts
+                            .as_ref()
+                            .and_then(|sld| sld.senate.get(0))
+                            .map(|d| d.district_number.to_string());
+
+                        CreateUserWithProfileInput {
                             email: input.email.clone(),
                             username: temp_username,
                             password: input.password,
@@ -281,24 +297,32 @@ impl AuthMutation {
                                 }),
                                 city,
                                 county,
-                                congressional_district: Some(congressional_district.to_string()),
-                                state_house_district: Some(state_house_district.to_string()),
-                                state_senate_district: Some(state_senate_district.to_string()),
-                                ..address
+                                congressional_district,
+                                state_house_district,
+                                state_senate_district,
+                                ..address_clone
                             }),
                             confirmation_token: confirmation_token.clone(),
-                        };
-
-                        Ok(User::create_with_profile(&db_pool, &new_user_input).await?)
+                        }
                     }
-                    Err(err) => match err {
-                        geocodio::Error::BadAddress(_err) => Err(Error::BadAddress),
-                        _ => Err(err.into()),
-                    },
-                };
-                t
-            }
+                    Err(err) => {
+                        warn!(
+                            error = ?err,
+                            "Failed to geocode address — continuing registration without district mapping"
+                        );
 
+                        CreateUserWithProfileInput {
+                            email: input.email.clone(),
+                            username: temp_username,
+                            password: input.password,
+                            address: Some(address_clone),
+                            confirmation_token: confirmation_token.clone(),
+                        }
+                    }
+                };
+
+                Ok(User::create_with_profile(&db_pool, &new_user_input).await?)
+            }
             None => {
                 // Handle register without address
                 let new_user_input = CreateUserInput {
@@ -320,19 +344,19 @@ impl AuthMutation {
                 if let Some(invite_token) = input.invite_token {
                     // Update invite_token record to set accepted_at time
                     let invite = sqlx::query!(
-                        r#"
-                        UPDATE invite_token
-                        SET accepted_at = now() AT TIME ZONE 'utc'
-                        WHERE token = $1
-                        AND email = $2
-                        AND accepted_at IS NULL
-                        RETURNING email, organization_id, politician_id, role AS "role:OrganizationRoleType"
-                    "#,
-                        uuid::Uuid::parse_str(&invite_token).unwrap(),
-                        input.email
-                    )
-                    .fetch_optional(&db_pool)
-                    .await?;
+                    r#"
+                    UPDATE invite_token
+                    SET accepted_at = now() AT TIME ZONE 'utc'
+                    WHERE token = $1
+                    AND email = $2
+                    AND accepted_at IS NULL
+                    RETURNING email, organization_id, politician_id, role AS "role:OrganizationRoleType"
+                "#,
+                    uuid::Uuid::parse_str(&invite_token).unwrap(),
+                    input.email
+                )
+                .fetch_optional(&db_pool)
+                .await?;
 
                     if let Some(invite) = invite {
                         if let Some(organization_id) = invite.organization_id {
@@ -373,7 +397,6 @@ impl AuthMutation {
                             )
                             INSERT INTO organization_users (organization_id, user_id, role)
                             SELECT id, $4, 'owner' FROM new_org
-
                         "#,
                                 name,
                                 name,
@@ -397,12 +420,16 @@ impl AuthMutation {
                     confirmation_token
                 );
 
+                // Attempt to send welcome email and log failure
                 if !new_user.email.contains("staging.email.test") {
                     if let Err(err) = EmailClient::default()
-                        .send_welcome_email(new_user.email, account_confirmation_url)
+                        .send_welcome_email(new_user.email.clone(), account_confirmation_url)
                         .await
                     {
-                        println!("Error sending welcome email: {}", err)
+                        warn!(
+                            error = ?err,
+                            "Failed to send welcome email — continuing registration"
+                        );
                     }
                 }
 
