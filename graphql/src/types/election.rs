@@ -36,7 +36,6 @@ pub struct ElectionResult {
 #[derive(InputObject, Default, Debug)]
 pub struct ElectionRaceFilter {
     state: Option<State>,
-    year: Option<i32>,
     query: Option<String>,
 }
 
@@ -343,13 +342,12 @@ impl ElectionResult {
             }
         }
 
-        // Prepare normalized optional filters
-        let year = filter.year;
-        // Lowercase query for case-insensitive matching
+        // Prepare normalized filters
+        let state = filter.state;
         let query_like = filter
             .query
             .as_ref()
-            .map(|q| format!("%{}%", q.to_lowercase()));
+            .map(|q| format!("%{}%", q.trim().to_lowercase()));
 
         // --- 1️⃣ Count total ------------------------------------------
         let total_count: i64 = sqlx::query_scalar!(
@@ -358,19 +356,17 @@ impl ElectionResult {
         FROM race
         WHERE election_id = $1
           AND ($2::state IS NULL OR state = $2)
-          AND ($3::INT IS NULL OR EXTRACT(YEAR FROM created_at) = $3)
-          AND ($4::TEXT IS NULL OR LOWER(title) LIKE $4)
+          AND ($3::TEXT IS NULL OR LOWER(title) LIKE $3)
         "#,
             uuid::Uuid::parse_str(&self.id)?,
-            filter.state as Option<State>,
-            year,
+            state as Option<State>,
             query_like,
         )
         .fetch_one(&db_pool)
         .await?
         .unwrap_or(0);
 
-        // --- 2️⃣ Fetch paged records -----------------------------------
+        // --- 2️⃣ Fetch paginated slice --------------------------------
         let records = sqlx::query_as!(
             Race,
             r#"
@@ -399,14 +395,12 @@ impl ElectionResult {
         FROM race
         WHERE election_id = $1
           AND ($2::state IS NULL OR state = $2)
-          AND ($3::INT IS NULL OR EXTRACT(YEAR FROM created_at) = $3)
-          AND ($4::TEXT IS NULL OR LOWER(title) LIKE $4)
+          AND ($3::TEXT IS NULL OR LOWER(title) LIKE $3)
         ORDER BY id ASC
-        LIMIT $5 OFFSET $6
+        LIMIT $4 OFFSET $5
         "#,
             uuid::Uuid::parse_str(&self.id)?,
-            filter.state as Option<State>,
-            year,
+            state as Option<State>,
             query_like,
             limit as i64 + 1,
             offset as i64
