@@ -36,6 +36,8 @@ pub struct ElectionResult {
 #[derive(InputObject, Default, Debug)]
 pub struct ElectionRaceFilter {
     state: Option<State>,
+    year: Option<i32>,
+    query: Option<String>,
 }
 
 pub async fn process_address_with_geocodio(
@@ -311,7 +313,7 @@ impl ElectionResult {
         last: Option<i32>,
         filter: Option<ElectionRaceFilter>,
     ) -> ConnectionResult<RaceResult> {
-        let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let filter = filter.unwrap_or_default();
         let default_page_size = 10;
 
@@ -319,7 +321,7 @@ impl ElectionResult {
         let after_offset = after
             .as_ref()
             .and_then(|a| Base64Cursor::decode_cursor(a).ok())
-            .map(|c| usize::from(c) + 1) // increment offset to avoid duplicate
+            .map(|c| usize::from(c) + 1)
             .unwrap_or(0);
 
         let before_offset = before
@@ -332,7 +334,6 @@ impl ElectionResult {
         let mut offset = after_offset;
 
         if let Some(before_idx) = before_offset {
-            // If both before + last are present, backtrack from before
             if let Some(last_n) = last {
                 if before_idx > last_n as usize {
                     offset = before_idx - last_n as usize;
@@ -342,63 +343,83 @@ impl ElectionResult {
             }
         }
 
-        // Count total
+        // Prepare normalized optional filters
+        let year = filter.year;
+        // Lowercase query for case-insensitive matching
+        let query_like = filter
+            .query
+            .as_ref()
+            .map(|q| format!("%{}%", q.to_lowercase()));
+
+        // --- 1️⃣ Count total ------------------------------------------
         let total_count: i64 = sqlx::query_scalar!(
-            "SELECT COUNT(*) FROM race WHERE election_id = $1 AND ($2::state IS NULL OR state = $2)",
+            r#"
+        SELECT COUNT(*)
+        FROM race
+        WHERE election_id = $1
+          AND ($2::state IS NULL OR state = $2)
+          AND ($3::INT IS NULL OR EXTRACT(YEAR FROM created_at) = $3)
+          AND ($4::TEXT IS NULL OR LOWER(title) LIKE $4)
+        "#,
             uuid::Uuid::parse_str(&self.id)?,
-            filter.state as Option<State>
+            filter.state as Option<State>,
+            year,
+            query_like,
         )
         .fetch_one(&db_pool)
         .await?
         .unwrap_or(0);
 
+        // --- 2️⃣ Fetch paged records -----------------------------------
         let records = sqlx::query_as!(
             Race,
             r#"
-            SELECT
-                id,
-                slug,
-                title,
-                office_id,
-                race_type AS "race_type:RaceType",
-                vote_type AS "vote_type:VoteType",
-                party_id,
-                state AS "state:State",
-                description,
-                ballotpedia_link,
-                early_voting_begins_date,
-                winner_ids,
-                total_votes,
-                num_precincts_reporting,
-                total_precincts,
-                official_website,
-                election_id,
-                is_special_election,
-                num_elect,
-                created_at,
-                updated_at
-            FROM
-                race
-            WHERE
-                election_id = $1
-                AND ($2::state IS NULL OR state = $2)
-            ORDER BY id ASC
-            LIMIT $3 OFFSET $4
-            "#,
-            uuid::Uuid::parse_str(&self.id).unwrap(),
+        SELECT
+            id,
+            slug,
+            title,
+            office_id,
+            race_type AS "race_type:RaceType",
+            vote_type AS "vote_type:VoteType",
+            party_id,
+            state AS "state:State",
+            description,
+            ballotpedia_link,
+            early_voting_begins_date,
+            winner_ids,
+            total_votes,
+            num_precincts_reporting,
+            total_precincts,
+            official_website,
+            election_id,
+            is_special_election,
+            num_elect,
+            created_at,
+            updated_at
+        FROM race
+        WHERE election_id = $1
+          AND ($2::state IS NULL OR state = $2)
+          AND ($3::INT IS NULL OR EXTRACT(YEAR FROM created_at) = $3)
+          AND ($4::TEXT IS NULL OR LOWER(title) LIKE $4)
+        ORDER BY id ASC
+        LIMIT $5 OFFSET $6
+        "#,
+            uuid::Uuid::parse_str(&self.id)?,
             filter.state as Option<State>,
-            limit as i64 + 1, // one extra to see if we have another page
+            year,
+            query_like,
+            limit as i64 + 1,
             offset as i64
         )
         .fetch_all(&db_pool)
-        .await
-        .unwrap();
+        .await?;
 
+        // --- 3️⃣ Pagination metadata -----------------------------------
         let has_next_page = records.len() as i64 > limit as i64;
         let has_previous_page = offset > 0;
         let slice = records.into_iter().take(limit as usize);
 
-        // Build connection
+        // --- 4️⃣ Build Relay connection -------------------------------
         let mut connection = Connection::with_additional_fields(
             has_previous_page,
             has_next_page,
@@ -407,12 +428,11 @@ impl ElectionResult {
             },
         );
 
-        connection
-            .edges
-            .extend(slice.enumerate().map(|(idx, race)| {
-                // The global index is offset + idx
+        connection.edges.extend(
+            slice.enumerate().map(|(idx, race)| {
                 Edge::new(Base64Cursor::new(offset + idx), RaceResult::from(race))
-            }));
+            }),
+        );
 
         Ok(connection)
     }
