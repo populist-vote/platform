@@ -36,6 +36,7 @@ pub struct ElectionResult {
 #[derive(InputObject, Default, Debug)]
 pub struct ElectionRaceFilter {
     state: Option<State>,
+    year: Option<i32>,
     query: Option<String>,
 }
 
@@ -342,12 +343,13 @@ impl ElectionResult {
             }
         }
 
-        // Prepare normalized filters
-        let state = filter.state;
+        // Prepare normalized optional filters
+        let year = filter.year;
+        // Lowercase query for case-insensitive matching
         let query_like = filter
             .query
             .as_ref()
-            .map(|q| format!("%{}%", q.trim().to_lowercase()));
+            .map(|q| format!("%{}%", q.to_lowercase()));
 
         // --- 1️⃣ Count total ------------------------------------------
         let total_count: i64 = sqlx::query_scalar!(
@@ -356,52 +358,55 @@ impl ElectionResult {
         FROM race
         WHERE election_id = $1
           AND ($2::state IS NULL OR state = $2)
-          AND ($3::TEXT IS NULL OR LOWER(title) LIKE $3)
+          AND ($3::INT IS NULL OR EXTRACT(YEAR FROM created_at) = $3)
+          AND ($4::TEXT IS NULL OR LOWER(title) LIKE $4)
         "#,
             uuid::Uuid::parse_str(&self.id)?,
-            state as Option<State>,
+            filter.state as Option<State>,
+            year,
             query_like,
         )
         .fetch_one(&db_pool)
         .await?
         .unwrap_or(0);
 
-        // --- 2️⃣ Fetch paginated slice --------------------------------
+        // --- 2️⃣ Fetch paged records -----------------------------------
         let records = sqlx::query_as!(
             Race,
             r#"
         SELECT
-            r.id,
-            r.slug,
-            r.title,
-            r.office_id,
-            r.race_type AS "race_type:RaceType",
-            r.vote_type AS "vote_type:VoteType",
-            r.party_id,
-            r.state AS "state:State",
-            r.description,
-            r.ballotpedia_link,
-            r.early_voting_begins_date,
-            r.winner_ids,
-            r.total_votes,
-            r.num_precincts_reporting,
-            r.total_precincts,
-            r.official_website,
-            r.election_id,
-            r.is_special_election,
-            r.num_elect,
-            r.created_at,
-            r.updated_at
-        FROM race r
-        JOIN office o ON o.id = r.office_id
-        WHERE r.election_id = $1
-          AND ($2::state IS NULL OR r.state = $2)
-          AND ($3::TEXT IS NULL OR LOWER(r.title) LIKE $3)
-        ORDER BY o.priority ASC NULLS LAST, r.title DESC, r.id ASC
-        LIMIT $4 OFFSET $5
+            id,
+            slug,
+            title,
+            office_id,
+            race_type AS "race_type:RaceType",
+            vote_type AS "vote_type:VoteType",
+            party_id,
+            state AS "state:State",
+            description,
+            ballotpedia_link,
+            early_voting_begins_date,
+            winner_ids,
+            total_votes,
+            num_precincts_reporting,
+            total_precincts,
+            official_website,
+            election_id,
+            is_special_election,
+            num_elect,
+            created_at,
+            updated_at
+        FROM race
+        WHERE election_id = $1
+          AND ($2::state IS NULL OR state = $2)
+          AND ($3::INT IS NULL OR EXTRACT(YEAR FROM created_at) = $3)
+          AND ($4::TEXT IS NULL OR LOWER(title) LIKE $4)
+        ORDER BY id ASC
+        LIMIT $5 OFFSET $6
         "#,
             uuid::Uuid::parse_str(&self.id)?,
-            state as Option<State>,
+            filter.state as Option<State>,
+            year,
             query_like,
             limit as i64 + 1,
             offset as i64
