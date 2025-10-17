@@ -1,6 +1,13 @@
 use super::{BallotMeasureResult, RaceResult};
-use crate::{context::ApiContext, Error};
-use async_graphql::{ComplexObject, Context, InputObject, Result, SimpleObject, ID};
+use crate::{
+    context::ApiContext,
+    relay::{Base64Cursor, ConnectionFields, ConnectionResult},
+    Error,
+};
+use async_graphql::{
+    connection::{Connection, CursorType, Edge},
+    ComplexObject, Context, InputObject, Result, SimpleObject, ID,
+};
 use auth::AccessTokenClaims;
 use db::{
     filters::mn::apply_mn_filters,
@@ -298,10 +305,53 @@ impl ElectionResult {
     async fn races(
         &self,
         ctx: &Context<'_>,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
         filter: Option<ElectionRaceFilter>,
-    ) -> Result<Vec<RaceResult>> {
+    ) -> ConnectionResult<RaceResult> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
         let filter = filter.unwrap_or_default();
+        let default_page_size = 10;
+
+        // Decode cursors
+        let after_offset = after
+            .as_ref()
+            .and_then(|a| Base64Cursor::decode_cursor(a).ok())
+            .map(|c| usize::from(c))
+            .unwrap_or(0);
+
+        let before_offset = before
+            .as_ref()
+            .and_then(|b| Base64Cursor::decode_cursor(b).ok())
+            .map(|c| usize::from(c));
+
+        // Determine range
+        let limit = first.or(last).unwrap_or(default_page_size);
+        let mut offset = after_offset;
+
+        if let Some(before_idx) = before_offset {
+            // If both before + last are present, backtrack from before
+            if let Some(last_n) = last {
+                if before_idx > last_n as usize {
+                    offset = before_idx - last_n as usize;
+                } else {
+                    offset = 0;
+                }
+            }
+        }
+
+        // Count total
+        let total_count: i64 = sqlx::query_scalar!(
+            "SELECT COUNT(*) FROM race WHERE election_id = $1 AND ($2::state IS NULL OR state = $2)",
+            uuid::Uuid::parse_str(&self.id)?,
+            filter.state as Option<State>
+        )
+        .fetch_one(&db_pool)
+        .await?
+        .unwrap_or(0);
+
         let records = sqlx::query_as!(
             Race,
             r#"
@@ -332,18 +382,39 @@ impl ElectionResult {
             WHERE
                 election_id = $1
                 AND ($2::state IS NULL OR state = $2)
-            ORDER BY title DESC
-            LIMIT 2000
+            ORDER BY id ASC
+            LIMIT $3 OFFSET $4
             "#,
             uuid::Uuid::parse_str(&self.id).unwrap(),
-            filter.state as Option<State>
+            filter.state as Option<State>,
+            limit as i64 + 1, // one extra to see if we have another page
+            offset as i64
         )
         .fetch_all(&db_pool)
         .await
         .unwrap();
 
-        let results = records.into_iter().map(RaceResult::from).collect();
-        Ok(results)
+        let has_next_page = records.len() as i64 > limit as i64;
+        let has_previous_page = offset > 0;
+        let slice = records.into_iter().take(limit as usize);
+
+        // Build connection
+        let mut connection = Connection::with_additional_fields(
+            has_previous_page,
+            has_next_page,
+            ConnectionFields {
+                total_count: total_count as usize,
+            },
+        );
+
+        connection
+            .edges
+            .extend(slice.enumerate().map(|(idx, race)| {
+                // The global index is offset + idx
+                Edge::new(Base64Cursor::new(offset + idx), RaceResult::from(race))
+            }));
+
+        Ok(connection)
     }
 
     /// Show races based on an anonymous user with an address
