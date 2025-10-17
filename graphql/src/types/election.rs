@@ -319,7 +319,7 @@ impl ElectionResult {
         let after_offset = after
             .as_ref()
             .and_then(|a| Base64Cursor::decode_cursor(a).ok())
-            .map(|c| usize::from(c))
+            .map(|c| usize::from(c) + 1) // increment offset to avoid duplicate
             .unwrap_or(0);
 
         let before_offset = before
