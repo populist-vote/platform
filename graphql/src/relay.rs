@@ -28,7 +28,7 @@ pub struct Base64Cursor {
 }
 
 impl Base64Cursor {
-    const fn new(index: usize) -> Self {
+    pub const fn new(index: usize) -> Self {
         Self {
             name: "Cursor",
             index,
@@ -89,7 +89,7 @@ impl CursorType for Base64Cursor {
 #[derive(SimpleObject)]
 pub struct ConnectionFields {
     /// Total result set count
-    total_count: usize,
+    pub total_count: usize,
 }
 
 /// Relay connection result
