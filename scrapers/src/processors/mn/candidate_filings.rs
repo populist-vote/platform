@@ -49,7 +49,7 @@ pub async fn process_mn_candidate_filings(
             campaign_city,
             campaign_state,
             campaign_zip
-        FROM p6t_state_mn.mn_candidate_filings_local_primaries_2025 raw
+        FROM p6t_state_mn.mn_candidate_filings_local_2025 raw
         LEFT JOIN p6t_state_mn.bdry_votingdistricts vd
             ON REGEXP_REPLACE(raw.county_id, '^0+', '') = vd.countycode
         WHERE office_title != 'U.S. President & Vice President'
@@ -195,7 +195,7 @@ fn process_race(
     let (title, slug) = generators::mn::race::RaceTitleGenerator::from_source(
         &RaceType::from_str(race_type)?,
         &Election {
-            slug: format!("{}-election-2024", race_type),
+            slug: format!("{}-election-2025", race_type),
             ..Default::default()
         },
         office,

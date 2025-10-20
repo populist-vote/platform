@@ -1,5 +1,5 @@
 use scrapers::mn_sos_candidate_filings_fed_state_county::get_mn_sos_candidate_filings_fed_state_county;
-use scrapers::mn_sos_candidate_filings_local::get_mn_sos_candidate_filings_local_primaries;
+use scrapers::mn_sos_candidate_filings_local::get_mn_sos_candidate_filings_local;
 use thirtyfour::prelude::*;
 use std::thread;
 use std::time::Duration;
@@ -31,14 +31,14 @@ async fn main() {
     // }
     
     // SCRAPE LOCAL GENERAL DATA FROM SOS SITE
-    // if let Err(err) = get_mn_sos_candidate_filings_local().await {
-    //     println!("error running example: {}", err);
-    // }
-
-    // SCRAPE LOCAL PRIMARY DATA FROM SOS SITE
-    if let Err(err) = get_mn_sos_candidate_filings_local_primaries(&driver).await {
+    if let Err(err) = get_mn_sos_candidate_filings_local().await {
         println!("error running example: {}", err);
     }
+
+    // SCRAPE LOCAL PRIMARY DATA FROM SOS SITE
+    // if let Err(err) = get_mn_sos_candidate_filings_local_primaries(&driver).await {
+    //     println!("error running example: {}", err);
+    // }
 
     println!("Press Enter to close the browser window...");
     io::stdout().flush().unwrap();
