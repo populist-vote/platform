@@ -22,31 +22,32 @@ pub struct RefreshTokenClaims {
     pub exp: usize,      // Expiration (timestamp)
 }
 
-pub fn create_token(system_role: SystemRoleType) -> Result<String, Error> {
+pub fn create_token<S, E>(
+    system_role: Option<SystemRoleType>,
+    username: Option<S>,
+    email: Option<E>,
+    organizations: Option<Vec<OrganizationRole>>,
+) -> Result<String, Error>
+where
+    S: Into<String>,
+    E: Into<String>,
+{
     let key = std::env::var("JWT_SECRET")?;
     let expiration = chrono::Utc::now()
         .checked_add_signed(chrono::Duration::try_days(120).unwrap())
         .expect("valid timestamp")
         .timestamp();
 
-    let username = match system_role {
-        SystemRoleType::Superuser => "superuser",
-        SystemRoleType::Staff => "staff",
-        SystemRoleType::User => "user",
-    };
-
-    let email = match system_role {
-        SystemRoleType::Superuser => "superuser@populist.us",
-        SystemRoleType::Staff => "staff@populist.us",
-        SystemRoleType::User => "user@example.com",
-    };
-
     let claims = AccessTokenClaims {
         sub: uuid::Uuid::new_v4(),
-        username: username.to_string(),
-        email: email.to_string(),
-        system_role, // Use the provided system_role parameter
-        organizations: vec![],
+        username: username
+            .map(|s| s.into())
+            .unwrap_or_else(|| format!("user-{}", uuid::Uuid::new_v4())),
+        email: email
+            .map(|e| e.into())
+            .unwrap_or_else(|| "user@example.com".to_string()),
+        system_role: system_role.unwrap_or_default(),
+        organizations: organizations.unwrap_or_default(),
         exp: expiration as usize,
     };
 
