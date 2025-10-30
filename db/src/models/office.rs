@@ -102,6 +102,7 @@ pub enum DistrictType {
     Hospital,
     SoilAndWater,
     Transportation,
+    Park,
 }
 
 #[derive(
