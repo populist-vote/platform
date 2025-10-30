@@ -95,6 +95,25 @@ pub enum SystemRoleType {
     Superuser,
 }
 
+impl std::str::FromStr for SystemRoleType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_ascii_lowercase().as_str() {
+            "user" => Ok(SystemRoleType::User),
+            "staff" => Ok(SystemRoleType::Staff),
+            "superuser" | "super_user" | "super-user" => Ok(SystemRoleType::Superuser),
+            other => Err(format!("invalid system role: {}", other)),
+        }
+    }
+}
+
+impl Default for SystemRoleType {
+    fn default() -> Self {
+        SystemRoleType::User
+    }
+}
+
 #[derive(SimpleObject, Debug, Clone, Serialize, Deserialize)]
 pub struct OrganizationRole {
     pub organization_id: uuid::Uuid,
