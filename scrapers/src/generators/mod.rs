@@ -3,9 +3,10 @@ pub mod party;
 pub mod politician;
 
 pub mod co;
+pub mod mn;
 
 
 #[inline]
-fn optional_state_str(state: Option<&db::State>) -> &str {
+pub fn optional_state_str(state: Option<&db::State>) -> &str {
     state.map(|s| s.as_ref()).unwrap_or_default()
 }

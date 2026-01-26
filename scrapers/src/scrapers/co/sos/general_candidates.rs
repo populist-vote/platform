@@ -4,8 +4,13 @@ use regex::Regex;
 use scraper::{Html, Selector};
 
 use crate::{
-    extractors::co::*,
-    generators::co::*,
+    extractors::co::office::{extract_office_meta, extract_office_seat, extract_office_district},
+    generators::co::office::{OfficeSubtitleGenerator, OfficeSlugGenerator},
+    generators::co::race::RaceTitleGenerator,
+    generators::election::{GeneralElectionDateGenerator, ElectionTitleGenerator},
+    generators::party::PartySlugGenerator,
+    generators::politician::{PoliticianSlugGenerator, PoliticianRefKeyGenerator},
+    extractors::party::extract_party_name,
     util::{self, extensions::*},
 };
 
@@ -271,7 +276,7 @@ impl Scraper {
             // TODO - Track/log failed scrape
             return None;
         };
-        let slug = PartySlugGenerator::new(name.as_str()).generate();
+        let slug = PartySlugGenerator::new(&name).generate();
         Some(db::UpsertPartyInput {
             name: Some(name),
             slug: Some(slug),

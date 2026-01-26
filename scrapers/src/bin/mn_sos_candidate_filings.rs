@@ -31,7 +31,7 @@ async fn main() {
     // }
     
     // SCRAPE LOCAL GENERAL DATA FROM SOS SITE
-    if let Err(err) = get_mn_sos_candidate_filings_local().await {
+    if let Err(err) = get_mn_sos_candidate_filings_local(&driver).await {
         println!("error running example: {}", err);
     }
 

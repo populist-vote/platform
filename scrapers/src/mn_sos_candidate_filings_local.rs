@@ -2,7 +2,7 @@ use csv::ReaderBuilder;
 use std::error::Error;
 use thirtyfour::prelude::*;
 
-static PRIMARY_HEADER_NAMES: [&str; 19] = [
+static PRIMARY_HEADER_NAMES: [&str; 18] = [
     "office_code",
     "candidate_name",
     "office_id",
@@ -10,7 +10,6 @@ static PRIMARY_HEADER_NAMES: [&str; 19] = [
     "county_id",
     "mcd_fips_code",
     "school_district_number",
-    "party_abbreviation",
     "residence_street_address",
     "residence_city",
     "residence_state",
@@ -24,7 +23,7 @@ static PRIMARY_HEADER_NAMES: [&str; 19] = [
     "campaign_email",
 ];
 
-static HEADER_NAMES: [&str; 19] = [
+static HEADER_NAMES: [&str; 18] = [
     "office_code",
     "candidate_name",
     "office_id",
@@ -32,7 +31,6 @@ static HEADER_NAMES: [&str; 19] = [
     "county_id",
     "mcd_fips_code",
     "school_district_number",
-    "party_abbreviation",
     "residence_street_address",
     "residence_city",
     "residence_state",
@@ -110,7 +108,7 @@ pub async fn get_mn_sos_candidate_filings_local(driver: &WebDriver) -> Result<()
     driver.goto("https://candidates.sos.mn.gov").await?;
     let link = driver
         .find(By::LinkText(
-            "Candidates in the General Election - Local Offices (Municipal and School District)",
+            "Candidate Filings - Local Offices (Municipal, School District, and Hospital District)",
         ))
         .await?;
     link.click().await?;
@@ -139,11 +137,11 @@ pub async fn get_mn_sos_candidate_filings_local(driver: &WebDriver) -> Result<()
     let csv_data_as_string = String::from_utf8(csv_string)?;
 
     let pool = db::pool().await;
-    sqlx::query!(r#"DROP TABLE IF EXISTS p6t_state_mn.mn_candidate_filings_local_primaries_2024 CASCADE;"#)
+    sqlx::query!(r#"DROP TABLE IF EXISTS p6t_state_mn.mn_candidate_filings_local_2025 CASCADE;"#)
         .execute(&pool.connection)
         .await?;
     let create_table_query = format!(
-        "CREATE TABLE p6t_state_mn.mn_candidate_filings_local_primaries_2024 (
+        "CREATE TABLE p6t_state_mn.mn_candidate_filings_local_2025 (
             {}
         );",
         HEADER_NAMES
@@ -158,7 +156,7 @@ pub async fn get_mn_sos_candidate_filings_local(driver: &WebDriver) -> Result<()
         .await?;
     let mut tx = pool.connection.acquire().await?;
     let copy_query =
-        r#"COPY p6t_state_mn.mn_candidate_filings_local_primaries_2024 FROM STDIN WITH CSV HEADER;"#;
+        r#"COPY p6t_state_mn.mn_candidate_filings_local_2025 FROM STDIN WITH CSV HEADER;"#;
     let mut tx_copy = tx.copy_in_raw(copy_query).await?;
     tx_copy.send(csv_data_as_string.as_bytes()).await?;
     tx_copy.finish().await?;

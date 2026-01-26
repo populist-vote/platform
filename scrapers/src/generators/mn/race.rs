@@ -1,6 +1,5 @@
 use std::sync::OnceLock;
 
-use chrono::Datelike;
 use regex::Regex;
 use slugify::slugify;
 
@@ -10,53 +9,96 @@ pub struct RaceTitleGenerator<'a> {
     pub race_type: &'a db::RaceType,
     pub election_scope: &'a db::ElectionScope,
     pub office_name: Option<&'a str>,
+    pub office_subtitle: Option<&'a str>,
     pub state: Option<&'a db::State>,
     pub county: Option<&'a str>,
     pub district: Option<&'a str>,
     pub seat: Option<&'a str>,
+    pub is_special_election: bool,
+    pub party: Option<&'a str>,
     pub year: i32,
 }
 
 impl<'a> RaceTitleGenerator<'a> {
     pub fn from_source(
         r#type: &'a db::RaceType,
-        election: &'a db::Election,
         office: &'a db::Office,
+        is_special_election: bool,
+        party: Option<&'a str>,
+        year: i32,
     ) -> Self {
         RaceTitleGenerator {
             race_type: r#type,
             election_scope: &office.election_scope,
-            office_name: office.name.as_str(),
+            office_name: office.name.as_deref(),
+            office_subtitle: office.subtitle.as_deref(),
             state: office.state.as_ref(),
-            county: office.county.as_str(),
-            district: office.district.as_str(),
-            seat: office.seat.as_str(),
-            year: election.election_date.year(),
+            county: office.county.as_deref(),
+            district: office.district.as_deref(),
+            seat: office.seat.as_deref(),
+            is_special_election,
+            party,
+            year,
         }
     }
 
     pub fn generate(&self) -> (String, String) {
-        let qualifier = match self.election_scope {
-            db::ElectionScope::County => (self.county.unwrap_or_default(), "County"),
-            _ => {
-                if self.district.is_some() {
-                    ("District", self.district.unwrap_or_default())
+        // Build title following dbt logic: MN - <office_name> - <subtitle> - [Special Election -] <race_type> [- party] - <year>
+        let mut parts = Vec::new();
+        
+        // Always start with MN
+        parts.push("MN".to_string());
+        
+        // Office name
+        if let Some(name) = self.office_name {
+            if !name.is_empty() {
+                parts.push(name.to_string());
+            }
+        }
+        
+        // Office subtitle (already contains location info, may have "MN - " prefix)
+        if let Some(subtitle) = self.office_subtitle {
+            if !subtitle.is_empty() {
+                // Remove "MN - " prefix if it exists to avoid duplication
+                let cleaned_subtitle = if subtitle.starts_with("MN - ") {
+                    &subtitle[5..]  // Skip "MN - "
                 } else {
-                    ("", self.seat.unwrap_or_default())
+                    subtitle
+                };
+                
+                // Only add if there's content after cleaning
+                if !cleaned_subtitle.is_empty() {
+                    parts.push(cleaned_subtitle.to_string());
                 }
             }
+        }
+        
+        // Special Election (before race type in SQL)
+        if self.is_special_election {
+            parts.push("Special Election".to_string());
+        }
+        
+        // Race type with party expansion for primaries
+        let race_type_str = match self.race_type {
+            db::RaceType::Primary => {
+                match self.party {
+                    Some("N") => "Primary - Nonpartisan".to_string(),
+                    Some("REP") => "Primary - Republican".to_string(),
+                    Some("DEM") | Some("DFL") => "Primary - Democratic".to_string(),
+                    Some(p) if !p.is_empty() => format!("Primary - {}", p),
+                    _ => "Primary".to_string(),
+                }
+            },
+            db::RaceType::General => "General".to_string(),
         };
-
-        let title = format!(
-            "{} {} {} {} {} {}",
-            super::optional_state_str(self.state),
-            self.office_name.unwrap_or_default(),
-            qualifier.0,
-            qualifier.1,
-            self.race_type,
-            self.year,
-        );
-
+        parts.push(race_type_str);
+        
+        // Year
+        parts.push(self.year.to_string());
+        
+        // Join with " - " and clean up extra spaces
+        let title = parts.join(" - ");
+        
         static REGEX: OnceLock<Regex> = OnceLock::new();
         let regex = REGEX.get_or_init(|| Regex::new(r"  +").unwrap());
         let title = regex.replace_all(&title, " ").trim().to_string();
