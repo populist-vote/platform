@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::str::FromStr;
 use sqlx::PgPool;
-use db::{Office, Politician, Race, State, RaceType, VoteType, Party};
+use db::{Office, Politician, Race, State, RaceType, VoteType};
 use uuid::Uuid;
 use serde_json::Value as JSON;
 use crate::extractors;
@@ -10,6 +10,7 @@ use crate::generators;
 pub struct CandidateFiling {
     pub office_title: Option<String>,
     pub office_id: Option<String>,
+    pub office_code: Option<String>,
     pub candidate_name: Option<String>,
     pub party_abbreviation: Option<String>,
     pub campaign_phone: Option<String>,
@@ -47,6 +48,7 @@ pub async fn process_mn_candidate_filings(
         SELECT DISTINCT
             raw.office_title,
             raw.office_id,
+            raw.office_code,
             raw.candidate_name,
             raw.party_abbreviation,
             raw.campaign_phone,
@@ -144,6 +146,7 @@ async fn create_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>> {
             political_scope TEXT,
             election_scope TEXT NOT NULL,
             state TEXT,
+            state_id TEXT,
             county TEXT,
             municipality TEXT,
             term_length INTEGER,
@@ -258,36 +261,45 @@ async fn process_and_insert_filing(
     // Process office data
     let office = process_office(filing)?;
     
+    // Resolve office id: use existing row in stg_offices if slug already exists, else None (we'll use office.id in process_race)
+    let office_id = get_staging_office_id_by_slug(pool, &office.slug).await?;
+    
+    // Insert office into staging table only if it doesn't already exist
+    if office_id.is_none() {
+        insert_staging_office(pool, &office, filing.office_code.as_ref()).await?;
+    }
+    
     // Process politician data
-    let politician = process_politician(filing)?;
+    let politician = process_politician(pool, filing).await?;
     
-    // Process race data
-    let race = process_race(filing, &office, race_type)?;
-    
-    // Insert office into staging table
-    insert_staging_office(pool, &office).await?;
+    // Process race data: use resolved office_id if present, otherwise office.id
+    let race = process_race(filing, &office, office_id, race_type)?;
     
     // Insert politician into staging table
     insert_staging_politician(pool, &politician).await?;
     
-    // Insert race into staging table
+    // Insert race into staging table (or skip if slug already exists)
     insert_staging_race(pool, &race).await?;
     
-    // Insert race candidate relationship into staging table
-    insert_staging_race_candidate(pool, &race, &politician).await?;
+    // Resolve the race id from stg_races by slug so we use the existing row's id when there was a slug conflict
+    let race_id = get_staging_race_id_by_slug(pool, &race.slug).await?
+        .unwrap_or(race.id);
+    
+    // Insert race candidate relationship into staging table using the resolved race id
+    insert_staging_race_candidate(pool, race_id, &politician).await?;
     
     Ok(())
 }
 
-async fn insert_staging_office(pool: &PgPool, office: &Office) -> Result<(), Box<dyn Error>> {
+async fn insert_staging_office(pool: &PgPool, office: &Office, state_id: Option<&String>) -> Result<(), Box<dyn Error>> {
     sqlx::query(
         r#"
         INSERT INTO dbt_henry.stg_offices (
             id, slug, name, title, subtitle, subtitle_short, office_type, chamber,
-            district_type, political_scope, election_scope, state, county, municipality,
+            district_type, political_scope, election_scope, state, state_id, county, municipality,
             term_length, district, seat, school_district, hospital_district, priority,
             created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
         ON CONFLICT (slug) DO NOTHING
         "#
     )
@@ -303,6 +315,7 @@ async fn insert_staging_office(pool: &PgPool, office: &Office) -> Result<(), Box
     .bind(format!("{:?}", office.political_scope))
     .bind(format!("{:?}", office.election_scope))
     .bind(office.state.map(|s| s.as_ref().to_string()))
+    .bind(state_id)
     .bind(&office.county)
     .bind(&office.municipality)
     .bind(office.term_length)
@@ -421,7 +434,27 @@ async fn insert_staging_race(pool: &PgPool, race: &Race) -> Result<(), Box<dyn E
     Ok(())
 }
 
-async fn insert_staging_race_candidate(pool: &PgPool, race: &Race, politician: &Politician) -> Result<(), Box<dyn Error>> {
+async fn get_staging_office_id_by_slug(pool: &PgPool, slug: &str) -> Result<Option<Uuid>, Box<dyn Error>> {
+    let row: Option<(Uuid,)> = sqlx::query_as(
+        "SELECT id FROM dbt_henry.stg_offices WHERE slug = $1",
+    )
+    .bind(slug)
+    .fetch_optional(pool)
+    .await?;
+    Ok(row.map(|(id,)| id))
+}
+
+async fn get_staging_race_id_by_slug(pool: &PgPool, slug: &str) -> Result<Option<Uuid>, Box<dyn Error>> {
+    let row: Option<(Uuid,)> = sqlx::query_as(
+        "SELECT id FROM dbt_henry.stg_races WHERE slug = $1",
+    )
+    .bind(slug)
+    .fetch_optional(pool)
+    .await?;
+    Ok(row.map(|(id,)| id))
+}
+
+async fn insert_staging_race_candidate(pool: &PgPool, race_id: Uuid, politician: &Politician) -> Result<(), Box<dyn Error>> {
     sqlx::query(
         r#"
         INSERT INTO dbt_henry.stg_race_candidates (race_id, candidate_id)
@@ -429,7 +462,7 @@ async fn insert_staging_race_candidate(pool: &PgPool, race: &Race, politician: &
         ON CONFLICT (race_id, candidate_id) DO NOTHING
         "#
     )
-    .bind(race.id)
+    .bind(race_id)
     .bind(politician.id)
     .execute(pool)
     .await?;
@@ -533,7 +566,10 @@ fn process_office(filing: &CandidateFiling) -> Result<Office, Box<dyn Error>> {
     })
 }
 
-fn process_politician(filing: &CandidateFiling) -> Result<Politician, Box<dyn Error>> {
+async fn process_politician(
+    pool: &PgPool,
+    filing: &CandidateFiling,
+) -> Result<Politician, Box<dyn Error>> {
     let candidate_name = filing.candidate_name.as_ref().ok_or("Missing candidate name")?;
     
     // Generate politician slug
@@ -542,24 +578,27 @@ fn process_politician(filing: &CandidateFiling) -> Result<Politician, Box<dyn Er
     // Generate ref key
     let ref_key = generators::politician::PoliticianRefKeyGenerator::new("MN-SOS", candidate_name).generate();
     
-    // Process party
-    let party = if let Some(party_abbrev) = &filing.party_abbreviation {
-        if let Some(party_name) = extractors::party::extract_party_name(party_abbrev) {
-            let party_slug = generators::party::PartySlugGenerator::new(&party_name).generate();
-            Some(Party {
-                id: Uuid::new_v4(),
-                name: party_name,
-                slug: party_slug,
-                fec_code: None,
-                description: None,
-                notes: None,
-            })
+    // Resolve party_id from production party table
+    // If no party_abbreviation or empty, use "UN" (unaffiliated)
+    let fec_code = if let Some(party_abbrev) = &filing.party_abbreviation {
+        if party_abbrev.trim().is_empty() {
+            "UN".to_string() // Empty/whitespace = unaffiliated
         } else {
-            None
+            // Try to extract the FEC code, default to "UN" if not found
+            extractors::party::extract_party_fec_code(party_abbrev)
+                .unwrap_or_else(|| "UN".to_string())
         }
     } else {
-        None
+        "UN".to_string() // No party abbreviation = unaffiliated
     };
+    
+    // Query the production party table to get the party.id
+    let party_id = sqlx::query_scalar!(
+        r#"SELECT id FROM party WHERE fec_code = $1"#,
+        fec_code
+    )
+    .fetch_optional(pool)
+    .await?;
 
     // Parse name using extractor (with fallback to simple split)
     let name_parts = extractors::politician::extract_politician_name(candidate_name)
@@ -598,7 +637,7 @@ fn process_politician(filing: &CandidateFiling) -> Result<Politician, Box<dyn Er
         biography: None,
         biography_source: None,
         home_state: Some(State::MN),
-        party_id: party.map(|p| p.id),
+        party_id,
         date_of_birth: None,
         office_id: None,
         upcoming_race_id: None,
@@ -630,6 +669,7 @@ fn process_politician(filing: &CandidateFiling) -> Result<Politician, Box<dyn Er
 fn process_race(
     filing: &CandidateFiling,
     office: &Office,
+    office_id: Option<Uuid>,
     race_type: &str,
 ) -> Result<Race, Box<dyn Error>> {
     // Hardcoded election ID for 2025 General Election
@@ -674,12 +714,13 @@ fn process_race(
         election_year,
     ).generate();
 
-    // Create race record
+    // Create race record: use resolved office_id from stg_offices if present, otherwise office.id
+    let resolved_office_id = office_id.unwrap_or(office.id);
     Ok(Race {
         id: Uuid::new_v4(),
         title,
         slug,
-        office_id: office.id,
+        office_id: resolved_office_id,
         state: Some(State::MN),
         race_type: RaceType::from_str(race_type)?,
         vote_type,
