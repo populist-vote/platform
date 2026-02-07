@@ -4,6 +4,7 @@ use sqlx::PgPool;
 use db::{Office, Politician, Race, State, RaceType, VoteType};
 use uuid::Uuid;
 use serde_json::Value as JSON;
+use slugify::slugify;
 use crate::extractors;
 use crate::generators;
 
@@ -242,6 +243,7 @@ async fn create_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>> {
         CREATE TABLE dbt_henry.stg_race_candidates (
             race_id UUID NOT NULL,
             candidate_id UUID NOT NULL,
+            ref_key TEXT,
             PRIMARY KEY (race_id, candidate_id)
         )
     "#)
@@ -285,8 +287,9 @@ async fn process_and_insert_filing(
     let race_id = get_staging_race_id_by_slug(pool, &race.slug).await?
         .unwrap_or(race.id);
     
-    // Insert race candidate relationship into staging table using the resolved race id
-    insert_staging_race_candidate(pool, race_id, &politician).await?;
+    // Process race candidate ref_key from filing, then insert into staging table
+    let race_candidate_ref_key = process_race_candidate(filing);
+    insert_staging_race_candidate(pool, race_id, &politician, &race_candidate_ref_key).await?;
     
     Ok(())
 }
@@ -454,19 +457,31 @@ async fn get_staging_race_id_by_slug(pool: &PgPool, slug: &str) -> Result<Option
     Ok(row.map(|(id,)| id))
 }
 
-async fn insert_staging_race_candidate(pool: &PgPool, race_id: Uuid, politician: &Politician) -> Result<(), Box<dyn Error>> {
+fn process_race_candidate(filing: &CandidateFiling) -> String {
+    let office_title = filing.office_title.as_deref().unwrap_or("");
+    let candidate_name = filing.candidate_name.as_deref().unwrap_or("");
+    slugify!(&format!("mn-sos-{}-{}", office_title, candidate_name))
+}
+
+async fn insert_staging_race_candidate(
+    pool: &PgPool,
+    race_id: Uuid,
+    politician: &Politician,
+    ref_key: &str,
+) -> Result<(), Box<dyn Error>> {
     sqlx::query(
         r#"
-        INSERT INTO dbt_henry.stg_race_candidates (race_id, candidate_id)
-        VALUES ($1, $2)
-        ON CONFLICT (race_id, candidate_id) DO NOTHING
+        INSERT INTO dbt_henry.stg_race_candidates (race_id, candidate_id, ref_key)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (race_id, candidate_id) DO UPDATE SET ref_key = EXCLUDED.ref_key
         "#
     )
     .bind(race_id)
     .bind(politician.id)
+    .bind(ref_key)
     .execute(pool)
     .await?;
-    
+
     Ok(())
 }
 

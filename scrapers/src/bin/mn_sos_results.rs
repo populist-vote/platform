@@ -1,4 +1,4 @@
-use scrapers::mn_sos_results::fetch_results;
+use scrapers::mn::sos::fetch_results;
 
 #[tokio::main]
 async fn main() {

@@ -2,9 +2,6 @@ use std::{error::Error, future::Future};
 
 pub mod extractors;
 pub mod generators;
-pub mod mn_sos_candidate_filings_fed_state_county;
-pub mod mn_sos_candidate_filings_local;
-pub mod mn_sos_results;
 pub mod util;
 pub mod processors;
 

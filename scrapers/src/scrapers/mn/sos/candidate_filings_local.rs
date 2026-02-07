@@ -23,14 +23,14 @@ static PRIMARY_HEADER_NAMES: [&str; 18] = [
     "campaign_email",
 ];
 
-static HEADER_NAMES: [&str; 18] = [
+static HEADER_NAMES: [&str; 19] = [
     "office_code",
     "candidate_name",
     "office_id",
     "office_title",
-    "county_id",
     "mcd_fips_code",
     "school_district_number",
+    "party_abbreviation",
     "residence_street_address",
     "residence_city",
     "residence_state",
@@ -42,6 +42,7 @@ static HEADER_NAMES: [&str; 18] = [
     "campaign_phone",
     "campaign_website",
     "campaign_email",
+    "county_id",
 ];
 
 pub async fn get_mn_sos_candidate_filings_local_primaries(driver: &WebDriver) -> Result<(), Box<dyn Error>> {

@@ -1,8 +1,9 @@
-use scrapers::mn_sos_candidate_filings_fed_state_county::{
+use scrapers::mn::sos::{
     get_mn_sos_candidate_filings_fed_state_county,
     get_mn_sos_candidate_filings_fed_state_county_primaries,
+    get_mn_sos_candidate_filings_local,
+    get_mn_sos_candidate_filings_local_primaries,
 };
-use scrapers::mn_sos_candidate_filings_local::get_mn_sos_candidate_filings_local;
 use thirtyfour::prelude::*;
 use std::thread;
 use std::time::Duration;
@@ -24,9 +25,9 @@ async fn main() {
     db::init_pool().await.unwrap();
     
     // SCRAPE FED STATE COUNTY GENERAL DATA FROM SOS SITE
-    //if let Err(err) = get_mn_sos_candidate_filings_fed_state_county(&driver).await {
+    // if let Err(err) = get_mn_sos_candidate_filings_fed_state_county(&driver).await {
     //     println!("error scraping data from MN SOS candidate filings: {}", err);
-    //}
+    // }
 
     // SCRAPE FED STATE COUNTY PRIMARY DATA FROM SOS SITE
     // if let Err(err) = get_mn_sos_candidate_filings_fed_state_county_primaries(&driver).await {

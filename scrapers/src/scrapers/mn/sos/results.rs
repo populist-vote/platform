@@ -53,22 +53,22 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
     //     "Supreme Court and Courts of Appeals",
     //     "https://electionresultsfiles.sos.state.mn.us/20241105/judicial.txt",
     // );
-    results_file_paths.insert(
-        "State Senator by District",
-        "https://electionresultsfiles.sos.mn.gov/20250415/stsenate.txt",
-    );
-    results_file_paths.insert(
-        "County Races",
-        "https://electionresultsfiles.sos.mn.gov/20250408/cntyRaces.txt",
-    );
     // results_file_paths.insert(
-    //     "Municipal Races and Questions",
-    //     "https://electionresultsfiles.sos.state.mn.us/20241105/local.txt",
+    //     "State Senator by District",
+    //     "https://electionresultsfiles.sos.mn.gov/20251104/stsenate.txt",
     // );
     // results_file_paths.insert(
-    //     "School Board Races",
-    //     "https://electionresultsfiles.sos.state.mn.us/20241105/sdrace.txt",
+    //     "County Races",
+    //     "https://electionresultsfiles.sos.mn.gov/20251104/cntyRaces.txt",
     // );
+    results_file_paths.insert(
+        "Municipal Races and Questions",
+        "https://electionresultsfiles.sos.mn.gov/20251104/local.txt",
+    );
+    results_file_paths.insert(
+        "School Board Races",
+        "https://electionresultsfiles.sos.mn.gov/20251104/sdrace.txt",
+    );
     // results_file_paths.insert(
     //     "State Representative by District",
     //     "https://electionresultsfiles.sos.mn.gov/20250311/LegislativeByDistrict.txt",
@@ -209,6 +209,12 @@ async fn update_public_schema_with_results(table_names: Vec<String>) {
         .collect::<Vec<String>>()
         .join(" UNION ALL ");
 
+    // Inline slugify (no DB function / unaccent): lower, strip non-alphanumeric, spaces→hyphens, trim
+    let ref_key_from_source =
+        "TRIM(BOTH '-' FROM REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(CONCAT('mn-sos-', source.office_name, '-', source.candidate_name)), '[^a-z0-9 -]', '', 'g'), '\\s+', '-', 'g'), '-+', '-', 'g'))";
+    let ref_key_from_results =
+        "TRIM(BOTH '-' FROM REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(CONCAT('mn-sos-', results.office_name, '-', results.candidate_name)), '[^a-z0-9 -]', '', 'g'), '\\s+', '-', 'g'), '-+', '-', 'g'))";
+
     let query = format!(
         r#"
         WITH source AS (
@@ -241,7 +247,7 @@ async fn update_public_schema_with_results(table_names: Vec<String>) {
                 END AS total_first_choice_votes
             FROM
                 source
-            LEFT JOIN race_candidates rc ON rc.ref_key = SLUGIFY(CONCAT('mn-sos-', source.office_name, '-', source.candidate_name))
+            LEFT JOIN race_candidates rc ON rc.ref_key = {}
             LEFT JOIN race r ON r.id = rc.race_id
             ORDER BY
                 office_name,
@@ -265,7 +271,7 @@ async fn update_public_schema_with_results(table_names: Vec<String>) {
             FROM
                 results
             WHERE
-                rc.ref_key = SLUGIFY(CONCAT('mn-sos-', results.office_name, '-', results.candidate_name))
+                rc.ref_key = {}
             RETURNING
                 *
         ),
@@ -288,9 +294,11 @@ async fn update_public_schema_with_results(table_names: Vec<String>) {
         FROM
             results
         WHERE
-            office_name NOT ILIKE '%question%';
+                office_name NOT ILIKE '%question%';
     "#,
-        source_tables
+        source_tables,
+        ref_key_from_source,
+        ref_key_from_results
     );
 
     let result = sqlx::query(&query)

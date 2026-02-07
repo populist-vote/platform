@@ -71,6 +71,7 @@ struct StgRace {
 struct StgRaceCandidate {
     race_id: uuid::Uuid,
     candidate_id: uuid::Uuid,
+    ref_key: Option<String>,
 }
 
 #[tokio::main]
@@ -158,7 +159,7 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
     // 4. Race candidates: insert (prod_race_id, prod_candidate_id)
     println!("Merging race_candidates...");
     let stg_rcs: Vec<StgRaceCandidate> = sqlx::query_as(
-        "SELECT race_id, candidate_id FROM dbt_henry.stg_race_candidates",
+        "SELECT race_id, candidate_id, ref_key FROM dbt_henry.stg_race_candidates",
     )
     .fetch_all(pool)
     .await?;
@@ -176,6 +177,7 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
         let input = UpsertRaceCandidateInput {
             race_id: prod_race_id,
             candidate_id: prod_candidate_id,
+            ref_key: rc.ref_key.clone(),
         };
         if RaceCandidate::upsert_from_source(pool, &input).await?.is_some() {
             inserted += 1;

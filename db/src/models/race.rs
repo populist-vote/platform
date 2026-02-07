@@ -76,6 +76,7 @@ pub struct RaceCandidate {
 pub struct UpsertRaceCandidateInput {
     pub race_id: uuid::Uuid,
     pub candidate_id: uuid::Uuid,
+    pub ref_key: Option<String>,
 }
 
 impl Race {
@@ -363,13 +364,15 @@ impl RaceCandidate {
         sqlx::query_as!(
             RaceCandidate,
             r#"
-                INSERT INTO race_candidates (race_id, candidate_id)
-                VALUES ($1, $2)
-                ON CONFLICT (race_id, candidate_id) DO NOTHING
+                INSERT INTO race_candidates (race_id, candidate_id, ref_key)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (race_id, candidate_id) DO UPDATE SET
+                    ref_key = COALESCE(EXCLUDED.ref_key, race_candidates.ref_key)
                 RETURNING race_id, candidate_id
             "#,
             input.race_id,
             input.candidate_id,
+            input.ref_key.as_deref(),
         )
         .fetch_optional(db_pool)
         .await
