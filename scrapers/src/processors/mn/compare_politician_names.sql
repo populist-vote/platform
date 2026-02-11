@@ -1,4 +1,4 @@
--- SQL Query to compare dbt_henry.stg_politicians with politician table
+-- SQL Query to compare ingest_staging.stg_mn_politicians with politician table
 -- to find similar matching names
 
 -- Option 1: Using fuzzystrmatch similarity (requires fuzzystrmatch extension)
@@ -29,7 +29,7 @@ SELECT
     ) AS full_name_similarity,
     -- Check if slugs match (exact match)
     CASE WHEN stg.slug = prod.slug THEN true ELSE false END AS slug_match
-FROM dbt_henry.stg_politicians stg
+FROM ingest_staging.stg_mn_politicians stg
 CROSS JOIN politician prod
 WHERE 
     -- Filter for similar names (similarity > 0.5 means 50% similar)
@@ -98,7 +98,7 @@ WITH matches AS (
              ) > 0.6 THEN 'medium_similarity'
              ELSE 'low_similarity'
         END AS match_type
-    FROM dbt_henry.stg_politicians stg
+    FROM ingest_staging.stg_mn_politicians stg
     CROSS JOIN politician prod
     WHERE 
         -- Exact matches
@@ -158,7 +158,7 @@ SELECT
         ELSE 'Low Similarity (<60%)'
     END AS match_category,
     COUNT(*) AS match_count
-FROM dbt_henry.stg_politicians stg
+FROM ingest_staging.stg_mn_politicians stg
 CROSS JOIN politician prod
 WHERE 
     stg.slug = prod.slug
@@ -249,11 +249,11 @@ staging_offices AS (
         string_agg(DISTINCT so.slug, ' | ' ORDER BY so.slug) AS office_slugs,
         string_agg(DISTINCT so.county, ' | ' ORDER BY so.county) AS office_counties,
         string_agg(DISTINCT e.election_date::text, ' | ' ORDER BY e.election_date::text) AS election_dates
-    FROM dbt_henry.stg_politicians stg
+    FROM ingest_staging.stg_mn_politicians stg
     CROSS JOIN search_name sn
-    LEFT JOIN dbt_henry.stg_race_candidates src ON src.candidate_id = stg.id
-    LEFT JOIN dbt_henry.stg_races sr ON sr.id = src.race_id
-    LEFT JOIN dbt_henry.stg_offices so ON so.id = sr.office_id
+    LEFT JOIN ingest_staging.stg_mn_race_candidates src ON src.candidate_id = stg.id
+    LEFT JOIN ingest_staging.stg_mn_races sr ON sr.id = src.race_id
+    LEFT JOIN ingest_staging.stg_mn_offices so ON so.id = sr.office_id
     LEFT JOIN election e ON e.id = sr.election_id
     WHERE EXISTS (SELECT 1 FROM search_variants sv WHERE stg.full_name ILIKE '%' || sv.variant || '%')
     GROUP BY stg.id, stg.slug, stg.full_name

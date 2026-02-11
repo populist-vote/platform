@@ -41,9 +41,9 @@ pub fn extract_party_name(input: &str) -> Option<String> {
 /// Returns the FEC code that should be used to query the production `party` table.
 pub fn extract_party_fec_code(abbrev: &str) -> Option<String> {
     match abbrev.trim().to_uppercase().as_str() {
-        "R" => Some("REP".to_string()),
+        "R" | "REPUBLICAN" => Some("REP".to_string()),
         "DFL" => Some("DFL".to_string()),
-        "DEM" => Some("DEM".to_string()),
+        "DEM" | "DEMOCRATIC" => Some("DEM".to_string()),
         "LIB" => Some("LIB".to_string()),
         "GRE" => Some("GRE".to_string()),
         "IND" => Some("IND".to_string()),

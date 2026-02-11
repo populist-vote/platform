@@ -38,7 +38,7 @@ pub async fn process_mn_candidate_filings(
     println!("Source table: {}", source_table);
     println!("Race type: {}", race_type);
     
-    // 1. Create staging tables in dbt_henry schema
+    // 1. Create staging tables in ingest_staging schema
     create_staging_tables(pool).await?;
     
     // 2. Get raw filings from source table
@@ -101,40 +101,40 @@ pub async fn process_mn_candidate_filings(
     println!("\n=== Processing Complete ===");
     println!("Successfully processed: {}", processed_count);
     println!("Errors: {}", error_count);
-    println!("\nStaging tables created in dbt_henry schema:");
-    println!("  - dbt_henry.stg_offices");
-    println!("  - dbt_henry.stg_politicians");
-    println!("  - dbt_henry.stg_races");
-    println!("  - dbt_henry.stg_race_candidates");
+    println!("\nStaging tables created in ingest_staging schema:");
+    println!("  - ingest_staging.stg_mn_offices");
+    println!("  - ingest_staging.stg_mn_politicians");
+    println!("  - ingest_staging.stg_mn_races");
+    println!("  - ingest_staging.stg_mn_race_candidates");
     
     Ok(())
 }
 
 async fn create_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>> {
-    println!("Creating staging tables in dbt_henry schema...");
+    println!("Creating staging tables in ingest_staging schema...");
     
     // Create schema if it doesn't exist
-    sqlx::query("CREATE SCHEMA IF NOT EXISTS dbt_henry")
+    sqlx::query("CREATE SCHEMA IF NOT EXISTS ingest_staging")
         .execute(pool)
         .await?;
     
     // Drop existing staging tables
-    sqlx::query("DROP TABLE IF EXISTS dbt_henry.stg_race_candidates CASCADE")
+    sqlx::query("DROP TABLE IF EXISTS ingest_staging.stg_mn_race_candidates CASCADE")
         .execute(pool)
         .await?;
-    sqlx::query("DROP TABLE IF EXISTS dbt_henry.stg_races CASCADE")
+    sqlx::query("DROP TABLE IF EXISTS ingest_staging.stg_mn_races CASCADE")
         .execute(pool)
         .await?;
-    sqlx::query("DROP TABLE IF EXISTS dbt_henry.stg_politicians CASCADE")
+    sqlx::query("DROP TABLE IF EXISTS ingest_staging.stg_mn_politicians CASCADE")
         .execute(pool)
         .await?;
-    sqlx::query("DROP TABLE IF EXISTS dbt_henry.stg_offices CASCADE")
+    sqlx::query("DROP TABLE IF EXISTS ingest_staging.stg_mn_offices CASCADE")
         .execute(pool)
         .await?;
     
     // Create staging offices table
     sqlx::query(r#"
-        CREATE TABLE dbt_henry.stg_offices (
+        CREATE TABLE ingest_staging.stg_mn_offices (
             id UUID PRIMARY KEY,
             slug TEXT NOT NULL UNIQUE,
             name TEXT,
@@ -165,7 +165,7 @@ async fn create_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>> {
     
     // Create staging politicians table
     sqlx::query(r#"
-        CREATE TABLE dbt_henry.stg_politicians (
+        CREATE TABLE ingest_staging.stg_mn_politicians (
             id UUID PRIMARY KEY,
             slug TEXT NOT NULL UNIQUE,
             ref_key TEXT,
@@ -211,7 +211,7 @@ async fn create_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>> {
     
     // Create staging races table
     sqlx::query(r#"
-        CREATE TABLE dbt_henry.stg_races (
+        CREATE TABLE ingest_staging.stg_mn_races (
             id UUID PRIMARY KEY,
             title TEXT NOT NULL,
             slug TEXT NOT NULL UNIQUE,
@@ -240,7 +240,7 @@ async fn create_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>> {
     
     // Create staging race_candidates table
     sqlx::query(r#"
-        CREATE TABLE dbt_henry.stg_race_candidates (
+        CREATE TABLE ingest_staging.stg_mn_race_candidates (
             race_id UUID NOT NULL,
             candidate_id UUID NOT NULL,
             ref_key TEXT,
@@ -263,7 +263,7 @@ async fn process_and_insert_filing(
     // Process office data
     let office = process_office(filing)?;
     
-    // Resolve office id: use existing row in stg_offices if slug already exists, else None (we'll use office.id in process_race)
+    // Resolve office id: use existing row in stg_mn_offices if slug already exists, else None (we'll use office.id in process_race)
     let office_id = get_staging_office_id_by_slug(pool, &office.slug).await?;
     
     // Insert office into staging table only if it doesn't already exist
@@ -283,7 +283,7 @@ async fn process_and_insert_filing(
     // Insert race into staging table (or skip if slug already exists)
     insert_staging_race(pool, &race).await?;
     
-    // Resolve the race id from stg_races by slug so we use the existing row's id when there was a slug conflict
+    // Resolve the race id from stg_mn_races by slug so we use the existing row's id when there was a slug conflict
     let race_id = get_staging_race_id_by_slug(pool, &race.slug).await?
         .unwrap_or(race.id);
     
@@ -297,7 +297,7 @@ async fn process_and_insert_filing(
 async fn insert_staging_office(pool: &PgPool, office: &Office, state_id: Option<&String>) -> Result<(), Box<dyn Error>> {
     sqlx::query(
         r#"
-        INSERT INTO dbt_henry.stg_offices (
+        INSERT INTO ingest_staging.stg_mn_offices (
             id, slug, name, title, subtitle, subtitle_short, office_type, chamber,
             district_type, political_scope, election_scope, state, state_id, county, municipality,
             term_length, district, seat, school_district, hospital_district, priority,
@@ -338,7 +338,7 @@ async fn insert_staging_office(pool: &PgPool, office: &Office, state_id: Option<
 async fn insert_staging_politician(pool: &PgPool, politician: &Politician) -> Result<(), Box<dyn Error>> {
     sqlx::query(
         r#"
-        INSERT INTO dbt_henry.stg_politicians (
+        INSERT INTO ingest_staging.stg_mn_politicians (
             id, slug, ref_key, first_name, middle_name, last_name, suffix, preferred_name,
             full_name, biography, biography_source, home_state, party_id, date_of_birth,
             office_id, upcoming_race_id, thumbnail_image_url, assets, official_website_url,
@@ -401,7 +401,7 @@ async fn insert_staging_politician(pool: &PgPool, politician: &Politician) -> Re
 async fn insert_staging_race(pool: &PgPool, race: &Race) -> Result<(), Box<dyn Error>> {
     sqlx::query(
         r#"
-        INSERT INTO dbt_henry.stg_races (
+        INSERT INTO ingest_staging.stg_mn_races (
             id, title, slug, office_id, state, race_type, vote_type, party_id,
             description, ballotpedia_link, early_voting_begins_date, official_website,
             election_id, winner_ids, total_votes, num_precincts_reporting, total_precincts,
@@ -439,7 +439,7 @@ async fn insert_staging_race(pool: &PgPool, race: &Race) -> Result<(), Box<dyn E
 
 async fn get_staging_office_id_by_slug(pool: &PgPool, slug: &str) -> Result<Option<Uuid>, Box<dyn Error>> {
     let row: Option<(Uuid,)> = sqlx::query_as(
-        "SELECT id FROM dbt_henry.stg_offices WHERE slug = $1",
+        "SELECT id FROM ingest_staging.stg_mn_offices WHERE slug = $1",
     )
     .bind(slug)
     .fetch_optional(pool)
@@ -449,7 +449,7 @@ async fn get_staging_office_id_by_slug(pool: &PgPool, slug: &str) -> Result<Opti
 
 async fn get_staging_race_id_by_slug(pool: &PgPool, slug: &str) -> Result<Option<Uuid>, Box<dyn Error>> {
     let row: Option<(Uuid,)> = sqlx::query_as(
-        "SELECT id FROM dbt_henry.stg_races WHERE slug = $1",
+        "SELECT id FROM ingest_staging.stg_mn_races WHERE slug = $1",
     )
     .bind(slug)
     .fetch_optional(pool)
@@ -471,7 +471,7 @@ async fn insert_staging_race_candidate(
 ) -> Result<(), Box<dyn Error>> {
     sqlx::query(
         r#"
-        INSERT INTO dbt_henry.stg_race_candidates (race_id, candidate_id, ref_key)
+        INSERT INTO ingest_staging.stg_mn_race_candidates (race_id, candidate_id, ref_key)
         VALUES ($1, $2, $3)
         ON CONFLICT (race_id, candidate_id) DO UPDATE SET ref_key = EXCLUDED.ref_key
         "#
@@ -729,7 +729,7 @@ fn process_race(
         election_year,
     ).generate();
 
-    // Create race record: use resolved office_id from stg_offices if present, otherwise office.id
+    // Create race record: use resolved office_id from stg_mn_offices if present, otherwise office.id
     let resolved_office_id = office_id.unwrap_or(office.id);
     Ok(Race {
         id: Uuid::new_v4(),

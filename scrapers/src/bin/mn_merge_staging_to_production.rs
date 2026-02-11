@@ -1,4 +1,4 @@
-//! Merges staging data from dbt_henry.stg_* into production tables (office, politician, race, race_candidates).
+//! Merges staging data from ingest_staging.stg_mn_* into production tables (office, politician, race, race_candidates).
 //! Run after process_mn_candidate_filings. Resolves by slug for offices/races and by ref_key/slug/email/phone for politicians.
 
 use std::collections::HashMap;
@@ -93,7 +93,7 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
     // 1. Offices: upsert by slug, build stg_office_id -> prod_office_id
     println!("Merging offices...");
     let stg_offices: Vec<StgOffice> = sqlx::query_as(
-        "SELECT id, slug, name, title, subtitle, subtitle_short, office_type, chamber, district_type, political_scope, election_scope, state, county, municipality, term_length, district, seat, school_district, hospital_district, priority FROM dbt_henry.stg_offices",
+        "SELECT id, slug, name, title, subtitle, subtitle_short, office_type, chamber, district_type, political_scope, election_scope, state, county, municipality, term_length, district, seat, school_district, hospital_district, priority FROM ingest_staging.stg_mn_offices",
     )
     .fetch_all(pool)
     .await?;
@@ -117,7 +117,7 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
     // 2. Politicians: resolve by email / phone, else upsert; build stg_politician_id -> prod_politician_id
     println!("Merging politicians...");
     let stg_politicians: Vec<StgPolitician> = sqlx::query_as(
-        "SELECT id, slug, ref_key, first_name, middle_name, last_name, suffix, preferred_name, full_name, home_state, party_id, email, phone, campaign_website_url FROM dbt_henry.stg_politicians",
+        "SELECT id, slug, ref_key, first_name, middle_name, last_name, suffix, preferred_name, full_name, home_state, party_id, email, phone, campaign_website_url FROM ingest_staging.stg_mn_politicians",
     )
     .fetch_all(pool)
     .await?;
@@ -139,7 +139,7 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
     // 3. Races: upsert by slug with prod office_id; build stg_race_id -> prod_race_id
     println!("Merging races...");
     let stg_races: Vec<StgRace> = sqlx::query_as(
-        "SELECT id, slug, title, office_id, state, race_type, vote_type, party_id, election_id, is_special_election, num_elect FROM dbt_henry.stg_races",
+        "SELECT id, slug, title, office_id, state, race_type, vote_type, party_id, election_id, is_special_election, num_elect FROM ingest_staging.stg_mn_races",
     )
     .fetch_all(pool)
     .await?;
@@ -159,7 +159,7 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
     // 4. Race candidates: insert (prod_race_id, prod_candidate_id)
     println!("Merging race_candidates...");
     let stg_rcs: Vec<StgRaceCandidate> = sqlx::query_as(
-        "SELECT race_id, candidate_id, ref_key FROM dbt_henry.stg_race_candidates",
+        "SELECT race_id, candidate_id, ref_key FROM ingest_staging.stg_mn_race_candidates",
     )
     .fetch_all(pool)
     .await?;

@@ -17,10 +17,10 @@ async fn main() {
         Ok(_) => {
             println!("\n✓ Processing completed successfully!");
             println!("\nYou can now examine the staging tables:");
-            println!("  SELECT * FROM dbt_henry.stg_offices;");
-            println!("  SELECT * FROM dbt_henry.stg_politicians;");
-            println!("  SELECT * FROM dbt_henry.stg_races;");
-            println!("  SELECT * FROM dbt_henry.stg_race_candidates;");
+            println!("  SELECT * FROM ingest_staging.stg_offices;");
+            println!("  SELECT * FROM ingest_staging.stg_politicians;");
+            println!("  SELECT * FROM ingest_staging.stg_races;");
+            println!("  SELECT * FROM ingest_staging.stg_race_candidates;");
         },
         Err(e) => {
             eprintln!("\n✗ Error processing filings: {}", e);

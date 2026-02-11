@@ -22,7 +22,7 @@ impl<'a> OfficeSubtitleGenerator<'a> {
             ElectionScope::State => {
                 // Use full state name when no district/seat, or if U.S. Senate
                 if self.office_name == Some("U.S. Senate") || (self.district.is_none() && self.seat.is_none()) {
-                    ("Minnesota".to_string(), "Minnesota".to_string())
+                    ("Minnesota".to_string(), "MN".to_string())
                 } else if let Some(seat) = self.seat {
                     if seat.to_lowercase().contains("at large") {
                         (format!("MN - {}", seat), format!("MN - {}", seat))
@@ -30,7 +30,7 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                         (format!("MN - Seat {}", seat), format!("MN - {}", seat))
                     }
                 } else {
-                    ("MN".to_string(), "MN".to_string())
+                    ("Minnesota".to_string(), "MN".to_string())
                 }
             },
             
