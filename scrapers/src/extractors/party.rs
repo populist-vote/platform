@@ -4,6 +4,7 @@ use regex::Regex;
 
 static MATCHERS: OnceLock<Vec<(Regex, &'static str)>> = OnceLock::new();
 
+/// Note to deprecate this in favor of extract_party_fec_code
 pub fn extract_party_name(input: &str) -> Option<String> {
     let matchers = MATCHERS.get_or_init(|| {
         [
@@ -34,6 +35,22 @@ pub fn extract_party_name(input: &str) -> Option<String> {
         }
     }
     None
+}
+
+/// Extracts FEC code from MN SOS party abbreviations for lookup in the party table.
+/// Returns the FEC code that should be used to query the production `party` table.
+pub fn extract_party_fec_code(abbrev: &str) -> Option<String> {
+    match abbrev.trim().to_uppercase().as_str() {
+        "R" | "REPUBLICAN" => Some("REP".to_string()),
+        "DFL" => Some("DFL".to_string()),
+        "DEM" | "DEMOCRATIC" => Some("DEM".to_string()),
+        "LIB" => Some("LIB".to_string()),
+        "GRE" => Some("GRE".to_string()),
+        "IND" => Some("IND".to_string()),
+        "NP" => Some("N".to_string()),
+        // Add more mappings as needed based on actual data
+        _ => None,
+    }
 }
 
 #[cfg(test)]
@@ -77,6 +94,33 @@ mod tests {
         for (input, expected) in tests {
             assert_eq!(
                 extract_party_name(input).as_str(),
+                expected,
+                "\n\n  Test Case: '{input}'\n"
+            );
+        }
+    }
+
+    #[test]
+    fn extract_party_fec_code() {
+        let tests: Vec<(&'static str, Option<&'static str>)> = vec![
+            ("R", Some("REP")),
+            ("r", Some("REP")),
+            (" R ", Some("REP")),
+            ("DFL", Some("DFL")),
+            ("dfl", Some("DFL")),
+            ("DEM", Some("DEM")),
+            ("LIB", Some("LIB")),
+            ("GRE", Some("GRE")),
+            ("IND", Some("IND")),
+            ("NP", Some("N")),
+            ("", None),
+            ("UNKNOWN", None),
+            ("XYZ", None),
+        ];
+
+        for (input, expected) in tests {
+            assert_eq!(
+                extract_party_fec_code(input).as_deref(),
                 expected,
                 "\n\n  Test Case: '{input}'\n"
             );

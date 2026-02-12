@@ -124,7 +124,7 @@ pub async fn init_job_schedule() {
             if let Err(e) = send_slack_notification(title, description, metadata).await {
                 error!("Failed to send Slack notification: {}", e);
             }
-            scrapers::mn_sos_results::fetch_results()
+            scrapers::mn::sos::fetch_results()
                 .await
                 .map_err(|e| warn!("Failed to update Minnesota SoS results: {}", e))
                 .ok();

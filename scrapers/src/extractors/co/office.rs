@@ -2,7 +2,7 @@ use std::sync::OnceLock;
 
 use regex::Regex;
 
-use super::{default_capture, owned_capture};
+use crate::extractors::{default_capture, owned_capture};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct OfficeMeta {

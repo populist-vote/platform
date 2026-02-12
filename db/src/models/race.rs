@@ -70,12 +70,16 @@ pub struct RaceFilter {
 pub struct RaceCandidate {
     pub race_id: uuid::Uuid,
     pub candidate_id: uuid::Uuid,
+    pub is_running: bool,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, InputObject)]
 pub struct UpsertRaceCandidateInput {
     pub race_id: uuid::Uuid,
     pub candidate_id: uuid::Uuid,
+    pub ref_key: Option<String>,
+    /// When `Some`, sets or updates `is_running` on insert/upsert. When `None`, leaves existing value unchanged on conflict or uses table default (true) on insert.
+    pub is_running: Option<bool>,
 }
 
 impl Race {
@@ -363,13 +367,17 @@ impl RaceCandidate {
         sqlx::query_as!(
             RaceCandidate,
             r#"
-                INSERT INTO race_candidates (race_id, candidate_id)
-                VALUES ($1, $2)
-                ON CONFLICT (race_id, candidate_id) DO NOTHING
-                RETURNING race_id, candidate_id
+                INSERT INTO race_candidates (race_id, candidate_id, ref_key, is_running)
+                VALUES ($1, $2, $3, COALESCE($4, true))
+                ON CONFLICT (race_id, candidate_id) DO UPDATE SET
+                    ref_key = COALESCE(EXCLUDED.ref_key, race_candidates.ref_key),
+                    is_running = CASE WHEN $4 IS NOT NULL THEN EXCLUDED.is_running ELSE race_candidates.is_running END
+                RETURNING race_id, candidate_id, is_running
             "#,
             input.race_id,
             input.candidate_id,
+            input.ref_key.as_deref(),
+            input.is_running,
         )
         .fetch_optional(db_pool)
         .await

@@ -2,13 +2,12 @@ use csv::ReaderBuilder;
 use std::error::Error;
 use thirtyfour::prelude::*;
 
-static HEADER_NAMES: [&str; 21] = [
-    "office_id_long",
+static HEADER_NAMES: [&str; 20] = [
+    "office_code",
     "candidate_name",
     "office_id",
     "office_title",
     "county_id",
-    "other_id",
     "party_abbreviation",
     "residence_street_address",
     "residence_city",
@@ -26,11 +25,8 @@ static HEADER_NAMES: [&str; 21] = [
     "running_mate_phone",
 ];
 static GENERAL_LINK_TEXT: &str =
-    "Candidates in the General Election - Federal, State, and County Offices";
-pub async fn get_mn_sos_candidate_filings_fed_state_county() -> Result<(), Box<dyn Error>> {
-    let pool = db::pool().await;
-    let caps = DesiredCapabilities::chrome();
-    let driver = WebDriver::new("http://localhost:9515", caps).await?;
+    "Candidate Filings - Federal, State, and County Offices";
+pub async fn get_mn_sos_candidate_filings_fed_state_county(driver: &WebDriver) -> Result<(), Box<dyn Error>> {
     driver.goto("https://candidates.sos.mn.gov").await?;
 
     let link = driver.find(By::LinkText(GENERAL_LINK_TEXT)).await?;
@@ -58,13 +54,14 @@ pub async fn get_mn_sos_candidate_filings_fed_state_county() -> Result<(), Box<d
     }
     let csv_data_as_string = String::from_utf8(csv_string)?;
 
+    let pool = db::pool().await;
     sqlx::query!(
-        r#"DROP TABLE IF EXISTS p6t_state_mn.mn_candidate_filings_fed_state_county_2024 CASCADE;"#
+        r#"DROP TABLE IF EXISTS p6t_state_mn.mn_candidate_filings_fed_state_county_2025 CASCADE;"#
     )
     .execute(&pool.connection)
     .await?;
     let create_table_query = format!(
-        "CREATE TABLE p6t_state_mn.mn_candidate_filings_fed_state_county_2024 (
+        "CREATE TABLE p6t_state_mn.mn_candidate_filings_fed_state_county_2025 (
         {}
     );",
         HEADER_NAMES
@@ -78,17 +75,16 @@ pub async fn get_mn_sos_candidate_filings_fed_state_county() -> Result<(), Box<d
         .execute(&pool.connection)
         .await?;
     let mut tx = pool.connection.acquire().await?;
-    let copy_query = r#"COPY p6t_state_mn.mn_candidate_filings_fed_state_county_2024 FROM STDIN WITH CSV HEADER;"#;
+    let copy_query = r#"COPY p6t_state_mn.mn_candidate_filings_fed_state_county_2025 FROM STDIN WITH CSV HEADER;"#;
     let mut tx_copy = tx.copy_in_raw(copy_query).await?;
     tx_copy.send(csv_data_as_string.as_bytes()).await?;
     tx_copy.finish().await?;
 
-    driver.quit().await?;
     Ok(())
 }
 
 static PRIMARY_HEADER_NAMES: [&str; 21] = [
-    "office_id_long",
+    "office_code",
     "candidate_name",
     "office_id",
     "office_title",
@@ -113,11 +109,8 @@ static PRIMARY_HEADER_NAMES: [&str; 21] = [
 
 static PRIMARY_LINK_TEXT: &str = "Candidates in the Primary - Federal, State, and County Offices";
 
-pub async fn get_mn_sos_candidate_filings_fed_state_county_primaries() -> Result<(), Box<dyn Error>>
+pub async fn get_mn_sos_candidate_filings_fed_state_county_primaries(driver: &WebDriver) -> Result<(), Box<dyn Error>>
 {
-    let pool = db::pool().await;
-    let caps = DesiredCapabilities::chrome();
-    let driver = WebDriver::new("http://localhost:9515", caps).await?;
     driver.goto("https://candidates.sos.mn.gov").await?;
 
     let link = driver.find(By::LinkText(PRIMARY_LINK_TEXT)).await?;
@@ -147,6 +140,7 @@ pub async fn get_mn_sos_candidate_filings_fed_state_county_primaries() -> Result
     }
     let csv_data_as_string = String::from_utf8(csv_string)?;
 
+    let pool = db::pool().await;
     sqlx::query!(
         r#"DROP TABLE IF EXISTS p6t_state_mn.mn_candidate_filings_fed_state_county_primaries_2024 CASCADE;"#
     )
@@ -172,6 +166,5 @@ pub async fn get_mn_sos_candidate_filings_fed_state_county_primaries() -> Result
     tx_copy.send(csv_data_as_string.as_bytes()).await?;
     tx_copy.finish().await?;
 
-    driver.quit().await?;
     Ok(())
 }

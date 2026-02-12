@@ -1,17 +1,16 @@
-mod office;
-mod party;
-mod politician;
+pub mod party;
+pub mod politician;
 
-pub use office::*;
-pub use party::*;
-pub use politician::*;
+pub mod co;
+pub mod mn;
+pub mod tx;
 
 #[inline]
-fn owned_capture(capture: regex::Match) -> String {
+pub fn owned_capture(capture: regex::Match) -> String {
     capture.as_str().to_string()
 }
 
 #[inline]
-fn default_capture(captures: regex::Captures) -> Option<String> {
+pub fn default_capture(captures: regex::Captures) -> Option<String> {
     captures.get(1).map(owned_capture)
 }

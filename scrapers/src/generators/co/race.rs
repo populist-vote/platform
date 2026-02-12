@@ -5,6 +5,7 @@ use regex::Regex;
 use slugify::slugify;
 
 use crate::util::extensions::*;
+use crate::generators::optional_state_str;
 
 pub struct RaceTitleGenerator<'a> {
     pub race_type: &'a db::RaceType,
@@ -49,7 +50,7 @@ impl<'a> RaceTitleGenerator<'a> {
 
         let title = format!(
             "{} {} {} {} {} {}",
-            super::optional_state_str(self.state),
+            optional_state_str(self.state),
             self.office_name.unwrap_or_default(),
             qualifier.0,
             qualifier.1,

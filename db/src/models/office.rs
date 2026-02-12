@@ -103,6 +103,12 @@ pub enum DistrictType {
     SoilAndWater,
     Transportation,
     Park,
+    // Texas-specific (and potentially other states)
+    BoardOfEducation,
+    CourtOfAppeals,
+    JusticeOfThePeace,
+    Constable,
+    VotingPrecinct,
 }
 
 #[derive(
