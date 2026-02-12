@@ -153,6 +153,8 @@ impl RaceResult {
                 p.fec_candidate_id,
                 p.race_wins,
                 p.race_losses,
+                p.residence_address_id,
+                p.campaign_address_id,
                 p.created_at,
                 p.updated_at
             FROM

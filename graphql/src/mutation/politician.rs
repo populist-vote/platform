@@ -298,6 +298,8 @@ impl PoliticianMutation {
             fec_candidate_id,
             race_wins,
             race_losses,
+            residence_address_id,
+            campaign_address_id,
             created_at,
             updated_at
         "#,

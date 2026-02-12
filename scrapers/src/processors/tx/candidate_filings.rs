@@ -316,7 +316,11 @@ async fn process_and_insert_tx_filing(
     let office = process_tx_office(filing)?;
     let office_id = get_staging_office_id_by_slug(pool, &office.slug).await?;
     if office_id.is_none() {
-        insert_staging_office(pool, &office, filing.office_title.as_ref()).await?;
+        let state_id = filing
+            .office_title
+            .as_ref()
+            .map(|t| generators::politician::PoliticianRefKeyGenerator::new("tx-sos", t).generate());
+        insert_staging_office(pool, &office, state_id.as_ref()).await?;
     }
     let resolved_office_id = office_id.unwrap_or(office.id);
 
@@ -509,7 +513,9 @@ async fn process_tx_politician(
     let suffix = name_parts.suffix.as_deref().map(|s| title(s));
     let preferred_name = name_parts.preferred.as_deref().map(|s| title(s));
     let full_name_display = title(&candidate_name);
-    let slug = generators::politician::PoliticianSlugGenerator::new(&full_name_display).generate();
+    let slug = generators::politician::PoliticianSlugGenerator::new(&full_name_display)
+        .with_state("TX")
+        .generate();
 
     let is_incumbent = filing
         .incumbent
@@ -521,6 +527,8 @@ async fn process_tx_politician(
     } else {
         None
     };
+
+    let assets = generators::politician::politician_thumbnail_assets(&slug);
 
     Ok(Politician {
         id: Uuid::new_v4(),
@@ -540,7 +548,7 @@ async fn process_tx_politician(
         office_id,
         upcoming_race_id: None,
         thumbnail_image_url: None,
-        assets: JSON::Object(serde_json::Map::new()),
+        assets,
         official_website_url: None,
         campaign_website_url: None,
         facebook_url: None,
