@@ -4362,6 +4362,7 @@ dependencies = [
  "thirtyfour",
  "tokio",
  "tracing",
+ "unicode-normalization",
  "uuid",
 ]
 

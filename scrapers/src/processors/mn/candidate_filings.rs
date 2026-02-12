@@ -676,6 +676,8 @@ async fn process_politician(
         fec_candidate_id: None,
         race_wins: None,
         race_losses: None,
+        residence_address_id: None,
+        campaign_address_id: None,
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
     })

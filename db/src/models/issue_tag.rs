@@ -186,6 +186,8 @@ impl IssueTag {
                         fec_candidate_id,
                         race_wins,
                         race_losses,
+                        p.residence_address_id,
+                        p.campaign_address_id,
                         p.created_at,
                         p.updated_at FROM politician p
                 JOIN politician_issue_tags

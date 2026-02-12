@@ -311,6 +311,7 @@ impl Scraper {
             race_id: race.id,
             candidate_id: politician.id,
             ref_key: None,
+            is_running: None,
         }
     }
 }

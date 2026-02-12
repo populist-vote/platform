@@ -49,6 +49,8 @@ pub struct Politician {
     pub fec_candidate_id: Option<String>,
     pub race_wins: Option<i32>,
     pub race_losses: Option<i32>,
+    pub residence_address_id: Option<uuid::Uuid>,
+    pub campaign_address_id: Option<uuid::Uuid>,
     pub created_at: DateTime,
     pub updated_at: DateTime,
 }
@@ -93,6 +95,8 @@ pub struct InsertPoliticianInput {
     pub fec_candidate_id: Option<String>,
     pub race_wins: Option<i32>,
     pub race_losses: Option<i32>,
+    pub residence_address_id: Option<uuid::Uuid>,
+    pub campaign_address_id: Option<uuid::Uuid>,
 }
 
 #[serde_with::serde_as]
@@ -136,6 +140,8 @@ pub struct UpdatePoliticianInput {
     pub fec_candidate_id: Option<String>,
     pub race_wins: Option<i32>,
     pub race_losses: Option<i32>,
+    pub residence_address_id: Option<uuid::Uuid>,
+    pub campaign_address_id: Option<uuid::Uuid>,
 }
 
 #[serde_with::serde_as]
@@ -181,6 +187,8 @@ pub struct UpsertPoliticianInput {
     pub fec_candidate_id: Option<String>,
     pub race_wins: Option<i32>,
     pub race_losses: Option<i32>,
+    pub residence_address_id: Option<uuid::Uuid>,
+    pub campaign_address_id: Option<uuid::Uuid>,
 }
 
 pub enum PoliticianIdentifier {
@@ -223,8 +231,8 @@ impl Politician {
         let record = sqlx::query_as!(
             Politician,
             r#"
-            INSERT INTO politician (slug, first_name, middle_name, last_name, suffix, preferred_name, biography, biography_source, home_state, date_of_birth, office_id, upcoming_race_id, thumbnail_image_url, assets, official_website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, phone, party_id, votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses)
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33) 
+            INSERT INTO politician (slug, first_name, middle_name, last_name, suffix, preferred_name, biography, biography_source, home_state, date_of_birth, office_id, upcoming_race_id, thumbnail_image_url, assets, official_website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, phone, party_id, votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses, residence_address_id, campaign_address_id)
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35) 
             RETURNING
                 id,
                 slug,
@@ -262,6 +270,8 @@ impl Politician {
                 fec_candidate_id,
                 race_wins,
                 race_losses,
+                residence_address_id,
+                campaign_address_id,
                 created_at,
                 updated_at
 
@@ -299,6 +309,8 @@ impl Politician {
             input.fec_candidate_id,
             input.race_wins,
             input.race_losses,
+            input.residence_address_id,
+            input.campaign_address_id,
         ).fetch_one(db_pool).await?;
 
         Ok(record)
@@ -360,8 +372,8 @@ impl Politician {
         sqlx::query_as!(
             Politician,
             r#"
-            INSERT INTO politician (ref_key, slug, first_name, middle_name, last_name, suffix, preferred_name, full_name, biography, biography_source, home_state, date_of_birth, office_id, upcoming_race_id, thumbnail_image_url, assets, official_website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, phone, party_id, votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses)
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, COALESCE($16, '{}'::jsonb), $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, COALESCE($29, '{}'::jsonb), COALESCE($30, '{}'::jsonb), $31, $32, $33, $34, $35) 
+            INSERT INTO politician (ref_key, slug, first_name, middle_name, last_name, suffix, preferred_name, full_name, biography, biography_source, home_state, date_of_birth, office_id, upcoming_race_id, thumbnail_image_url, assets, official_website_url, campaign_website_url, facebook_url, twitter_url, instagram_url, youtube_url, linkedin_url, tiktok_url, email, phone, party_id, votesmart_candidate_id, votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id, crp_candidate_id, fec_candidate_id, race_wins, race_losses, residence_address_id, campaign_address_id)
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, COALESCE($16, '{}'::jsonb), $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, COALESCE($29, '{}'::jsonb), COALESCE($30, '{}'::jsonb), $31, $32, $33, $34, $35, $36, $37) 
             ON CONFLICT (ref_key) DO UPDATE SET
                 slug = COALESCE($2, politician.slug),
                 first_name = COALESCE($3, politician.first_name),
@@ -396,7 +408,9 @@ impl Politician {
                 crp_candidate_id = COALESCE($32, politician.crp_candidate_id),
                 fec_candidate_id = COALESCE($33, politician.fec_candidate_id),
                 race_wins = COALESCE($34, politician.race_wins),
-                race_losses = COALESCE($35, politician.race_losses)
+                race_losses = COALESCE($35, politician.race_losses),
+                residence_address_id = COALESCE($36, politician.residence_address_id),
+                campaign_address_id = COALESCE($37, politician.campaign_address_id)
             RETURNING
                 id,
                 slug,
@@ -434,6 +448,8 @@ impl Politician {
                 fec_candidate_id,
                 race_wins,
                 race_losses,
+                residence_address_id,
+                campaign_address_id,
                 created_at,
                 updated_at
 
@@ -473,6 +489,8 @@ impl Politician {
             input.fec_candidate_id,
             input.race_wins,
             input.race_losses,
+            input.residence_address_id,
+            input.campaign_address_id,
         ).fetch_one(db_pool).await
     }
 
@@ -517,7 +535,9 @@ impl Politician {
                 crp_candidate_id = COALESCE($31, politician.crp_candidate_id),
                 fec_candidate_id = COALESCE($32, politician.fec_candidate_id),
                 race_wins = COALESCE($33, politician.race_wins),
-                race_losses = COALESCE($34, politician.race_losses)
+                race_losses = COALESCE($34, politician.race_losses),
+                residence_address_id = COALESCE($35, politician.residence_address_id),
+                campaign_address_id = COALESCE($36, politician.campaign_address_id)
             WHERE id = $1
             RETURNING
                 id,
@@ -556,6 +576,8 @@ impl Politician {
                 fec_candidate_id,
                 race_wins,
                 race_losses,
+                residence_address_id,
+                campaign_address_id,
                 created_at,
                 updated_at
             "#,
@@ -593,6 +615,8 @@ impl Politician {
             input.fec_candidate_id,
             input.race_wins,
             input.race_losses,
+            input.residence_address_id,
+            input.campaign_address_id,
         )
         .fetch_one(db_pool)
         .await?;
@@ -659,6 +683,8 @@ impl Politician {
                         fec_candidate_id,
                         race_wins,
                         race_losses,
+                        residence_address_id,
+                        campaign_address_id,
                         created_at,
                         updated_at FROM politician"#,
         )
@@ -707,6 +733,8 @@ impl Politician {
                         fec_candidate_id,
                         race_wins,
                         race_losses,
+                        residence_address_id,
+                        campaign_address_id,
                         created_at,
                         updated_at FROM politician
                 WHERE id = $1
@@ -758,6 +786,8 @@ impl Politician {
                         fec_candidate_id,
                         race_wins,
                         race_losses,
+                        residence_address_id,
+                        campaign_address_id,
                         created_at,
                         updated_at FROM politician
                 WHERE slug = $1
@@ -813,6 +843,8 @@ impl Politician {
                         fec_candidate_id,
                         race_wins,
                         race_losses,
+                        residence_address_id,
+                        campaign_address_id,
                         created_at,
                         updated_at FROM politician
                 WHERE intake_token = $1
@@ -869,6 +901,8 @@ impl Politician {
                         fec_candidate_id,
                         race_wins,
                         race_losses,
+                        p.residence_address_id,
+                        p.campaign_address_id,
                         p.created_at,
                         p.updated_at 
                 FROM politician p
@@ -972,6 +1006,8 @@ impl Politician {
                         fec_candidate_id,
                         race_wins,
                         race_losses,
+                        p.residence_address_id,
+                        p.campaign_address_id,
                         p.created_at,
                         p.updated_at FROM politician p
                 JOIN politician_politician_endorsements

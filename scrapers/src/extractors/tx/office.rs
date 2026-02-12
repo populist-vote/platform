@@ -7,6 +7,7 @@ use std::sync::OnceLock;
 
 use regex::Regex;
 
+use crate::extractors::politician::title_case;
 use crate::extractors::{default_capture, owned_capture};
 
 /// Strip "COUNTY_NAME - " prefix from raw title; returns (county_name_if_any, rest).
@@ -64,19 +65,6 @@ fn strip_county_suffix(input: &str) -> (Option<String>, String) {
         }
     }
     (None, normalize_whitespace(trimmed))
-}
-
-fn title_case(s: &str) -> String {
-    s.split_whitespace()
-        .map(|w| {
-            let mut c = w.chars();
-            match c.next() {
-                None => String::new(),
-                Some(f) => f.to_uppercase().chain(c.flat_map(|c| c.to_lowercase())).collect(),
-            }
-        })
-        .collect::<Vec<_>>()
-        .join(" ")
 }
 
 static TX_COUNTY_PREFIX_REGEX: OnceLock<Regex> = OnceLock::new();
@@ -161,14 +149,16 @@ pub fn extract_tx_county_from_office_title(
     if office_name_allows_county_suffix(office_name) {
         let (from_suffix, rest_after_suffix) = strip_county_suffix(input.trim());
         if let Some(county) = from_suffix {
-            return (Some(normalize_county_name(&county)), rest_after_suffix);
+            let name = normalize_county_name(&county);
+            return (Some(title_case(&name)), rest_after_suffix);
         }
         return (None, normalize_whitespace(input.trim()));
     }
     let (from_prefix, rest) = strip_county_prefix(input);
     if let Some(ref county) = from_prefix {
         if is_valid_texas_county(county) {
-            return (Some(normalize_county_name(county)), normalize_whitespace(rest));
+            let name = normalize_county_name(county);
+            return (Some(title_case(&name)), normalize_whitespace(rest));
         }
     }
     (None, normalize_whitespace(input.trim()))
@@ -292,7 +282,10 @@ pub fn extract_office_name(input: &str, party: Option<&str>) -> Option<String> {
         return Some("County Tax Assessor-Collector".to_string());
     }
     if input_lower.contains("county chair") {
-        return Some("County Chair".to_string());
+        let name = party_to_letter(party)
+            .map(|letter| format!("County Chair ({})", letter))
+            .unwrap_or_else(|| "County Chair".to_string());
+        return Some(name);
     }
     if input_lower.contains("justice of the peace") {
         return Some("Justice of the Peace".to_string());
@@ -302,6 +295,9 @@ pub fn extract_office_name(input: &str, party: Option<&str>) -> Option<String> {
     }
     if input_lower.contains("sheriff") {
         return Some("Sheriff".to_string());
+    }
+    if input_lower.contains("department of education") {
+        return Some("Department of Education".to_string());
     }
 
     // County Judicial Offices
@@ -317,7 +313,7 @@ pub fn extract_office_name(input: &str, party: Option<&str>) -> Option<String> {
     if input_lower.contains("county criminal court") {
         return Some("Judge - County Criminal Court at Law".to_string());
     }
-    if input_lower.contains("county probate court at law") {
+    if input_lower.contains("probate court") {
         return Some("Judge - Probate Court".to_string());
     }
     if input_lower.contains("county court at law") {
@@ -369,15 +365,30 @@ pub fn extract_office_chamber(name: &str) -> Option<db::Chamber> {
 // raw filing input will be used later to distinguish state judicial vs county.
 
 /// Returns (political_scope, election_scope, district_type) for the given office name.
-/// Takes raw filing input and optional county (e.g. for District Attorney: county set => local/county, else state/district/judicial).
+/// Takes raw filing input, optional county, and optional seat (e.g. for Department of Education + Harris).
 /// Returns None when scope cannot be determined.
 pub fn extract_office_scope(
     name: &str,
     county: Option<&str>,
+    seat: Option<&str>,
 ) -> Option<(db::PoliticalScope, db::ElectionScope, Option<db::DistrictType>)> {
     use db::{DistrictType, ElectionScope, PoliticalScope};
 
     let out: (PoliticalScope, ElectionScope, Option<DistrictType>) = match name {
+        "Department of Education" => {
+            let is_harris = county.map(|c| {
+                let t = c.trim();
+                t.eq_ignore_ascii_case("Harris")
+            }).unwrap_or(false);
+            if is_harris {
+                match seat {
+                    Some("7") | Some("5") | Some("3") => (PoliticalScope::Local, ElectionScope::County, None),
+                    _ => (PoliticalScope::Local, ElectionScope::District, Some(DistrictType::County)),
+                }
+            } else {
+                (PoliticalScope::Local, ElectionScope::County, None)
+            }
+        }
         "U.S. House" => (PoliticalScope::Federal, ElectionScope::District, Some(DistrictType::UsCongressional)),
         "U.S. Senate" => (PoliticalScope::Federal, ElectionScope::State, None),
         "Governor" | "Lieutenant Governor" | "Attorney General" | "Railroad Commissioner"
@@ -401,7 +412,7 @@ pub fn extract_office_scope(
         }
         "County Commissioner" => (PoliticalScope::Local, ElectionScope::District, Some(DistrictType::County)),
         "County Judge" | "County Clerk" | "District Clerk" | "County Attorney" | "County Treasurer"
-        | "County Surveyor" | "County Tax Assessor-Collector" | "County Chair" | "County & District Clerk"
+        | "County Surveyor" | "County Tax Assessor-Collector" | "County Chair (D)" | "County Chair (R)" | "County & District Clerk"
         | "Sheriff" | "Judge - County Court at Law" | "Judge - 1st Multicounty Court at Law" | "Judge - County Civil Court at Law"
         | "Judge - County Criminal Court of Appeals" | "Judge - County Criminal Court at Law"
         | "Judge - Probate Court" | "Judge - Criminal District" => (PoliticalScope::Local, ElectionScope::County, None),
@@ -438,6 +449,19 @@ fn normalize_precinct_district_list(s: &str) -> String {
     numbers.join(", ")
 }
 
+/// For PCHR segment: ignore leading letters and "."/space; ignore "." throughout; return numbers + any letters after.
+fn normalize_precinct_district(segment: &str) -> Option<String> {
+    let trimmed = segment
+        .trim_start_matches(|c: char| c.is_alphabetic() || c == '.' || c.is_whitespace());
+    let without_dots = trimmed.replace('.', "");
+    let out = without_dots.trim();
+    if out.is_empty() {
+        None
+    } else {
+        Some(out.to_string())
+    }
+}
+
 pub fn extract_office_district(input: &str) -> Option<String> {
     let input_lower = normalized_office_part(input);
     let extractors = TX_DISTRICT_EXTRACTORS.get_or_init(|| {
@@ -452,8 +476,8 @@ pub fn extract_office_district(input: &str) -> Option<String> {
             Regex::new(r"(?i)([0-9]{1,3})(?:st|nd|rd|th)\s+court\s+of\s+appeals\s+district").unwrap(),
             // [4] Ordinal + "Judicial District" – more specific than [1]
             Regex::new(r"(?i)([0-9]{1,3})(?:st|nd|rd|th)\s+judicial\s+district").unwrap(),
-            // [5] PCHR_<digits>_ (precinct chair)
-            Regex::new(r"(?i)pchr_([0-9]+)_").unwrap(),
+            // [5] PCHR_<segment>_rep|_dem (precinct chair): capture segment between pchr_ and _rep/_dem; then ignore leading letters, ignore "." throughout, keep numbers + letters after
+            Regex::new(r"(?i)pchr_(.+?)_(?:rep|dem)").unwrap(),
             // [6] "No." + number
             Regex::new(r"(?i)no\.\s*([0-9]{1,3}[A-Za-z]*)").unwrap(),
             // [7] "#" + number
@@ -468,7 +492,9 @@ pub fn extract_office_district(input: &str) -> Option<String> {
     if input_lower.contains("pchr_") {
         if let Some(caps) = extractors[5].captures(input) {
             if let Some(m) = caps.get(1) {
-                return Some(m.as_str().to_string());
+                if let Some(normalized) = normalize_precinct_district(m.as_str()) {
+                    return Some(normalized);
+                }
             }
         }
     }

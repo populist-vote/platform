@@ -39,6 +39,52 @@ pub struct Coordinates {
     pub longitude: f64,
 }
 
+/// Input for creating a new address. Used by scrapers and other code that does not geocode.
+#[derive(Debug, Clone)]
+pub struct InsertAddressInput {
+    pub line_1: String,
+    pub line_2: Option<String>,
+    pub city: String,
+    pub state: State,
+    pub country: String,
+    pub postal_code: String,
+    pub county: Option<String>,
+    pub congressional_district: Option<String>,
+    pub state_senate_district: Option<String>,
+    pub state_house_district: Option<String>,
+    pub lon: Option<f64>,
+    pub lat: Option<f64>,
+}
+
+/// Input for updating an existing address. All fields optional except id.
+#[derive(Debug, Clone)]
+pub struct UpdateAddressInput {
+    pub id: uuid::Uuid,
+    pub line_1: Option<String>,
+    pub line_2: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<State>,
+    pub country: Option<String>,
+    pub postal_code: Option<String>,
+    pub county: Option<String>,
+    pub congressional_district: Option<String>,
+    pub state_senate_district: Option<String>,
+    pub state_house_district: Option<String>,
+    pub lon: Option<f64>,
+    pub lat: Option<f64>,
+}
+
+/// Parameters for searching addresses. All fields optional; combined with AND.
+#[derive(Debug, Clone, Default)]
+pub struct SearchAddressParams {
+    pub line_1_contains: Option<String>,
+    pub city: Option<String>,
+    pub state: Option<State>,
+    pub country: Option<String>,
+    pub postal_code_prefix: Option<String>,
+    pub limit: Option<u32>,
+}
+
 #[derive(FromRow, Debug, Clone)]
 pub struct AddressExtendedMN {
     pub gid: i32,
@@ -102,6 +148,361 @@ impl Address {
         .await?;
 
         Ok(address)
+    }
+
+    /// Fetch an address by id.
+    pub async fn find_by_id(
+        pool: &PgPool,
+        id: &uuid::Uuid,
+    ) -> Result<Option<Address>, sqlx::Error> {
+        let address = sqlx::query_as!(
+            Address,
+            r#"
+            SELECT
+                id,
+                line_1,
+                line_2,
+                city,
+                county,
+                state AS "state:State",
+                postal_code,
+                country,
+                congressional_district,
+                state_senate_district,
+                state_house_district
+            FROM address
+            WHERE id = $1
+            "#,
+            id
+        )
+        .fetch_optional(pool)
+        .await?;
+        Ok(address)
+    }
+
+    /// Find an address by the unique key (line_1, line_2, city, state, country, postal_code).
+    pub async fn find_by_unique_key(
+        pool: &PgPool,
+        line_1: &str,
+        line_2: Option<&str>,
+        city: &str,
+        state: &State,
+        country: &str,
+        postal_code: &str,
+    ) -> Result<Option<Address>, sqlx::Error> {
+        let address = sqlx::query_as!(
+            Address,
+            r#"
+            SELECT
+                id,
+                line_1,
+                line_2,
+                city,
+                county,
+                state AS "state:State",
+                postal_code,
+                country,
+                congressional_district,
+                state_senate_district,
+                state_house_district
+            FROM address
+            WHERE line_1 = $1
+              AND line_2 IS NOT DISTINCT FROM $2
+              AND city = $3
+              AND state = $4
+              AND country = $5
+              AND postal_code = $6
+            "#,
+            line_1,
+            line_2,
+            city,
+            state.to_string(),
+            country,
+            postal_code
+        )
+        .fetch_optional(pool)
+        .await?;
+        Ok(address)
+    }
+
+    /// Insert a new address. If (line_1, line_2, city, state, country, postal_code) already exists,
+    /// updates lon/lat and district fields and returns the existing row.
+    pub async fn insert(
+        pool: &PgPool,
+        input: &InsertAddressInput,
+    ) -> Result<Address, sqlx::Error> {
+        let (lon, lat) = (input.lon, input.lat);
+        let has_coords = lon.is_some() && lat.is_some();
+        let row = if has_coords {
+            let lon = lon.unwrap();
+            let lat = lat.unwrap();
+            let wkt = format!("POINT({} {})", lon, lat);
+            sqlx::query_as!(
+                Address,
+                r#"
+                INSERT INTO address (line_1, line_2, city, state, county, country, postal_code,
+                    lon, lat, geog, geom, congressional_district, state_senate_district, state_house_district)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9,
+                    ST_SetSRID(ST_MakePoint($8, $9), 4326), ST_GeomFromText($10, 4326),
+                    $11, $12, $13)
+                ON CONFLICT (line_1, line_2, city, state, country, postal_code)
+                DO UPDATE SET
+                    lon = EXCLUDED.lon,
+                    lat = EXCLUDED.lat,
+                    geog = EXCLUDED.geog,
+                    geom = EXCLUDED.geom,
+                    county = COALESCE(EXCLUDED.county, address.county),
+                    congressional_district = COALESCE(EXCLUDED.congressional_district, address.congressional_district),
+                    state_senate_district = COALESCE(EXCLUDED.state_senate_district, address.state_senate_district),
+                    state_house_district = COALESCE(EXCLUDED.state_house_district, address.state_house_district)
+                RETURNING
+                    id,
+                    line_1,
+                    line_2,
+                    city,
+                    county,
+                    state AS "state:State",
+                    postal_code,
+                    country,
+                    congressional_district,
+                    state_senate_district,
+                    state_house_district
+                "#,
+                input.line_1,
+                input.line_2,
+                input.city,
+                input.state.to_string(),
+                input.county,
+                input.country,
+                input.postal_code,
+                lon,
+                lat,
+                wkt,
+                input.congressional_district,
+                input.state_senate_district,
+                input.state_house_district
+            )
+            .fetch_one(pool)
+            .await?
+        } else {
+            sqlx::query_as!(
+                Address,
+                r#"
+                INSERT INTO address (line_1, line_2, city, state, county, country, postal_code,
+                    congressional_district, state_senate_district, state_house_district)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                ON CONFLICT (line_1, line_2, city, state, country, postal_code)
+                DO UPDATE SET
+                    county = COALESCE(EXCLUDED.county, address.county),
+                    congressional_district = COALESCE(EXCLUDED.congressional_district, address.congressional_district),
+                    state_senate_district = COALESCE(EXCLUDED.state_senate_district, address.state_senate_district),
+                    state_house_district = COALESCE(EXCLUDED.state_house_district, address.state_house_district)
+                RETURNING
+                    id,
+                    line_1,
+                    line_2,
+                    city,
+                    county,
+                    state AS "state:State",
+                    postal_code,
+                    country,
+                    congressional_district,
+                    state_senate_district,
+                    state_house_district
+                "#,
+                input.line_1,
+                input.line_2,
+                input.city,
+                input.state.to_string(),
+                input.county,
+                input.country,
+                input.postal_code,
+                input.congressional_district,
+                input.state_senate_district,
+                input.state_house_district
+            )
+            .fetch_one(pool)
+            .await?
+        };
+        Ok(row)
+    }
+
+    /// Find an address by unique key, or insert it if not found.
+    pub async fn find_or_create(
+        pool: &PgPool,
+        input: &InsertAddressInput,
+    ) -> Result<Address, sqlx::Error> {
+        if let Some(addr) = Self::find_by_unique_key(
+            pool,
+            &input.line_1,
+            input.line_2.as_deref(),
+            &input.city,
+            &input.state,
+            &input.country,
+            &input.postal_code,
+        )
+        .await?
+        {
+            return Ok(addr);
+        }
+        Self::insert(pool, input).await
+    }
+
+    /// Update an existing address by id. Only provided fields are updated.
+    pub async fn update(
+        pool: &PgPool,
+        input: &UpdateAddressInput,
+    ) -> Result<Address, sqlx::Error> {
+        let has_coords = input.lon.is_some() && input.lat.is_some();
+        let row = if has_coords {
+            let lon = input.lon.unwrap();
+            let lat = input.lat.unwrap();
+            let wkt = format!("POINT({} {})", lon, lat);
+            sqlx::query_as!(
+                Address,
+                r#"
+                UPDATE address
+                SET
+                    line_1 = COALESCE($2, line_1),
+                    line_2 = COALESCE($3, line_2),
+                    city = COALESCE($4, city),
+                    state = COALESCE($5, state),
+                    county = COALESCE($6, county),
+                    country = COALESCE($7, country),
+                    postal_code = COALESCE($8, postal_code),
+                    lon = COALESCE($9, lon),
+                    lat = COALESCE($10, lat),
+                    geog = COALESCE(ST_SetSRID(ST_MakePoint($9, $10), 4326), geog),
+                    geom = COALESCE(ST_GeomFromText($11, 4326), geom),
+                    congressional_district = COALESCE($12, congressional_district),
+                    state_senate_district = COALESCE($13, state_senate_district),
+                    state_house_district = COALESCE($14, state_house_district)
+                WHERE id = $1
+                RETURNING
+                    id,
+                    line_1,
+                    line_2,
+                    city,
+                    county,
+                    state AS "state:State",
+                    postal_code,
+                    country,
+                    congressional_district,
+                    state_senate_district,
+                    state_house_district
+                "#,
+                input.id,
+                input.line_1,
+                input.line_2,
+                input.city,
+                input.state.as_ref().map(|s| s.to_string()),
+                input.county,
+                input.country,
+                input.postal_code,
+                lon,
+                lat,
+                wkt,
+                input.congressional_district,
+                input.state_senate_district,
+                input.state_house_district
+            )
+            .fetch_one(pool)
+            .await?
+        } else {
+            sqlx::query_as!(
+                Address,
+                r#"
+                UPDATE address
+                SET
+                    line_1 = COALESCE($2, line_1),
+                    line_2 = COALESCE($3, line_2),
+                    city = COALESCE($4, city),
+                    state = COALESCE($5, state),
+                    county = COALESCE($6, county),
+                    country = COALESCE($7, country),
+                    postal_code = COALESCE($8, postal_code),
+                    congressional_district = COALESCE($9, congressional_district),
+                    state_senate_district = COALESCE($10, state_senate_district),
+                    state_house_district = COALESCE($11, state_house_district)
+                WHERE id = $1
+                RETURNING
+                    id,
+                    line_1,
+                    line_2,
+                    city,
+                    county,
+                    state AS "state:State",
+                    postal_code,
+                    country,
+                    congressional_district,
+                    state_senate_district,
+                    state_house_district
+                "#,
+                input.id,
+                input.line_1,
+                input.line_2,
+                input.city,
+                input.state.as_ref().map(|s| s.to_string()),
+                input.county,
+                input.country,
+                input.postal_code,
+                input.congressional_district,
+                input.state_senate_district,
+                input.state_house_district
+            )
+            .fetch_one(pool)
+            .await?
+        };
+        Ok(row)
+    }
+
+    /// Search addresses by optional filters. Conditions are ANDed. Limit defaults to 100.
+    pub async fn search(
+        pool: &PgPool,
+        params: &SearchAddressParams,
+    ) -> Result<Vec<Address>, sqlx::Error> {
+        let limit = params.limit.unwrap_or(100).min(500) as i64;
+        let line_1_contains = params
+            .line_1_contains
+            .as_deref()
+            .map(|s| format!("%{}%", s));
+        let postal_code_prefix = params.postal_code_prefix.as_deref();
+
+        let rows = sqlx::query_as!(
+            Address,
+            r#"
+            SELECT
+                id,
+                line_1,
+                line_2,
+                city,
+                county,
+                state AS "state:State",
+                postal_code,
+                country,
+                congressional_district,
+                state_senate_district,
+                state_house_district
+            FROM address
+            WHERE
+                ($1::text IS NULL OR line_1 ILIKE $1)
+                AND ($2::text IS NULL OR city = $2)
+                AND ($3::text IS NULL OR state = $3)
+                AND ($4::text IS NULL OR country = $4)
+                AND ($5::text IS NULL OR postal_code LIKE $5 || '%')
+            ORDER BY city, line_1
+            LIMIT $6
+            "#,
+            line_1_contains,
+            params.city.as_deref(),
+            params.state.as_ref().map(|s| s.to_string()),
+            params.country.as_deref(),
+            postal_code_prefix,
+            limit
+        )
+        .fetch_all(pool)
+        .await?;
+        Ok(rows)
     }
 
     pub async fn extended_mn_by_address_id(

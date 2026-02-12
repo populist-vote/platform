@@ -77,8 +77,8 @@ WITH matches AS (
             LOWER(COALESCE(stg.first_name, '') || ' ' || COALESCE(stg.middle_name, '') || ' ' || stg.last_name),
             LOWER(COALESCE(prod.first_name, '') || ' ' || COALESCE(prod.middle_name, '') || ' ' || prod.last_name)
         ) AS full_name_similarity,
-        -- Match type indicators
-        CASE WHEN stg.email = prod.email AND stg.email IS NOT NULL AND prod.email IS NOT NULL THEN 'exact_email'
+        -- Match type indicators (exclude empty string so two null/empty emails or phones don't match)
+        CASE WHEN stg.email = prod.email AND stg.email IS NOT NULL AND prod.email IS NOT NULL AND stg.email <> '' AND prod.email <> '' THEN 'exact_email'
              WHEN stg.phone = prod.phone AND stg.phone IS NOT NULL AND prod.phone IS NOT NULL AND stg.phone <> '' AND prod.phone <> '' THEN 'exact_phone'
              WHEN LOWER(stg.first_name) = LOWER(prod.first_name) 
                   AND LOWER(stg.last_name) = LOWER(prod.last_name) 
@@ -101,9 +101,9 @@ WITH matches AS (
     FROM ingest_staging.stg_mn_politicians stg
     CROSS JOIN politician prod
     WHERE 
-        -- Exact matches
+        -- Exact matches (exclude when both email or both phone are empty)
         stg.slug = prod.slug
-        OR (stg.email = prod.email AND stg.email IS NOT NULL AND prod.email IS NOT NULL)
+        OR (stg.email = prod.email AND stg.email IS NOT NULL AND prod.email IS NOT NULL AND stg.email <> '' AND prod.email <> '')
         OR (stg.phone = prod.phone AND stg.phone IS NOT NULL AND prod.phone IS NOT NULL AND stg.phone <> '' AND prod.phone <> '')
         OR (
             LOWER(stg.first_name) = LOWER(prod.first_name) 
@@ -138,7 +138,7 @@ ORDER BY
 -- Option 3: Summary view showing match counts by type
 SELECT 
     CASE 
-        WHEN stg.email = prod.email AND stg.email IS NOT NULL AND prod.email IS NOT NULL THEN 'Exact Email Match'
+        WHEN stg.email = prod.email AND stg.email IS NOT NULL AND prod.email IS NOT NULL AND stg.email <> '' AND prod.email <> '' THEN 'Exact Email Match'
         WHEN stg.phone = prod.phone AND stg.phone IS NOT NULL AND prod.phone IS NOT NULL AND stg.phone <> '' AND prod.phone <> '' THEN 'Exact Phone Match'
         WHEN LOWER(stg.first_name) = LOWER(prod.first_name) 
              AND LOWER(stg.last_name) = LOWER(prod.last_name)
@@ -162,7 +162,7 @@ FROM ingest_staging.stg_mn_politicians stg
 CROSS JOIN politician prod
 WHERE 
     stg.slug = prod.slug
-    OR (stg.email = prod.email AND stg.email IS NOT NULL AND prod.email IS NOT NULL)
+    OR (stg.email = prod.email AND stg.email IS NOT NULL AND prod.email IS NOT NULL AND stg.email <> '' AND prod.email <> '')
     OR (stg.phone = prod.phone AND stg.phone IS NOT NULL AND prod.phone IS NOT NULL AND stg.phone <> '' AND prod.phone <> '')
     OR (
         LOWER(stg.first_name) = LOWER(prod.first_name) 
