@@ -5,9 +5,9 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use sqlx::PgPool;
 use db::{
-    Chamber, DistrictType, ElectionScope, Office, Politician, PoliticalScope, Race, RaceCandidate,
-    RaceType, State, UpdatePoliticianInput, UpsertOfficeInput, UpsertPoliticianInput,
-    UpsertRaceCandidateInput, UpsertRaceInput, VoteType,
+    Address, Chamber, DistrictType, ElectionScope, InsertAddressInput, Office, Politician,
+    PoliticalScope, Race, RaceCandidate, RaceType, State, UpdatePoliticianInput, UpsertOfficeInput,
+    UpsertPoliticianInput, UpsertRaceCandidateInput, UpsertRaceInput, VoteType,
 };
 
 #[derive(sqlx::FromRow, Debug)]
@@ -50,6 +50,15 @@ struct StgPolitician {
     email: Option<String>,
     phone: Option<String>,
     campaign_website_url: Option<String>,
+    residence_address_id: Option<uuid::Uuid>,
+}
+
+#[derive(sqlx::FromRow, Debug)]
+struct StgAddress {
+    line_1: String,
+    city: String,
+    state: String,
+    country: String,
 }
 
 #[derive(sqlx::FromRow, Debug)]
@@ -117,7 +126,7 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
     // 2. Politicians: resolve by email / phone, else upsert; build stg_politician_id -> prod_politician_id
     println!("Merging politicians...");
     let stg_politicians: Vec<StgPolitician> = sqlx::query_as(
-        "SELECT id, slug, ref_key, first_name, middle_name, last_name, suffix, preferred_name, full_name, home_state, party_id, email, phone, campaign_website_url FROM ingest_staging.stg_tx_politicians",
+        "SELECT id, slug, ref_key, first_name, middle_name, last_name, suffix, preferred_name, full_name, home_state, party_id, email, phone, campaign_website_url, residence_address_id FROM ingest_staging.stg_tx_politicians",
     )
     .fetch_all(pool)
     .await?;
@@ -312,6 +321,44 @@ async fn update_matched_politician_from_staging(
     Ok(())
 }
 
+async fn fetch_stg_tx_address(
+    pool: &PgPool,
+    residence_address_id: uuid::Uuid,
+) -> Result<Option<StgAddress>, Box<dyn std::error::Error>> {
+    let row = sqlx::query_as(
+        "SELECT line_1, city, state, country FROM ingest_staging.stg_tx_addresses WHERE id = $1",
+    )
+    .bind(residence_address_id)
+    .fetch_optional(pool)
+    .await?;
+    Ok(row)
+}
+
+/// Insert the staging address into production address (or return existing id by unique key).
+/// Returns the production address id.
+async fn merge_staging_address_to_production(
+    pool: &PgPool,
+    stg: &StgAddress,
+) -> Result<uuid::Uuid, Box<dyn std::error::Error>> {
+    let state = parse_state(Some(&stg.state)).unwrap_or(State::TX);
+    let input = InsertAddressInput {
+        line_1: stg.line_1.clone(),
+        line_2: None,
+        city: stg.city.clone(),
+        state,
+        country: stg.country.clone(),
+        postal_code: String::new(),
+        county: None,
+        congressional_district: None,
+        state_senate_district: None,
+        state_house_district: None,
+        lon: None,
+        lat: None,
+    };
+    let addr = Address::insert(pool, &input).await?;
+    Ok(addr.id)
+}
+
 async fn office_slug_exists(pool: &PgPool, slug: &str) -> Result<bool, Box<dyn std::error::Error>> {
     let row: Option<(uuid::Uuid,)> = sqlx::query_as(
         "SELECT id FROM office WHERE slug = $1",
@@ -389,6 +436,19 @@ async fn resolve_or_upsert_politician(
     }
 
     // 3. Insert/update via upsert_from_source (requires ref_key and slug) — new politician
+    // If staging has residence_address_id, insert the address from stg_tx_addresses into production
+    // and use the new address id for the politician insert.
+    let residence_address_id = match stg.residence_address_id {
+        Some(stg_addr_id) => {
+            let stg_addr = fetch_stg_tx_address(pool, stg_addr_id).await?;
+            match stg_addr {
+                Some(addr) => Some(merge_staging_address_to_production(pool, &addr).await?),
+                None => None,
+            }
+        }
+        None => None,
+    };
+
     // If staging slug already exists in production, use slug-1, slug-2, ... until unique
     let slug = resolve_unique_politician_slug(pool, &stg.slug).await?;
     let ref_key = stg
@@ -435,6 +495,8 @@ async fn resolve_or_upsert_politician(
         fec_candidate_id: None,
         race_wins: None,
         race_losses: None,
+        residence_address_id,
+        campaign_address_id: None,
     };
     let prod = Politician::upsert_from_source(pool, &input).await?;
     Ok((prod.id, false))
