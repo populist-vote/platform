@@ -226,6 +226,7 @@ async fn create_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>> {
             race_wins INTEGER,
             race_losses INTEGER,
             residence_address_id UUID,
+            treat_exact_slug_as_same_person BOOLEAN NOT NULL DEFAULT false,
             created_at TIMESTAMPTZ NOT NULL,
             updated_at TIMESTAMPTZ NOT NULL
         )
@@ -771,11 +772,11 @@ async fn execute_staging_politician_insert(
             linkedin_url, tiktok_url, email, phone, votesmart_candidate_id,
             votesmart_candidate_bio, votesmart_candidate_ratings, legiscan_people_id,
             crp_candidate_id, fec_candidate_id, race_wins, race_losses,
-            residence_address_id, created_at, updated_at
+            residence_address_id, treat_exact_slug_as_same_person, created_at, updated_at
         ) VALUES (
             $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
             $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34,
-            $35, $36, $37, $38, $39
+            $35, $36, $37, $38, $39, $40
         )
         ON CONFLICT (slug) DO NOTHING
         "#,
@@ -817,6 +818,7 @@ async fn execute_staging_politician_insert(
     .bind(politician.race_wins)
     .bind(politician.race_losses)
     .bind(politician.residence_address_id)
+    .bind(false) // treat_exact_slug_as_same_person
     .bind(politician.created_at)
     .bind(politician.updated_at)
     .execute(pool)

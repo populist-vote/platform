@@ -344,6 +344,7 @@ async fn update_matched_politician_from_staging(
         .cloned();
     let input = UpdatePoliticianInput {
         id,
+        ref_key: stg.ref_key.clone(),
         slug: None,
         first_name: Some(stg.first_name.clone()),
         middle_name,
@@ -647,7 +648,7 @@ async fn merge_staging_address_to_production(
         lon: None,
         lat: None,
     };
-    let addr = Address::insert(pool, &input).await?;
+    let addr = Address::upsert(pool, &input).await?;
     Ok(addr.id)
 }
 

@@ -263,6 +263,7 @@ async fn update_matched_politician_from_staging(
         .filter(|s| !s.is_empty());
     let input = UpdatePoliticianInput {
         id,
+        ref_key: stg.ref_key.clone(),
         slug: None,
         first_name: Some(stg.first_name.clone()),
         middle_name: stg.middle_name.clone(),

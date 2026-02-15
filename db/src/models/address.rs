@@ -225,9 +225,9 @@ impl Address {
         Ok(address)
     }
 
-    /// Insert a new address. If (line_1, line_2, city, state, country, postal_code) already exists,
+    /// Upsert by (line_1, line_2, city, state, country, postal_code). Inserts if new; if conflict,
     /// updates lon/lat and district fields and returns the existing row.
-    pub async fn insert(
+    pub async fn upsert(
         pool: &PgPool,
         input: &InsertAddressInput,
     ) -> Result<Address, sqlx::Error> {
@@ -345,7 +345,7 @@ impl Address {
         {
             return Ok(addr);
         }
-        Self::insert(pool, input).await
+        Self::upsert(pool, input).await
     }
 
     /// Update an existing address by id. Only provided fields are updated.
