@@ -83,11 +83,15 @@ struct StgRaceCandidate {
     ref_key: Option<String>,
 }
 
-/// Outcome of resolving a staging politician: exact match (slug+email/phone/address) or new insert.
+/// Outcome of resolving a staging politician: exact match (email/phone/slug), new insert, or questionable match skipped.
 #[derive(Debug)]
 enum PoliticianOutcome {
     ExactMatch { match_type: &'static str },
     NewInsert,
+    /// Same slug + same home_state but address didn't match; saved to dupe_politicians_during_merge, not merged.
+    QuestionableSlugMatchSkipped,
+    /// Phone match but incoming slug matches (or is increment of) existing slug; saved to dupe table, not merged.
+    QuestionablePhoneMatchSkipped,
 }
 
 #[tokio::main]
@@ -139,15 +143,20 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
     .fetch_all(pool)
     .await?;
 
-    create_merge_tables(pool).await?;
+    ensure_politician_phase2_dupes_table(pool).await?;
+    ensure_dupe_politicians_during_merge_table(pool).await?;
 
     let mut stg_to_prod_politician: HashMap<uuid::Uuid, uuid::Uuid> = HashMap::new();
     let mut exact_match_count = 0usize;
+    let mut questionable_slug_skipped_count = 0usize;
+    let mut questionable_phone_skipped_count = 0usize;
     for stg in &stg_politicians {
         let results = resolve_or_upsert_politician(pool, stg).await?;
         for (prod_id_opt, outcome) in results {
             match &outcome {
                 PoliticianOutcome::ExactMatch { .. } => exact_match_count += 1,
+                PoliticianOutcome::QuestionableSlugMatchSkipped => questionable_slug_skipped_count += 1,
+                PoliticianOutcome::QuestionablePhoneMatchSkipped => questionable_phone_skipped_count += 1,
                 PoliticianOutcome::NewInsert => {}
             }
             if let Some(pid) = prod_id_opt {
@@ -155,7 +164,9 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    println!("  Exact matches (slug+email/phone/address → updated): {}", exact_match_count);
+    println!("  Exact matches (email, phone, or slug+address → updated): {}", exact_match_count);
+    println!("  Questionable slug matches skipped (saved to dupe_politicians_during_merge): {}", questionable_slug_skipped_count);
+    println!("  Questionable phone matches skipped (slug overlap, saved to dupe_politicians_during_merge): {}", questionable_phone_skipped_count);
 
     // 3. Races: upsert by slug with prod office_id; build stg_race_id -> prod_race_id
     println!("Merging races...");
@@ -310,7 +321,6 @@ fn stg_office_to_upsert(stg: &StgOffice) -> UpsertOfficeInput {
 /// full_name, home_state, party_id, campaign_website_url are updated from staging. middle_name
 /// is only updated when staging middle_name is non-empty (otherwise existing value is kept).
 /// email and phone are only updated when the staging value is not empty or null.
-/// If the incoming politician has a non-empty address, merge it to production and set residence_address_id.
 async fn update_matched_politician_from_staging(
     pool: &PgPool,
     id: uuid::Uuid,
@@ -332,17 +342,6 @@ async fn update_matched_politician_from_staging(
         .as_ref()
         .filter(|s| !s.trim().is_empty())
         .cloned();
-    // If incoming has an address, merge it to production and update the politician's residence_address_id
-    let residence_address_id = match stg.residence_address_id {
-        Some(stg_addr_id) => {
-            let stg_addr = fetch_stg_tx_address(pool, stg_addr_id).await?;
-            match stg_addr {
-                Some(addr) => Some(merge_staging_address_to_production(pool, &addr).await?),
-                None => None,
-            }
-        }
-        None => None,
-    };
     let input = UpdatePoliticianInput {
         id,
         slug: None,
@@ -382,7 +381,7 @@ async fn update_matched_politician_from_staging(
         fec_candidate_id: None,
         race_wins: None,
         race_losses: None,
-        residence_address_id,
+        residence_address_id: None,
         campaign_address_id: None,
     };
     Politician::update(pool, &input).await?;
@@ -427,29 +426,13 @@ async fn do_addresses_match(
     Ok((same, Some(stg_addr), Some(prod_addr)))
 }
 
-/// Create or recreate all ingest_staging tables used by the TX merge (politician audit tables).
-/// Drops tables if they exist, then creates them. Call once before merging politicians.
-async fn create_merge_tables(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
-    sqlx::query("CREATE SCHEMA IF NOT EXISTS ingest_staging")
+async fn ensure_politician_phase2_dupes_table(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
+    sqlx::query("DROP TABLE IF EXISTS ingest_staging.politician_phase2_dupes")
         .execute(pool)
         .await?;
-
-    sqlx::query("DROP TABLE IF EXISTS ingest_staging.politician_merge_overwritten_data CASCADE")
-        .execute(pool)
-        .await?;
-    sqlx::query("DROP TABLE IF EXISTS ingest_staging.inserted_politicians_with_same_slug CASCADE")
-        .execute(pool)
-        .await?;
-    sqlx::query("DROP TABLE IF EXISTS ingest_staging.politician_merge_updated CASCADE")
-        .execute(pool)
-        .await?;
-    sqlx::query("DROP TABLE IF EXISTS ingest_staging.politician_merge_dupes CASCADE")
-        .execute(pool)
-        .await?;
-
     sqlx::query(
         r#"
-        CREATE TABLE ingest_staging.politician_merge_dupes (
+        CREATE TABLE IF NOT EXISTS ingest_staging.politician_phase2_dupes (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             stg_first_name TEXT NOT NULL,
             stg_middle_name TEXT,
@@ -485,52 +468,25 @@ async fn create_merge_tables(pool: &PgPool) -> Result<(), Box<dyn std::error::Er
     )
     .execute(pool)
     .await?;
+    Ok(())
+}
 
+async fn ensure_dupe_politicians_during_merge_table(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
+    sqlx::query("DROP TABLE IF EXISTS ingest_staging.dupe_politicians_during_merge")
+        .execute(pool)
+        .await?;
     sqlx::query(
         r#"
-        CREATE TABLE ingest_staging.politician_merge_updated (
+        CREATE TABLE IF NOT EXISTS ingest_staging.dupe_politicians_during_merge (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             stg_politician_id UUID NOT NULL,
             prod_politician_id UUID NOT NULL,
+            stg_slug TEXT NOT NULL,
             stg_full_name TEXT,
-            prod_full_name TEXT,
-            match_type TEXT NOT NULL,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-        )
-        "#,
-    )
-    .execute(pool)
-    .await?;
-
-    sqlx::query(
-        r#"
-        CREATE TABLE ingest_staging.inserted_politicians_with_same_slug (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            stg_politician_id UUID NOT NULL,
-            prod_politician_id UUID NOT NULL,
-            full_name TEXT,
-            slug TEXT NOT NULL,
-            email TEXT,
-            phone TEXT,
-            address_line_1 TEXT,
-            address_city TEXT,
-            address_state TEXT,
-            address_country TEXT,
-            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-        )
-        "#,
-    )
-    .execute(pool)
-    .await?;
-
-    sqlx::query(
-        r#"
-        CREATE TABLE ingest_staging.politician_merge_overwritten_data (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            prod_politician_id UUID NOT NULL,
-            stg_politician_id UUID NOT NULL,
-            match_type TEXT NOT NULL,
-            prod_slug TEXT,
+            stg_email TEXT,
+            stg_phone TEXT,
+            stg_home_state TEXT,
+            prod_slug TEXT NOT NULL,
             prod_full_name TEXT,
             created_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
@@ -538,100 +494,32 @@ async fn create_merge_tables(pool: &PgPool) -> Result<(), Box<dyn std::error::Er
     )
     .execute(pool)
     .await?;
-
     Ok(())
 }
 
-async fn record_overwritten_politician(
+async fn record_questionable_slug_match(
     pool: &PgPool,
+    stg: &StgPolitician,
     prod_id: uuid::Uuid,
-    stg_id: uuid::Uuid,
-    match_type: &'static str,
-    pre_fetched_prod: Option<&Politician>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let prod_owned = if pre_fetched_prod.is_none() {
-        Some(Politician::find_by_id(pool, prod_id).await?)
-    } else {
-        None
-    };
-    let prod = pre_fetched_prod.unwrap_or_else(|| prod_owned.as_ref().unwrap());
+    let prod = Politician::find_by_id(pool, prod_id).await?;
     sqlx::query(
         r#"
-        INSERT INTO ingest_staging.politician_merge_overwritten_data (
-            prod_politician_id, stg_politician_id, match_type, prod_slug, prod_full_name
-        ) VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO ingest_staging.dupe_politicians_during_merge (
+            stg_politician_id, prod_politician_id, stg_slug, stg_full_name, stg_email, stg_phone, stg_home_state,
+            prod_slug, prod_full_name
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         "#,
     )
+    .bind(stg.id)
     .bind(prod_id)
-    .bind(stg_id)
-    .bind(match_type)
+    .bind(&stg.slug)
+    .bind(&stg.full_name)
+    .bind(&stg.email)
+    .bind(&stg.phone)
+    .bind(&stg.home_state)
     .bind(&prod.slug)
-    .bind(prod.full_name.as_deref())
-    .execute(pool)
-    .await?;
-    Ok(())
-}
-
-async fn record_updated_politician(
-    pool: &PgPool,
-    stg_id: uuid::Uuid,
-    stg_full_name: Option<&str>,
-    prod_id: uuid::Uuid,
-    match_type: &'static str,
-    pre_fetched_prod_full_name: Option<&str>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let prod_full_name = match pre_fetched_prod_full_name {
-        Some(name) => Some(name.to_string()),
-        None => Politician::find_by_id(pool, prod_id).await?.full_name,
-    };
-    sqlx::query(
-        r#"
-        INSERT INTO ingest_staging.politician_merge_updated (
-            stg_politician_id, prod_politician_id, stg_full_name, prod_full_name, match_type
-        ) VALUES ($1, $2, $3, $4, $5)
-        "#,
-    )
-    .bind(stg_id)
-    .bind(prod_id)
-    .bind(stg_full_name)
-    .bind(prod_full_name.as_deref())
-    .bind(match_type)
-    .execute(pool)
-    .await?;
-    Ok(())
-}
-
-async fn record_inserted_politician_with_same_slug(
-    pool: &PgPool,
-    stg_id: uuid::Uuid,
-    prod_id: uuid::Uuid,
-    full_name: Option<&str>,
-    slug: &str,
-    email: Option<&str>,
-    phone: Option<&str>,
-    address_line_1: Option<&str>,
-    address_city: Option<&str>,
-    address_state: Option<&str>,
-    address_country: Option<&str>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    sqlx::query(
-        r#"
-        INSERT INTO ingest_staging.inserted_politicians_with_same_slug (
-            stg_politician_id, prod_politician_id, full_name, slug, email, phone,
-            address_line_1, address_city, address_state, address_country
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        "#,
-    )
-    .bind(stg_id)
-    .bind(prod_id)
-    .bind(full_name)
-    .bind(slug)
-    .bind(email)
-    .bind(phone)
-    .bind(address_line_1)
-    .bind(address_city)
-    .bind(address_state)
-    .bind(address_country)
+    .bind(&prod.full_name)
     .execute(pool)
     .await?;
     Ok(())
@@ -677,7 +565,7 @@ async fn record_phase2_dupe(
     let prod_home_state_text = prod.home_state.as_ref().map(|s| s.to_string());
     sqlx::query(
         r#"
-        INSERT INTO ingest_staging.politician_merge_dupes (
+        INSERT INTO ingest_staging.politician_phase2_dupes (
             stg_first_name, stg_middle_name, stg_last_name, stg_suffix,
             prod_first_name, prod_middle_name, prod_last_name, prod_suffix,
             stg_id, prod_id, stg_ref_key, prod_ref_key,
@@ -800,102 +688,110 @@ async fn resolve_unique_politician_slug(
     }
 }
 
-/// For a candidate that matched (email, phone, or address): record phase2 dupe, record overwritten,
-/// update prod politician from staging, record updated politician, and push to updated list.
-/// Fetches the production politician once and passes it to both record_overwritten and record_updated.
-async fn apply_match_and_record(
-    pool: &PgPool,
-    stg: &StgPolitician,
-    prod_id: uuid::Uuid,
-    match_type: &'static str,
-    pre_fetched_stg_address: Option<StgAddress>,
-    pre_fetched_prod_address: Option<Address>,
-    updated: &mut Vec<(uuid::Uuid, &'static str)>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let prod = Politician::find_by_id(pool, prod_id).await?;
-    record_phase2_dupe(
-        pool,
-        stg,
-        prod_id,
-        match_type,
-        None,
-        pre_fetched_stg_address,
-        pre_fetched_prod_address,
-    )
-    .await?;
-    record_overwritten_politician(pool, prod_id, stg.id, match_type, Some(&prod)).await?;
-    update_matched_politician_from_staging(pool, prod_id, stg).await?;
-    record_updated_politician(
-        pool,
-        stg.id,
-        stg.full_name.as_deref(),
-        prod_id,
-        match_type,
-        Some(prod.full_name.as_deref().unwrap_or("")),
-    )
-    .await?;
-    updated.push((prod_id, match_type));
-    Ok(())
-}
-
-/// Returns a list of (prod_id_opt, outcome). Usually one element.
+/// Returns a list of (prod_id_opt, outcome). Usually one element; step 3 (slug) can return multiple when several slug-match candidates are questionable.
 async fn resolve_or_upsert_politician(
     pool: &PgPool,
     stg: &StgPolitician,
 ) -> Result<Vec<(Option<uuid::Uuid>, PoliticianOutcome)>, Box<dyn std::error::Error>> {
-    // Find ALL prod politicians with matching slug or slug increment; for each test email, phone, address; record_phase2_dupe; if any match → update and record to politician_merge_updated; else insert (and record to inserted_politicians_with_same_slug only when we had slug candidates)
+    // 1. Match by email (non-empty) — record dupe, update existing
+    if let Some(email) = &stg.email {
+        let email = email.trim();
+        if !email.is_empty() {
+            let row: Option<(uuid::Uuid,)> = sqlx::query_as(
+                "SELECT id FROM politician WHERE email = $1",
+            )
+            .bind(email)
+            .fetch_optional(pool)
+            .await?;
+            if let Some((id,)) = row {
+                record_phase2_dupe(pool, stg, id, "email", None, None, None).await?;
+                update_matched_politician_from_staging(pool, id, stg).await?;
+                return Ok(vec![(Some(id), PoliticianOutcome::ExactMatch { match_type: "email" })]);
+            }
+        }
+    }
+
+    // 2. Match by phone (non-empty) — if prod slug matches or is increment of stg slug, same person; else questionable
+    if let Some(phone) = &stg.phone {
+        let phone = phone.trim();
+        if !phone.is_empty() {
+            let row: Option<(uuid::Uuid, String)> = sqlx::query_as(
+                "SELECT id, slug FROM politician WHERE phone = $1",
+            )
+            .bind(phone)
+            .fetch_optional(pool)
+            .await?;
+            if let Some((id, prod_slug)) = row {
+                if same_slug_or_increment(&stg.slug, &prod_slug) {
+                    record_phase2_dupe(pool, stg, id, "phone", None, None, None).await?;
+                    update_matched_politician_from_staging(pool, id, stg).await?;
+                    return Ok(vec![(Some(id), PoliticianOutcome::ExactMatch { match_type: "phone" })]);
+                }
+                record_questionable_slug_match(pool, stg, id).await?;
+                record_phase2_dupe(pool, stg, id, "phone", None, None, None).await?;
+                return Ok(vec![(None, PoliticianOutcome::QuestionablePhoneMatchSkipped)]);
+            }
+        }
+    }
+
+    // 3. After email and phone: find ALL slug matches using base of stg.slug (base, base-1, base-2, ...), then test home_state and address on each
+    let stg_home_state = parse_state(stg.home_state.as_ref());
+    // use the base slug of the staging politician's slug, or the slug itself if it doesn't have a numeric suffix
     let base_slug: String = base_slug_if_increment(&stg.slug).unwrap_or_else(|| stg.slug.to_string());
-    let candidates: Vec<(uuid::Uuid, String, Option<State>, Option<uuid::Uuid>, Option<String>, Option<String>)> = sqlx::query_as(
-        r#"SELECT id, slug, home_state AS "home_state:State", residence_address_id, email, phone FROM politician WHERE slug = $1 OR slug LIKE $1 || '-%'"#,
+    // find all slug matches in production politicians using the base slug (base, base-1, base-2, ...)
+    let candidates: Vec<(uuid::Uuid, String, Option<State>, Option<uuid::Uuid>)> = sqlx::query_as(
+        r#"SELECT id, slug, home_state AS "home_state:State", residence_address_id FROM politician WHERE slug = $1 OR slug LIKE $1 || '-%'"#,
     )
     .bind(&base_slug)
     .fetch_all(pool)
     .await?;
 
     let mut pre_fetched_stg_addr: Option<StgAddress> = None;
-    let stg_email_trimmed = stg.email.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty());
-    let stg_phone_trimmed = stg.phone.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty());
-    let mut updated: Vec<(uuid::Uuid, &'static str)> = Vec::new();
-
-    for (id, _prod_slug, _prod_home_state, prod_residence_address_id, prod_email, prod_phone) in &candidates {
-        let prod_email_trimmed = prod_email.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty());
-        let prod_phone_trimmed = prod_phone.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty());
-
-        if stg_email_trimmed.is_some() && prod_email_trimmed.is_some() && stg_email_trimmed == prod_email_trimmed {
-            apply_match_and_record(pool, stg, *id, "slug + email", None, None, &mut updated).await?;
-        } else if stg_phone_trimmed.is_some() && prod_phone_trimmed.is_some() && stg_phone_trimmed == prod_phone_trimmed {
-            apply_match_and_record(pool, stg, *id, "slug + phone", None, None, &mut updated).await?;
-        } else {
+    let mut questionable_slug_results: Vec<(Option<uuid::Uuid>, PoliticianOutcome)> = Vec::new();
+    
+    // loop through every candidate with a matching slug (or increment) and tests home_state and address matching
+    for (id, _prod_slug, prod_home_state, prod_residence_address_id) in &candidates {
+        if same_home_state(stg_home_state, *prod_home_state) {
             let (address_match, stg_addr_opt, prod_addr_opt) =
                 do_addresses_match(pool, stg.residence_address_id, *prod_residence_address_id).await?;
-            if pre_fetched_stg_addr.is_none() {
-                pre_fetched_stg_addr = stg_addr_opt.clone();
-            }
             if address_match {
-                apply_match_and_record(
+                record_phase2_dupe(
                     pool,
                     stg,
                     *id,
                     "slug + address",
+                    None,
                     stg_addr_opt,
                     prod_addr_opt,
-                    &mut updated,
                 )
                 .await?;
+                update_matched_politician_from_staging(pool, *id, stg).await?;
+                // we found the exact person based on our accepted criteria, other questionable slug matches do not matter and are not logged
+                return Ok(vec![(Some(*id), PoliticianOutcome::ExactMatch { match_type: "slug + address" })]);
             }
+            if pre_fetched_stg_addr.is_none() {
+                pre_fetched_stg_addr = stg_addr_opt.clone();
+            }
+            record_phase2_dupe(
+                pool,
+                stg,
+                *id,
+                "slug",
+                None,
+                stg_addr_opt,
+                prod_addr_opt,
+            )
+            .await?;
+            record_questionable_slug_match(pool, stg, *id).await?;
+            questionable_slug_results.push((None, PoliticianOutcome::QuestionableSlugMatchSkipped));
         }
     }
-
-    if !updated.is_empty() {
-        return Ok(updated
-            .into_iter()
-            .map(|(id, match_type)| (Some(id), PoliticianOutcome::ExactMatch { match_type }))
-            .collect());
+    if !questionable_slug_results.is_empty() {
+        return Ok(questionable_slug_results);
     }
+    // No exact match and no questionables → insert incoming politician
 
-    // No email/phone/address match for any slug candidate → insert incoming politician (with resolved slug) and record to inserted_politicians_with_same_slug
-
-    // 4. Insert via upsert_from_source — new politician
+    // 4. Insert/update via upsert_from_source — new politician
 
     // start with inserting the staging address into production
     let residence_address_id = if let Some(addr) = pre_fetched_stg_addr {
@@ -920,7 +816,7 @@ async fn resolve_or_upsert_politician(
         .unwrap_or_else(|| format!("tx-sos|{}", slug));
     let input = UpsertPoliticianInput {
         id: None,
-        slug: Some(slug.clone()),
+        slug: Some(slug),
         ref_key: Some(ref_key),
         first_name: Some(stg.first_name.clone()),
         middle_name: stg.middle_name.clone(),
@@ -962,37 +858,6 @@ async fn resolve_or_upsert_politician(
         campaign_address_id: None,
     };
     let prod = Politician::upsert_from_source(pool, &input).await?;
-    if !candidates.is_empty() {
-        let (addr_line_1, addr_city, addr_state, addr_country) = match residence_address_id {
-            Some(addr_id) => {
-                let addr = Address::find_by_id(pool, &addr_id).await?;
-                match addr {
-                    Some(a) => (
-                        Some(a.line_1.clone()),
-                        Some(a.city.clone()),
-                        Some(format!("{:?}", a.state)),
-                        Some(a.country.clone()),
-                    ),
-                    None => (None, None, None, None),
-                }
-            }
-            None => (None, None, None, None),
-        };
-        record_inserted_politician_with_same_slug(
-            pool,
-            stg.id,
-            prod.id,
-            stg.full_name.as_deref(),
-            &slug,
-            stg.email.as_deref(),
-            stg.phone.as_deref(),
-            addr_line_1.as_deref(),
-            addr_city.as_deref(),
-            addr_state.as_deref(),
-            addr_country.as_deref(),
-        )
-        .await?;
-    }
     Ok(vec![(Some(prod.id), PoliticianOutcome::NewInsert)])
 }
 

@@ -269,6 +269,7 @@ async fn update_matched_politician_from_staging(
         last_name: Some(stg.last_name.clone()),
         suffix: stg.suffix.clone(),
         preferred_name: stg.preferred_name.clone(),
+        full_name: stg.full_name.clone(),
         biography: None,
         biography_source: None,
         home_state: parse_state(stg.home_state.as_ref()),
@@ -301,14 +302,6 @@ async fn update_matched_politician_from_staging(
         race_losses: None,
     };
     Politician::update(pool, &input).await?;
-    // full_name is not on UpdatePoliticianInput; update via raw SQL
-    if stg.full_name.is_some() {
-        sqlx::query("UPDATE politician SET full_name = $1 WHERE id = $2")
-            .bind(&stg.full_name)
-            .bind(id)
-            .execute(pool)
-            .await?;
-    }
     Ok(())
 }
 
