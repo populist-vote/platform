@@ -104,7 +104,7 @@ pub fn apply_tx_filters(
         if !courts.is_empty() {
             builder.push(
                 " OR (o.election_scope = 'district' \
-                          AND o.district_type = 'state_district_courts' AND (",
+                          AND o.district_type = 'judicial' AND (",
             );
             for (i, district) in courts.iter().enumerate() {
                 if i > 0 {
