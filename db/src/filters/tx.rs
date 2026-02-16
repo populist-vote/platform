@@ -111,7 +111,7 @@ pub fn apply_tx_filters(
                     builder.push(" OR ");
                 }
                 builder.push("o.district = ");
-                builder.push_bind(district);
+                builder.push_bind(district.clone());
             }
             builder.push("))");
         }
@@ -129,7 +129,7 @@ pub fn apply_tx_filters(
                     builder.push(" OR ");
                 }
                 builder.push("o.district = ");
-                builder.push_bind(district);
+                builder.push_bind(district.clone());
             }
             builder.push("))");
         }
