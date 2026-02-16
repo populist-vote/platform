@@ -11,6 +11,7 @@ use async_graphql::{
 use auth::AccessTokenClaims;
 use db::{
     filters::mn::apply_mn_filters,
+    filters::tx::apply_tx_filters,
     models::{
         ballot_measure::BallotMeasure,
         enums::{BallotMeasureStatus, RaceType, State, VoteType},
@@ -189,8 +190,21 @@ async fn get_races_by_address_id(
     .await?;
 
     // 2. Fetch extended state info if applicable
-    let extended_address = if user_address_data.state == State::MN {
+    let extended_address_mn = if user_address_data.state == State::MN {
         Address::extended_mn_by_address_id(db_pool, address_id).await?
+    } else {
+        None
+    };
+    let extended_address_tx = if user_address_data.state == State::TX {
+        let result = Address::extended_tx_by_address_id(db_pool, address_id).await?;
+        if result.is_none() {
+            tracing::warn!(
+                address_id = %address_id,
+                state = ?user_address_data.state,
+                "extended_tx_by_address_id returned None (address may have NULL geom, or point outside TX VTDs)"
+            );
+        }
+        result
     } else {
         None
     };
@@ -207,7 +221,7 @@ async fn get_races_by_address_id(
         school_subdistrict,
         ward,
         city,
-    ) = match &extended_address {
+    ) = match &extended_address_mn {
         Some(ext) if user_address_data.state == State::MN => (
             ext.county_commissioner_district_norm(),
             ext.judicial_district_norm(),
@@ -229,6 +243,45 @@ async fn get_races_by_address_id(
             None,
             None,
             user_address_data.city.clone(),
+        ),
+    };
+
+    // For TX, extract extended fields when present
+    let (
+        tx_precinct,
+        tx_congressional_district,
+        tx_state_senate_district,
+        tx_state_house_district,
+        tx_county_commissioner_district,
+        tx_justice_of_the_peace_district,
+        tx_constable_district,
+        tx_state_district_courts,
+        tx_court_of_appeals_districts,
+        tx_board_of_education_district,
+    ) = match &extended_address_tx {
+        Some(ext) if user_address_data.state == State::TX => (
+            ext.precinct.clone(),
+            ext.congressional_district.clone(),
+            ext.state_senate_district.clone(),
+            ext.state_house_district.clone(),
+            ext.county_commissioner_district.clone(),
+            ext.justice_of_the_peace_district.clone(),
+            ext.constable_district.clone(),
+            Some(ext.state_district_courts()),
+            Some(ext.court_of_appeals_districts()),
+            ext.board_of_education_district.clone(),
+        ),
+        _ => (
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
         ),
     };
 
@@ -289,6 +342,40 @@ async fn get_races_by_address_id(
             ward.clone(),
             parsed_soil_and_water_district.clone(),
             hospital_district.clone(),
+        );
+    }
+
+    if user_address_data.state == State::TX {
+        tracing::info!(
+            state = ?user_address_data.state,
+            county = ?user_address_data.county.as_deref(),
+            tx_precinct = ?tx_precinct,
+            tx_congressional_district = ?tx_congressional_district,
+            tx_state_senate_district = ?tx_state_senate_district,
+            tx_state_house_district = ?tx_state_house_district,
+            tx_county_commissioner_district = ?tx_county_commissioner_district,
+            tx_justice_of_the_peace_district = ?tx_justice_of_the_peace_district,
+            tx_constable_district = ?tx_constable_district,
+            tx_state_district_courts = ?tx_state_district_courts,
+            tx_court_of_appeals_districts = ?tx_court_of_appeals_districts,
+            tx_board_of_education_district = ?tx_board_of_education_district,
+            "apply_tx_filters inputs"
+        );
+        apply_tx_filters(
+            &mut builder,
+            user_address_data.state.clone(),
+            user_address_data.county.as_deref(),
+            tx_precinct.clone(),
+            tx_congressional_district.clone(),
+            //user_address_data.congressional_district.clone(),
+            tx_state_senate_district.clone(),
+            tx_state_house_district.clone(),
+            tx_county_commissioner_district.clone(),
+            tx_justice_of_the_peace_district.clone(),
+            tx_constable_district.clone(),
+            tx_state_district_courts.clone(),
+            tx_court_of_appeals_districts.clone(),
+            tx_board_of_education_district.clone(),
         );
     }
 

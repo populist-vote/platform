@@ -108,6 +108,24 @@ pub struct AddressExtendedMN {
     pub ward: Option<String>,
 }
 
+#[derive(FromRow, Debug, Clone)]
+pub struct AddressExtendedTX {
+    pub gid: i32,
+    pub county_fips: Option<String>,
+    pub precinct: Option<String>,
+    pub precinct_key: Option<String>,
+    pub county_name: Option<String>,
+    pub congressional_district: Option<String>,
+    pub state_senate_district: Option<String>,
+    pub state_house_district: Option<String>,
+    pub board_of_education_district: Option<String>,
+    pub court_of_appeals_district: Option<String>,
+    pub state_district_courts: Option<String>,
+    pub county_commissioner_district: Option<String>,
+    pub justice_of_the_peace_district: Option<String>,
+    pub constable_district: Option<String>,
+}
+
 pub enum SchoolDistrictTypeMN {
     /// Independent Districts and Schools
     ISD = 1,
@@ -225,9 +243,9 @@ impl Address {
         Ok(address)
     }
 
-    /// Insert a new address. If (line_1, line_2, city, state, country, postal_code) already exists,
+    /// Upsert by (line_1, line_2, city, state, country, postal_code). Inserts if new; if conflict,
     /// updates lon/lat and district fields and returns the existing row.
-    pub async fn insert(
+    pub async fn upsert(
         pool: &PgPool,
         input: &InsertAddressInput,
     ) -> Result<Address, sqlx::Error> {
@@ -345,7 +363,7 @@ impl Address {
         {
             return Ok(addr);
         }
-        Self::insert(pool, input).await
+        Self::upsert(pool, input).await
     }
 
     /// Update an existing address by id. Only provided fields are updated.
@@ -673,6 +691,41 @@ impl Address {
 
         Ok(record)
     }
+
+    pub async fn extended_tx_by_address_id(
+        pool: &PgPool,
+        address_id: &uuid::Uuid,
+    ) -> Result<Option<AddressExtendedTX>, sqlx::Error> {
+        let record = sqlx::query_as!(AddressExtendedTX,
+            r#"
+            SELECT vd.gid,
+                vd.cntyfips AS county_fips,
+                vd.prec AS precinct,
+                vd.pctkey AS precinct_key,
+                vd.countyname AS county_name,
+                vd.state_sd AS state_senate_district,
+                vd.state_hd AS state_house_district,
+                vd.boe_dist AS board_of_education_district,
+                vd.coa_dist AS court_of_appeals_district,
+                vd.state_dist_court AS state_district_courts,
+                vd.ctycom_dist AS county_commissioner_district,
+                vd.jp_dist AS justice_of_the_peace_district,
+                vd.const_dist AS constable_district,
+                (SELECT cd.cong_dist
+                 FROM p6t_state_tx.tx_congressional_planc2333 AS cd
+                 WHERE ST_Contains(ST_SetSRID(cd.geom, 3081), ST_Transform(a.geom, 3081))
+                 LIMIT 1) AS congressional_district
+            FROM p6t_state_tx.tx_vtds_2026 AS vd
+            JOIN address a ON a.id = $1
+            WHERE ST_Contains(ST_SetSRID(vd.geom, 3081), ST_Transform(a.geom, 3081))
+            "#,
+            address_id,
+        )
+        .fetch_optional(pool)
+        .await?;
+
+        Ok(record)
+    }
 }
 
 impl AddressExtendedMN {
@@ -733,6 +786,36 @@ impl AddressExtendedMN {
             .unwrap_or_else(|| base_city.to_string())
     }
 }
+
+impl AddressExtendedTX {
+    /// Splits the court of appeals district value by comma and returns a vec of trimmed strings.
+    /// e.g. `"1,14"` → `["1", "14"]`.
+    pub fn court_of_appeals_districts(&self) -> Vec<String> {
+        self.court_of_appeals_district
+            .as_ref()
+            .map(|s| {
+                s.split(',')
+                    .map(|part| part.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    /// Splits the state district courts value by comma and returns a vec of trimmed strings.
+    pub fn state_district_courts(&self) -> Vec<String> {
+        self.state_district_courts
+            .as_ref()
+            .map(|s| {
+                s.split(',')
+                    .map(|part| part.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+}
+
 
 fn extract_district_or_direction(input: Option<String>) -> Option<String> {
     let re = regex::Regex::new(r"(District\s*(\d+)|(East|West|North|South))").unwrap();
