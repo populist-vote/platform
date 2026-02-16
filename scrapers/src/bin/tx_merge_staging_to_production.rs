@@ -4,12 +4,15 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 use serde_json::Value as JSON;
+use slugify::slugify;
 use sqlx::PgPool;
 use db::{
     Address, Chamber, DistrictType, ElectionScope, InsertAddressInput, Office, Politician,
     PoliticalScope, Race, RaceCandidate, RaceType, State, UpdatePoliticianInput, UpsertOfficeInput,
     UpsertPoliticianInput, UpsertRaceCandidateInput, UpsertRaceInput, VoteType,
 };
+
+const ELECTION_YEAR: i32 = 2026;
 
 #[derive(sqlx::FromRow, Debug)]
 struct StgOffice {
@@ -998,10 +1001,14 @@ async fn resolve_or_upsert_politician(
         }
     };
 
-    let ref_key = stg
-        .ref_key
-        .clone()
-        .unwrap_or_else(|| format!("tx-sos|{}", stg.slug));
+    let ref_key = stg.ref_key.clone().unwrap_or_else(|| {
+        let name = stg
+            .full_name
+            .as_deref()
+            .filter(|s| !s.trim().is_empty())
+            .unwrap_or(&stg.slug);
+        format!("tx-sos-{}-{}", ELECTION_YEAR, slugify!(name))
+    });
     let input = UpsertPoliticianInput {
         id: None,
         slug: Some(stg.slug.clone()),

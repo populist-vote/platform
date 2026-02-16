@@ -471,7 +471,8 @@ async fn process_tx_politician(
     let candidate_name_raw = filing.candidate_name.as_ref().ok_or("Missing candidate name")?;
     let candidate_name = extractors::politician::normalize_name(candidate_name_raw);
     let ref_key_input = format!(
-        "{} {} {}",
+        "{} {} {} {}",
+        ELECTION_YEAR,
         filing.office_title.as_deref().unwrap_or(""),        
         candidate_name,
         filing.status.as_deref().unwrap_or(""),

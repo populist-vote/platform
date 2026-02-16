@@ -155,8 +155,8 @@ ORDER BY
     staging_last_name,
     staging_first_name;
 
--- Option 2.1: Exact name match with all contact/address empty — set treat_exact_slug_as_same_person = true
--- Compare only when exact name match and both staging and production have empty email, phone, residence_address_id.
+-- Option 2.1: Exact name match, emails distinct or both empty — set treat_exact_slug_as_same_person = true
+-- Compare when exact name match, (emails are distinct OR emails are both empty/null), and phone/address empty.
 -- (a) SELECT: show staging and production rows that qualify
 SELECT
     stg.id AS staging_id,
@@ -177,12 +177,27 @@ JOIN politician prod ON prod.home_state = 'TX'
         (COALESCE(TRIM(stg.middle_name), '') = '' AND COALESCE(TRIM(prod.middle_name), '') = '')
         OR (COALESCE(TRIM(stg.middle_name), '') <> '' AND COALESCE(TRIM(prod.middle_name), '') <> '' AND LOWER(TRIM(stg.middle_name)) = LOWER(TRIM(prod.middle_name)))
     )
-    AND (stg.email IS NULL OR TRIM(stg.email) = '')
-    AND (prod.email IS NULL OR TRIM(prod.email) = '')
-    AND (stg.phone IS NULL OR TRIM(stg.phone) = '')
-    AND (prod.phone IS NULL OR TRIM(prod.phone) = '')
-    AND stg.residence_address_id IS NULL
-    AND prod.residence_address_id IS NULL
+    AND (
+        (stg.email IS DISTINCT FROM prod.email)
+        OR (
+            (stg.email IS NULL OR TRIM(stg.email) = '')
+            AND (prod.email IS NULL OR TRIM(prod.email) = '')
+        )
+    )
+    AND (
+        (stg.phone IS DISTINCT FROM prod.phone)
+        OR (
+            (stg.phone IS NULL OR TRIM(stg.phone) = '')
+            AND (prod.phone IS NULL OR TRIM(prod.phone) = '')
+        )
+    )
+    AND (
+        (stg.residence_address_id IS DISTINCT FROM prod.residence_address_id)
+        OR (
+            stg.residence_address_id IS NULL 
+            AND prod.residence_address_id IS NULL
+        )
+    )
 ORDER BY stg.last_name, stg.first_name;
 
 -- (b) UPDATE: set treat_exact_slug_as_same_person = true for those staging politicians
@@ -198,8 +213,13 @@ WHERE id IN (
             (COALESCE(TRIM(stg.middle_name), '') = '' AND COALESCE(TRIM(prod.middle_name), '') = '')
             OR (COALESCE(TRIM(stg.middle_name), '') <> '' AND COALESCE(TRIM(prod.middle_name), '') <> '' AND LOWER(TRIM(stg.middle_name)) = LOWER(TRIM(prod.middle_name)))
         )
-        AND (stg.email IS NULL OR TRIM(stg.email) = '')
-        AND (prod.email IS NULL OR TRIM(prod.email) = '')
+        AND (
+            (stg.email IS DISTINCT FROM prod.email)
+            OR (
+                (stg.email IS NULL OR TRIM(stg.email) = '')
+                AND (prod.email IS NULL OR TRIM(prod.email) = '')
+            )
+        )
         AND (stg.phone IS NULL OR TRIM(stg.phone) = '')
         AND (prod.phone IS NULL OR TRIM(prod.phone) = '')
         AND stg.residence_address_id IS NULL
