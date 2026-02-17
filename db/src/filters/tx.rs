@@ -143,14 +143,17 @@ pub fn apply_tx_filters(
         }
     }
 
-    // Board of education
-    if let Some(board_of_education) = board_of_education_district.clone() {
+    // Precinct Chairs
+    if let (Some(precinct), Some(clean)) = (precinct.clone(), county_cleaned.clone())
+    {
         builder.push(
             " OR (o.election_scope = 'district' \
-                      AND o.district_type = 'board_of_education' \
-                      AND o.district = ",
+                      AND o.district_type = 'voting_precinct' \
+                      AND o.county = ",
         );
-        builder.push_bind(board_of_education);
+        builder.push_bind(clean);
+        builder.push(" AND o.district = ");
+        builder.push_bind(precinct);
         builder.push(")");
     }
 
