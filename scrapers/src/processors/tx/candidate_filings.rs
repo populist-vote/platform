@@ -344,7 +344,18 @@ async fn process_and_insert_tx_filing(
     let resolved_office_id = office_id.unwrap_or(office.id);
 
     let mut politician = process_tx_politician(pool, filing, resolved_office_id).await?;
-    let race = process_tx_race(filing, &office, office_id, race_type)?;
+
+    let party_fec = filing
+        .party
+        .as_deref()
+        .and_then(extractors::party::extract_party_fec_code);
+    let party_id = match party_fec.as_deref() {
+        Some(fec) => sqlx::query_scalar!(r#"SELECT id FROM party WHERE fec_code = $1"#, fec)
+            .fetch_optional(pool)
+            .await?,
+        None => None,
+    };
+    let race = process_tx_race(filing, &office, office_id, race_type, party_id)?;
     let address = process_tx_address(filing);
 
     let politician_inserted = insert_staging_politician(pool, &mut politician, address).await?;
@@ -606,6 +617,7 @@ fn process_tx_race(
     office: &Office,
     office_id: Option<Uuid>,
     race_type: &str,
+    party_id: Option<Uuid>,
 ) -> Result<Race, Box<dyn Error>> {
     let election_id = Uuid::parse_str("0d586931-c119-4fe7-814f-f679e91282a8").unwrap_or_else(|_| Uuid::nil());
 
@@ -639,7 +651,7 @@ fn process_tx_race(
         state: Some(State::TX),
         race_type: RaceType::from_str(race_type)?,
         vote_type: VoteType::Plurality,
-        party_id: party_fec,
+        party_id,
         description: None,
         ballotpedia_link: None,
         early_voting_begins_date: None,
