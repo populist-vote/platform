@@ -77,25 +77,33 @@ pub fn apply_tx_filters(
         builder.push(")");
     }
 
-    // Justice of the peace
-    if let Some(jp) = justice_of_the_peace_district.clone() {
+    // Justice of the peace (o.district can be comma-separated; check jp is in that list)
+    if let (Some(jp), Some(clean)) = (justice_of_the_peace_district.clone(), county_cleaned.clone())
+    {
         builder.push(
             " OR (o.election_scope = 'district' \
                       AND o.district_type = 'justice_of_the_peace' \
-                      AND o.district = ",
+                      AND o.county = ",
         );
+        builder.push_bind(clean);
+        builder.push(" AND ");
         builder.push_bind(jp);
+        builder.push(" = ANY(string_to_array(replace(o.district, ' ', ''), ','))");
         builder.push(")");
     }
 
     // Constable
-    if let Some(constable) = constable_district.clone() {
+    if let (Some(constable), Some(clean)) = (constable_district.clone(), county_cleaned.clone())
+    {
         builder.push(
             " OR (o.election_scope = 'district' \
                       AND o.district_type = 'constable' \
-                      AND o.district = ",
+                      AND o.county = ",
         );
+        builder.push_bind(clean);
+        builder.push(" AND ");
         builder.push_bind(constable);
+        builder.push(" = ANY(string_to_array(replace(o.district, ' ', ''), ','))");
         builder.push(")");
     }
 
