@@ -63,6 +63,17 @@ pub fn apply_tx_filters(
         builder.push(")");
     }
 
+    // Board of education
+    if let Some(boe) = board_of_education_district.clone() {
+        builder.push(
+            " OR (o.election_scope = 'district' \
+                      AND o.district_type = 'board_of_education' \
+                      AND o.district = ",
+        );
+        builder.push_bind(boe);
+        builder.push(")");
+    }
+
     // County commissioner
     if let (Some(cc), Some(clean)) = (county_commissioner_district.clone(), county_cleaned.clone())
     {

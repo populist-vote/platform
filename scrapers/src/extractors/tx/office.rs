@@ -365,12 +365,13 @@ pub fn extract_office_chamber(name: &str) -> Option<db::Chamber> {
 // raw filing input will be used later to distinguish state judicial vs county.
 
 /// Returns (political_scope, election_scope, district_type) for the given office name.
-/// Takes raw filing input, optional county, and optional seat (e.g. for Department of Education + Harris).
+/// Takes raw filing input, optional county, optional seat (e.g. for Department of Education + Harris), and optional district.
 /// Returns None when scope cannot be determined.
 pub fn extract_office_scope(
     name: &str,
     county: Option<&str>,
     seat: Option<&str>,
+    district: Option<&str>,
 ) -> Option<(db::PoliticalScope, db::ElectionScope, Option<db::DistrictType>)> {
     use db::{DistrictType, ElectionScope, PoliticalScope};
 
@@ -400,7 +401,11 @@ pub fn extract_office_scope(
         "State House" => (PoliticalScope::State, ElectionScope::District, Some(DistrictType::StateHouse)),
         "State Senate" => (PoliticalScope::State, ElectionScope::District, Some(DistrictType::StateSenate)),
         "Chief Justice - Court of Appeals" | "Justice - Court of Appeals" => {
-            (PoliticalScope::State, ElectionScope::District, Some(DistrictType::CourtOfAppeals))
+            if district == Some("15") {
+                (PoliticalScope::State, ElectionScope::State, None)
+            } else {
+                (PoliticalScope::State, ElectionScope::District, Some(DistrictType::CourtOfAppeals))
+            }
         }
         "Judge - District Court" => (PoliticalScope::State, ElectionScope::District, Some(DistrictType::Judicial)),
         "District Attorney" => {

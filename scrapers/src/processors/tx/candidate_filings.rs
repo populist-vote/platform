@@ -403,9 +403,15 @@ fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error
 
     // Extract and strip the seat from the office title (before scope, so scope can use seat for some offices)
     let (seat, office_title_no_seat) = office::extract_office_seat(office_title);
-    let (political_scope, election_scope, district_type) = office::extract_office_scope(&name, county.as_deref(), seat.as_deref())
-        .ok_or("Failed to extract office scope")?;
+    // Extract the district from the office title (so district can also be used for some scopes)
     let district = office::extract_office_district(&office_title_no_seat);
+    let (political_scope, election_scope, district_type) = office::extract_office_scope(
+        &name,
+        county.as_deref(),
+        seat.as_deref(),
+        district.as_deref(),
+    )
+    .ok_or("Failed to extract office scope")?;
 
     let slug = generators::tx::office::OfficeSlugGenerator {
         state: &State::TX,
@@ -633,7 +639,7 @@ fn process_tx_race(
         state: Some(State::TX),
         race_type: RaceType::from_str(race_type)?,
         vote_type: VoteType::Plurality,
-        party_id: None,
+        party_id: party_fec,
         description: None,
         ballotpedia_link: None,
         early_voting_begins_date: None,
