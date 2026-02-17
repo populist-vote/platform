@@ -23,7 +23,10 @@ fn is_roman_numeral(s: &str) -> bool {
         return false;
     }
     s.chars().all(|c| {
-        matches!(c, 'I' | 'i' | 'V' | 'v' | 'X' | 'x' | 'L' | 'l' | 'C' | 'c' | 'D' | 'd' | 'M' | 'm')
+        matches!(
+            c,
+            'I' | 'i' | 'V' | 'v' | 'X' | 'x' | 'L' | 'l' | 'C' | 'c' | 'D' | 'd' | 'M' | 'm'
+        )
     })
 }
 
@@ -58,7 +61,10 @@ fn is_two_letter_all_caps(s: &str) -> bool {
     if MIXED_TWO_LETTER_ALL_CAPS.iter().any(|x| x == &s_lower) {
         return true;
     }
-    is_two_consonants(s) && !TWO_CONSONANT_EXCEPTIONS.iter().any(|x| s_lower.eq_ignore_ascii_case(x))
+    is_two_consonants(s)
+        && !TWO_CONSONANT_EXCEPTIONS
+            .iter()
+            .any(|x| s_lower.eq_ignore_ascii_case(x))
 }
 
 /// Title-case a single word (first char upper, rest lower).
@@ -66,7 +72,10 @@ fn word_to_title(w: &str) -> String {
     let mut c = w.chars();
     match c.next() {
         None => String::new(),
-        Some(f) => f.to_uppercase().chain(c.flat_map(|c| c.to_lowercase())).collect(),
+        Some(f) => f
+            .to_uppercase()
+            .chain(c.flat_map(|c| c.to_lowercase()))
+            .collect(),
     }
 }
 
@@ -187,7 +196,11 @@ fn extract_preferred(input: &str) -> (String, Option<String>) {
         if let (Some(preferred), Some(full_match)) = (preferred, captures.get(0)) {
             let before = input[..full_match.start()].trim_end();
             let after = input[full_match.end()..].trim_start();
-            let name_without_preferred = [before, after].join(" ").split_whitespace().collect::<Vec<_>>().join(" ");
+            let name_without_preferred = [before, after]
+                .join(" ")
+                .split_whitespace()
+                .collect::<Vec<_>>()
+                .join(" ");
             return (name_without_preferred, Some(preferred));
         }
     }
@@ -200,17 +213,17 @@ fn extract_suffix(input: &str) -> (String, Option<String>) {
     let suffix_regex = SUFFIX_REGEX.get_or_init(|| {
         Regex::new(r#",?\s+(?<suffix>[iIvVxX]+|[jJsS][rR]\.?|[jJsS][rR])$"#).unwrap()
     });
-    
+
     if let Some(captures) = suffix_regex.captures(input) {
         if let Some(suffix_match) = captures.name("suffix") {
             let mut suffix = suffix_match.as_str().to_string();
-            
+
             // Normalize "Jr" and "Sr" to "Jr." and "Sr." if they don't have periods
             let suffix_lower = suffix.to_lowercase();
             if (suffix_lower == "jr" || suffix_lower == "sr") && !suffix.ends_with('.') {
                 suffix.push('.');
             }
-            
+
             // Find the start of the entire match (including comma and space)
             let match_start = captures.get(0).unwrap().start();
             let name_without_suffix = input[..match_start].trim().to_string();
@@ -225,9 +238,8 @@ fn extract_suffix(input: &str) -> (String, Option<String>) {
 /// Returns (name_without_last, last_name_if_found)
 fn extract_last_name(input: &str) -> (String, Option<String>) {
     // 1. "De La" + one word (e.g. "Maria De La Cruz" -> last "De La Cruz")
-    let de_la_regex = DE_LA_LAST_REGEX.get_or_init(|| {
-        Regex::new(r#"(?i)\s+de\s+la\s+([\w\.'-]+)$"#).unwrap()
-    });
+    let de_la_regex =
+        DE_LA_LAST_REGEX.get_or_init(|| Regex::new(r#"(?i)\s+de\s+la\s+([\w\.'-]+)$"#).unwrap());
     if let Some(captures) = de_la_regex.captures(input) {
         if let Some(last_part) = captures.get(1) {
             let last_name = format!("De La {}", last_part.as_str());
@@ -238,9 +250,8 @@ fn extract_last_name(input: &str) -> (String, Option<String>) {
     }
 
     // 2. "Van De" + one word (e.g. "John Van De Bogart" -> last "Van De Bogart"); before De so "Van De" isn't split as "De"
-    let van_de_regex = VAN_DE_LAST_REGEX.get_or_init(|| {
-        Regex::new(r#"(?i)\s+van\s+de\s+([\w\.'-]+)$"#).unwrap()
-    });
+    let van_de_regex =
+        VAN_DE_LAST_REGEX.get_or_init(|| Regex::new(r#"(?i)\s+van\s+de\s+([\w\.'-]+)$"#).unwrap());
     if let Some(captures) = van_de_regex.captures(input) {
         if let Some(last_part) = captures.get(1) {
             let last_name = format!("Van De {}", last_part.as_str());
@@ -251,9 +262,7 @@ fn extract_last_name(input: &str) -> (String, Option<String>) {
     }
 
     // 3. "De" + one word (e.g. "Hernando De Soto" -> last "De Soto"); after De La and Van De so they aren't split
-    let de_regex = DE_LAST_REGEX.get_or_init(|| {
-        Regex::new(r#"(?i)\s+de\s+([\w\.'-]+)$"#).unwrap()
-    });
+    let de_regex = DE_LAST_REGEX.get_or_init(|| Regex::new(r#"(?i)\s+de\s+([\w\.'-]+)$"#).unwrap());
     if let Some(captures) = de_regex.captures(input) {
         if let Some(last_part) = captures.get(1) {
             let last_name = format!("De {}", last_part.as_str());
@@ -264,9 +273,7 @@ fn extract_last_name(input: &str) -> (String, Option<String>) {
     }
 
     // 4. "Di" + one word (e.g. "Yane Di Nicola" -> last "Di Nicola")
-    let di_regex = DI_LAST_REGEX.get_or_init(|| {
-        Regex::new(r#"(?i)\s+di\s+([\w\.'-]+)$"#).unwrap()
-    });
+    let di_regex = DI_LAST_REGEX.get_or_init(|| Regex::new(r#"(?i)\s+di\s+([\w\.'-]+)$"#).unwrap());
     if let Some(captures) = di_regex.captures(input) {
         if let Some(last_part) = captures.get(1) {
             let last_name = format!("Di {}", last_part.as_str());
@@ -277,9 +284,8 @@ fn extract_last_name(input: &str) -> (String, Option<String>) {
     }
 
     // 5. "San" + one word (e.g. "Maria San Miguel" -> last "San Miguel")
-    let san_regex = SAN_LAST_REGEX.get_or_init(|| {
-        Regex::new(r#"(?i)\s+san\s+([\w\.'-]+)$"#).unwrap()
-    });
+    let san_regex =
+        SAN_LAST_REGEX.get_or_init(|| Regex::new(r#"(?i)\s+san\s+([\w\.'-]+)$"#).unwrap());
     if let Some(captures) = san_regex.captures(input) {
         if let Some(last_part) = captures.get(1) {
             let last_name = format!("San {}", last_part.as_str());
@@ -290,9 +296,8 @@ fn extract_last_name(input: &str) -> (String, Option<String>) {
     }
 
     // 6. Van or St./St compound last names
-    let compound_regex = LAST_NAME_REGEX.get_or_init(|| {
-        Regex::new(r#"(?i)\s+(van|st\.?)\s+([\w\.'-]+)$"#).unwrap()
-    });
+    let compound_regex =
+        LAST_NAME_REGEX.get_or_init(|| Regex::new(r#"(?i)\s+(van|st\.?)\s+([\w\.'-]+)$"#).unwrap());
     if let Some(captures) = compound_regex.captures(input) {
         if let (Some(prefix), Some(last_part)) = (captures.get(1), captures.get(2)) {
             let prefix_str = prefix.as_str();
@@ -321,7 +326,7 @@ fn extract_last_name(input: &str) -> (String, Option<String>) {
             return (name_without_last, Some(last_name));
         }
     }
-    
+
     (input.to_string(), None)
 }
 
@@ -345,10 +350,10 @@ fn strip_accents(s: &str) -> String {
 /// Replace '' and directional/curly double quotes with ASCII ".
 fn normalize_quotes(s: &str) -> String {
     s.replace("''", "\"")
-        .replace('\u{201C}', "\"")  // "
-        .replace('\u{201D}', "\"")  // "
-        .replace('\u{201E}', "\"")  // „
-        .replace('\u{201F}', "\"")   // ‟
+        .replace('\u{201C}', "\"") // "
+        .replace('\u{201D}', "\"") // "
+        .replace('\u{201E}', "\"") // „
+        .replace('\u{201F}', "\"") // ‟
 }
 
 /// Strip "dr." (case-insensitive) from the string only when not inside single quotes, double quotes, or parentheses.
@@ -363,7 +368,12 @@ fn strip_dr_unless_quoted_or_parens(s: &str) -> String {
     while i < s.len() {
         let outside = !in_double && !in_single && paren_depth == 0;
 
-        if outside && i + 3 <= s.len() && s[i].eq_ignore_ascii_case(&b'd') && s[i + 1].eq_ignore_ascii_case(&b'r') && s[i + 2] == b'.' {
+        if outside
+            && i + 3 <= s.len()
+            && s[i].eq_ignore_ascii_case(&b'd')
+            && s[i + 1].eq_ignore_ascii_case(&b'r')
+            && s[i + 2] == b'.'
+        {
             i += 3;
             continue;
         }

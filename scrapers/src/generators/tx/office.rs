@@ -17,15 +17,23 @@ pub fn office_priority(office_title: &str, county: Option<&str>) -> Option<i32> 
         "State Senator" => 10,
         "State Representative" => 11,
         "Board of Education" => 12,
-        "Railroad Commissioner" | "Commissioner of Agriculture" | "Commissioner of the General Land Office"
+        "Railroad Commissioner"
+        | "Commissioner of Agriculture"
+        | "Commissioner of the General Land Office"
         | "Comptroller of Public Accounts" => 13,
         "Mayor" => 20,
         "City Council" => 21,
         "County Commissioner" => 22,
         "Justice of the Peace" => 23,
         "County Constable" => 24,
-        "County Clerk" | "County & District Clerk" | "County Attorney" | "County Treasurer"
-        | "County Surveyor" | "County Tax Assessor-Collector" | "County Judge" | "District Clerk"
+        "County Clerk"
+        | "County & District Clerk"
+        | "County Attorney"
+        | "County Treasurer"
+        | "County Surveyor"
+        | "County Tax Assessor-Collector"
+        | "County Judge"
+        | "District Clerk"
         | "Department of Education" => 25,
         "District Attorney" => {
             if county.is_some() {
@@ -33,7 +41,7 @@ pub fn office_priority(office_title: &str, county: Option<&str>) -> Option<i32> 
             } else {
                 46
             }
-        },
+        }
         "Sheriff" => 26,
         "County Chair (D)" | "County Chair (R)" => 27,
         "Precinct Chair (D)" | "Precinct Chair (R)" => 28,
@@ -43,9 +51,12 @@ pub fn office_priority(office_title: &str, county: Option<&str>) -> Option<i32> 
         "Justice - Court of Appeals" => 43,
         "Judge - Court of Criminal Appeals" => 44,
         "Judge - District Court" => 45,
-        "Judge - County Court at Law" | "Judge - 1st Multicounty Court at Law"
-        | "Judge - County Civil Court at Law" | "Judge - County Criminal Court at Law"
-        | "Judge - County Criminal Court of Appeals" | "Judge - Criminal District"
+        "Judge - County Court at Law"
+        | "Judge - 1st Multicounty Court at Law"
+        | "Judge - County Civil Court at Law"
+        | "Judge - County Criminal Court at Law"
+        | "Judge - County Criminal Court of Appeals"
+        | "Judge - Criminal District"
         | "Judge - Probate Court" => 50,
         _ => return None,
     };
@@ -81,11 +92,13 @@ pub struct OfficeSubtitleGenerator<'a> {
 
 impl<'a> OfficeSubtitleGenerator<'a> {
     pub fn generate(&self) -> (String, String) {
-        use db::{ElectionScope, DistrictType};
+        use db::{DistrictType, ElectionScope};
 
         match self.election_scope {
             ElectionScope::State => {
-                if self.office_name == Some("U.S. Senate") || (self.district.is_none() && self.seat.is_none()) {
+                if self.office_name == Some("U.S. Senate")
+                    || (self.district.is_none() && self.seat.is_none())
+                {
                     ("Texas".to_string(), "TX".to_string())
                 } else if let Some(seat) = self.seat {
                     if seat.to_lowercase().contains("at large") {
@@ -117,109 +130,144 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                             )
                         }
                     } else {
-                        (format!("{} County, TX", county), format!("{} County, TX", county))
+                        (
+                            format!("{} County, TX", county),
+                            format!("{} County, TX", county),
+                        )
                     }
                 } else {
                     ("Texas".to_string(), "TX".to_string())
                 }
             }
 
-            ElectionScope::District => {
-                match self.district_type {
-                    Some(DistrictType::UsCongressional) => {
-                        if let Some(district) = self.district {
-                            (format!("TX - District {}", district), format!("TX - {}", district))
-                        } else {
-                            ("TX".to_string(), "TX".to_string())
-                        }
+            ElectionScope::District => match self.district_type {
+                Some(DistrictType::UsCongressional) => {
+                    if let Some(district) = self.district {
+                        (
+                            format!("TX - District {}", district),
+                            format!("TX - {}", district),
+                        )
+                    } else {
+                        ("TX".to_string(), "TX".to_string())
                     }
-                    Some(DistrictType::StateHouse) => {
-                        if let Some(district) = self.district {
-                            (format!("TX - House District {}", district), format!("TX - {}", district))
-                        } else {
-                            ("TX".to_string(), "TX".to_string())
-                        }
-                    }
-                    Some(DistrictType::StateSenate) => {
-                        if let Some(district) = self.district {
-                            (format!("TX - Senate District {}", district), format!("TX - {}", district))
-                        } else {
-                            ("TX".to_string(), "TX".to_string())
-                        }
-                    }
-                    Some(DistrictType::County) => {
-                        if let (Some(county), Some(district)) = (self.county, self.district) {
-                            let precinct_label = format_precinct_subtitle(district);
-                            (
-                                format!("{} County, TX - Precinct {}", county, precinct_label),
-                                format!("{} County, TX - {}", county, precinct_label),
-                            )
-                        } else {
-                            ("TX".to_string(), "TX".to_string())
-                        }
-                    }
-                    Some(DistrictType::Judicial) => {
-                        if let Some(district) = self.district {
-                            let seat_suffix = self.seat
-                                .as_ref()
-                                .map(|s| (format!(" - Seat {}", s), format!(" - {}", s)))
-                                .unwrap_or_else(|| (String::new(), String::new()));
-                            (
-                                format!("TX - District {}{}", district, seat_suffix.0),
-                                format!("TX - District {}{}", district, seat_suffix.1),
-                            )
-                        } else if let Some(seat) = self.seat {
-                            (format!("TX - Seat {}", seat), format!("TX - {}", seat))
-                        } else {
-                            ("TX".to_string(), "TX".to_string())
-                        }
-                    }
-                    Some(DistrictType::School) | Some(DistrictType::BoardOfEducation) => {
-                        if let Some(district) = self.district {
-                            (
-                                format!("TX - District {}{}", district, self.seat.as_ref().map(|s| format!(" - Place {}", s)).unwrap_or_default()),
-                                format!("TX - {}{}", district, self.seat.as_ref().map(|s| format!(" - {}", s)).unwrap_or_default()),
-                            )
-                        } else {
-                            ("TX".to_string(), "TX".to_string())
-                        }
-                    }
-                    Some(DistrictType::CourtOfAppeals) => {
-                        if let Some(district) = self.district {
-                            let seat_suffix = self.seat
-                                .as_ref()
-                                .map(|s| (format!(" - Seat {}", s), format!(" - {}", s)))
-                                .unwrap_or_else(|| (String::new(), String::new()));
-                            (
-                                format!("TX - District {}{}", district, seat_suffix.0),
-                                format!("TX - District {}{}", district, seat_suffix.1),
-                            )
-                        } else if let Some(seat) = self.seat {
-                            (format!("TX - Seat {}", seat), format!("TX - {}", seat))
-                        } else {
-                            ("TX".to_string(), "TX".to_string())
-                        }
-                    }
-                    Some(DistrictType::JusticeOfThePeace) | Some(DistrictType::Constable) | Some(DistrictType::VotingPrecinct) => {
-                        if let (Some(county), Some(district)) = (self.county, self.district) {
-                            let precinct_label = format_precinct_subtitle(district);
-                            (
-                                format!("{} County, TX - Precinct {}", county, precinct_label),
-                                format!("{} County, TX - {}", county, precinct_label),
-                            )
-                        } else {
-                            ("TX".to_string(), "TX".to_string())
-                        }
-                    }
-                    _ => ("TX".to_string(), "TX".to_string()),
                 }
-            }
+                Some(DistrictType::StateHouse) => {
+                    if let Some(district) = self.district {
+                        (
+                            format!("TX - House District {}", district),
+                            format!("TX - {}", district),
+                        )
+                    } else {
+                        ("TX".to_string(), "TX".to_string())
+                    }
+                }
+                Some(DistrictType::StateSenate) => {
+                    if let Some(district) = self.district {
+                        (
+                            format!("TX - Senate District {}", district),
+                            format!("TX - {}", district),
+                        )
+                    } else {
+                        ("TX".to_string(), "TX".to_string())
+                    }
+                }
+                Some(DistrictType::County) => {
+                    if let (Some(county), Some(district)) = (self.county, self.district) {
+                        let precinct_label = format_precinct_subtitle(district);
+                        (
+                            format!("{} County, TX - Precinct {}", county, precinct_label),
+                            format!("{} County, TX - {}", county, precinct_label),
+                        )
+                    } else {
+                        ("TX".to_string(), "TX".to_string())
+                    }
+                }
+                Some(DistrictType::Judicial) => {
+                    if let Some(district) = self.district {
+                        let seat_suffix = self
+                            .seat
+                            .as_ref()
+                            .map(|s| (format!(" - Seat {}", s), format!(" - {}", s)))
+                            .unwrap_or_else(|| (String::new(), String::new()));
+                        (
+                            format!("TX - District {}{}", district, seat_suffix.0),
+                            format!("TX - District {}{}", district, seat_suffix.1),
+                        )
+                    } else if let Some(seat) = self.seat {
+                        (format!("TX - Seat {}", seat), format!("TX - {}", seat))
+                    } else {
+                        ("TX".to_string(), "TX".to_string())
+                    }
+                }
+                Some(DistrictType::School) | Some(DistrictType::BoardOfEducation) => {
+                    if let Some(district) = self.district {
+                        (
+                            format!(
+                                "TX - District {}{}",
+                                district,
+                                self.seat
+                                    .as_ref()
+                                    .map(|s| format!(" - Place {}", s))
+                                    .unwrap_or_default()
+                            ),
+                            format!(
+                                "TX - {}{}",
+                                district,
+                                self.seat
+                                    .as_ref()
+                                    .map(|s| format!(" - {}", s))
+                                    .unwrap_or_default()
+                            ),
+                        )
+                    } else {
+                        ("TX".to_string(), "TX".to_string())
+                    }
+                }
+                Some(DistrictType::CourtOfAppeals) => {
+                    if let Some(district) = self.district {
+                        let seat_suffix = self
+                            .seat
+                            .as_ref()
+                            .map(|s| (format!(" - Seat {}", s), format!(" - {}", s)))
+                            .unwrap_or_else(|| (String::new(), String::new()));
+                        (
+                            format!("TX - District {}{}", district, seat_suffix.0),
+                            format!("TX - District {}{}", district, seat_suffix.1),
+                        )
+                    } else if let Some(seat) = self.seat {
+                        (format!("TX - Seat {}", seat), format!("TX - {}", seat))
+                    } else {
+                        ("TX".to_string(), "TX".to_string())
+                    }
+                }
+                Some(DistrictType::JusticeOfThePeace)
+                | Some(DistrictType::Constable)
+                | Some(DistrictType::VotingPrecinct) => {
+                    if let (Some(county), Some(district)) = (self.county, self.district) {
+                        let precinct_label = format_precinct_subtitle(district);
+                        (
+                            format!("{} County, TX - Precinct {}", county, precinct_label),
+                            format!("{} County, TX - {}", county, precinct_label),
+                        )
+                    } else {
+                        ("TX".to_string(), "TX".to_string())
+                    }
+                }
+                _ => ("TX".to_string(), "TX".to_string()),
+            },
 
             ElectionScope::National => ("".to_string(), "".to_string()),
             ElectionScope::City => {
                 if let Some(municipality) = self.municipality {
-                    let seat_suffix = self.seat.as_ref().map(|s| format!(" - {}", s)).unwrap_or_default();
-                    (format!("{}, TX{}", municipality, seat_suffix), format!("{}, TX{}", municipality, seat_suffix))
+                    let seat_suffix = self
+                        .seat
+                        .as_ref()
+                        .map(|s| format!(" - {}", s))
+                        .unwrap_or_default();
+                    (
+                        format!("{}, TX{}", municipality, seat_suffix),
+                        format!("{}, TX{}", municipality, seat_suffix),
+                    )
                 } else {
                     ("TX".to_string(), "TX".to_string())
                 }
@@ -243,7 +291,7 @@ pub struct OfficeSlugGenerator<'a> {
 
 impl<'a> OfficeSlugGenerator<'a> {
     pub fn generate(&self) -> String {
-        use db::{ElectionScope, DistrictType};
+        use db::{DistrictType, ElectionScope};
 
         let cleaned_name = self.name.replace(".", "").replace("&", "and");
 
@@ -279,57 +327,58 @@ impl<'a> OfficeSlugGenerator<'a> {
                 )
             }
 
-            Some(ElectionScope::District) => {
-                match self.district_type {
-                    Some(DistrictType::County) | Some(DistrictType::JusticeOfThePeace) | Some(DistrictType::Constable) | Some(DistrictType::VotingPrecinct) => {
-                        format!(
-                            "{} {} {} {} {}",
-                            self.state.as_ref(),
-                            cleaned_name,
-                            county_with_label,
-                            self.district.unwrap_or(""),
-                            self.seat.unwrap_or(""),
-                        )
-                    }
-                    Some(DistrictType::Judicial) => {
-                        format!(
-                            "{} {} {} {}",
-                            self.state.as_ref(),
-                            cleaned_name,
-                            self.district.unwrap_or(""),
-                            self.seat.unwrap_or(""),
-                        )
-                    }
-                    Some(DistrictType::School) => {
-                        format!(
-                            "{} {} {} {} {}",
-                            self.state.as_ref(),
-                            cleaned_name,
-                            self.school_district.unwrap_or(""),
-                            self.district.unwrap_or(""),
-                            self.seat.unwrap_or(""),
-                        )
-                    }
-                    Some(DistrictType::CourtOfAppeals) | Some(DistrictType::BoardOfEducation) => {
-                        format!(
-                            "{} {} {} {}",
-                            self.state.as_ref(),
-                            cleaned_name,
-                            self.district.unwrap_or(""),
-                            self.seat.unwrap_or(""),
-                        )
-                    }
-                    _ => {
-                        format!(
-                            "{} {} {} {}",
-                            self.state.as_ref(),
-                            cleaned_name,
-                            self.district.unwrap_or(""),
-                            self.seat.unwrap_or(""),
-                        )
-                    }
+            Some(ElectionScope::District) => match self.district_type {
+                Some(DistrictType::County)
+                | Some(DistrictType::JusticeOfThePeace)
+                | Some(DistrictType::Constable)
+                | Some(DistrictType::VotingPrecinct) => {
+                    format!(
+                        "{} {} {} {} {}",
+                        self.state.as_ref(),
+                        cleaned_name,
+                        county_with_label,
+                        self.district.unwrap_or(""),
+                        self.seat.unwrap_or(""),
+                    )
                 }
-            }
+                Some(DistrictType::Judicial) => {
+                    format!(
+                        "{} {} {} {}",
+                        self.state.as_ref(),
+                        cleaned_name,
+                        self.district.unwrap_or(""),
+                        self.seat.unwrap_or(""),
+                    )
+                }
+                Some(DistrictType::School) => {
+                    format!(
+                        "{} {} {} {} {}",
+                        self.state.as_ref(),
+                        cleaned_name,
+                        self.school_district.unwrap_or(""),
+                        self.district.unwrap_or(""),
+                        self.seat.unwrap_or(""),
+                    )
+                }
+                Some(DistrictType::CourtOfAppeals) | Some(DistrictType::BoardOfEducation) => {
+                    format!(
+                        "{} {} {} {}",
+                        self.state.as_ref(),
+                        cleaned_name,
+                        self.district.unwrap_or(""),
+                        self.seat.unwrap_or(""),
+                    )
+                }
+                _ => {
+                    format!(
+                        "{} {} {} {}",
+                        self.state.as_ref(),
+                        cleaned_name,
+                        self.district.unwrap_or(""),
+                        self.seat.unwrap_or(""),
+                    )
+                }
+            },
 
             _ => {
                 format!(

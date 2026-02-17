@@ -24,9 +24,10 @@ static HEADER_NAMES: [&str; 20] = [
     "running_mate_email",
     "running_mate_phone",
 ];
-static GENERAL_LINK_TEXT: &str =
-    "Candidate Filings - Federal, State, and County Offices";
-pub async fn get_mn_sos_candidate_filings_fed_state_county(driver: &WebDriver) -> Result<(), Box<dyn Error>> {
+static GENERAL_LINK_TEXT: &str = "Candidate Filings - Federal, State, and County Offices";
+pub async fn get_mn_sos_candidate_filings_fed_state_county(
+    driver: &WebDriver,
+) -> Result<(), Box<dyn Error>> {
     driver.goto("https://candidates.sos.mn.gov").await?;
 
     let link = driver.find(By::LinkText(GENERAL_LINK_TEXT)).await?;
@@ -109,8 +110,9 @@ static PRIMARY_HEADER_NAMES: [&str; 21] = [
 
 static PRIMARY_LINK_TEXT: &str = "Candidates in the Primary - Federal, State, and County Offices";
 
-pub async fn get_mn_sos_candidate_filings_fed_state_county_primaries(driver: &WebDriver) -> Result<(), Box<dyn Error>>
-{
+pub async fn get_mn_sos_candidate_filings_fed_state_county_primaries(
+    driver: &WebDriver,
+) -> Result<(), Box<dyn Error>> {
     driver.goto("https://candidates.sos.mn.gov").await?;
 
     let link = driver.find(By::LinkText(PRIMARY_LINK_TEXT)).await?;

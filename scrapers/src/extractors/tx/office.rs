@@ -14,15 +14,15 @@ use crate::extractors::{default_capture, owned_capture};
 /// Only accepts the prefix when it matches a valid Texas county (TEXAS_COUNTIES), same as strip_county_suffix.
 /// Example: "KLEBERG - COUNTY COMMISSIONER PRECINCT 4" -> (Some("Kleberg"), "COUNTY COMMISSIONER PRECINCT 4")
 fn strip_county_prefix(input: &str) -> (Option<String>, &str) {
-    let prefix_re = TX_COUNTY_PREFIX_REGEX.get_or_init(|| {
-        Regex::new(r"^\s*([A-Z][A-Za-z\s]+?)\s*-\s*(.*)$").unwrap()
-    });
+    let prefix_re = TX_COUNTY_PREFIX_REGEX
+        .get_or_init(|| Regex::new(r"^\s*([A-Z][A-Za-z\s]+?)\s*-\s*(.*)$").unwrap());
     if let Some(caps) = prefix_re.captures(input) {
         if let (Some(county), Some(rest)) = (caps.get(1), caps.get(2)) {
             let county_str = county.as_str().trim();
             let rest_str = rest.as_str().trim();
             let county_norm = normalize_county_name(county_str);
-            if !rest_str.is_empty() && county_str.len() >= 2 && is_valid_texas_county(&county_norm) {
+            if !rest_str.is_empty() && county_str.len() >= 2 && is_valid_texas_county(&county_norm)
+            {
                 let county_title_case = title_case(&county_norm);
                 return (Some(county_title_case), rest_str);
             }
@@ -73,35 +73,260 @@ static TX_SEAT_EXTRACTORS: OnceLock<Regex> = OnceLock::new();
 
 /// All 254 Texas county names (title case), for validating extracted county strings.
 const TEXAS_COUNTIES: [&str; 254] = [
-    "Anderson", "Andrews", "Angelina", "Aransas", "Archer", "Armstrong", "Atascosa", "Austin",
-    "Bailey", "Bandera", "Bastrop", "Baylor", "Bee", "Bell", "Bexar", "Blanco", "Borden", "Bosque",
-    "Bowie", "Brazoria", "Brazos", "Brewster", "Briscoe", "Brooks", "Brown", "Burleson", "Burnet",
-    "Caldwell", "Calhoun", "Callahan", "Cameron", "Camp", "Carson", "Cass", "Castro", "Chambers",
-    "Cherokee", "Childress", "Clay", "Cochran", "Coke", "Coleman", "Collin", "Collingsworth",
-    "Colorado", "Comal", "Comanche", "Concho", "Cooke", "Coryell", "Cottle", "Crane", "Crockett",
-    "Crosby", "Culberson", "Dallam", "Dallas", "Dawson", "Deaf Smith", "Delta", "Denton", "DeWitt",
-    "Dickens", "Dimmit", "Donley", "Duval", "Eastland", "Ector", "Edwards", "Ellis", "El Paso",
-    "Erath", "Falls", "Fannin", "Fayette", "Fisher", "Floyd", "Foard", "Fort Bend", "Franklin",
-    "Freestone", "Frio", "Gaines", "Galveston", "Garza", "Gillespie", "Glasscock", "Goliad",
-    "Gonzales", "Gray", "Grayson", "Gregg", "Grimes", "Guadalupe", "Hale", "Hall", "Hamilton",
-    "Hansford", "Hardeman", "Hardin", "Harris", "Harrison", "Hartley", "Haskell", "Hays",
-    "Hemphill", "Henderson", "Hidalgo", "Hill", "Hockley", "Hood", "Hopkins", "Houston", "Howard",
-    "Hudspeth", "Hunt", "Hutchinson", "Irion", "Jack", "Jackson", "Jasper", "Jeff Davis",
-    "Jefferson", "Jim Hogg", "Jim Wells", "Johnson", "Jones", "Karnes", "Kaufman", "Kendall",
-    "Kenedy", "Kent", "Kerr", "Kimble", "King", "Kinney", "Kleberg", "Knox", "La Salle", "Lamar",
-    "Lamb", "Lampasas", "Lavaca", "Lee", "Leon", "Liberty", "Limestone", "Lipscomb", "Live Oak",
-    "Llano", "Loving", "Lubbock", "Lynn", "Madison", "Marion", "Martin", "Mason", "Matagorda",
-    "Maverick", "McCulloch", "McLennan", "McMullen", "Medina", "Menard", "Midland", "Milam", "Mills",
-    "Mitchell", "Montague", "Montgomery", "Moore", "Morris", "Motley", "Nacogdoches", "Navarro",
-    "Newton", "Nolan", "Nueces", "Ochiltree", "Oldham", "Orange", "Palo Pinto", "Panola", "Parker",
-    "Parmer", "Pecos", "Polk", "Potter", "Presidio", "Rains", "Randall", "Reagan", "Real", "Red River",
-    "Reeves", "Refugio", "Roberts", "Robertson", "Rockwall", "Runnels", "Rusk", "Sabine",
-    "San Augustine", "San Jacinto", "San Patricio", "San Saba", "Schleicher", "Scurry", "Shackelford",
-    "Shelby", "Sherman", "Smith", "Somervell", "Starr", "Stephens", "Sterling", "Stonewall",
-    "Sutton", "Swisher", "Tarrant", "Taylor", "Terrell", "Terry", "Throckmorton", "Titus", "Tom Green",
-    "Travis", "Trinity", "Tyler", "Upshur", "Upton", "Uvalde", "Val Verde", "Van Zandt", "Victoria",
-    "Walker", "Waller", "Ward", "Washington", "Webb", "Wharton", "Wheeler", "Wichita", "Wilbarger",
-    "Willacy", "Williamson", "Wilson", "Winkler", "Wise", "Wood", "Yoakum", "Young", "Zapata", "Zavala",
+    "Anderson",
+    "Andrews",
+    "Angelina",
+    "Aransas",
+    "Archer",
+    "Armstrong",
+    "Atascosa",
+    "Austin",
+    "Bailey",
+    "Bandera",
+    "Bastrop",
+    "Baylor",
+    "Bee",
+    "Bell",
+    "Bexar",
+    "Blanco",
+    "Borden",
+    "Bosque",
+    "Bowie",
+    "Brazoria",
+    "Brazos",
+    "Brewster",
+    "Briscoe",
+    "Brooks",
+    "Brown",
+    "Burleson",
+    "Burnet",
+    "Caldwell",
+    "Calhoun",
+    "Callahan",
+    "Cameron",
+    "Camp",
+    "Carson",
+    "Cass",
+    "Castro",
+    "Chambers",
+    "Cherokee",
+    "Childress",
+    "Clay",
+    "Cochran",
+    "Coke",
+    "Coleman",
+    "Collin",
+    "Collingsworth",
+    "Colorado",
+    "Comal",
+    "Comanche",
+    "Concho",
+    "Cooke",
+    "Coryell",
+    "Cottle",
+    "Crane",
+    "Crockett",
+    "Crosby",
+    "Culberson",
+    "Dallam",
+    "Dallas",
+    "Dawson",
+    "Deaf Smith",
+    "Delta",
+    "Denton",
+    "DeWitt",
+    "Dickens",
+    "Dimmit",
+    "Donley",
+    "Duval",
+    "Eastland",
+    "Ector",
+    "Edwards",
+    "Ellis",
+    "El Paso",
+    "Erath",
+    "Falls",
+    "Fannin",
+    "Fayette",
+    "Fisher",
+    "Floyd",
+    "Foard",
+    "Fort Bend",
+    "Franklin",
+    "Freestone",
+    "Frio",
+    "Gaines",
+    "Galveston",
+    "Garza",
+    "Gillespie",
+    "Glasscock",
+    "Goliad",
+    "Gonzales",
+    "Gray",
+    "Grayson",
+    "Gregg",
+    "Grimes",
+    "Guadalupe",
+    "Hale",
+    "Hall",
+    "Hamilton",
+    "Hansford",
+    "Hardeman",
+    "Hardin",
+    "Harris",
+    "Harrison",
+    "Hartley",
+    "Haskell",
+    "Hays",
+    "Hemphill",
+    "Henderson",
+    "Hidalgo",
+    "Hill",
+    "Hockley",
+    "Hood",
+    "Hopkins",
+    "Houston",
+    "Howard",
+    "Hudspeth",
+    "Hunt",
+    "Hutchinson",
+    "Irion",
+    "Jack",
+    "Jackson",
+    "Jasper",
+    "Jeff Davis",
+    "Jefferson",
+    "Jim Hogg",
+    "Jim Wells",
+    "Johnson",
+    "Jones",
+    "Karnes",
+    "Kaufman",
+    "Kendall",
+    "Kenedy",
+    "Kent",
+    "Kerr",
+    "Kimble",
+    "King",
+    "Kinney",
+    "Kleberg",
+    "Knox",
+    "La Salle",
+    "Lamar",
+    "Lamb",
+    "Lampasas",
+    "Lavaca",
+    "Lee",
+    "Leon",
+    "Liberty",
+    "Limestone",
+    "Lipscomb",
+    "Live Oak",
+    "Llano",
+    "Loving",
+    "Lubbock",
+    "Lynn",
+    "Madison",
+    "Marion",
+    "Martin",
+    "Mason",
+    "Matagorda",
+    "Maverick",
+    "McCulloch",
+    "McLennan",
+    "McMullen",
+    "Medina",
+    "Menard",
+    "Midland",
+    "Milam",
+    "Mills",
+    "Mitchell",
+    "Montague",
+    "Montgomery",
+    "Moore",
+    "Morris",
+    "Motley",
+    "Nacogdoches",
+    "Navarro",
+    "Newton",
+    "Nolan",
+    "Nueces",
+    "Ochiltree",
+    "Oldham",
+    "Orange",
+    "Palo Pinto",
+    "Panola",
+    "Parker",
+    "Parmer",
+    "Pecos",
+    "Polk",
+    "Potter",
+    "Presidio",
+    "Rains",
+    "Randall",
+    "Reagan",
+    "Real",
+    "Red River",
+    "Reeves",
+    "Refugio",
+    "Roberts",
+    "Robertson",
+    "Rockwall",
+    "Runnels",
+    "Rusk",
+    "Sabine",
+    "San Augustine",
+    "San Jacinto",
+    "San Patricio",
+    "San Saba",
+    "Schleicher",
+    "Scurry",
+    "Shackelford",
+    "Shelby",
+    "Sherman",
+    "Smith",
+    "Somervell",
+    "Starr",
+    "Stephens",
+    "Sterling",
+    "Stonewall",
+    "Sutton",
+    "Swisher",
+    "Tarrant",
+    "Taylor",
+    "Terrell",
+    "Terry",
+    "Throckmorton",
+    "Titus",
+    "Tom Green",
+    "Travis",
+    "Trinity",
+    "Tyler",
+    "Upshur",
+    "Upton",
+    "Uvalde",
+    "Val Verde",
+    "Van Zandt",
+    "Victoria",
+    "Walker",
+    "Waller",
+    "Ward",
+    "Washington",
+    "Webb",
+    "Wharton",
+    "Wheeler",
+    "Wichita",
+    "Wilbarger",
+    "Willacy",
+    "Williamson",
+    "Wilson",
+    "Winkler",
+    "Wise",
+    "Wood",
+    "Yoakum",
+    "Young",
+    "Zapata",
+    "Zavala",
 ];
 
 fn is_valid_texas_county(county: &str) -> bool {
@@ -121,10 +346,8 @@ fn normalize_county_name(county: &str) -> String {
 }
 
 /// Office names for which county may appear as a suffix (" X COUNTY") in the raw title.
-const OFFICE_NAMES_ALLOWING_COUNTY_SUFFIX: &[&str] = &[
-    "District Attorney",
-    "Judge - Criminal District",
-];
+const OFFICE_NAMES_ALLOWING_COUNTY_SUFFIX: &[&str] =
+    &["District Attorney", "Judge - Criminal District"];
 
 /// True if county may appear as a suffix (" X COUNTY") in the office title.
 fn office_name_allows_county_suffix(office_name: Option<&str>) -> bool {
@@ -232,13 +455,19 @@ pub fn extract_office_name(input: &str, party: Option<&str>) -> Option<String> {
     if input_lower.contains("chief justice") && input_lower.contains("supreme court") {
         return Some("Chief Justice - Supreme Court".to_string());
     }
-    if input_lower.contains("justice") && input_lower.contains("supreme court") && !input_lower.contains("chief") {
+    if input_lower.contains("justice")
+        && input_lower.contains("supreme court")
+        && !input_lower.contains("chief")
+    {
         return Some("Justice - Supreme Court".to_string());
     }
     if input_lower.contains("chief justice") && input_lower.contains("court of appeals") {
         return Some("Chief Justice - Court of Appeals".to_string());
     }
-    if input_lower.contains("justice") && input_lower.contains("court of appeals") && !input_lower.contains("chief") {
+    if input_lower.contains("justice")
+        && input_lower.contains("court of appeals")
+        && !input_lower.contains("chief")
+    {
         return Some("Justice - Court of Appeals".to_string());
     }
     if input_lower.contains("court of criminal appeals") {
@@ -371,56 +600,128 @@ pub fn extract_office_scope(
     name: &str,
     county: Option<&str>,
     seat: Option<&str>,
-) -> Option<(db::PoliticalScope, db::ElectionScope, Option<db::DistrictType>)> {
+) -> Option<(
+    db::PoliticalScope,
+    db::ElectionScope,
+    Option<db::DistrictType>,
+)> {
     use db::{DistrictType, ElectionScope, PoliticalScope};
 
     let out: (PoliticalScope, ElectionScope, Option<DistrictType>) = match name {
         "Department of Education" => {
-            let is_harris = county.map(|c| {
-                let t = c.trim();
-                t.eq_ignore_ascii_case("Harris")
-            }).unwrap_or(false);
+            let is_harris = county
+                .map(|c| {
+                    let t = c.trim();
+                    t.eq_ignore_ascii_case("Harris")
+                })
+                .unwrap_or(false);
             if is_harris {
                 match seat {
-                    Some("7") | Some("5") | Some("3") => (PoliticalScope::Local, ElectionScope::County, None),
-                    _ => (PoliticalScope::Local, ElectionScope::District, Some(DistrictType::County)),
+                    Some("7") | Some("5") | Some("3") => {
+                        (PoliticalScope::Local, ElectionScope::County, None)
+                    }
+                    _ => (
+                        PoliticalScope::Local,
+                        ElectionScope::District,
+                        Some(DistrictType::County),
+                    ),
                 }
             } else {
                 (PoliticalScope::Local, ElectionScope::County, None)
             }
         }
-        "U.S. House" => (PoliticalScope::Federal, ElectionScope::District, Some(DistrictType::UsCongressional)),
+        "U.S. House" => (
+            PoliticalScope::Federal,
+            ElectionScope::District,
+            Some(DistrictType::UsCongressional),
+        ),
         "U.S. Senate" => (PoliticalScope::Federal, ElectionScope::State, None),
-        "Governor" | "Lieutenant Governor" | "Attorney General" | "Railroad Commissioner"
-        | "Commissioner of Agriculture" | "Commissioner of the General Land Office" | "Comptroller of Public Accounts"
-        | "Chief Justice - Supreme Court" | "Justice - Supreme Court" | "Judge - Court of Criminal Appeals" => {
+        "Governor"
+        | "Lieutenant Governor"
+        | "Attorney General"
+        | "Railroad Commissioner"
+        | "Commissioner of Agriculture"
+        | "Commissioner of the General Land Office"
+        | "Comptroller of Public Accounts"
+        | "Chief Justice - Supreme Court"
+        | "Justice - Supreme Court"
+        | "Judge - Court of Criminal Appeals" => {
             (PoliticalScope::State, ElectionScope::State, None)
         }
-        "State Board of Education" => (PoliticalScope::State, ElectionScope::District, Some(DistrictType::BoardOfEducation)),
-        "State House" => (PoliticalScope::State, ElectionScope::District, Some(DistrictType::StateHouse)),
-        "State Senate" => (PoliticalScope::State, ElectionScope::District, Some(DistrictType::StateSenate)),
-        "Chief Justice - Court of Appeals" | "Justice - Court of Appeals" => {
-            (PoliticalScope::State, ElectionScope::District, Some(DistrictType::CourtOfAppeals))
-        }
-        "Judge - District Court" => (PoliticalScope::State, ElectionScope::District, Some(DistrictType::Judicial)),
+        "State Board of Education" => (
+            PoliticalScope::State,
+            ElectionScope::District,
+            Some(DistrictType::BoardOfEducation),
+        ),
+        "State House" => (
+            PoliticalScope::State,
+            ElectionScope::District,
+            Some(DistrictType::StateHouse),
+        ),
+        "State Senate" => (
+            PoliticalScope::State,
+            ElectionScope::District,
+            Some(DistrictType::StateSenate),
+        ),
+        "Chief Justice - Court of Appeals" | "Justice - Court of Appeals" => (
+            PoliticalScope::State,
+            ElectionScope::District,
+            Some(DistrictType::CourtOfAppeals),
+        ),
+        "Judge - District Court" => (
+            PoliticalScope::State,
+            ElectionScope::District,
+            Some(DistrictType::Judicial),
+        ),
         "District Attorney" => {
             if county.is_some() {
                 (PoliticalScope::Local, ElectionScope::County, None)
             } else {
-                (PoliticalScope::State, ElectionScope::District, Some(DistrictType::Judicial))
+                (
+                    PoliticalScope::State,
+                    ElectionScope::District,
+                    Some(DistrictType::Judicial),
+                )
             }
         }
-        "County Commissioner" => (PoliticalScope::Local, ElectionScope::District, Some(DistrictType::County)),
-        "County Judge" | "County Clerk" | "District Clerk" | "County Attorney" | "County Treasurer"
-        | "County Surveyor" | "County Tax Assessor-Collector" | "County Chair (D)" | "County Chair (R)" | "County & District Clerk"
-        | "Sheriff" | "Judge - County Court at Law" | "Judge - 1st Multicounty Court at Law" | "Judge - County Civil Court at Law"
-        | "Judge - County Criminal Court of Appeals" | "Judge - County Criminal Court at Law"
-        | "Judge - Probate Court" | "Judge - Criminal District" => (PoliticalScope::Local, ElectionScope::County, None),
-        "Justice of the Peace" => (PoliticalScope::Local, ElectionScope::District, Some(DistrictType::JusticeOfThePeace)),
-        "County Constable" => (PoliticalScope::Local, ElectionScope::District, Some(DistrictType::Constable)),
-        "Precinct Chair" | "Precinct Chair (D)" | "Precinct Chair (R)" => {
-            (PoliticalScope::Local, ElectionScope::District, Some(DistrictType::VotingPrecinct))
-        }
+        "County Commissioner" => (
+            PoliticalScope::Local,
+            ElectionScope::District,
+            Some(DistrictType::County),
+        ),
+        "County Judge"
+        | "County Clerk"
+        | "District Clerk"
+        | "County Attorney"
+        | "County Treasurer"
+        | "County Surveyor"
+        | "County Tax Assessor-Collector"
+        | "County Chair (D)"
+        | "County Chair (R)"
+        | "County & District Clerk"
+        | "Sheriff"
+        | "Judge - County Court at Law"
+        | "Judge - 1st Multicounty Court at Law"
+        | "Judge - County Civil Court at Law"
+        | "Judge - County Criminal Court of Appeals"
+        | "Judge - County Criminal Court at Law"
+        | "Judge - Probate Court"
+        | "Judge - Criminal District" => (PoliticalScope::Local, ElectionScope::County, None),
+        "Justice of the Peace" => (
+            PoliticalScope::Local,
+            ElectionScope::District,
+            Some(DistrictType::JusticeOfThePeace),
+        ),
+        "County Constable" => (
+            PoliticalScope::Local,
+            ElectionScope::District,
+            Some(DistrictType::Constable),
+        ),
+        "Precinct Chair" | "Precinct Chair (D)" | "Precinct Chair (R)" => (
+            PoliticalScope::Local,
+            ElectionScope::District,
+            Some(DistrictType::VotingPrecinct),
+        ),
         _ => return None,
     };
     Some(out)
@@ -451,8 +752,8 @@ fn normalize_precinct_district_list(s: &str) -> String {
 
 /// For PCHR segment: ignore leading letters and "."/space; ignore "." throughout; return numbers + any letters after.
 fn normalize_precinct_district(segment: &str) -> Option<String> {
-    let trimmed = segment
-        .trim_start_matches(|c: char| c.is_alphabetic() || c == '.' || c.is_whitespace());
+    let trimmed =
+        segment.trim_start_matches(|c: char| c.is_alphabetic() || c == '.' || c.is_whitespace());
     let without_dots = trimmed.replace('.', "");
     let out = without_dots.trim();
     if out.is_empty() {
@@ -473,7 +774,8 @@ pub fn extract_office_district(input: &str) -> Option<String> {
             // [2] Precinct list (e.g. "1, 2, 3", "2 & 6")
             Regex::new(r"(?i)precinct\s+([0-9][0-9\s,&]*)").unwrap(),
             // [3] Ordinal + "Court of Appeals District" – more specific than [1]
-            Regex::new(r"(?i)([0-9]{1,3})(?:st|nd|rd|th)\s+court\s+of\s+appeals\s+district").unwrap(),
+            Regex::new(r"(?i)([0-9]{1,3})(?:st|nd|rd|th)\s+court\s+of\s+appeals\s+district")
+                .unwrap(),
             // [4] Ordinal + "Judicial District" – more specific than [1]
             Regex::new(r"(?i)([0-9]{1,3})(?:st|nd|rd|th)\s+judicial\s+district").unwrap(),
             // [5] PCHR_<segment>_rep|_dem (precinct chair): capture segment between pchr_ and _rep/_dem; then ignore leading letters, ignore "." throughout, keep numbers + letters after

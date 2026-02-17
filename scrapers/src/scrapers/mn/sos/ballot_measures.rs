@@ -7,7 +7,7 @@ use regex::Regex;
 use serde::Deserialize;
 use slugify::slugify;
 
-use crate::generators::election::{GeneralElectionDateGenerator, ElectionTitleGenerator};
+use crate::generators::election::{ElectionTitleGenerator, GeneralElectionDateGenerator};
 use std::io::Cursor;
 
 const FILE_PATH: &str = "mn/sos/ballot_measures.xlsx";

@@ -4,8 +4,8 @@ use chrono::Datelike;
 use regex::Regex;
 use slugify::slugify;
 
-use crate::util::extensions::*;
 use crate::generators::optional_state_str;
+use crate::util::extensions::*;
 
 pub struct RaceTitleGenerator<'a> {
     pub race_type: &'a db::RaceType,

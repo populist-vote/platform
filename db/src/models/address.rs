@@ -227,10 +227,7 @@ impl Address {
 
     /// Insert a new address. If (line_1, line_2, city, state, country, postal_code) already exists,
     /// updates lon/lat and district fields and returns the existing row.
-    pub async fn insert(
-        pool: &PgPool,
-        input: &InsertAddressInput,
-    ) -> Result<Address, sqlx::Error> {
+    pub async fn insert(pool: &PgPool, input: &InsertAddressInput) -> Result<Address, sqlx::Error> {
         let (lon, lat) = (input.lon, input.lat);
         let has_coords = lon.is_some() && lat.is_some();
         let row = if has_coords {
@@ -349,10 +346,7 @@ impl Address {
     }
 
     /// Update an existing address by id. Only provided fields are updated.
-    pub async fn update(
-        pool: &PgPool,
-        input: &UpdateAddressInput,
-    ) -> Result<Address, sqlx::Error> {
+    pub async fn update(pool: &PgPool, input: &UpdateAddressInput) -> Result<Address, sqlx::Error> {
         let has_coords = input.lon.is_some() && input.lat.is_some();
         let row = if has_coords {
             let lon = input.lon.unwrap();

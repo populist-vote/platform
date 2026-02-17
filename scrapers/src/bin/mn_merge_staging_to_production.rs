@@ -1,14 +1,14 @@
 //! Merges staging data from ingest_staging.stg_mn_* into production tables (office, politician, race, race_candidates).
 //! Run after process_mn_candidate_filings. Resolves by slug for offices/races and by ref_key/slug/email/phone for politicians.
 
-use std::collections::HashMap;
-use std::str::FromStr;
-use sqlx::PgPool;
 use db::{
-    Chamber, DistrictType, ElectionScope, Office, Politician, PoliticalScope, Race, RaceCandidate,
+    Chamber, DistrictType, ElectionScope, Office, PoliticalScope, Politician, Race, RaceCandidate,
     RaceType, State, UpdatePoliticianInput, UpsertOfficeInput, UpsertPoliticianInput,
     UpsertRaceCandidateInput, UpsertRaceInput, VoteType,
 };
+use sqlx::PgPool;
+use std::collections::HashMap;
+use std::str::FromStr;
 
 #[derive(sqlx::FromRow, Debug)]
 struct StgOffice {
@@ -112,7 +112,10 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
         let prod = Office::upsert_from_source(pool, &input).await?;
         stg_to_prod_office.insert(stg.id, prod.id);
     }
-    println!("  Offices: {} existing (matched by slug), {} new", offices_existing, offices_new);
+    println!(
+        "  Offices: {} existing (matched by slug), {} new",
+        offices_existing, offices_new
+    );
 
     // 2. Politicians: resolve by email / phone, else upsert; build stg_politician_id -> prod_politician_id
     println!("Merging politicians...");
@@ -134,7 +137,10 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
         }
         stg_to_prod_politician.insert(stg.id, prod_id);
     }
-    println!("  Politicians: {} existing (matched by email/phone), {} new", politicians_existing, politicians_new);
+    println!(
+        "  Politicians: {} existing (matched by email/phone), {} new",
+        politicians_existing, politicians_new
+    );
 
     // 3. Races: upsert by slug with prod office_id; build stg_race_id -> prod_race_id
     println!("Merging races...");
@@ -149,7 +155,12 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
         let prod_office_id = stg_to_prod_office
             .get(&stg.office_id)
             .copied()
-            .ok_or_else(|| format!("Staging race {} references unknown office {}", stg.slug, stg.office_id))?;
+            .ok_or_else(|| {
+                format!(
+                    "Staging race {} references unknown office {}",
+                    stg.slug, stg.office_id
+                )
+            })?;
         let input = stg_race_to_upsert(stg, prod_office_id);
         let prod = Race::upsert_from_source(pool, &input).await?;
         stg_to_prod_race.insert(stg.id, prod.id);
@@ -180,7 +191,10 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
             ref_key: rc.ref_key.clone(),
             is_running: None,
         };
-        if RaceCandidate::upsert_from_source(pool, &input).await?.is_some() {
+        if RaceCandidate::upsert_from_source(pool, &input)
+            .await?
+            .is_some()
+        {
             inserted += 1;
         }
     }
@@ -313,22 +327,21 @@ async fn update_matched_politician_from_staging(
 }
 
 async fn office_slug_exists(pool: &PgPool, slug: &str) -> Result<bool, Box<dyn std::error::Error>> {
-    let row: Option<(uuid::Uuid,)> = sqlx::query_as(
-        "SELECT id FROM office WHERE slug = $1",
-    )
-    .bind(slug)
-    .fetch_optional(pool)
-    .await?;
+    let row: Option<(uuid::Uuid,)> = sqlx::query_as("SELECT id FROM office WHERE slug = $1")
+        .bind(slug)
+        .fetch_optional(pool)
+        .await?;
     Ok(row.is_some())
 }
 
-async fn politician_slug_exists(pool: &PgPool, slug: &str) -> Result<bool, Box<dyn std::error::Error>> {
-    let row: Option<(uuid::Uuid,)> = sqlx::query_as(
-        "SELECT id FROM politician WHERE slug = $1",
-    )
-    .bind(slug)
-    .fetch_optional(pool)
-    .await?;
+async fn politician_slug_exists(
+    pool: &PgPool,
+    slug: &str,
+) -> Result<bool, Box<dyn std::error::Error>> {
+    let row: Option<(uuid::Uuid,)> = sqlx::query_as("SELECT id FROM politician WHERE slug = $1")
+        .bind(slug)
+        .fetch_optional(pool)
+        .await?;
     Ok(row.is_some())
 }
 
@@ -358,12 +371,11 @@ async fn resolve_or_upsert_politician(
     if let Some(email) = &stg.email {
         let email = email.trim();
         if !email.is_empty() {
-            let row: Option<(uuid::Uuid,)> = sqlx::query_as(
-                "SELECT id FROM politician WHERE email = $1",
-            )
-            .bind(email)
-            .fetch_optional(pool)
-            .await?;
+            let row: Option<(uuid::Uuid,)> =
+                sqlx::query_as("SELECT id FROM politician WHERE email = $1")
+                    .bind(email)
+                    .fetch_optional(pool)
+                    .await?;
             if let Some((id,)) = row {
                 update_matched_politician_from_staging(pool, id, stg).await?;
                 return Ok((id, true));
@@ -375,12 +387,11 @@ async fn resolve_or_upsert_politician(
     if let Some(phone) = &stg.phone {
         let phone = phone.trim();
         if !phone.is_empty() {
-            let row: Option<(uuid::Uuid,)> = sqlx::query_as(
-                "SELECT id FROM politician WHERE phone = $1",
-            )
-            .bind(phone)
-            .fetch_optional(pool)
-            .await?;
+            let row: Option<(uuid::Uuid,)> =
+                sqlx::query_as("SELECT id FROM politician WHERE phone = $1")
+                    .bind(phone)
+                    .fetch_optional(pool)
+                    .await?;
             if let Some((id,)) = row {
                 update_matched_politician_from_staging(pool, id, stg).await?;
                 return Ok((id, true));

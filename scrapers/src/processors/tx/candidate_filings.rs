@@ -4,16 +4,16 @@
 //! Creates staging tables (ingest_staging.stg_tx_offices, stg_tx_politicians, stg_tx_politician_dupes, stg_tx_addresses, stg_tx_races, stg_tx_race_candidates)
 //! and processes each row into staging using TX office/race extractors and generators.
 
-use std::error::Error;
-use std::str::FromStr;
-use sqlx::FromRow;
-use sqlx::PgPool;
-use db::{Office, Politician, Race, State, RaceType, VoteType};
-use uuid::Uuid;
-use serde_json::Value as JSON;
-use slugify::slugify;
 use crate::extractors;
 use crate::generators;
+use db::{Office, Politician, Race, RaceType, State, VoteType};
+use serde_json::Value as JSON;
+use slugify::slugify;
+use sqlx::FromRow;
+use sqlx::PgPool;
+use std::error::Error;
+use std::str::FromStr;
+use uuid::Uuid;
 
 /// Staging address built from a filing; inserted into stg_tx_addresses only when the politician is inserted.
 #[derive(Debug, Clone)]
@@ -102,10 +102,7 @@ pub async fn process_tx_candidate_filings(
                 error_count += 1;
                 eprintln!(
                     "Error processing filing: {} - {}",
-                    filing
-                        .candidate_name
-                        .as_deref()
-                        .unwrap_or("Unknown"),
+                    filing.candidate_name.as_deref().unwrap_or("Unknown"),
                     e
                 );
             }
@@ -152,7 +149,8 @@ async fn create_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>> {
         .execute(pool)
         .await?;
 
-    sqlx::query(r#"
+    sqlx::query(
+        r#"
         CREATE TABLE ingest_staging.stg_tx_offices (
             id UUID PRIMARY KEY,
             slug TEXT NOT NULL UNIQUE,
@@ -178,11 +176,13 @@ async fn create_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>> {
             created_at TIMESTAMPTZ NOT NULL,
             updated_at TIMESTAMPTZ NOT NULL
         )
-    "#)
+    "#,
+    )
     .execute(pool)
     .await?;
 
-    sqlx::query(r#"
+    sqlx::query(
+        r#"
         CREATE TABLE ingest_staging.stg_tx_politicians (
             id UUID PRIMARY KEY,
             slug TEXT NOT NULL UNIQUE,
@@ -224,11 +224,13 @@ async fn create_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>> {
             created_at TIMESTAMPTZ NOT NULL,
             updated_at TIMESTAMPTZ NOT NULL
         )
-    "#)
+    "#,
+    )
     .execute(pool)
     .await?;
 
-    sqlx::query(r#"
+    sqlx::query(
+        r#"
         CREATE TABLE ingest_staging.stg_tx_addresses (
             id UUID PRIMARY KEY,
             line_1 TEXT NOT NULL,
@@ -237,11 +239,13 @@ async fn create_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>> {
             country TEXT NOT NULL,
             politician_id UUID NOT NULL
         )
-    "#)
+    "#,
+    )
     .execute(pool)
     .await?;
 
-    sqlx::query(r#"
+    sqlx::query(
+        r#"
         CREATE TABLE ingest_staging.stg_tx_politician_dupes (
             existing_id UUID NOT NULL,
             existing_slug TEXT NOT NULL,
@@ -254,11 +258,13 @@ async fn create_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>> {
             incoming_inserted BOOLEAN NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
         )
-    "#)
+    "#,
+    )
     .execute(pool)
     .await?;
 
-    sqlx::query(r#"
+    sqlx::query(
+        r#"
         CREATE TABLE ingest_staging.stg_tx_races (
             id UUID PRIMARY KEY,
             title TEXT NOT NULL,
@@ -282,18 +288,21 @@ async fn create_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>> {
             created_at TIMESTAMPTZ NOT NULL,
             updated_at TIMESTAMPTZ NOT NULL
         )
-    "#)
+    "#,
+    )
     .execute(pool)
     .await?;
 
-    sqlx::query(r#"
+    sqlx::query(
+        r#"
         CREATE TABLE ingest_staging.stg_tx_race_candidates (
             race_id UUID NOT NULL,
             candidate_id UUID NOT NULL,
             ref_key TEXT,
             PRIMARY KEY (race_id, candidate_id)
         )
-    "#)
+    "#,
+    )
     .execute(pool)
     .await?;
 
@@ -316,10 +325,9 @@ async fn process_and_insert_tx_filing(
     let office = process_tx_office(filing)?;
     let office_id = get_staging_office_id_by_slug(pool, &office.slug).await?;
     if office_id.is_none() {
-        let state_id = filing
-            .office_title
-            .as_ref()
-            .map(|t| generators::politician::PoliticianRefKeyGenerator::new("tx-sos", t).generate());
+        let state_id = filing.office_title.as_ref().map(|t| {
+            generators::politician::PoliticianRefKeyGenerator::new("tx-sos", t).generate()
+        });
         insert_staging_office(pool, &office, state_id.as_ref()).await?;
     }
     let resolved_office_id = office_id.unwrap_or(office.id);
@@ -329,7 +337,7 @@ async fn process_and_insert_tx_filing(
     let address = process_tx_address(filing);
 
     let politician_inserted = insert_staging_politician(pool, &mut politician, address).await?;
-    
+
     // If the politician was not inserted, exit and don't insert the race or race_candidate
     if !politician_inserted {
         let name = politician.full_name.as_deref().unwrap_or("(no name)");
@@ -339,7 +347,9 @@ async fn process_and_insert_tx_filing(
 
     insert_staging_race(pool, &race).await?;
 
-    let race_id = get_staging_race_id_by_slug(pool, &race.slug).await?.unwrap_or(race.id);
+    let race_id = get_staging_race_id_by_slug(pool, &race.slug)
+        .await?
+        .unwrap_or(race.id);
     let race_candidate_ref_key = process_tx_race_candidate_ref_key(filing);
     insert_staging_race_candidate(pool, race_id, &politician, &race_candidate_ref_key).await?;
 
@@ -364,11 +374,11 @@ fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error
 
     let raw_filing_title = filing.office_title.as_ref().ok_or("Missing office title")?;
     let raw_filing_title_cleaned = strip_unexpired_term(raw_filing_title);
-    
+
     // Extract the office name, and if it fails record the error and skip this filing
     let name = office::extract_office_name(&raw_filing_title_cleaned, filing.party.as_deref())
         .ok_or("Failed to extract office name")?;
-    
+
     let (extracted_county, office_title_stripped) =
         office::extract_tx_county_from_office_title(&raw_filing_title_cleaned, Some(&name));
     let county = filing
@@ -384,8 +394,9 @@ fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error
 
     // Extract and strip the seat from the office title (before scope, so scope can use seat for some offices)
     let (seat, office_title_no_seat) = office::extract_office_seat(office_title);
-    let (political_scope, election_scope, district_type) = office::extract_office_scope(&name, county.as_deref(), seat.as_deref())
-        .ok_or("Failed to extract office scope")?;
+    let (political_scope, election_scope, district_type) =
+        office::extract_office_scope(&name, county.as_deref(), seat.as_deref())
+            .ok_or("Failed to extract office scope")?;
     let district = office::extract_office_district(&office_title_no_seat);
 
     let slug = generators::tx::office::OfficeSlugGenerator {
@@ -449,7 +460,10 @@ async fn process_tx_politician(
     filing: &TxCandidateFiling,
     current_office_id: Uuid,
 ) -> Result<Politician, Box<dyn Error>> {
-    let candidate_name_raw = filing.candidate_name.as_ref().ok_or("Missing candidate name")?;
+    let candidate_name_raw = filing
+        .candidate_name
+        .as_ref()
+        .ok_or("Missing candidate name")?;
     let candidate_name = extractors::politician::normalize_name(candidate_name_raw);
     let ref_key_input = format!(
         "{} {}",
@@ -458,7 +472,8 @@ async fn process_tx_politician(
     )
     .trim()
     .to_string();
-    let ref_key = generators::politician::PoliticianRefKeyGenerator::new("TX-SOS", &ref_key_input).generate();
+    let ref_key =
+        generators::politician::PoliticianRefKeyGenerator::new("TX-SOS", &ref_key_input).generate();
 
     // Resolve party_id from production party table
     // If no party or empty, use "UN" (unaffiliated)
@@ -509,7 +524,11 @@ async fn process_tx_politician(
     let title = extractors::politician::title_case;
     let first_name = title(&name_parts.first);
     let middle_name = name_parts.middle.as_deref().map(|s| title(s));
-    let last_name = name_parts.last.as_deref().map(|s| title(s)).unwrap_or_default();
+    let last_name = name_parts
+        .last
+        .as_deref()
+        .map(|s| title(s))
+        .unwrap_or_default();
     let suffix = name_parts.suffix.as_deref().map(|s| title(s));
     let preferred_name = name_parts.preferred.as_deref().map(|s| title(s));
     let full_name_display = title(&candidate_name);
@@ -580,7 +599,8 @@ fn process_tx_race(
     office_id: Option<Uuid>,
     race_type: &str,
 ) -> Result<Race, Box<dyn Error>> {
-    let election_id = Uuid::parse_str("0d586931-c119-4fe7-814f-f679e91282a8").unwrap_or_else(|_| Uuid::nil());
+    let election_id =
+        Uuid::parse_str("0d586931-c119-4fe7-814f-f679e91282a8").unwrap_or_else(|_| Uuid::nil());
     let election_year = 2026;
 
     let is_special_election = filing
@@ -588,7 +608,10 @@ fn process_tx_race(
         .as_ref()
         .map(|t| extractors::tx::race::extract_is_special_election(t))
         .unwrap_or(false);
-    let num_elect = filing.office_title.as_ref().and_then(|t| extractors::tx::race::extract_num_elect(t));
+    let num_elect = filing
+        .office_title
+        .as_ref()
+        .and_then(|t| extractors::tx::race::extract_num_elect(t));
 
     let party_fec = filing
         .party
@@ -676,7 +699,10 @@ fn process_tx_address(filing: &TxCandidateFiling) -> Option<TxStagingAddress> {
     })
 }
 
-async fn get_staging_office_id_by_slug(pool: &PgPool, slug: &str) -> Result<Option<Uuid>, Box<dyn Error>> {
+async fn get_staging_office_id_by_slug(
+    pool: &PgPool,
+    slug: &str,
+) -> Result<Option<Uuid>, Box<dyn Error>> {
     let row: Option<(Uuid,)> =
         sqlx::query_as("SELECT id FROM ingest_staging.stg_tx_offices WHERE slug = $1")
             .bind(slug)
@@ -685,7 +711,10 @@ async fn get_staging_office_id_by_slug(pool: &PgPool, slug: &str) -> Result<Opti
     Ok(row.map(|(id,)| id))
 }
 
-async fn get_staging_race_id_by_slug(pool: &PgPool, slug: &str) -> Result<Option<Uuid>, Box<dyn Error>> {
+async fn get_staging_race_id_by_slug(
+    pool: &PgPool,
+    slug: &str,
+) -> Result<Option<Uuid>, Box<dyn Error>> {
     let row: Option<(Uuid,)> =
         sqlx::query_as("SELECT id FROM ingest_staging.stg_tx_races WHERE slug = $1")
             .bind(slug)
@@ -773,7 +802,12 @@ async fn execute_staging_politician_insert(
     .bind(&politician.full_name)
     .bind(&politician.biography)
     .bind(&politician.biography_source)
-    .bind(politician.home_state.as_ref().map(|s| s.as_ref().to_string()))
+    .bind(
+        politician
+            .home_state
+            .as_ref()
+            .map(|s| s.as_ref().to_string()),
+    )
     .bind(politician.party_id)
     .bind(politician.date_of_birth)
     .bind(politician.office_id)
@@ -807,7 +841,7 @@ async fn execute_staging_politician_insert(
 }
 
 /// Tests to see if existing and incoming are the same person by comparing email and address.
-/// Returns booleans (same_person, emails_equal_not_both_empty) 
+/// Returns booleans (same_person, emails_equal_not_both_empty)
 fn same_person_from_emails_and_addresses(
     existing_email_trimmed: Option<&str>,
     existing_address: Option<&TxStagingAddress>,
@@ -880,15 +914,25 @@ async fn apply_same_person_updates_and_dupes(
             .execute(pool)
             .await?;
         }
-    } else if existing_email_trimmed.is_none() && politician.email.as_deref().map(|e| e.trim()).filter(|e| !e.is_empty()).is_some() {
-        let incoming_trimmed = politician.email.as_deref().map(|e| e.trim()).filter(|e| !e.is_empty()).unwrap();
-        sqlx::query(
-            r#"UPDATE ingest_staging.stg_tx_politicians SET email = $1 WHERE id = $2"#,
-        )
-        .bind(incoming_trimmed)
-        .bind(existing_id)
-        .execute(pool)
-        .await?;
+    } else if existing_email_trimmed.is_none()
+        && politician
+            .email
+            .as_deref()
+            .map(|e| e.trim())
+            .filter(|e| !e.is_empty())
+            .is_some()
+    {
+        let incoming_trimmed = politician
+            .email
+            .as_deref()
+            .map(|e| e.trim())
+            .filter(|e| !e.is_empty())
+            .unwrap();
+        sqlx::query(r#"UPDATE ingest_staging.stg_tx_politicians SET email = $1 WHERE id = $2"#)
+            .bind(incoming_trimmed)
+            .bind(existing_id)
+            .execute(pool)
+            .await?;
     }
     sqlx::query(
         r#"
@@ -953,7 +997,13 @@ async fn insert_staging_politician(
     }
 
     // Slug conflict: fetch existing row (including residence_address_id) and compare emails + addresses
-    let existing: (uuid::Uuid, String, Option<String>, Option<String>, Option<uuid::Uuid>) = sqlx::query_as(
+    let existing: (
+        uuid::Uuid,
+        String,
+        Option<String>,
+        Option<String>,
+        Option<uuid::Uuid>,
+    ) = sqlx::query_as(
         r#"
         SELECT id, slug, email, ref_key, residence_address_id
         FROM ingest_staging.stg_tx_politicians
@@ -965,9 +1015,22 @@ async fn insert_staging_politician(
     .await?
     .ok_or_else(|| "Existing row not found for slug conflict".to_string())?;
 
-    let (existing_id, existing_slug, existing_email, existing_ref_key, existing_residence_address_id) = existing;
-    let existing_email_trimmed = existing_email.as_deref().map(|e| e.trim()).filter(|e| !e.is_empty());
-    let incoming_email_trimmed = politician.email.as_deref().map(|e| e.trim()).filter(|e| !e.is_empty());
+    let (
+        existing_id,
+        existing_slug,
+        existing_email,
+        existing_ref_key,
+        existing_residence_address_id,
+    ) = existing;
+    let existing_email_trimmed = existing_email
+        .as_deref()
+        .map(|e| e.trim())
+        .filter(|e| !e.is_empty());
+    let incoming_email_trimmed = politician
+        .email
+        .as_deref()
+        .map(|e| e.trim())
+        .filter(|e| !e.is_empty());
 
     let existing_address = fetch_staging_address(pool, existing_residence_address_id).await?;
     let incoming_address = address.as_ref();
@@ -1002,7 +1065,13 @@ async fn insert_staging_politician(
     let mut n = 1u32;
     loop {
         let candidate = format!("{}-{}", base_slug, n);
-        let existing: Option<(uuid::Uuid, String, Option<String>, Option<String>, Option<uuid::Uuid>)> = sqlx::query_as(
+        let existing: Option<(
+            uuid::Uuid,
+            String,
+            Option<String>,
+            Option<String>,
+            Option<uuid::Uuid>,
+        )> = sqlx::query_as(
             r#"
             SELECT id, slug, email, ref_key, residence_address_id
             FROM ingest_staging.stg_tx_politicians
@@ -1019,7 +1088,10 @@ async fn insert_staging_politician(
                 break;
             }
             Some((eid, eslug, eemail, eref_key, eaddr_id)) => {
-                let e_email_trimmed = eemail.as_deref().map(|e| e.trim()).filter(|e| !e.is_empty());
+                let e_email_trimmed = eemail
+                    .as_deref()
+                    .map(|e| e.trim())
+                    .filter(|e| !e.is_empty());
                 let e_address = fetch_staging_address(pool, eaddr_id).await?;
                 let (same, emails_eq) = same_person_from_emails_and_addresses(
                     e_email_trimmed,
@@ -1109,7 +1181,12 @@ async fn fetch_staging_address(
     .bind(addr_id)
     .fetch_optional(pool)
     .await?;
-    Ok(row.map(|(line_1, city, state, country)| TxStagingAddress { line_1, city, state, country }))
+    Ok(row.map(|(line_1, city, state, country)| TxStagingAddress {
+        line_1,
+        city,
+        state,
+        country,
+    }))
 }
 
 async fn insert_staging_race(pool: &PgPool, race: &Race) -> Result<(), Box<dyn Error>> {

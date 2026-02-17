@@ -2,8 +2,8 @@ use std::{error::Error, future::Future};
 
 pub mod extractors;
 pub mod generators;
-pub mod util;
 pub mod processors;
+pub mod util;
 
 mod scrapers;
 

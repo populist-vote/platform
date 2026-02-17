@@ -45,60 +45,58 @@ impl<'a> RaceTitleGenerator<'a> {
     pub fn generate(&self) -> (String, String) {
         // Build title following dbt logic: MN - <office_name> - <subtitle> - [Special Election -] <race_type> [- party] - <year>
         let mut parts = Vec::new();
-        
+
         // Always start with MN
         parts.push("MN".to_string());
-        
+
         // Office name
         if let Some(name) = self.office_name {
             if !name.is_empty() {
                 parts.push(name.to_string());
             }
         }
-        
+
         // Office subtitle (already contains location info, may have "MN - " prefix)
         if let Some(subtitle) = self.office_subtitle {
             if !subtitle.is_empty() {
                 // Remove "MN - " prefix if it exists to avoid duplication
                 let cleaned_subtitle = if subtitle.starts_with("MN - ") {
-                    &subtitle[5..]  // Skip "MN - "
+                    &subtitle[5..] // Skip "MN - "
                 } else {
                     subtitle
                 };
-                
+
                 // Only add if there's content after cleaning
                 if !cleaned_subtitle.is_empty() {
                     parts.push(cleaned_subtitle.to_string());
                 }
             }
         }
-        
+
         // Special Election (before race type in SQL)
         if self.is_special_election {
             parts.push("Special Election".to_string());
         }
-        
+
         // Race type with party expansion for primaries
         let race_type_str = match self.race_type {
-            db::RaceType::Primary => {
-                match self.party {
-                    Some("N") => "Primary - Nonpartisan".to_string(),
-                    Some("REP") => "Primary - Republican".to_string(),
-                    Some("DEM") | Some("DFL") => "Primary - Democratic".to_string(),
-                    Some(p) if !p.is_empty() => format!("Primary - {}", p),
-                    _ => "Primary".to_string(),
-                }
+            db::RaceType::Primary => match self.party {
+                Some("N") => "Primary - Nonpartisan".to_string(),
+                Some("REP") => "Primary - Republican".to_string(),
+                Some("DEM") | Some("DFL") => "Primary - Democratic".to_string(),
+                Some(p) if !p.is_empty() => format!("Primary - {}", p),
+                _ => "Primary".to_string(),
             },
             db::RaceType::General => "General".to_string(),
         };
         parts.push(race_type_str);
-        
+
         // Year
         parts.push(self.year.to_string());
-        
+
         // Join with " - " and clean up extra spaces
         let title = parts.join(" - ");
-        
+
         static REGEX: OnceLock<Regex> = OnceLock::new();
         let regex = REGEX.get_or_init(|| Regex::new(r"  +").unwrap());
         let title = regex.replace_all(&title, " ").trim().to_string();
