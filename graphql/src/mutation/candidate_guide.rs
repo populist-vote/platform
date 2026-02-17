@@ -1,5 +1,5 @@
 use crate::{context::ApiContext, types::CandidateGuideResult};
-use async_graphql::{Context, InputObject, Object, Result, SimpleObject, ID};
+use async_graphql::{Context, Error, InputObject, Object, Result, SimpleObject, ID};
 use auth::AccessTokenClaims;
 use db::{
     models::candidate_guide::{CandidateGuide, UpsertCandidateGuideInput},
@@ -31,10 +31,35 @@ impl CandidateGuideMutation {
     ) -> Result<CandidateGuideResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let user = ctx.data::<Option<TokenData<AccessTokenClaims>>>().unwrap();
-        let organization_id = input.organization_id;
+
+        let organization_id = input
+            .organization_id
+            .ok_or_else(|| Error::new("organization_id is required"))?;
+
+        let is_paid_organization = sqlx::query_scalar::<_, bool>(
+            "SELECT is_paid FROM organization WHERE id = $1",
+        )
+        .bind(organization_id)
+        .fetch_one(&db_pool)
+        .await?;
+
+        if !is_paid_organization {
+            let existing_guides = CandidateGuide::find_by_organization(&db_pool, organization_id).await?;
+            let creating_new_guide = match input.id {
+                Some(id) => existing_guides.iter().all(|guide| guide.id != id),
+                None => true,
+            };
+
+            if creating_new_guide && existing_guides.len() >= 3 {
+                return Err(Error::new(
+                    "Free organizations can only create up to 3 candidate guides. Contact us to upgrade.",
+                ));
+            }
+        }
+
         let input = UpsertCandidateGuideInput {
             user_id: Some(user.as_ref().unwrap().claims.sub),
-            organization_id,
+            organization_id: Some(organization_id),
             ..input
         };
         let upsert = CandidateGuide::upsert(&db_pool, &input).await?;
@@ -44,7 +69,7 @@ impl CandidateGuideMutation {
             for race_id in input.race_ids.unwrap() {
                 let embed_input = UpsertEmbedInput {
                     id: None,
-                    organization_id,
+                    organization_id: Some(organization_id),
                     name: upsert.name.clone(),
                     description: None,
                     embed_type: Some(EmbedType::CandidateGuide),
