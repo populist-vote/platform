@@ -245,10 +245,13 @@ pub fn extract_office_name(input: &str, party: Option<&str>) -> Option<String> {
         return Some("Judge - Court of Criminal Appeals".to_string());
     }
     if input_lower.contains("district judge") && input_lower.contains("judicial district") {
-        return Some("Judge - District Court".to_string());
+        return Some("District Judge".to_string());
     }
 
     // District Attorney is for both State and County types
+    if input_lower.contains("criminal district attorney") {
+        return Some("Criminal District Attorney".to_string());
+    }
     if input_lower.contains("district attorney") {
         return Some("District Attorney".to_string());
     }
@@ -297,7 +300,7 @@ pub fn extract_office_name(input: &str, party: Option<&str>) -> Option<String> {
         return Some("Sheriff".to_string());
     }
     if input_lower.contains("department of education") {
-        return Some("Department of Education".to_string());
+        return Some("County School Trustee".to_string());
     }
 
     // County Judicial Offices
@@ -320,7 +323,7 @@ pub fn extract_office_name(input: &str, party: Option<&str>) -> Option<String> {
         return Some("Judge - County Court at Law".to_string());
     }
     if input_lower.contains("criminal district judge") {
-        return Some("Judge - Criminal District".to_string());
+        return Some("Criminal District Judge".to_string());
     }
 
     // VTD Precinct Chair: "Precinct Chair (D)" or "Precinct Chair (R)" when party is Democratic/Republican
@@ -376,7 +379,7 @@ pub fn extract_office_scope(
     use db::{DistrictType, ElectionScope, PoliticalScope};
 
     let out: (PoliticalScope, ElectionScope, Option<DistrictType>) = match name {
-        "Department of Education" => {
+        "County School Trustee" => {
             let is_harris = county.map(|c| {
                 let t = c.trim();
                 t.eq_ignore_ascii_case("Harris")
@@ -407,20 +410,16 @@ pub fn extract_office_scope(
                 (PoliticalScope::State, ElectionScope::District, Some(DistrictType::CourtOfAppeals))
             }
         }
-        "Judge - District Court" => (PoliticalScope::State, ElectionScope::District, Some(DistrictType::Judicial)),
-        "District Attorney" => {
-            if county.is_some() {
-                (PoliticalScope::Local, ElectionScope::County, None)
-            } else {
-                (PoliticalScope::State, ElectionScope::District, Some(DistrictType::Judicial))
-            }
-        }
+        "District Judge" => (PoliticalScope::State, ElectionScope::District, Some(DistrictType::Judicial)),
+        "District Attorney" => (PoliticalScope::State, ElectionScope::District, Some(DistrictType::Judicial)),
+        "Criminal District Attorney" => (PoliticalScope::Local, ElectionScope::County, None),
+
         "County Commissioner" => (PoliticalScope::Local, ElectionScope::District, Some(DistrictType::County)),
         "County Judge" | "County Clerk" | "District Clerk" | "County Attorney" | "County Treasurer"
         | "County Surveyor" | "County Tax Assessor-Collector" | "County Chair (D)" | "County Chair (R)" | "County & District Clerk"
         | "Sheriff" | "Judge - County Court at Law" | "Judge - 1st Multicounty Court at Law" | "Judge - County Civil Court at Law"
         | "Judge - County Criminal Court of Appeals" | "Judge - County Criminal Court at Law"
-        | "Judge - Probate Court" | "Judge - Criminal District" => (PoliticalScope::Local, ElectionScope::County, None),
+        | "Judge - Probate Court" | "Criminal District Judge" => (PoliticalScope::Local, ElectionScope::County, None),
         "Justice of the Peace" => (PoliticalScope::Local, ElectionScope::District, Some(DistrictType::JusticeOfThePeace)),
         "County Constable" => (PoliticalScope::Local, ElectionScope::District, Some(DistrictType::Constable)),
         "Precinct Chair" | "Precinct Chair (D)" | "Precinct Chair (R)" => {

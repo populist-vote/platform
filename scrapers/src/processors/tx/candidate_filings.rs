@@ -452,7 +452,7 @@ fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error
     }
     .generate();
 
-    let priority = generators::tx::office::office_priority(&title, county.as_deref());
+    let priority = generators::tx::office::office_priority(&title, county.as_deref(), district.as_deref());
 
     Ok(Office {
         id: Uuid::new_v4(),
