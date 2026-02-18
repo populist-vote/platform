@@ -4,49 +4,84 @@
 use slugify::slugify;
 
 /// Returns the priority for the given office title. Matches populist-office-titles-map.csv (office_title → priority).
-pub fn office_priority(office_title: &str, county: Option<&str>) -> Option<i32> {
+pub fn office_priority(
+    office_title: &str,
+    county: Option<&str>,
+    district: Option<&str>,
+) -> Option<i32> {
     let priority = match office_title.trim() {
+        // Federal Offices
         "U.S. President" => 1,
         "U.S. Vice President" => 2,
         "U.S. Senator" => 3,
         "U.S. Representative" => 4,
+        
+        // State Executive Offices
         "Governor" => 5,
         "Lieutenant Governor" => 6,
         "Secretary of State" => 7,
         "Attorney General" => 8,
-        "State Senator" => 10,
-        "State Representative" => 11,
-        "Board of Education" => 12,
-        "Railroad Commissioner" | "Commissioner of Agriculture" | "Commissioner of the General Land Office"
-        | "Comptroller of Public Accounts" => 13,
-        "Mayor" => 20,
-        "City Council" => 21,
-        "County Commissioner" => 22,
-        "Justice of the Peace" => 23,
-        "County Constable" => 24,
-        "County Clerk" | "County & District Clerk" | "County Attorney" | "County Treasurer"
-        | "County Surveyor" | "County Tax Assessor-Collector" | "County Judge" | "District Clerk"
-        | "Department of Education" => 25,
-        "District Attorney" => {
-            if county.is_some() {
-                25
+        "Comptroller of Public Accounts" => 9,
+        "Commissioner of the General Land Office" => 10,
+        "Commissioner of Agriculture" => 11,
+        "Railroad Commissioner" => 12,
+
+        "Chief Justice - Supreme Court" => 15,
+        "Justice - Supreme Court" => 16,
+        "Judge - Court of Criminal Appeals" => 17,
+        
+        "State Board of Education" => 18,
+        "State Senator" => 19,
+        "State Representative" => 20,
+
+        "Chief Justice - Court of Appeals" => {
+            if district == Some("15") {
+                21
             } else {
-                46
+                23
             }
-        },
-        "Sheriff" => 26,
-        "County Chair (D)" | "County Chair (R)" => 27,
-        "Precinct Chair (D)" | "Precinct Chair (R)" => 28,
-        "Chief Justice - Supreme Court" => 40,
-        "Justice - Supreme Court" => 41,
-        "Chief Justice - Court of Appeals" => 42,
-        "Justice - Court of Appeals" => 43,
-        "Judge - Court of Criminal Appeals" => 44,
-        "Judge - District Court" => 45,
-        "Judge - County Court at Law" | "Judge - 1st Multicounty Court at Law"
-        | "Judge - County Civil Court at Law" | "Judge - County Criminal Court at Law"
-        | "Judge - County Criminal Court of Appeals" | "Judge - Criminal District"
-        | "Judge - Probate Court" => 50,
+        }
+        "Justice - Court of Appeals" => {
+            if district == Some("15") {
+                22
+            } else {
+                24
+            }
+        }
+
+        "District Judge" => 25,
+        "District Attorney" => 26,
+        "Criminal District Judge" => 27,
+        "Criminal District Attorney" => 28,
+        "County Judge" => 30,
+        "Judge - County Court at Law" => 31,
+        "Judge - 1st Multicounty Court at Law" => 32,
+        "Judge - County Civil Court at Law" => 35,
+        "Judge - County Criminal Court of Appeals" => 36,
+        "Judge - County Criminal Court at Law" => 37,
+        "Judge - Probate Court" => 38,
+        
+        "County Attorney" => 40,
+        "District Clerk" => 41,
+        "County Clerk" => 42,
+        "County & District Clerk" => 42,
+        "Sheriff" => 44,
+        "County Tax Assessor-Collector" => 45,
+        "County Treasurer" => 46,
+        "County Surveyor" => 47,
+        "County School Trustee" => 48,
+        
+        "County Commissioner" => 50,
+        "Justice of the Peace" => 51,
+        "County Constable" => 52,
+        
+        "County Chair (D)" => 55,
+        "County Chair (R)" => 55,
+        "Precinct Chair (D)" | "Precinct Chair (R)" => 56,
+
+        "Mayor" => 60,
+        "City Council" => 61,
+        
         _ => return None,
     };
     Some(priority)
