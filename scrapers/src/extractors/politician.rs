@@ -64,9 +64,44 @@ fn is_two_letter_all_caps(s: &str) -> bool {
 /// Title-case a single word (first char upper, rest lower).
 fn word_to_title(w: &str) -> String {
     let mut c = w.chars();
-    match c.next() {
+    let first = c.next();
+    let second = c.next();
+    let rest: String = c.collect();
+    // Mc prefix: "mccoy" -> "McCoy", "mcgill" -> "McGill"
+    if first.is_some_and(|f| f.eq_ignore_ascii_case(&'m'))
+        && second.is_some_and(|s| s.eq_ignore_ascii_case(&'c'))
+        && !rest.is_empty()
+    {
+        let mut rest_c = rest.chars();
+        let rest_title = match rest_c.next() {
+            None => String::new(),
+            Some(f) => f
+                .to_uppercase()
+                .chain(rest_c.flat_map(|c| c.to_lowercase()))
+                .collect::<String>(),
+        };
+        return format!("Mc{rest_title}");
+    }
+    // O' prefix: "o'brian" -> "O'Brian", "o'connell" -> "O'Connell"
+    if first.is_some_and(|f| f.eq_ignore_ascii_case(&'o'))
+        && second == Some('\'')
+        && !rest.is_empty()
+    {
+        let mut rest_c = rest.chars();
+        let rest_title = match rest_c.next() {
+            None => String::new(),
+            Some(f) => f
+                .to_uppercase()
+                .chain(rest_c.flat_map(|c| c.to_lowercase()))
+                .collect::<String>(),
+        };
+        return format!("O'{rest_title}");
+    }
+    // Normal title case: first char upper, rest lower
+    let mut all = first.into_iter().chain(second.into_iter()).chain(rest.chars());
+    match all.next() {
         None => String::new(),
-        Some(f) => f.to_uppercase().chain(c.flat_map(|c| c.to_lowercase())).collect(),
+        Some(f) => f.to_uppercase().chain(all.flat_map(|c| c.to_lowercase())).collect(),
     }
 }
 
@@ -161,6 +196,7 @@ const COMPOUND_FIRST_NAMES: &[&str] = &[
     "Lee Ann",
     "Jo Ann",
     "Anita Jo",
+    "Dee Dee",
 ];
 
 /// When both parentheses and quotes are used (e.g. ("JIM")), remove the inner quotes so we have (JIM).
@@ -289,15 +325,18 @@ fn extract_last_name(input: &str) -> (String, Option<String>) {
         }
     }
 
-    // 6. Van or St./St compound last names
+    // 6. Van, Von, Del, or St./St compound last names
     let compound_regex = LAST_NAME_REGEX.get_or_init(|| {
-        Regex::new(r#"(?i)\s+(van|st\.?)\s+([\w\.'-]+)$"#).unwrap()
+        Regex::new(r#"(?i)\s+(van|von|del|st\.?)\s+([\w\.'-]+)$"#).unwrap()
     });
     if let Some(captures) = compound_regex.captures(input) {
         if let (Some(prefix), Some(last_part)) = (captures.get(1), captures.get(2)) {
             let prefix_str = prefix.as_str();
             let last_part_str = last_part.as_str();
-            let prefix_formatted = if prefix_str.eq_ignore_ascii_case("van") {
+            let prefix_formatted = if prefix_str.eq_ignore_ascii_case("van")
+                || prefix_str.eq_ignore_ascii_case("von")
+                || prefix_str.eq_ignore_ascii_case("del")
+            {
                 prefix_str.to_string()
             } else if prefix_str.ends_with('.') {
                 prefix_str.to_string()

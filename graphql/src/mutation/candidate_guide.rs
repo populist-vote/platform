@@ -43,17 +43,47 @@ impl CandidateGuideMutation {
         .fetch_one(&db_pool)
         .await?;
 
+        // Free organizations: limit total races across all candidate guides to 3
         if !is_paid_organization {
-            let existing_guides = CandidateGuide::find_by_organization(&db_pool, organization_id).await?;
-            let creating_new_guide = match input.id {
-                Some(id) => existing_guides.iter().all(|guide| guide.id != id),
-                None => true,
-            };
+            if let Some(ref race_ids) = input.race_ids {
+                if !race_ids.is_empty() {
+                    let current_total: i64 = sqlx::query_scalar::<_, i64>(
+                        r#"
+                        SELECT COUNT(*)::bigint
+                        FROM candidate_guide_races cgr
+                        JOIN candidate_guide cg ON cg.id = cgr.candidate_guide_id
+                        WHERE cg.organization_id = $1
+                        "#,
+                    )
+                    .bind(organization_id)
+                    .fetch_one(&db_pool)
+                    .await?;
 
-            if creating_new_guide && existing_guides.len() >= 3 {
-                return Err(Error::new(
-                    "Free organizations can only create up to 3 candidate guides. Contact us to upgrade.",
-                ));
+                    let guide_id = input.id.unwrap_or_else(uuid::Uuid::new_v4);
+
+                    let existing_for_guide: i64 = if input.id.is_some() {
+                        sqlx::query_scalar::<_, i64>(
+                            r#"
+                            SELECT COUNT(*)::bigint
+                            FROM candidate_guide_races
+                            WHERE candidate_guide_id = $1 AND race_id = ANY($2::uuid[])
+                            "#,
+                        )
+                        .bind(guide_id)
+                        .bind(race_ids)
+                        .fetch_one(&db_pool)
+                        .await?
+                    } else {
+                        0
+                    };
+
+                    let new_count = race_ids.len() as i64 - existing_for_guide;
+                    if current_total + new_count > 3 {
+                        return Err(Error::new(
+                            "Free organizations can only create candidate guides for up to 3 races. Contact us to upgrade.",
+                        ));
+                    }
+                }
             }
         }
 

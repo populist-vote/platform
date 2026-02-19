@@ -587,17 +587,20 @@ impl PoliticianResult {
 
 impl From<Politician> for PoliticianResult {
     fn from(p: Politician) -> Self {
-        let full_name = match &p.full_name {
-            Some(full_name) => full_name.to_string(),
-            None => format!(
-                "{first_name} {last_name} {suffix}",
-                first_name = &p.preferred_name.as_ref().unwrap_or(&p.first_name),
-                last_name = &p.last_name,
-                suffix = &p.suffix.as_ref().unwrap_or(&"".to_string())
-            )
-            .trim_end()
-            .to_string(),
-        };
+        // Always compute fullName from first/last/preferred + suffix (never use stored full_name)
+        let full_name = format!(
+            "{first_name} {middle_name} {last_name}{suffix}",
+            first_name = p.preferred_name.as_ref().unwrap_or(&p.first_name),
+            middle_name = p.middle_name.as_deref().unwrap_or(""),
+            last_name = p.last_name,
+            suffix = p
+                .suffix
+                .as_ref()
+                .map(|s| format!(" {}", s))
+                .unwrap_or_default()
+        )
+        .trim_end()
+        .to_string();
 
         Self {
             id: ID::from(p.id),
