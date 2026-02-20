@@ -484,7 +484,7 @@ impl ElectionResult {
         WHERE r.election_id = $1
           AND ($2::state IS NULL OR r.state = $2)
           AND ($3::TEXT IS NULL OR LOWER(r.title) LIKE $3)
-        ORDER BY o.priority ASC NULLS LAST, r.title DESC, r.id ASC
+        ORDER BY o.priority ASC NULLS LAST, COALESCE(o.district, '') ASC, COALESCE(o.seat, '') ASC, r.title DESC, r.id ASC
         LIMIT $4 OFFSET $5
         "#,
             uuid::Uuid::parse_str(&self.id)?,
