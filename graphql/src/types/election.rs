@@ -379,7 +379,7 @@ async fn get_races_by_address_id(
         );
     }
 
-    builder.push(") ORDER BY o.priority ASC, title DESC");
+    builder.push(") ORDER BY o.priority ASC NULLS LAST, COALESCE(o.district, '') ASC, COALESCE(o.seat, '') ASC, title DESC");
 
     // 5. Run query
     let query = builder.build_query_as::<Race>();
@@ -601,7 +601,7 @@ impl ElectionResult {
                 r.election_id = $1 AND
                 vgc.voting_guide_id = $2 AND 
                 (vgc.is_endorsement = true OR vgc.note IS NOT NULL)
-            ORDER BY o.priority ASC, r.title DESC
+            ORDER BY o.priority ASC NULLS LAST, COALESCE(o.district, '') ASC, COALESCE(o.seat, '') ASC, r.title DESC
             "#,
             uuid::Uuid::parse_str(&self.id).unwrap(),
             uuid::Uuid::parse_str(&voting_guide_id).unwrap()
