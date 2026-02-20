@@ -379,7 +379,7 @@ async fn get_races_by_address_id(
         );
     }
 
-    builder.push(") ORDER BY o.priority ASC NULLS LAST, COALESCE(o.district, '') ASC, COALESCE(o.seat, '') ASC, title DESC");
+    builder.push(") ORDER BY o.priority ASC NULLS LAST, (regexp_match(o.district, '^[0-9]+'))[1]::int ASC NULLS LAST, COALESCE(o.district, '') ASC, (regexp_match(o.seat, '^[0-9]+'))[1]::int ASC NULLS LAST, COALESCE(o.seat, '') ASC, title DESC");
 
     // 5. Run query
     let query = builder.build_query_as::<Race>();
@@ -484,7 +484,7 @@ impl ElectionResult {
         WHERE r.election_id = $1
           AND ($2::state IS NULL OR r.state = $2)
           AND ($3::TEXT IS NULL OR LOWER(r.title) LIKE $3)
-        ORDER BY o.priority ASC NULLS LAST, COALESCE(o.district, '') ASC, COALESCE(o.seat, '') ASC, r.title DESC, r.id ASC
+        ORDER BY o.priority ASC NULLS LAST, (regexp_match(o.district, '^[0-9]+'))[1]::int ASC NULLS LAST, COALESCE(o.district, '') ASC, (regexp_match(o.seat, '^[0-9]+'))[1]::int ASC NULLS LAST, COALESCE(o.seat, '') ASC, r.title DESC, r.id ASC
         LIMIT $4 OFFSET $5
         "#,
             uuid::Uuid::parse_str(&self.id)?,
@@ -591,7 +591,11 @@ impl ElectionResult {
                 num_elect,
                 r.created_at,
                 r.updated_at,
-                o.priority 
+                o.priority,
+                o.district,
+                o.seat,
+                (regexp_match(o.district, '^[0-9]+'))[1]::int AS district_num,
+                (regexp_match(o.seat, '^[0-9]+'))[1]::int AS seat_num
             FROM
                 race r
             JOIN office o ON o.id = r.office_id
@@ -601,7 +605,7 @@ impl ElectionResult {
                 r.election_id = $1 AND
                 vgc.voting_guide_id = $2 AND 
                 (vgc.is_endorsement = true OR vgc.note IS NOT NULL)
-            ORDER BY o.priority ASC NULLS LAST, COALESCE(o.district, '') ASC, COALESCE(o.seat, '') ASC, r.title DESC
+            ORDER BY o.priority ASC NULLS LAST, district_num ASC NULLS LAST, o.district ASC NULLS LAST, seat_num ASC NULLS LAST, o.seat ASC NULLS LAST, r.title DESC
             "#,
             uuid::Uuid::parse_str(&self.id).unwrap(),
             uuid::Uuid::parse_str(&voting_guide_id).unwrap()
