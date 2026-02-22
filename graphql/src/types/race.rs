@@ -136,6 +136,7 @@ impl RaceResult {
                 p.thumbnail_image_url,
                 p.assets,
                 p.official_website_url,
+                p.ballotpedia_url,
                 p.campaign_website_url,
                 p.facebook_url,
                 p.twitter_url,

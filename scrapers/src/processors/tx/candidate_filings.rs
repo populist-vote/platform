@@ -588,6 +588,7 @@ async fn process_tx_politician(
         thumbnail_image_url: None,
         assets,
         official_website_url: None,
+        ballotpedia_url: None,
         campaign_website_url: None,
         facebook_url: None,
         twitter_url: None,

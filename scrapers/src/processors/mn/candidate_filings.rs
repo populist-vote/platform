@@ -659,6 +659,7 @@ async fn process_politician(
         thumbnail_image_url: None,
         assets: JSON::Object(serde_json::Map::new()),
         official_website_url: None,
+        ballotpedia_url: None,
         campaign_website_url: filing.campaign_website.clone(),
         facebook_url: None,
         twitter_url: None,
