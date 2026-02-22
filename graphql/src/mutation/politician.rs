@@ -280,6 +280,7 @@ impl PoliticianMutation {
             thumbnail_image_url,
             assets,
             official_website_url,
+            ballotpedia_url,
             campaign_website_url,
             facebook_url,
             twitter_url,

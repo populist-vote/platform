@@ -455,6 +455,7 @@ impl Bill {
                         assets,
                         party_id,
                         official_website_url,
+                        ballotpedia_url,
                         campaign_website_url,
                         facebook_url,
                         twitter_url,
