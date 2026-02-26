@@ -12,6 +12,8 @@ csv = "1"
 project-root = "0"
 regex = "1"
 reqwest = "0"
+url = "2"
+form_urlencoded = "1"
 scraper = "0"
 slugify = "0"
 serde = { version = "1", features = ["derive"] }
