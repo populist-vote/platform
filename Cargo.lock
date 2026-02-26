@@ -4349,6 +4349,7 @@ dependencies = [
  "csv",
  "db",
  "encoding_rs",
+ "form_urlencoded",
  "once_cell",
  "project-root",
  "regex",
@@ -4363,6 +4364,7 @@ dependencies = [
  "tokio",
  "tracing",
  "unicode-normalization",
+ "url",
  "uuid",
 ]
 
