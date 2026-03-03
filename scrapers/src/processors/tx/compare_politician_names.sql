@@ -226,6 +226,141 @@ WHERE id IN (
         AND prod.residence_address_id IS NULL
 );
 
+-- Option 2.2: Exact slug match, emails distinct or both empty — set treat_exact_slug_as_same_person = true
+-- Compare when exact slug match, (emails are distinct OR emails are both empty/null), and phone/address empty.
+-- (a) SELECT: show staging and production rows that qualify
+SELECT
+    stg.id AS staging_id,
+    stg.slug AS staging_slug,
+    stg.first_name AS staging_first_name,
+    stg.middle_name AS staging_middle_name,
+    stg.last_name AS staging_last_name,
+    prod.id AS production_id,
+    prod.slug AS production_slug,
+    prod.first_name AS production_first_name,
+    prod.middle_name AS production_middle_name,
+    prod.last_name AS production_last_name
+FROM ingest_staging.stg_tx_politicians stg
+JOIN politician prod ON prod.home_state = 'TX'
+    AND stg.slug = prod.slug
+    AND (
+        (stg.email IS DISTINCT FROM prod.email)
+        OR (
+            (stg.email IS NULL OR TRIM(stg.email) = '')
+            AND (prod.email IS NULL OR TRIM(prod.email) = '')
+        )
+    )
+    AND (
+        (stg.phone IS DISTINCT FROM prod.phone)
+        OR (
+            (stg.phone IS NULL OR TRIM(stg.phone) = '')
+            AND (prod.phone IS NULL OR TRIM(prod.phone) = '')
+        )
+    )
+    AND (
+        (stg.residence_address_id IS DISTINCT FROM prod.residence_address_id)
+        OR (
+            stg.residence_address_id IS NULL 
+            AND prod.residence_address_id IS NULL
+        )
+    )
+ORDER BY stg.last_name, stg.first_name;
+
+-- (b) UPDATE: set treat_exact_slug_as_same_person = true for those staging politicians (same filter as (a))
+UPDATE ingest_staging.stg_tx_politicians
+SET treat_exact_slug_as_same_person = true
+WHERE id IN (
+    SELECT stg.id
+    FROM ingest_staging.stg_tx_politicians stg
+    JOIN politician prod ON prod.home_state = 'TX'
+        AND stg.slug = prod.slug
+        AND (
+            (stg.email IS DISTINCT FROM prod.email)
+            OR (
+                (stg.email IS NULL OR TRIM(stg.email) = '')
+                AND (prod.email IS NULL OR TRIM(prod.email) = '')
+            )
+        )
+        AND (
+            (stg.phone IS DISTINCT FROM prod.phone)
+            OR (
+                (stg.phone IS NULL OR TRIM(stg.phone) = '')
+                AND (prod.phone IS NULL OR TRIM(prod.phone) = '')
+            )
+        )
+        AND (
+            (stg.residence_address_id IS DISTINCT FROM prod.residence_address_id)
+            OR (
+                stg.residence_address_id IS NULL
+                AND prod.residence_address_id IS NULL
+            )
+        )
+);
+
+-- Option 2.3: Same as 2.2 but only where staging ref_key is different from production ref_key
+-- (a) SELECT: show staging and production rows that qualify (with ref_keys)
+SELECT
+    stg.id AS staging_id,
+    stg.slug AS staging_slug,
+    stg.ref_key AS staging_ref_key,
+    prod.ref_key AS production_ref_key,
+    stg.first_name AS staging_first_name,
+    stg.middle_name AS staging_middle_name,
+    stg.last_name AS staging_last_name,
+    prod.id AS production_id,
+    prod.slug AS production_slug,
+    prod.first_name AS production_first_name,
+    prod.middle_name AS production_middle_name,
+    prod.last_name AS production_last_name
+FROM ingest_staging.stg_tx_politicians stg
+JOIN politician prod ON prod.home_state = 'TX'
+    AND stg.slug = prod.slug
+    AND stg.ref_key IS DISTINCT FROM prod.ref_key
+    AND (
+        (stg.email IS DISTINCT FROM prod.email)
+        OR (
+            (stg.email IS NULL OR TRIM(stg.email) = '')
+            AND (prod.email IS NULL OR TRIM(prod.email) = '')
+        )
+    )
+    AND (
+        (stg.phone IS DISTINCT FROM prod.phone)
+        OR (
+            (stg.phone IS NULL OR TRIM(stg.phone) = '')
+            AND (prod.phone IS NULL OR TRIM(prod.phone) = '')
+        )
+    )
+    AND (
+        (stg.residence_address_id IS DISTINCT FROM prod.residence_address_id)
+        OR (
+            stg.residence_address_id IS NULL 
+            AND prod.residence_address_id IS NULL
+        )
+    )
+ORDER BY stg.last_name, stg.first_name;
+
+-- (b) UPDATE: set treat_exact_slug_as_same_person = true for those staging politicians
+UPDATE ingest_staging.stg_tx_politicians
+SET treat_exact_slug_as_same_person = true
+WHERE id IN (
+    SELECT stg.id
+    FROM ingest_staging.stg_tx_politicians stg
+    JOIN politician prod ON prod.home_state = 'TX'
+        AND stg.slug = prod.slug
+        AND stg.ref_key IS DISTINCT FROM prod.ref_key
+        AND (
+            (stg.email IS DISTINCT FROM prod.email)
+            OR (
+                (stg.email IS NULL OR TRIM(stg.email) = '')
+                AND (prod.email IS NULL OR TRIM(prod.email) = '')
+            )
+        )
+        AND (stg.phone IS NULL OR TRIM(stg.phone) = '')
+        AND (prod.phone IS NULL OR TRIM(prod.phone) = '')
+        AND stg.residence_address_id IS NULL
+        AND prod.residence_address_id IS NULL
+);
+
 -- Option 3: Summary view showing match counts by type
 SELECT 
     CASE 

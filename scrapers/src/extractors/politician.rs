@@ -375,7 +375,7 @@ fn normalize_whitespace(s: &str) -> String {
 }
 
 /// Strip accents/diacritics (e.g. é → e, ñ → n) via NFD and removing combining marks.
-fn strip_accents(s: &str) -> String {
+pub(crate) fn strip_accents(s: &str) -> String {
     s.nfd()
         .filter(|c| !unicode_normalization::char::is_combining_mark(*c))
         .collect()

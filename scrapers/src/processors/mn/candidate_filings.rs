@@ -29,6 +29,8 @@ pub struct CandidateFiling {
     pub campaign_zip: Option<String>,
 }
 
+const ELECTION_YEAR: i32 = 2025;
+
 pub async fn process_mn_candidate_filings(
     pool: &PgPool,
     source_table: &str,
@@ -585,13 +587,20 @@ async fn process_politician(
     pool: &PgPool,
     filing: &CandidateFiling,
 ) -> Result<Politician, Box<dyn Error>> {
+    let office_title = filing.office_title.as_deref().unwrap_or("");
     let candidate_name = filing.candidate_name.as_ref().ok_or("Missing candidate name")?;
     
     // Generate politician slug
     let slug = generators::politician::PoliticianSlugGenerator::new(candidate_name).generate();
     
     // Generate ref key
-    let ref_key = generators::politician::PoliticianRefKeyGenerator::new("MN-SOS", candidate_name).generate();
+    let ref_key = generators::politician::PoliticianRefKeyGenerator::new(
+        "MN-SOS",
+        ELECTION_YEAR,
+        office_title,
+        Some(candidate_name),
+    )
+    .generate();
     
     // Resolve party_id from production party table
     // If no party_abbreviation or empty, use "UN" (unaffiliated)
@@ -692,10 +701,7 @@ fn process_race(
     // Hardcoded election ID for 2025 General Election
     let election_id = Uuid::parse_str("a81f4a62-69d6-48f9-b704-c0151a42b8c8")
         .expect("Invalid election UUID");
-    
-    // Hardcoded year for race titles
-    let election_year = 2025;
-    
+
     // Extract if this is a special election
     let is_special_election = filing.office_title
         .as_ref()
@@ -728,7 +734,7 @@ fn process_race(
         office,
         is_special_election,
         party,
-        election_year,
+        ELECTION_YEAR,
     ).generate();
 
     // Create race record: use resolved office_id from stg_mn_offices if present, otherwise office.id
