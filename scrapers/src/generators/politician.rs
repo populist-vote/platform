@@ -50,17 +50,42 @@ impl<'a> PoliticianSlugGenerator<'a> {
 }
 
 pub struct PoliticianRefKeyGenerator<'a> {
-    pub source: &'a str,
-    pub slug: &'a str,
+    source: &'a str,
+    election_year: i32,
+    office_title: &'a str,
+    candidate_name: Option<&'a str>,
 }
 
 impl<'a> PoliticianRefKeyGenerator<'a> {
-    pub fn new(source: &'a str, slug: &'a str) -> Self {
-        PoliticianRefKeyGenerator { source, slug }
+    pub fn new(
+        source: &'a str,
+        election_year: i32,
+        office_title: &'a str,
+        candidate_name: Option<&'a str>,
+    ) -> Self {
+        PoliticianRefKeyGenerator {
+            source,
+            election_year,
+            office_title,
+            candidate_name,
+        }
     }
 
     pub fn generate(&self) -> String {
-        slugify!(&format!("{} {}", self.source, self.slug))
+        let mut parts: Vec<String> = vec![self.source.to_string()];
+        if self.election_year != 0 {
+            parts.push(self.election_year.to_string());
+        }
+        if !self.office_title.is_empty() {
+            parts.push(self.office_title.to_string());
+        }
+        if let Some(name) = self.candidate_name {
+            if !name.is_empty() {
+                parts.push(name.to_string());
+            }
+        }
+        let combined: String = parts.join("-");
+        slugify!(&combined)
     }
 }
 
@@ -84,6 +109,7 @@ mod tests {
 
     #[test]
     fn politician_ref_key() {
+        // Source + candidate name only (year=0, office_title="") -> same as legacy source+slug
         let tests: Vec<((&'static str, &'static str), &'static str)> = vec![
             (("CO SOS", "john-smith"), "co-sos-john-smith"),
             (("MN CSV", "john-smith"), "mn-csv-john-smith"),
@@ -91,9 +117,21 @@ mod tests {
 
         for (input, expected) in tests {
             assert_eq!(
-                PoliticianRefKeyGenerator::new(input.0, input.1).generate(),
+                PoliticianRefKeyGenerator::new(input.0, 0, "", Some(input.1)).generate(),
                 expected
             );
         }
+
+        // TX primaries: source + year + office_title + candidate_name
+        assert_eq!(
+            PoliticianRefKeyGenerator::new(
+                "tx-primaries",
+                2026,
+                "U. S. REPRESENTATIVE DISTRICT 1",
+                Some("JANE DOE")
+            )
+            .generate(),
+            "tx-primaries-2026-u-s-representative-district-1-jane-doe"
+        );
     }
 }

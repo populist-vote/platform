@@ -13,3 +13,6 @@
 *.sublime-workspace
 
 /server/src/certs/*
+
+# TX election results (manual/SFTP downloads)
+scrapers/data/

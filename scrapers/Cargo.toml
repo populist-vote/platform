@@ -28,4 +28,7 @@ tracing = "0.1.40"
 encoding_rs = "0.8.35"
 once_cell = "1.19"
 unicode-normalization = "0.1"
+roxmltree = "0.20"
+# default-features = false to avoid bzip2-sys/zstd-sys; enable only deflate for common zips
+zip = { version = "2", default-features = false, features = ["deflate"] }
 

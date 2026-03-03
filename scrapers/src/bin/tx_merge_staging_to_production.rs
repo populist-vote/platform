@@ -91,7 +91,7 @@ struct StgRaceCandidate {
     ref_key: Option<String>,
 }
 
-/// Outcome of resolving a staging politician: exact match (slug+email/phone/address) or new insert.
+/// Outcome of resolving a staging politician: exact match (slug + email/phone/address, or slug exact when flagged) or new insert.
 #[derive(Debug)]
 enum PoliticianOutcome {
     ExactMatch { match_type: &'static str },
@@ -100,20 +100,26 @@ enum PoliticianOutcome {
 
 #[tokio::main]
 async fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    let overwrite_race_candidates = args.iter().any(|a| a == "--overwrite-rcs");
+
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
     let db = &pool.connection;
 
     println!("=== Merge TX staging → production ===\n");
+    if overwrite_race_candidates {
+        println!("(--overwrite-rcs: existing race_candidates with same ref_key will be replaced)\n");
+    }
 
-    if let Err(e) = run_merge(db).await {
+    if let Err(e) = run_merge(db, overwrite_race_candidates).await {
         eprintln!("Merge failed: {}", e);
         std::process::exit(1);
     }
     println!("\n✓ Merge completed successfully.");
 }
 
-async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
+async fn run_merge(pool: &PgPool, overwrite_race_candidates: bool) -> Result<(), Box<dyn std::error::Error>> {
     // 1. Offices: upsert by slug, build stg_office_id -> prod_office_id
     println!("Merging offices...");
     let stg_offices: Vec<StgOffice> = sqlx::query_as(
@@ -170,7 +176,7 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
             match &outcome {
                 PoliticianOutcome::ExactMatch { match_type } => {
                     exact_match_count += 1;
-                    if *match_type == "slug exact + flagged" {
+                    if *match_type == "slug + flagged" {
                         exact_flagged_count += 1;
                     }
                 }
@@ -181,15 +187,9 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    println!(
-        "  Exact matches (slug+email/phone/address → updated): {}",
-        exact_match_count
-    );
-    println!("  Slug exact + flagged: {}", exact_flagged_count);
-    println!(
-        "  Addresses: {} inserted, {} existing (reused)",
-        addresses_inserted, addresses_reused
-    );
+    println!("  Exact matches (slug+email/phone/address → updated): {}", exact_match_count);
+    println!("  slug + flagged: {}", exact_flagged_count);
+    println!("  Addresses: {} inserted, {} existing (reused)", addresses_inserted, addresses_reused);
 
     // 3. Races: upsert by slug with prod office_id; build stg_race_id -> prod_race_id
     println!("Merging races...");
@@ -216,7 +216,7 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
     }
     println!("  Races: {} merged", stg_to_prod_race.len());
 
-    // 4. Race candidates: insert (prod_race_id, prod_candidate_id)
+    // 4. Race candidates: upsert (prod_race_id, prod_candidate_id, ref_key). When ref_key already exists in production: skip (default) or delete and insert if --overwrite-rcs.
     println!("Merging race_candidates...");
     let stg_rcs: Vec<StgRaceCandidate> = sqlx::query_as(
         "SELECT race_id, candidate_id, ref_key FROM ingest_staging.stg_tx_race_candidates",
@@ -226,6 +226,7 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
 
     let mut inserted = 0usize;
     let mut skipped_ref_key = 0usize;
+    let mut overwritten_ref_key = 0usize;
     for rc in &stg_rcs {
         let prod_race_id = match stg_to_prod_race.get(&rc.race_id) {
             Some(id) => *id,
@@ -235,17 +236,29 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
             Some(id) => *id,
             None => continue,
         };
-        // Skip if incoming ref_key already exists in production (avoid duplicate ref_key)
         if let Some(ref key) = rc.ref_key {
             if !key.trim().is_empty() {
-                let exists: Option<(i32,)> =
-                    sqlx::query_as("SELECT 1 FROM race_candidates WHERE ref_key = $1 LIMIT 1")
+                if overwrite_race_candidates {
+                    // Delete existing row so we can insert the incoming one
+                    let deleted = sqlx::query("DELETE FROM race_candidates WHERE ref_key = $1")
                         .bind(key.as_str())
-                        .fetch_optional(pool)
+                        .execute(pool)
                         .await?;
-                if exists.is_some() {
-                    skipped_ref_key += 1;
-                    continue;
+                    if deleted.rows_affected() > 0 {
+                        overwritten_ref_key += 1;
+                    }
+                } else {
+                    // Skip if incoming ref_key already exists in production (avoid duplicate ref_key)
+                    let exists: Option<(i32,)> = sqlx::query_as(
+                        "SELECT 1 FROM race_candidates WHERE ref_key = $1 LIMIT 1",
+                    )
+                    .bind(key.as_str())
+                    .fetch_optional(pool)
+                    .await?;
+                    if exists.is_some() {
+                        skipped_ref_key += 1;
+                        continue;
+                    }
                 }
             }
         }
@@ -263,10 +276,11 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     println!("  Race_candidates: {} new links", inserted);
-    println!(
-        "  Race_candidates skipped (existing ref_key): {}",
-        skipped_ref_key
-    );
+    if overwrite_race_candidates {
+        println!("  Race_candidates overwritten (existing ref_key replaced by incoming): {}", overwritten_ref_key);
+    } else {
+        println!("  Race_candidates skipped (existing ref_key): {}", skipped_ref_key);
+    }
 
     Ok(())
 }
@@ -366,7 +380,7 @@ fn stg_office_to_upsert(stg: &StgOffice) -> UpsertOfficeInput {
     }
 }
 
-/// When a staging politician matches an existing production politician (by email or phone),
+/// When a staging politician matches an existing production politician (by email, phone, address, or exact slug when flagged),
 /// update the production row with staging data. first_name, last_name, suffix, preferred_name,
 /// full_name, home_state, party_id, campaign_website_url are updated from staging. middle_name
 /// is only updated when staging middle_name is non-empty (otherwise existing value is kept).
@@ -923,9 +937,11 @@ async fn resolve_or_upsert_politician(
     address_inserted: &mut usize,
     address_reused: &mut usize,
 ) -> Result<Vec<(Option<uuid::Uuid>, PoliticianOutcome)>, Box<dyn std::error::Error>> {
-    // Find ALL prod politicians with matching slug or slug increment; for each test email, phone, address; record_merge_dupe; if any match → update and record to politician_merge_updated; else insert (and record to inserted_politicians_with_same_slug only when we had slug candidates)
-    let base_slug: String =
-        base_slug_if_increment(&stg.slug).unwrap_or_else(|| stg.slug.to_string());
+    // Find ALL prod politicians with matching slug or slug increment;
+    // for each test email, phone, address;
+    // if any match → update existing politician and record to helper tables
+    // else insert (and record to inserted_politicians_with_same_slug only when we had slug candidates)
+    let base_slug: String = base_slug_if_increment(&stg.slug).unwrap_or_else(|| stg.slug.to_string());
     let candidates: Vec<(uuid::Uuid, String, Option<State>, Option<uuid::Uuid>, Option<String>, Option<String>)> = sqlx::query_as(
         r#"SELECT id, slug, home_state AS "home_state:State", residence_address_id, email, phone FROM politician WHERE slug = $1 OR slug LIKE $1 || '-%'"#,
     )
@@ -946,15 +962,16 @@ async fn resolve_or_upsert_politician(
         .filter(|s| !s.is_empty());
     let mut updated: Vec<(uuid::Uuid, &'static str)> = Vec::new();
 
-    for (id, prod_slug, _prod_home_state, prod_residence_address_id, prod_email, prod_phone) in
-        &candidates
-    {
+    // If no matching slugs, skip to insert incoming politician
+    
+    for (id, prod_slug, _prod_home_state, prod_residence_address_id, prod_email, prod_phone) in &candidates {
+        // If slug + flagged, treat as same person without requiring email/phone/address match
         if stg.treat_exact_slug_as_same_person && stg.slug == *prod_slug {
             apply_match_and_record(
                 pool,
                 stg,
                 *id,
-                "slug exact + flagged",
+                "slug + flagged",
                 None,
                 None,
                 stg_to_prod_office,
@@ -1041,7 +1058,7 @@ async fn resolve_or_upsert_politician(
             .collect());
     }
 
-    // No email/phone/address match for any slug candidate → insert incoming politician (with resolved slug) and record to inserted_politicians_with_same_slug
+    // No email/phone/address match for any candidate where a matching slug was found → insert incoming politician (with resolved slug) and record to inserted_politicians_with_same_slug
 
     // 4. Insert via upsert_from_source — new politician
 
