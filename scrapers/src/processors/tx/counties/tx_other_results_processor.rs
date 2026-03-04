@@ -1,13 +1,13 @@
-//! Processor for TX county Clarity election results CSV files.
+//! Processor for TX county "other" election results CSV files.
 //!
-//! Reads CSV files from data/tx/counties/clarity (contest name, choice name, party, county, etc.),
-//! maps rows to staging shape and inserts into ingest_staging.stg_tx_results_clarity.
-//! Only county-level races are included; matching is driven by string rules derived from
-//! populist-clarity-results-map.csv (see COUNTY_OFFICE_MATCH_RULES). ref_key is built per office type.
+//! Reads CSV files from data/tx/counties/other (contest name, choice name, party, county, etc.),
+//! maps rows to staging shape and inserts into ingest_staging.stg_tx_results_other.
+//! Same CSV format and county-level matching rules as Hart/Clarity; contest normalization and
+//! ref_key logic aligned with tx_hart_results_processor.
 
 use std::fs;
 use std::io::Cursor;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use csv::ReaderBuilder;
 use sqlx::PgPool;
@@ -16,137 +16,162 @@ use slugify::slugify;
 use crate::extractors::tx::office::{extract_office_district, extract_office_seat};
 use crate::util::decode_csv_bytes_to_utf8;
 
-/// Default election year when not derivable from Clarity CSV (for ref_key generation).
+/// Default election year when not derivable from CSV (for ref_key generation).
 const DEFAULT_ELECTION_YEAR: i32 = 2026;
 
-/// County office match rule: populist name and strings to match in contest_name (any match = county-level race).
-/// Derived from data/tx/counties/populist-clarity-results-map.csv; update this list when that reference CSV changes.
-struct CountyOfficeRule {
-    populist_office_name: &'static str,
-    /// Match if normalized contest_name contains any of these (case-insensitive). Empty = placeholder (no match).
-    match_substrings: &'static [&'static str],
+/// Directory for TX "other" county results CSVs (relative to scrapers crate root).
+pub const TX_OTHER_DATA_DIR: &str = "data/tx/counties/other";
+
+/// Return the path to the TX other data directory.
+pub fn other_data_path() -> PathBuf {
+    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".into());
+    Path::new(&manifest_dir).join(TX_OTHER_DATA_DIR)
 }
 
-/// County-level office matching rules. Order matters: first match wins, so list **more specific**
-/// matches first (e.g. "Judge, County Criminal Court" before "Judge, County Court at Law", since
-/// the latter is a substring of the former and would otherwise mis-match).
-/// Source: populist-clarity-results-map.csv (clarity_office_name column, ";"-separated variants).
+/// County office match rule: populist name, strings to match, and strings that disqualify the match.
+struct CountyOfficeRule {
+    populist_office_name: &'static str,
+    match_substrings: &'static [&'static str],
+    exclude_substrings: &'static [&'static str],
+}
+
 const COUNTY_OFFICE_MATCH_RULES: &[CountyOfficeRule] = &[
-    // — Judges: more specific court types first (Criminal / Probate before generic "County Court at Law")
     CountyOfficeRule {
         populist_office_name: "Judge - County Criminal Court of Appeals",
         match_substrings: &["Judge, County Criminal Court of Appeals"],
+        exclude_substrings: &[],
     },
     CountyOfficeRule {
         populist_office_name: "Judge - County Criminal Court at Law",
         match_substrings: &["Judge, County Criminal Court"],
+        exclude_substrings: &[],
     },
     CountyOfficeRule {
         populist_office_name: "Judge - County Court at Law",
-        match_substrings: &["Judge, County Court at Law"],
+        match_substrings: &["Judge, County Court at Law", "Judge, County Court-at-Law"],
+        exclude_substrings: &[],
     },
     CountyOfficeRule {
         populist_office_name: "Judge - Probate Court",
         match_substrings: &["Probate Court"],
+        exclude_substrings: &[],
     },
     CountyOfficeRule {
         populist_office_name: "Criminal District Judge",
         match_substrings: &["Criminal District Judge"],
+        exclude_substrings: &["Judicial District"],
     },
     CountyOfficeRule {
         populist_office_name: "Criminal District Attorney",
         match_substrings: &["Criminal District Attorney"],
+        exclude_substrings: &[],
     },
     CountyOfficeRule {
         populist_office_name: "County Judge",
         match_substrings: &["County Judge"],
+        exclude_substrings: &[],
     },
     CountyOfficeRule {
         populist_office_name: "Judge - County Civil Court at Law",
-        match_substrings: &[],
+        match_substrings: &["Judge, County Civil Court at Law"],
+        exclude_substrings: &[],
     },
-    CountyOfficeRule {
-        populist_office_name: "Judge - County Criminal Court of Appeals",
-        match_substrings: &[],
-    },
-    // — Clerks: "County & District Clerk" before "District Clerk" / "County Clerk" so when match strings are added it wins
     CountyOfficeRule {
         populist_office_name: "County Attorney",
-        match_substrings: &[],
+        match_substrings: &["County Attorney"],
+        exclude_substrings: &[],
     },
     CountyOfficeRule {
         populist_office_name: "County & District Clerk",
-        match_substrings: &[],
+        match_substrings: &["County and District Clerk", "District and County Clerk"],
+        exclude_substrings: &[],
     },
     CountyOfficeRule {
         populist_office_name: "District Clerk",
         match_substrings: &["District Clerk"],
+        exclude_substrings: &[],
     },
     CountyOfficeRule {
         populist_office_name: "County Clerk",
         match_substrings: &["County Clerk"],
+        exclude_substrings: &[],
     },
     CountyOfficeRule {
         populist_office_name: "Sheriff & County Tax Assessor-Collector",
-        match_substrings: &[],
+        match_substrings: &["Sheriff and Tax Assessor-Collector"],
+        exclude_substrings: &[],
     },
     CountyOfficeRule {
         populist_office_name: "Sheriff",
-        match_substrings: &[],
+        match_substrings: &["Sheriff"],
+        exclude_substrings: &[],
     },
     CountyOfficeRule {
         populist_office_name: "County Tax Assessor-Collector",
-        match_substrings: &[],
+        match_substrings: &["Tax Assessor-Collector"],
+        exclude_substrings: &[],
     },
     CountyOfficeRule {
         populist_office_name: "County Treasurer",
         match_substrings: &["County Treasurer"],
+        exclude_substrings: &[],
     },
     CountyOfficeRule {
         populist_office_name: "County Surveyor",
         match_substrings: &["County Surveyor"],
+        exclude_substrings: &[],
     },
     CountyOfficeRule {
         populist_office_name: "County School Trustee",
-        match_substrings: &[],
+        match_substrings: &["County School Trustee"],
+        exclude_substrings: &[],
     },
-    // — Precinct/district-specific: more specific before generic "County Chair" etc.
     CountyOfficeRule {
         populist_office_name: "County Commissioner",
-        match_substrings: &["County Commissioner"],
+        match_substrings: &["County Commissioner", "Commissioner"],
+        exclude_substrings: &["Railroad", "Agriculture", "General Land Office"],
     },
     CountyOfficeRule {
         populist_office_name: "Justice of the Peace",
         match_substrings: &["Justice of the Peace", "JOP"],
+        exclude_substrings: &[],
     },
     CountyOfficeRule {
         populist_office_name: "County Constable",
-        match_substrings: &[],
+        match_substrings: &["Constable"],
+        exclude_substrings: &[],
     },
     CountyOfficeRule {
         populist_office_name: "Precinct Chair",
         match_substrings: &["Precinct Chair"],
+        exclude_substrings: &[],
     },
     CountyOfficeRule {
         populist_office_name: "County Chair",
-        match_substrings: &["County Chair"],
+        match_substrings: &["County Chair", "Party Chairman", "Party Chair"],
+        exclude_substrings: &[],
     },
 ];
 
-/// Returns the first COUNTY_OFFICE_MATCH_RULES entry whose match_substrings match the given
-/// normalized contest_name (any substring contained in contest_name, case-insensitive).
-/// Entries with empty match_substrings are skipped (placeholder until criteria are defined).
 fn find_matching_county_office(normalized_contest_name: &str) -> Option<&'static CountyOfficeRule> {
     let contest_lower = normalized_contest_name.to_lowercase();
     for rule in COUNTY_OFFICE_MATCH_RULES {
         if rule.match_substrings.is_empty() {
             continue;
         }
-        for s in rule.match_substrings {
-            if contest_lower.contains(&s.to_lowercase()) {
-                return Some(rule);
-            }
+        let matched = rule.match_substrings.iter().any(|s| {
+            contest_lower.contains(&s.to_lowercase())
+        });
+        if !matched {
+            continue;
         }
+        let excluded = rule.exclude_substrings.iter().any(|s| {
+            contest_lower.contains(&s.to_lowercase())
+        });
+        if excluded {
+            continue;
+        }
+        return Some(rule);
     }
     None
 }
@@ -169,20 +194,18 @@ fn remove_substring_ignore_ascii_case(s: &str, phrase: &str) -> String {
     result
 }
 
-/// Normalize contest name: remove "(Vote for 1)" from the end (case-insensitive), "DEM "/"REP " from the front, and "unexpired term".
+/// Normalize contest name: strip party/instruction suffixes and prefixes (same order as Hart); also remove "unexpired term".
 fn normalize_contest_name(s: &str) -> String {
     let mut s: String = remove_substring_ignore_ascii_case(s.trim(), "unexpired term")
         .trim()
         .trim_end_matches(|c| c == ' ' || c == '-')
         .into();
 
-    // 1. Remove " - Vote for none or one" from end (case-insensitive)
     let suffix1 = " - Vote for none or one";
     if s.len() >= suffix1.len() && s[s.len() - suffix1.len()..].eq_ignore_ascii_case(suffix1) {
         s = s[..s.len() - suffix1.len()].trim_end().to_string();
     }
 
-    // 2. Remove " - Republican Party" or " - Democratic Party" from end (case-insensitive)
     let suffix_rep = " - Republican Party";
     let suffix_dem = " - Democratic Party";
     if s.len() >= suffix_rep.len() && s[s.len() - suffix_rep.len()..].eq_ignore_ascii_case(suffix_rep) {
@@ -191,7 +214,6 @@ fn normalize_contest_name(s: &str) -> String {
         s = s[..s.len() - suffix_dem.len()].trim_end().to_string();
     }
 
-    // 3. Remove " (D)" or " (R)" from end (case-insensitive)
     let suffix_d = " (D)";
     let suffix_r = " (R)";
     if s.len() >= suffix_d.len() && s[s.len() - suffix_d.len()..].eq_ignore_ascii_case(suffix_d) {
@@ -200,7 +222,6 @@ fn normalize_contest_name(s: &str) -> String {
         s = s[..s.len() - suffix_r.len()].trim_end().to_string();
     }
 
-    // 4. Remove "REP - " or "DEM - " from front (case-insensitive)
     let prefix_rep = "REP - ";
     let prefix_dem = "DEM - ";
     if s.len() >= prefix_rep.len() && s[..prefix_rep.len()].eq_ignore_ascii_case(prefix_rep) {
@@ -209,7 +230,6 @@ fn normalize_contest_name(s: &str) -> String {
         s = s[prefix_dem.len()..].trim_start().to_string();
     }
 
-    // 5. Remove "(Vote for 1)" from end (case-insensitive), for Clarity-style names
     let suffix_vote1 = "(Vote for 1)";
     if s.len() >= suffix_vote1.len() && s[s.len() - suffix_vote1.len()..].eq_ignore_ascii_case(suffix_vote1) {
         s = s[..s.len() - suffix_vote1.len()].trim_end().to_string();
@@ -218,9 +238,9 @@ fn normalize_contest_name(s: &str) -> String {
     s
 }
 
-/// One row written to ingest_staging.stg_tx_results_clarity.
+/// One row written to ingest_staging.stg_tx_results_other.
 #[derive(Debug, Clone)]
-pub struct StgTxClarityResultRow {
+pub struct StgTxOtherResultRow {
     pub office_name: Option<String>,
     pub office_key: Option<String>,
     pub candidate_name: Option<String>,
@@ -238,29 +258,23 @@ pub struct StgTxClarityResultRow {
     pub county: Option<String>,
 }
 
-/// Parsed bits from contest_name for ref_key building (e.g. district, seat).
 #[derive(Debug, Clone)]
 struct ParsedContestName {
-    raw: String,
     office_name: String,
     district: Option<String>,
     seat: Option<String>,
 }
 
-/// Extracts district and seat from contest_name using TX office extractors.
 fn parse_contest_name_for_office(rule: &CountyOfficeRule, contest_name: &str) -> ParsedContestName {
     let (seat, _stripped) = extract_office_seat(contest_name);
     let district = extract_office_district(&_stripped, None);
-    
     ParsedContestName {
-        raw: contest_name.to_string(),
         office_name: rule.populist_office_name.to_string(),
         district,
         seat,
     }
 }
 
-/// Pushes the slug of `s` onto `parts` if `s` is non-empty after trim.
 fn push_slug(parts: &mut Vec<String>, s: &str) {
     let t = s.trim();
     if !t.is_empty() {
@@ -271,7 +285,6 @@ fn push_slug(parts: &mut Vec<String>, s: &str) {
     }
 }
 
-/// Build ref_key for a county race row. Order and formatting depend on office name and county.
 fn build_ref_key_for_county_race(
     office_name: &str,
     parsed: &ParsedContestName,
@@ -292,7 +305,6 @@ fn build_ref_key_for_county_race(
     match office_name {
         "Criminal District Judge" => {
             if county_lower == "tarrant" {
-                // office_name + district + county + " county" + candidate
                 push_slug(&mut parts, office_name);
                 if let Some(d) = district {
                     push_slug(&mut parts, d);
@@ -300,7 +312,6 @@ fn build_ref_key_for_county_race(
                 push_slug(&mut parts, &format!("{} county", county));
                 push_slug(&mut parts, candidate);
             } else if county_lower == "dallas" {
-                // office_name + county + " county number " + district + candidate
                 push_slug(&mut parts, office_name);
                 push_slug(&mut parts, &format!("{} county number", county));
                 if let Some(d) = district {
@@ -308,7 +319,6 @@ fn build_ref_key_for_county_race(
                 }
                 push_slug(&mut parts, candidate);
             } else {
-                // office_name + county + " county" + district (if exists) + candidate
                 push_slug(&mut parts, office_name);
                 push_slug(&mut parts, &format!("{} county", county));
                 if let Some(d) = district {
@@ -318,13 +328,11 @@ fn build_ref_key_for_county_race(
             }
         }
         "Criminal District Attorney" => {
-            // office_name + county + " county" + candidate
             push_slug(&mut parts, office_name);
             push_slug(&mut parts, &format!("{} county", county));
             push_slug(&mut parts, candidate);
         }
         "County Judge" => {
-            // county + office_name + candidate
             push_slug(&mut parts, county);
             push_slug(&mut parts, office_name);
             push_slug(&mut parts, candidate);
@@ -339,8 +347,20 @@ fn build_ref_key_for_county_race(
             push_slug(&mut parts, name);
             push_slug(&mut parts, candidate);
         }
+        "Sheriff & County Tax Assessor-Collector" => {
+            push_slug(&mut parts, county);
+            push_slug(&mut parts, office_name);
+            push_slug(&mut parts, candidate);
+        }
+        "Judge - County Civil Court at Law" => {
+            push_slug(&mut parts, county);
+            push_slug(&mut parts, office_name);
+            if let Some(d) = district {
+                push_slug(&mut parts, &format!("no {}", d));
+            }
+            push_slug(&mut parts, candidate);
+        }
         "Judge - County Court at Law" => {
-            // county + office_name + (if district "no " + district) + candidate
             push_slug(&mut parts, county);
             push_slug(&mut parts, office_name);
             if let Some(d) = district {
@@ -349,7 +369,6 @@ fn build_ref_key_for_county_race(
             push_slug(&mut parts, candidate);
         }
         "Judge - County Criminal Court of Appeals" => {
-            // county + office_name + (if district "no " + district) + candidate
             push_slug(&mut parts, county);
             push_slug(&mut parts, office_name);
             if let Some(d) = district {
@@ -358,7 +377,6 @@ fn build_ref_key_for_county_race(
             push_slug(&mut parts, candidate);
         }
         "Judge - County Criminal Court at Law" => {
-            // county + office_name + (if district "no " + district) + candidate; Tarrant: drop "at Law"
             let name = if county_lower == "tarrant" {
                 "Judge - County Criminal Court"
             } else {
@@ -372,7 +390,6 @@ fn build_ref_key_for_county_race(
             push_slug(&mut parts, candidate);
         }
         "Judge - Probate Court" => {
-            // county + office_name + (if district "no " + district) + candidate; Collin: drop "Judge - "; Galveston/Denton: "Judge - Probate Court at Law"
             let name = if county_lower == "collin" {
                 "Probate Court"
             } else if county_lower == "galveston" {
@@ -390,7 +407,6 @@ fn build_ref_key_for_county_race(
             push_slug(&mut parts, candidate);
         }
         "County Commissioner" => {
-            // county + office_name + (if district "precinct " + district) + candidate
             push_slug(&mut parts, county);
             push_slug(&mut parts, office_name);
             if let Some(d) = district {
@@ -399,7 +415,6 @@ fn build_ref_key_for_county_race(
             push_slug(&mut parts, candidate);
         }
         "Justice of the Peace" => {
-            // county + office_name + (if district "precinct " + district) + (if seat "place " + seat) + candidate
             push_slug(&mut parts, county);
             push_slug(&mut parts, office_name);
             if let Some(d) = district {
@@ -411,26 +426,32 @@ fn build_ref_key_for_county_race(
             push_slug(&mut parts, candidate);
         }
         "County Chair" => {
-            // county + office_name + candidate
             push_slug(&mut parts, county);
             push_slug(&mut parts, office_name);
             push_slug(&mut parts, candidate);
         }
         "Precinct Chair" => {
-            // county + office_name + " for pchr " + district + party + candidate
             push_slug(&mut parts, county);
             push_slug(&mut parts, office_name);
             push_slug(&mut parts, "for pchr");
             if let Some(d) = district {
-                push_slug(&mut parts, d);
+                let d_trimmed = d.trim_start_matches('0');
+                push_slug(&mut parts, if d_trimmed.is_empty() { "0" } else { d_trimmed });
             }
             if let Some(p) = party {
                 push_slug(&mut parts, p);
             }
             push_slug(&mut parts, candidate);
         }
+        "County School Trustee" => {
+            push_slug(&mut parts, county);
+            push_slug(&mut parts, "Harris County Department of Education");
+            if let Some(d) = district {
+                push_slug(&mut parts, &format!("Position {}", d));
+            }
+            push_slug(&mut parts, candidate);
+        }
         _ => {
-            // Default: county + office_name + (if district "precinct " + district) + candidate
             push_slug(&mut parts, county);
             push_slug(&mut parts, office_name);
             if let Some(d) = district {
@@ -444,9 +465,9 @@ fn build_ref_key_for_county_race(
     parts.join("-")
 }
 
-/// One row from a Clarity county results CSV (column names as in the file).
+/// One row from an "other" county results CSV (same column names as Clarity-style).
 #[derive(Debug, serde::Deserialize)]
-struct ClarityCsvRow {
+struct OtherCsvRow {
     #[serde(rename = "contest name")]
     contest_name: Option<String>,
     #[serde(rename = "choice name")]
@@ -463,12 +484,11 @@ struct ClarityCsvRow {
     num_precinct_total: Option<i64>,
     #[serde(rename = "num Precinct rptg")]
     num_precinct_rptg: Option<i64>,
-    /// County name (added by scraper when writing CSV; optional for CSVs without it).
     county: Option<String>,
 }
 
 /// Compute race total from candidate votes and percent: total_votes = candidate_votes / (percent / 100).
-/// Returns None if percent is missing, zero, or unparseable.
+/// Same logic as tx_clarity_results_processor. Returns None if percent is missing, zero, or unparseable.
 fn total_votes_from_percent(candidate_votes: Option<i64>, percent_of_votes: Option<&str>) -> Option<i64> {
     let votes = candidate_votes?;
     let pct_str = percent_of_votes?.trim().trim_end_matches('%').trim();
@@ -487,15 +507,13 @@ fn total_votes_from_percent(candidate_votes: Option<i64>, percent_of_votes: Opti
     }
 }
 
-/// Parse a single Clarity CSV file into staging rows for ingest_staging.stg_tx_results_clarity.
-/// Only rows whose contest_name matches a county-level office in COUNTY_OFFICE_MATCH_RULES are included.
-pub fn parse_clarity_csv(
+/// Parse a single "other" CSV file into staging rows for ingest_staging.stg_tx_results_other.
+pub fn parse_other_csv(
     csv_path: &Path,
     source_file: &str,
     election_year: Option<i32>,
-) -> Result<Vec<StgTxClarityResultRow>, Box<dyn std::error::Error + Send + Sync>> {
+) -> Result<Vec<StgTxOtherResultRow>, Box<dyn std::error::Error + Send + Sync>> {
     let year = election_year.unwrap_or(DEFAULT_ELECTION_YEAR);
-    // Convert to UTF-8 if needed (try UTF-8, else Windows-1252) so we parse valid Unicode.
     let bytes = fs::read(csv_path)?;
     let content = decode_csv_bytes_to_utf8(&bytes);
     let mut rdr = ReaderBuilder::new()
@@ -505,7 +523,7 @@ pub fn parse_clarity_csv(
 
     let mut rows = Vec::new();
     for result in rdr.deserialize() {
-        let raw: ClarityCsvRow = result?;
+        let raw: OtherCsvRow = result?;
         let contest_name_raw = raw.contest_name.as_deref().unwrap_or("").trim();
         if contest_name_raw.is_empty() {
             continue;
@@ -514,7 +532,7 @@ pub fn parse_clarity_csv(
 
         let rule = match find_matching_county_office(&normalized_contest) {
             Some(r) => r,
-            None => continue, // Not a county-level race we track; skip row.
+            None => continue,
         };
 
         let parsed = parse_contest_name_for_office(rule, &normalized_contest);
@@ -537,7 +555,7 @@ pub fn parse_clarity_csv(
 
         let total_votes = total_votes_from_percent(raw.total_votes, raw.percent_of_votes.as_deref());
 
-        rows.push(StgTxClarityResultRow {
+        rows.push(StgTxOtherResultRow {
             office_name: Some(rule.populist_office_name.to_string()),
             office_key: None,
             candidate_name,
@@ -559,10 +577,9 @@ pub fn parse_clarity_csv(
     Ok(rows)
 }
 
-/// Insert a batch of rows into ingest_staging.stg_tx_results_clarity.
-async fn insert_clarity_staging_rows(
+async fn insert_other_staging_rows(
     pool: &PgPool,
-    rows: &[StgTxClarityResultRow],
+    rows: &[StgTxOtherResultRow],
 ) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
     if rows.is_empty() {
         return Ok(0);
@@ -572,7 +589,7 @@ async fn insert_clarity_staging_rows(
     for row in rows {
         sqlx::query(
             r#"
-            INSERT INTO ingest_staging.stg_tx_results_clarity (
+            INSERT INTO ingest_staging.stg_tx_results_other (
                 office_name, office_key, candidate_name, candidate_key,
                 precincts_reporting, precincts_total, votes_for_candidate, total_votes, total_voters,
                 party, race_type, election_year, ref_key, source_file, county
@@ -602,14 +619,13 @@ async fn insert_clarity_staging_rows(
     Ok(count)
 }
 
-/// Ensure stg_tx_results_clarity exists, parse the Clarity CSV at `csv_path`, and insert all rows.
-/// `source_file` is stored in each row (e.g. the CSV filename).
-pub async fn process_clarity_csv(
+/// Parse the "other" CSV at `csv_path` and insert all rows into ingest_staging.stg_tx_results_other.
+pub async fn process_other_csv(
     pool: &PgPool,
     csv_path: &Path,
     source_file: &str,
     election_year: Option<i32>,
 ) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
-    let rows = parse_clarity_csv(csv_path, source_file, election_year)?;
-    insert_clarity_staging_rows(pool, &rows).await
+    let rows = parse_other_csv(csv_path, source_file, election_year)?;
+    insert_other_staging_rows(pool, &rows).await
 }

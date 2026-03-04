@@ -110,7 +110,8 @@ pub struct AddressExtendedMN {
 
 #[derive(FromRow, Debug, Clone)]
 pub struct AddressExtendedTX {
-    pub gid: i32,
+    /// VTD row id; stored as text in `tx_vtds_2026` (e.g. from shapefile), so we use String.
+    pub gid: String,
     pub county_fips: Option<String>,
     pub precinct: Option<String>,
     pub precinct_key: Option<String>,

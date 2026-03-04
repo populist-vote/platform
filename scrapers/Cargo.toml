@@ -31,4 +31,5 @@ unicode-normalization = "0.1"
 roxmltree = "0.20"
 # default-features = false to avoid bzip2-sys/zstd-sys; enable only deflate for common zips
 zip = { version = "2", default-features = false, features = ["deflate"] }
+pdf-extract = "0.8"
 

@@ -505,12 +505,14 @@ pub fn extract_office_district(input: &str, seat: Option<&str>) -> Option<String
             Regex::new(r"(?i)([0-9]{1,3})(?:st|nd|rd|th)\s+judicial\s+district").unwrap(),
             // [5] PCHR_<segment>_rep|_dem (precinct chair): capture segment between pchr_ and _rep/_dem; then ignore leading letters, ignore "." throughout, keep numbers + letters after
             Regex::new(r"(?i)pchr_(.+?)_(?:rep|dem)").unwrap(),
-            // [6] "No." + number/label (support digits, letters, hyphens; e.g. "4052", "1AGB", "19-1", "4A2B")
-            Regex::new(r"(?i)no\.\s*([0-9][0-9A-Za-z-]*)").unwrap(),
+            // [6] "No." + number/label or "N & M" list only (no comma: "No. 1, Place 2" must not capture "1, place 2")
+            Regex::new(r"(?i)no\.\s*([0-9][0-9A-Za-z\s&\-]*)").unwrap(),
             // [7] "#" + number/label
             Regex::new(r"#\s*([0-9][0-9A-Za-z-]*)").unwrap(),
             // [8] "number" + number/label (e.g. COUNTY NUMBER 1)
             Regex::new(r"(?i)number\s+([0-9][0-9A-Za-z-]*)").unwrap(),
+            // [9] "Position N" (e.g. Position 5, Position 7)
+            Regex::new(r"(?i)position\s+([0-9]+)").unwrap(),
         ]
     });
 
@@ -569,10 +571,21 @@ pub fn extract_office_district(input: &str, seat: Option<&str>) -> Option<String
     }
     if let Some(caps) = extractors[6].captures(input) {
         if let Some(m) = caps.get(1) {
-            return Some(m.as_str().to_string());
+            let s = m.as_str().trim();
+            if !s.is_empty() {
+                if s.contains('&') {
+                    return Some(normalize_precinct_district_list(s));
+                }
+                return Some(s.to_string());
+            }
         }
     }
     if let Some(caps) = extractors[8].captures(input) {
+        if let Some(m) = caps.get(1) {
+            return Some(m.as_str().to_string());
+        }
+    }
+    if let Some(caps) = extractors[9].captures(input) {
         if let Some(m) = caps.get(1) {
             return Some(m.as_str().to_string());
         }
