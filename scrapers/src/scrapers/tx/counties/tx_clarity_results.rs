@@ -1,8 +1,8 @@
 //! Texas county election results from Clarity.
 //!
-//! Reads county_results_urls.csv (columns: url, county_name), downloads each zip into
-//! `data/tx/counties/clarity` with the county name appended to the filename, uncompresses
-//! and renames extracted CSVs by appending the county name, then processes each CSV
+//! Reads county_clarity_results_urls.csv (columns: url, county_name, party). Downloads each zip
+//! into `data/tx/counties/clarity` with county name (and optional party) appended to the filename,
+//! uncompresses and renames extracted CSVs with the same suffix, then processes each CSV
 //! via the tx_clarity_results_processor into ingest_staging.stg_tx_results_clarity.
 
 use std::fs;
@@ -66,14 +66,16 @@ pub const TX_CLARITY_DATA_DIR: &str = "data/tx/counties/clarity";
 /// Directory containing the URL list CSV (parent of TX_CLARITY_DATA_DIR).
 pub const TX_COUNTIES_DIR: &str = "data/tx/counties";
 
-/// Default CSV file: first column = URL, second column = county_name (in TX_COUNTIES_DIR).
+/// Default CSV file: columns url, county_name, party (in TX_COUNTIES_DIR).
 pub const COUNTY_CLARITY_RESULTS_URLS_CSV: &str = "county_clarity_results_urls.csv";
 
-/// One row from county_results_urls.csv.
+/// One row from county_clarity_results_urls.csv.
 #[derive(Debug)]
 pub struct CountyClarityResultsUrl {
     pub url: String,
     pub county_name: String,
+    /// If present (e.g. "dem", "rep"), appended to zip and CSV filenames so both party CSVs can be processed per county.
+    pub party: Option<String>,
 }
 
 /// Return the path to the TX Clarity data directory.
@@ -129,7 +131,7 @@ fn add_county_column_to_csv(
     Ok(())
 }
 
-/// Load URL + county_name rows from county_clarity_results_urls.csv (first column = URL, second = county_name).
+/// Load URL + county_name + optional party from county_clarity_results_urls.csv (columns: url, county_name, party).
 pub fn load_county_clarity_results_urls(path: &Path) -> Result<Vec<CountyClarityResultsUrl>, Box<dyn std::error::Error + Send + Sync>> {
     let mut rdr = ReaderBuilder::new().from_path(path)?;
     let mut rows = Vec::new();
@@ -138,20 +140,36 @@ pub fn load_county_clarity_results_urls(path: &Path) -> Result<Vec<CountyClarity
         if record.len() >= 2 {
             let url = record.get(0).unwrap().trim().to_string();
             let county_name = record.get(1).unwrap().trim().to_string();
+            let party = record
+                .get(2)
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty());
             if !url.is_empty() && !url.starts_with('#') {
-                rows.push(CountyClarityResultsUrl { url, county_name });
+                rows.push(CountyClarityResultsUrl { url, county_name, party });
             }
         }
     }
     Ok(rows)
 }
 
-/// Build the local zip filename: base name from URL with county name appended before the extension.
-/// E.g. url "https://x.com/results.zip", county "Harris" -> "results_Harris.zip".
-fn zip_filename_for_url_and_county(url: &str, county_name: &str) -> String {
+/// Build the local zip filename: base name from URL with county (and optional party) appended before the extension.
+/// E.g. url "https://x.com/summary.zip", county "dallas", party Some("dem") -> "summary_dallas_dem.zip".
+fn zip_filename_for_url_county_party(url: &str, county_name: &str, party: Option<&str>) -> String {
     let base = url.rsplit('/').next().unwrap_or("download.zip");
-    let sanitized = sanitize_for_filename(county_name);
-    if sanitized.is_empty() {
+    let county_sanitized = sanitize_for_filename(county_name);
+    let suffix = if county_sanitized.is_empty() {
+        String::new()
+    } else if let Some(p) = party {
+        let party_sanitized = sanitize_for_filename(p);
+        if party_sanitized.is_empty() {
+            county_sanitized
+        } else {
+            format!("{}_{}", county_sanitized, party_sanitized)
+        }
+    } else {
+        county_sanitized
+    };
+    if suffix.is_empty() {
         return base.to_string();
     }
     let (stem, ext) = if let Some(dot) = base.rfind('.') {
@@ -159,7 +177,7 @@ fn zip_filename_for_url_and_county(url: &str, county_name: &str) -> String {
     } else {
         (base, "")
     };
-    format!("{}_{}{}", stem, sanitized, ext)
+    format!("{}_{}{}", stem, suffix, ext)
 }
 
 /// Download a URL to a destination path.
@@ -180,16 +198,18 @@ pub async fn download_to_path(
 
 /// Extract a zip file into the given directory. All entries are written as files under `out_dir`.
 /// Uses only the base name of each entry to avoid path traversal.
-/// If `county_name_suffix` is Some, extracted CSV files are renamed to append the suffix before .csv
-/// (e.g. "results.csv" -> "results_Harris.csv").
+/// If `filename_suffix` is Some, extracted CSV files are renamed to append the suffix before .csv
+/// (e.g. "results.csv" -> "results_dallas_dem.csv"). If `county_name_for_column` is Some, a "county"
+/// column is added to each CSV with that value (title-cased).
 pub fn unzip_into_dir(
     zip_path: &Path,
     out_dir: &Path,
-    county_name_suffix: Option<&str>,
+    filename_suffix: Option<&str>,
+    county_name_for_column: Option<&str>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let file = fs::File::open(zip_path)?;
     let mut archive = ZipArchive::new(file)?;
-    let suffix = county_name_suffix.map(sanitize_for_filename);
+    let suffix = filename_suffix.map(sanitize_for_filename);
     for i in 0..archive.len() {
         let mut entry = archive.by_index(i)?;
         let name = entry.name();
@@ -207,7 +227,7 @@ pub fn unzip_into_dir(
             }
             let mut out_file = fs::File::create(&out_path)?;
             std::io::copy(&mut entry, &mut out_file)?;
-            // If this is a CSV and we have a county suffix, rename to append it before .csv and add county column
+            // If this is a CSV and we have a filename suffix, rename to append it before .csv and add county column
             if let (Some(s), Some(ext)) = (suffix.as_ref(), out_path.extension()) {
                 if !s.is_empty() && ext.eq_ignore_ascii_case("csv") {
                     if let Some(stem) = out_path.file_stem() {
@@ -217,7 +237,7 @@ pub fn unzip_into_dir(
                             fs::remove_file(&new_path)?;
                         }
                         fs::rename(&out_path, &new_path)?;
-                        if let Some(county_name) = county_name_suffix {
+                        if let Some(county_name) = county_name_for_column {
                             add_county_column_to_csv(&new_path, county_name)?;
                         }
                     }
@@ -263,12 +283,26 @@ pub async fn run(
     let client = reqwest::Client::new();
 
     for row in &rows {
-        let zip_filename = zip_filename_for_url_and_county(&row.url, &row.county_name);
+        let zip_filename = zip_filename_for_url_county_party(
+            &row.url,
+            &row.county_name,
+            row.party.as_deref(),
+        );
+        let file_suffix = if let Some(ref p) = row.party {
+            format!("{}_{}", sanitize_for_filename(&row.county_name), sanitize_for_filename(p))
+        } else {
+            sanitize_for_filename(&row.county_name)
+        };
         let zip_path = data_dir.join(&zip_filename);
-        println!("Downloading {} -> {} ({})", row.url, zip_path.display(), row.county_name);
+        println!("Downloading {} -> {} ({}{})", row.url, zip_path.display(), row.county_name, row.party.as_deref().map(|p| format!(", {}", p)).unwrap_or_default());
         download_to_path(&client, &row.url, &zip_path).await?;
-        println!("Unzipping {} -> {} (CSVs renamed with county: {})", zip_path.display(), data_dir.display(), row.county_name);
-        unzip_into_dir(&zip_path, &data_dir, Some(&row.county_name))?;
+        println!("Unzipping {} -> {} (CSVs renamed with suffix: {})", zip_path.display(), data_dir.display(), file_suffix);
+        unzip_into_dir(
+            &zip_path,
+            &data_dir,
+            if file_suffix.is_empty() { None } else { Some(file_suffix.as_str()) },
+            Some(&row.county_name),
+        )?;
         fs::remove_file(&zip_path)?;
         println!("Removed {}", zip_path.display());
     }
