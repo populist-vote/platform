@@ -1,5 +1,5 @@
 //! Merge TX results from staging into production: SOS (stg_tx_results_sos) and Clarity (stg_tx_results_clarity).
-//! Updates race_candidates.votes and race totals. Use --dry-run to report without writing.
+//! Updates race_candidates.votes and race (total_votes, num_precincts_reporting, total_precincts from staging). Use --dry-run to report without writing.
 //! Use --test-merge to only merge rows where office_name = "U. S. Senator".
 
 use scrapers::processors::tx::tx_merge_results;

@@ -50,7 +50,7 @@ const COUNTY_OFFICE_MATCH_RULES: &[CountyOfficeRule] = &[
     },
     CountyOfficeRule {
         populist_office_name: "Judge - County Court at Law",
-        match_substrings: &["Judge, County Court at Law", "Judge, County Court-at-Law"],
+        match_substrings: &["Judge, County Court at Law", "County Court-at-Law"],
         exclude_substrings: &[],
     },
     CountyOfficeRule {
@@ -381,7 +381,7 @@ fn build_ref_key_for_county_race(
             push_slug(&mut parts, candidate);
         }
         "Judge - Probate Court" => {
-            let name = if county_lower == "collin" {
+            let name = if (county_lower == "collin" || county_lower == "montgomery") {
                 "Probate Court"
             } else if county_lower == "galveston" {
                 "Judge - Probate Court at Law"
