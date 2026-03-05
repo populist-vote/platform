@@ -32,4 +32,11 @@ roxmltree = "0.20"
 # default-features = false to avoid bzip2-sys/zstd-sys; enable only deflate for common zips
 zip = { version = "2", default-features = false, features = ["deflate"] }
 pdf-extract = "0.8"
+# TX SOS SFTP download (tx_scrape_results_sos)
+rusftp = "0.2"
+russh = "0.44"
+russh-keys = "0.44"
+async-trait = "0.1"
+futures = "0.3"
+dotenvy = "0.15"
 

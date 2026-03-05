@@ -338,8 +338,8 @@ pub async fn merge_stg_tx_results_sos_to_production(
 }
 
 /// Merge ingest_staging.stg_tx_results_clarity into production.
-/// Same logic as merge_stg_tx_results_sos_to_production: match by ref_key, update race_candidates.votes and race totals;
-/// unmatched rows are recorded in ingest_staging.stg_tx_results_clarity_unmatched.
+/// Match by ref_key; update race_candidates.votes; update race with total_votes, num_precincts_reporting (from staging precincts_reporting), and total_precincts (from staging precincts_total).
+/// Unmatched rows are recorded in ingest_staging.stg_tx_results_clarity_unmatched.
 pub async fn merge_stg_tx_results_clarity_to_production(
     pool: &PgPool,
     dry_run: bool,

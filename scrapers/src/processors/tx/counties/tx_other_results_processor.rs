@@ -48,7 +48,7 @@ const COUNTY_OFFICE_MATCH_RULES: &[CountyOfficeRule] = &[
     },
     CountyOfficeRule {
         populist_office_name: "Judge - County Court at Law",
-        match_substrings: &["Judge, County Court at Law", "Judge, County Court-at-Law"],
+        match_substrings: &["Judge, County Court at Law", "County Court-at-Law"],
         exclude_substrings: &[],
     },
     CountyOfficeRule {
@@ -390,7 +390,7 @@ fn build_ref_key_for_county_race(
             push_slug(&mut parts, candidate);
         }
         "Judge - Probate Court" => {
-            let name = if county_lower == "collin" {
+            let name = if (county_lower == "collin" || county_lower == "montgomery") {
                 "Probate Court"
             } else if county_lower == "galveston" {
                 "Judge - Probate Court at Law"
@@ -476,6 +476,8 @@ struct OtherCsvRow {
     party_name: Option<String>,
     #[serde(rename = "total votes")]
     total_votes: Option<i64>,
+    #[serde(rename = "total votes cast in race")]
+    total_votes_cast_in_race: Option<i64>,
     #[serde(rename = "ballots cast")]
     ballots_cast: Option<i64>,
     #[serde(rename = "percent of votes")]
@@ -553,7 +555,8 @@ pub fn parse_other_csv(
             year,
         );
 
-        let total_votes = total_votes_from_percent(raw.total_votes, raw.percent_of_votes.as_deref());
+        let total_votes = raw.total_votes_cast_in_race
+            .or_else(|| total_votes_from_percent(raw.total_votes, raw.percent_of_votes.as_deref()));
 
         rows.push(StgTxOtherResultRow {
             office_name: Some(rule.populist_office_name.to_string()),
