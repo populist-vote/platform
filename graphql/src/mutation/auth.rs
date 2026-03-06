@@ -127,10 +127,14 @@ async fn consume_invite_token(
 
         if let Some(politician_id) = invite.politician_id {
             let politician = db::Politician::find_by_id(db_pool, politician_id).await?;
+<<<<<<< HEAD
             let name = format!(
                 "{} {}'s Campaign",
                 politician.first_name, politician.last_name
             );
+=======
+            let name = format!("{} {}'s Campaign", politician.first_name, politician.last_name);
+>>>>>>> a12ff37 (Add timestamps and invite flow tests for organization users)
 
             sqlx::query!(
                 r#"
