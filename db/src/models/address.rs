@@ -110,7 +110,7 @@ pub struct AddressExtendedMN {
 
 #[derive(FromRow, Debug, Clone)]
 pub struct AddressExtendedTX {
-    pub gid: i32,
+    pub gid: Option<String>,
     pub county_fips: Option<String>,
     pub precinct: Option<String>,
     pub precinct_key: Option<String>,
@@ -245,10 +245,7 @@ impl Address {
 
     /// Upsert by (line_1, line_2, city, state, country, postal_code). Inserts if new; if conflict,
     /// updates lon/lat and district fields and returns the existing row.
-    pub async fn upsert(
-        pool: &PgPool,
-        input: &InsertAddressInput,
-    ) -> Result<Address, sqlx::Error> {
+    pub async fn upsert(pool: &PgPool, input: &InsertAddressInput) -> Result<Address, sqlx::Error> {
         let (lon, lat) = (input.lon, input.lat);
         let has_coords = lon.is_some() && lat.is_some();
         let row = if has_coords {
@@ -367,10 +364,7 @@ impl Address {
     }
 
     /// Update an existing address by id. Only provided fields are updated.
-    pub async fn update(
-        pool: &PgPool,
-        input: &UpdateAddressInput,
-    ) -> Result<Address, sqlx::Error> {
+    pub async fn update(pool: &PgPool, input: &UpdateAddressInput) -> Result<Address, sqlx::Error> {
         let has_coords = input.lon.is_some() && input.lat.is_some();
         let row = if has_coords {
             let lon = input.lon.unwrap();
@@ -696,9 +690,10 @@ impl Address {
         pool: &PgPool,
         address_id: &uuid::Uuid,
     ) -> Result<Option<AddressExtendedTX>, sqlx::Error> {
-        let record = sqlx::query_as!(AddressExtendedTX,
+        let record = sqlx::query_as!(
+            AddressExtendedTX,
             r#"
-            SELECT vd.gid,
+            SELECT vd.gid::text AS gid,
                 vd.cntyfips AS county_fips,
                 vd.prec AS precinct,
                 vd.pctkey AS precinct_key,
@@ -815,7 +810,6 @@ impl AddressExtendedTX {
             .unwrap_or_default()
     }
 }
-
 
 fn extract_district_or_direction(input: Option<String>) -> Option<String> {
     let re = regex::Regex::new(r"(District\s*(\d+)|(East|West|North|South))").unwrap();

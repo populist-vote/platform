@@ -1,16 +1,16 @@
 //! Merges staging data from ingest_staging.stg_tx_* into production tables (office, politician, race, race_candidates).
 //! Run after process_tx_candidate_filings. Resolves by slug for offices/races and by ref_key/slug/email/phone for politicians.
 
-use std::collections::HashMap;
-use std::str::FromStr;
+use db::{
+    Address, Chamber, DistrictType, ElectionScope, InsertAddressInput, Office, PoliticalScope,
+    Politician, Race, RaceCandidate, RaceType, State, UpdatePoliticianInput, UpsertOfficeInput,
+    UpsertPoliticianInput, UpsertRaceCandidateInput, UpsertRaceInput, VoteType,
+};
 use serde_json::Value as JSON;
 use slugify::slugify;
 use sqlx::PgPool;
-use db::{
-    Address, Chamber, DistrictType, ElectionScope, InsertAddressInput, Office, Politician,
-    PoliticalScope, Race, RaceCandidate, RaceType, State, UpdatePoliticianInput, UpsertOfficeInput,
-    UpsertPoliticianInput, UpsertRaceCandidateInput, UpsertRaceInput, VoteType,
-};
+use std::collections::HashMap;
+use std::str::FromStr;
 
 const ELECTION_YEAR: i32 = 2026;
 
@@ -137,7 +137,10 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
         let prod = Office::upsert_from_source(pool, &input).await?;
         stg_to_prod_office.insert(stg.id, prod.id);
     }
-    println!("  Offices: {} existing (matched by slug), {} new", offices_existing, offices_new);
+    println!(
+        "  Offices: {} existing (matched by slug), {} new",
+        offices_existing, offices_new
+    );
 
     // 2. Politicians: resolve by email / phone, else upsert; build stg_politician_id -> prod_politician_id
     println!("Merging politicians...");
@@ -178,9 +181,15 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    println!("  Exact matches (slug+email/phone/address → updated): {}", exact_match_count);
+    println!(
+        "  Exact matches (slug+email/phone/address → updated): {}",
+        exact_match_count
+    );
     println!("  Slug exact + flagged: {}", exact_flagged_count);
-    println!("  Addresses: {} inserted, {} existing (reused)", addresses_inserted, addresses_reused);
+    println!(
+        "  Addresses: {} inserted, {} existing (reused)",
+        addresses_inserted, addresses_reused
+    );
 
     // 3. Races: upsert by slug with prod office_id; build stg_race_id -> prod_race_id
     println!("Merging races...");
@@ -195,7 +204,12 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
         let prod_office_id = stg_to_prod_office
             .get(&stg.office_id)
             .copied()
-            .ok_or_else(|| format!("Staging race {} references unknown office {}", stg.slug, stg.office_id))?;
+            .ok_or_else(|| {
+                format!(
+                    "Staging race {} references unknown office {}",
+                    stg.slug, stg.office_id
+                )
+            })?;
         let input = stg_race_to_upsert(stg, prod_office_id);
         let prod = Race::upsert_from_source(pool, &input).await?;
         stg_to_prod_race.insert(stg.id, prod.id);
@@ -224,12 +238,11 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
         // Skip if incoming ref_key already exists in production (avoid duplicate ref_key)
         if let Some(ref key) = rc.ref_key {
             if !key.trim().is_empty() {
-                let exists: Option<(i32,)> = sqlx::query_as(
-                    "SELECT 1 FROM race_candidates WHERE ref_key = $1 LIMIT 1",
-                )
-                .bind(key.as_str())
-                .fetch_optional(pool)
-                .await?;
+                let exists: Option<(i32,)> =
+                    sqlx::query_as("SELECT 1 FROM race_candidates WHERE ref_key = $1 LIMIT 1")
+                        .bind(key.as_str())
+                        .fetch_optional(pool)
+                        .await?;
                 if exists.is_some() {
                     skipped_ref_key += 1;
                     continue;
@@ -242,12 +255,18 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
             ref_key: rc.ref_key.clone(),
             is_running: None,
         };
-        if RaceCandidate::upsert_from_source(pool, &input).await?.is_some() {
+        if RaceCandidate::upsert_from_source(pool, &input)
+            .await?
+            .is_some()
+        {
             inserted += 1;
         }
     }
     println!("  Race_candidates: {} new links", inserted);
-    println!("  Race_candidates skipped (existing ref_key): {}", skipped_ref_key);
+    println!(
+        "  Race_candidates skipped (existing ref_key): {}",
+        skipped_ref_key
+    );
 
     Ok(())
 }
@@ -386,7 +405,8 @@ async fn update_matched_politician_from_staging(
             let stg_addr = fetch_stg_tx_address(pool, stg_addr_id).await?;
             match stg_addr {
                 Some(addr) => {
-                    let (addr_id, was_inserted) = merge_staging_address_to_production(pool, &addr).await?;
+                    let (addr_id, was_inserted) =
+                        merge_staging_address_to_production(pool, &addr).await?;
                     if was_inserted {
                         *address_inserted += 1;
                     } else {
@@ -413,10 +433,15 @@ async fn update_matched_politician_from_staging(
         biography_source: None,
         home_state: parse_state(stg.home_state.as_ref()),
         date_of_birth: None,
-        office_id: stg.office_id.and_then(|stg_oid| stg_to_prod_office.get(&stg_oid).copied()),
+        office_id: stg
+            .office_id
+            .and_then(|stg_oid| stg_to_prod_office.get(&stg_oid).copied()),
         upcoming_race_id: None,
         thumbnail_image_url: None,
-        assets: if prod_assets.map(|a| a == &serde_json::json!({})).unwrap_or(false) {
+        assets: if prod_assets
+            .map(|a| a == &serde_json::json!({}))
+            .unwrap_or(false)
+        {
             stg.assets.clone()
         } else {
             None
@@ -460,15 +485,9 @@ async fn do_addresses_match(
     pool: &PgPool,
     stg_residence_address_id: Option<uuid::Uuid>,
     prod_residence_address_id: Option<uuid::Uuid>,
-) -> Result<
-    (
-        bool,
-        Option<StgAddress>,
-        Option<Address>,
-    ),
-    Box<dyn std::error::Error>,
-> {
-    let (Some(stg_id), Some(prod_id)) = (stg_residence_address_id, prod_residence_address_id) else {
+) -> Result<(bool, Option<StgAddress>, Option<Address>), Box<dyn std::error::Error>> {
+    let (Some(stg_id), Some(prod_id)) = (stg_residence_address_id, prod_residence_address_id)
+    else {
         return Ok((false, None, None));
     };
     let stg_addr = match fetch_stg_tx_address(pool, stg_id).await? {
@@ -839,12 +858,10 @@ async fn merge_staging_address_to_production(
 }
 
 async fn office_slug_exists(pool: &PgPool, slug: &str) -> Result<bool, Box<dyn std::error::Error>> {
-    let row: Option<(uuid::Uuid,)> = sqlx::query_as(
-        "SELECT id FROM office WHERE slug = $1",
-    )
-    .bind(slug)
-    .fetch_optional(pool)
-    .await?;
+    let row: Option<(uuid::Uuid,)> = sqlx::query_as("SELECT id FROM office WHERE slug = $1")
+        .bind(slug)
+        .fetch_optional(pool)
+        .await?;
     Ok(row.is_some())
 }
 
@@ -875,7 +892,16 @@ async fn apply_match_and_record(
     )
     .await?;
     record_overwritten_politician(pool, prod_id, stg.id, match_type, Some(&prod)).await?;
-    update_matched_politician_from_staging(pool, prod_id, stg, stg_to_prod_office, Some(&prod.assets), address_inserted, address_reused).await?;
+    update_matched_politician_from_staging(
+        pool,
+        prod_id,
+        stg,
+        stg_to_prod_office,
+        Some(&prod.assets),
+        address_inserted,
+        address_reused,
+    )
+    .await?;
     record_updated_politician(
         pool,
         stg.id,
@@ -898,7 +924,8 @@ async fn resolve_or_upsert_politician(
     address_reused: &mut usize,
 ) -> Result<Vec<(Option<uuid::Uuid>, PoliticianOutcome)>, Box<dyn std::error::Error>> {
     // Find ALL prod politicians with matching slug or slug increment; for each test email, phone, address; record_merge_dupe; if any match → update and record to politician_merge_updated; else insert (and record to inserted_politicians_with_same_slug only when we had slug candidates)
-    let base_slug: String = base_slug_if_increment(&stg.slug).unwrap_or_else(|| stg.slug.to_string());
+    let base_slug: String =
+        base_slug_if_increment(&stg.slug).unwrap_or_else(|| stg.slug.to_string());
     let candidates: Vec<(uuid::Uuid, String, Option<State>, Option<uuid::Uuid>, Option<String>, Option<String>)> = sqlx::query_as(
         r#"SELECT id, slug, home_state AS "home_state:State", residence_address_id, email, phone FROM politician WHERE slug = $1 OR slug LIKE $1 || '-%'"#,
     )
@@ -907,11 +934,21 @@ async fn resolve_or_upsert_politician(
     .await?;
 
     let mut pre_fetched_stg_addr: Option<StgAddress> = None;
-    let stg_email_trimmed = stg.email.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty());
-    let stg_phone_trimmed = stg.phone.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty());
+    let stg_email_trimmed = stg
+        .email
+        .as_ref()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty());
+    let stg_phone_trimmed = stg
+        .phone
+        .as_ref()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty());
     let mut updated: Vec<(uuid::Uuid, &'static str)> = Vec::new();
 
-    for (id, prod_slug, _prod_home_state, prod_residence_address_id, prod_email, prod_phone) in &candidates {
+    for (id, prod_slug, _prod_home_state, prod_residence_address_id, prod_email, prod_phone) in
+        &candidates
+    {
         if stg.treat_exact_slug_as_same_person && stg.slug == *prod_slug {
             apply_match_and_record(
                 pool,
@@ -929,16 +966,53 @@ async fn resolve_or_upsert_politician(
             break;
         }
 
-        let prod_email_trimmed = prod_email.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty());
-        let prod_phone_trimmed = prod_phone.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty());
+        let prod_email_trimmed = prod_email
+            .as_ref()
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty());
+        let prod_phone_trimmed = prod_phone
+            .as_ref()
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty());
 
-        if stg_email_trimmed.is_some() && prod_email_trimmed.is_some() && stg_email_trimmed == prod_email_trimmed {
-            apply_match_and_record(pool, stg, *id, "slug + email", None, None, stg_to_prod_office, address_inserted, address_reused, &mut updated).await?;
-        } else if stg_phone_trimmed.is_some() && prod_phone_trimmed.is_some() && stg_phone_trimmed == prod_phone_trimmed {
-            apply_match_and_record(pool, stg, *id, "slug + phone", None, None, stg_to_prod_office, address_inserted, address_reused, &mut updated).await?;
+        if stg_email_trimmed.is_some()
+            && prod_email_trimmed.is_some()
+            && stg_email_trimmed == prod_email_trimmed
+        {
+            apply_match_and_record(
+                pool,
+                stg,
+                *id,
+                "slug + email",
+                None,
+                None,
+                stg_to_prod_office,
+                address_inserted,
+                address_reused,
+                &mut updated,
+            )
+            .await?;
+        } else if stg_phone_trimmed.is_some()
+            && prod_phone_trimmed.is_some()
+            && stg_phone_trimmed == prod_phone_trimmed
+        {
+            apply_match_and_record(
+                pool,
+                stg,
+                *id,
+                "slug + phone",
+                None,
+                None,
+                stg_to_prod_office,
+                address_inserted,
+                address_reused,
+                &mut updated,
+            )
+            .await?;
         } else {
             let (address_match, stg_addr_opt, prod_addr_opt) =
-                do_addresses_match(pool, stg.residence_address_id, *prod_residence_address_id).await?;
+                do_addresses_match(pool, stg.residence_address_id, *prod_residence_address_id)
+                    .await?;
             if pre_fetched_stg_addr.is_none() {
                 pre_fetched_stg_addr = stg_addr_opt.clone();
             }
@@ -986,7 +1060,8 @@ async fn resolve_or_upsert_politician(
                 let stg_addr = fetch_stg_tx_address(pool, stg_addr_id).await?;
                 match stg_addr {
                     Some(addr) => {
-                        let (id, was_inserted) = merge_staging_address_to_production(pool, &addr).await?;
+                        let (id, was_inserted) =
+                            merge_staging_address_to_production(pool, &addr).await?;
                         if was_inserted {
                             *address_inserted += 1;
                         } else {
@@ -1023,7 +1098,9 @@ async fn resolve_or_upsert_politician(
         biography_source: None,
         home_state: parse_state(stg.home_state.as_ref()),
         date_of_birth: None,
-        office_id: stg.office_id.and_then(|stg_oid| stg_to_prod_office.get(&stg_oid).copied()),
+        office_id: stg
+            .office_id
+            .and_then(|stg_oid| stg_to_prod_office.get(&stg_oid).copied()),
         upcoming_race_id: None,
         thumbnail_image_url: None,
         assets: stg.assets.clone(),

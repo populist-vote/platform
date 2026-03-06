@@ -37,7 +37,11 @@ impl<'a> PoliticianSlugGenerator<'a> {
 
     pub fn generate(&self) -> String {
         let base = slugify!(self.name);
-        if self.state.map(|s| s.eq_ignore_ascii_case("TX")).unwrap_or(false) {
+        if self
+            .state
+            .map(|s| s.eq_ignore_ascii_case("TX"))
+            .unwrap_or(false)
+        {
             format!("{}-tx", base)
         } else {
             base
@@ -66,9 +70,14 @@ mod tests {
 
     #[test]
     fn politician_slug() {
-        assert_eq!(PoliticianSlugGenerator::new("John Smith").generate(), "john-smith");
         assert_eq!(
-            PoliticianSlugGenerator::new("John Smith").with_state("TX").generate(),
+            PoliticianSlugGenerator::new("John Smith").generate(),
+            "john-smith"
+        );
+        assert_eq!(
+            PoliticianSlugGenerator::new("John Smith")
+                .with_state("TX")
+                .generate(),
             "john-smith-tx"
         );
     }

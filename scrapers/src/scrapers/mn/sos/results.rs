@@ -296,9 +296,7 @@ async fn update_public_schema_with_results(table_names: Vec<String>) {
         WHERE
                 office_name NOT ILIKE '%question%';
     "#,
-        source_tables,
-        ref_key_from_source,
-        ref_key_from_results
+        source_tables, ref_key_from_source, ref_key_from_results
     );
 
     let result = sqlx::query(&query)

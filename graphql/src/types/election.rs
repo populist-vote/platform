@@ -271,18 +271,7 @@ async fn get_races_by_address_id(
             Some(ext.court_of_appeals_districts()),
             ext.board_of_education_district.clone(),
         ),
-        _ => (
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        ),
+        _ => (None, None, None, None, None, None, None, None, None, None),
     };
 
     // 4. Build query

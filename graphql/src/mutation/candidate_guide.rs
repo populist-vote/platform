@@ -36,12 +36,11 @@ impl CandidateGuideMutation {
             .organization_id
             .ok_or_else(|| Error::new("organization_id is required"))?;
 
-        let is_paid_organization = sqlx::query_scalar::<_, bool>(
-            "SELECT is_paid FROM organization WHERE id = $1",
-        )
-        .bind(organization_id)
-        .fetch_one(&db_pool)
-        .await?;
+        let is_paid_organization =
+            sqlx::query_scalar::<_, bool>("SELECT is_paid FROM organization WHERE id = $1")
+                .bind(organization_id)
+                .fetch_one(&db_pool)
+                .await?;
 
         // Free organizations: limit total races across all candidate guides to 3
         if !is_paid_organization {

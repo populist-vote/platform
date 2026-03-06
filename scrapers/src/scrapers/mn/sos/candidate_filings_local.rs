@@ -45,13 +45,11 @@ static HEADER_NAMES: [&str; 19] = [
     "county_id",
 ];
 
-pub async fn get_mn_sos_candidate_filings_local_primaries(driver: &WebDriver) -> Result<(), Box<dyn Error>> {
+pub async fn get_mn_sos_candidate_filings_local_primaries(
+    driver: &WebDriver,
+) -> Result<(), Box<dyn Error>> {
     driver.goto("https://candidates.sos.mn.gov").await?;
-    let link = driver
-        .find(By::LinkText(
-            "REPLACE WITH LINK TEXT",
-        ))
-        .await?;
+    let link = driver.find(By::LinkText("REPLACE WITH LINK TEXT")).await?;
     link.click().await?;
     let text = driver
         .find(By::XPath("/html/body/pre"))

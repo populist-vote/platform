@@ -89,8 +89,10 @@ pub fn apply_tx_filters(
     }
 
     // Justice of the peace (o.district can be comma-separated; check jp is in that list)
-    if let (Some(jp), Some(clean)) = (justice_of_the_peace_district.clone(), county_cleaned.clone())
-    {
+    if let (Some(jp), Some(clean)) = (
+        justice_of_the_peace_district.clone(),
+        county_cleaned.clone(),
+    ) {
         builder.push(
             " OR (o.election_scope = 'district' \
                       AND o.district_type = 'justice_of_the_peace' \
@@ -104,8 +106,7 @@ pub fn apply_tx_filters(
     }
 
     // Constable
-    if let (Some(constable), Some(clean)) = (constable_district.clone(), county_cleaned.clone())
-    {
+    if let (Some(constable), Some(clean)) = (constable_district.clone(), county_cleaned.clone()) {
         builder.push(
             " OR (o.election_scope = 'district' \
                       AND o.district_type = 'constable' \
@@ -155,8 +156,7 @@ pub fn apply_tx_filters(
     }
 
     // Precinct Chairs
-    if let (Some(precinct), Some(clean)) = (precinct.clone(), county_cleaned.clone())
-    {
+    if let (Some(precinct), Some(clean)) = (precinct.clone(), county_cleaned.clone()) {
         builder.push(
             " OR (o.election_scope = 'district' \
                       AND o.district_type = 'voting_precinct' \

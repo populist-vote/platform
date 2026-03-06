@@ -15,13 +15,15 @@ pub struct OfficeSubtitleGenerator<'a> {
 
 impl<'a> OfficeSubtitleGenerator<'a> {
     pub fn generate(&self) -> (String, String) {
-        use db::{ElectionScope, DistrictType};
-        
+        use db::{DistrictType, ElectionScope};
+
         match self.election_scope {
             // State scope
             ElectionScope::State => {
                 // Use full state name when no district/seat, or if U.S. Senate
-                if self.office_name == Some("U.S. Senate") || (self.district.is_none() && self.seat.is_none()) {
+                if self.office_name == Some("U.S. Senate")
+                    || (self.district.is_none() && self.seat.is_none())
+                {
                     ("Minnesota".to_string(), "MN".to_string())
                 } else if let Some(seat) = self.seat {
                     if seat.to_lowercase().contains("at large") {
@@ -32,8 +34,8 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                 } else {
                     ("Minnesota".to_string(), "MN".to_string())
                 }
-            },
-            
+            }
+
             // County scope
             ElectionScope::County => {
                 if let Some(county) = self.county {
@@ -51,25 +53,33 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                 } else {
                     ("MN".to_string(), "MN".to_string())
                 }
-            },
-            
+            }
+
             // City scope
             ElectionScope::City => {
                 if let Some(municipality) = self.municipality {
                     // Duplicate municipality names that need county specification
                     let duplicate_municipalities = [
-                        "Beaver Township", "Becker Township", "Clover Township",
-                        "Cornish Township", "Fairview Township", "Hillman Township",
-                        "Lawrence Township", "Long Lake Township", "Louisville Township",
-                        "Moose Lake Township", "Stokes Township", "Twin Lakes Township",
+                        "Beaver Township",
+                        "Becker Township",
+                        "Clover Township",
+                        "Cornish Township",
+                        "Fairview Township",
+                        "Hillman Township",
+                        "Lawrence Township",
+                        "Long Lake Township",
+                        "Louisville Township",
+                        "Moose Lake Township",
+                        "Stokes Township",
+                        "Twin Lakes Township",
                     ];
-                    
+
                     let seat_suffix = match self.seat {
                         None => String::new(),
                         Some(s) if s.to_lowercase().contains("at large") => format!(" - {}", s),
                         Some(s) => format!(" - Seat {}", s),
                     };
-                    
+
                     if duplicate_municipalities.contains(&municipality) {
                         if let Some(county) = self.county {
                             (
@@ -77,40 +87,55 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                                 format!("{} - {} County, MN{}", municipality, county, seat_suffix),
                             )
                         } else {
-                            (format!("{}, MN{}", municipality, seat_suffix), format!("{}, MN{}", municipality, seat_suffix))
+                            (
+                                format!("{}, MN{}", municipality, seat_suffix),
+                                format!("{}, MN{}", municipality, seat_suffix),
+                            )
                         }
                     } else {
-                        (format!("{}, MN{}", municipality, seat_suffix), format!("{}, MN{}", municipality, seat_suffix))
+                        (
+                            format!("{}, MN{}", municipality, seat_suffix),
+                            format!("{}, MN{}", municipality, seat_suffix),
+                        )
                     }
                 } else {
                     ("MN".to_string(), "MN".to_string())
                 }
-            },
-            
+            }
+
             // District scope - depends on district_type
             ElectionScope::District => {
                 match self.district_type {
                     Some(DistrictType::UsCongressional) => {
                         if let Some(district) = self.district {
-                            (format!("MN - District {}", district), format!("MN - {}", district))
+                            (
+                                format!("MN - District {}", district),
+                                format!("MN - {}", district),
+                            )
                         } else {
                             ("MN".to_string(), "MN".to_string())
                         }
-                    },
+                    }
                     Some(DistrictType::StateHouse) => {
                         if let Some(district) = self.district {
-                            (format!("MN - House District {}", district), format!("MN - {}", district))
+                            (
+                                format!("MN - House District {}", district),
+                                format!("MN - {}", district),
+                            )
                         } else {
                             ("MN".to_string(), "MN".to_string())
                         }
-                    },
+                    }
                     Some(DistrictType::StateSenate) => {
                         if let Some(district) = self.district {
-                            (format!("MN - Senate District {}", district), format!("MN - {}", district))
+                            (
+                                format!("MN - Senate District {}", district),
+                                format!("MN - {}", district),
+                            )
                         } else {
                             ("MN".to_string(), "MN".to_string())
                         }
-                    },
+                    }
                     Some(DistrictType::County) => {
                         if let (Some(county), Some(district)) = (self.county, self.district) {
                             (
@@ -120,7 +145,7 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                         } else {
                             ("MN".to_string(), "MN".to_string())
                         }
-                    },
+                    }
                     Some(DistrictType::City) => {
                         if let Some(municipality) = self.municipality {
                             if let Some(district) = self.district {
@@ -149,31 +174,48 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                                     )
                                 }
                             } else {
-                                (format!("{}, MN", municipality), format!("{}, MN", municipality))
+                                (
+                                    format!("{}, MN", municipality),
+                                    format!("{}, MN", municipality),
+                                )
                             }
                         } else {
                             ("MN".to_string(), "MN".to_string())
                         }
-                    },
+                    }
                     Some(DistrictType::School) => {
                         if let Some(school_district) = self.school_district {
                             let seat_suffix = match self.seat {
                                 None => String::new(),
-                                Some(s) if s.to_lowercase().contains("at large") => format!(" - {}", s),
+                                Some(s) if s.to_lowercase().contains("at large") => {
+                                    format!(" - {}", s)
+                                }
                                 Some(s) => format!(" - Seat {}", s),
                             };
-                            
+
                             if let Some(district) = self.district {
                                 // Check if district is purely numeric
                                 if district.chars().all(|c| c.is_numeric()) {
                                     (
-                                        format!("MN - {} - District {}{}", school_district, district, seat_suffix),
-                                        format!("MN - {} - {}{}", school_district, district, seat_suffix),
+                                        format!(
+                                            "MN - {} - District {}{}",
+                                            school_district, district, seat_suffix
+                                        ),
+                                        format!(
+                                            "MN - {} - {}{}",
+                                            school_district, district, seat_suffix
+                                        ),
                                     )
                                 } else {
                                     (
-                                        format!("MN - {} - {}{}", school_district, district, seat_suffix),
-                                        format!("MN - {} - {}{}", school_district, district, seat_suffix),
+                                        format!(
+                                            "MN - {} - {}{}",
+                                            school_district, district, seat_suffix
+                                        ),
+                                        format!(
+                                            "MN - {} - {}{}",
+                                            school_district, district, seat_suffix
+                                        ),
                                     )
                                 }
                             } else {
@@ -185,28 +227,36 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                         } else {
                             ("MN".to_string(), "MN".to_string())
                         }
-                    },
+                    }
                     Some(DistrictType::Judicial) => {
                         if let Some(seat) = self.seat {
                             (format!("MN - Seat {}", seat), format!("MN - {}", seat))
                         } else {
                             ("MN".to_string(), "MN".to_string())
                         }
-                    },
+                    }
                     Some(DistrictType::Hospital) => {
                         if let Some(hospital_district) = self.hospital_district {
                             let seat_suffix = match self.seat {
                                 None => String::new(),
-                                Some(s) if s.to_lowercase().contains("at large") => format!(" - {}", s),
+                                Some(s) if s.to_lowercase().contains("at large") => {
+                                    format!(" - {}", s)
+                                }
                                 Some(s) => format!(" - Seat {}", s),
                             };
-                            
+
                             if let Some(district) = self.district {
                                 // Check if district is purely numeric
                                 if district.chars().all(|c| c.is_numeric()) {
                                     (
-                                        format!("{} - District {}{}", hospital_district, district, seat_suffix),
-                                        format!("{} - {}{}", hospital_district, district, seat_suffix),
+                                        format!(
+                                            "{} - District {}{}",
+                                            hospital_district, district, seat_suffix
+                                        ),
+                                        format!(
+                                            "{} - {}{}",
+                                            hospital_district, district, seat_suffix
+                                        ),
                                     )
                                 } else {
                                     (
@@ -223,7 +273,7 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                         } else {
                             ("MN".to_string(), "MN".to_string())
                         }
-                    },
+                    }
                     Some(DistrictType::SoilAndWater) => {
                         if let (Some(county), Some(district)) = (self.county, self.district) {
                             (
@@ -233,7 +283,7 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                         } else {
                             ("MN".to_string(), "MN".to_string())
                         }
-                    },
+                    }
                     Some(DistrictType::Park) => {
                         if let Some(municipality) = self.municipality {
                             if let Some(district) = self.district {
@@ -250,16 +300,19 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                                     )
                                 }
                             } else {
-                                (format!("{}, MN", municipality), format!("{}, MN", municipality))
+                                (
+                                    format!("{}, MN", municipality),
+                                    format!("{}, MN", municipality),
+                                )
                             }
                         } else {
                             ("MN".to_string(), "MN".to_string())
                         }
-                    },
+                    }
                     _ => ("MN".to_string(), "MN".to_string()),
                 }
-            },
-            
+            }
+
             // National scope
             ElectionScope::National => ("".to_string(), "".to_string()),
         }
@@ -281,11 +334,11 @@ pub struct OfficeSlugGenerator<'a> {
 
 impl<'a> OfficeSlugGenerator<'a> {
     pub fn generate(&self) -> String {
-        use db::{ElectionScope, DistrictType};
-        
+        use db::{DistrictType, ElectionScope};
+
         // Replace special characters in name
         let cleaned_name = self.name.replace(".", "").replace("&", "and");
-        
+
         // Build slug string based on election scope and district type
         let slug_text = match self.election_scope {
             // State scope: mn + name + district + seat
@@ -297,8 +350,8 @@ impl<'a> OfficeSlugGenerator<'a> {
                     self.district.unwrap_or(""),
                     self.seat.unwrap_or(""),
                 )
-            },
-            
+            }
+
             // County scope: mn + name + county + "county" + district + seat
             Some(ElectionScope::County) => {
                 format!(
@@ -309,14 +362,15 @@ impl<'a> OfficeSlugGenerator<'a> {
                     self.district.unwrap_or(""),
                     self.seat.unwrap_or(""),
                 )
-            },
-            
+            }
+
             // City scope: mn + name + municipality + county + "county" + school_district + district + seat
             Some(ElectionScope::City) => {
-                let municipality_cleaned = self.municipality
+                let municipality_cleaned = self
+                    .municipality
                     .map(|m| m.replace("Township", "Twp"))
                     .unwrap_or_default();
-                
+
                 format!(
                     "{} {} {} {} county {} {} {}",
                     self.state.as_ref(),
@@ -327,8 +381,8 @@ impl<'a> OfficeSlugGenerator<'a> {
                     self.district.unwrap_or(""),
                     self.seat.unwrap_or(""),
                 )
-            },
-            
+            }
+
             // District scope - varies by district_type
             Some(ElectionScope::District) => {
                 match self.district_type {
@@ -341,12 +395,13 @@ impl<'a> OfficeSlugGenerator<'a> {
                             self.district.unwrap_or(""),
                             self.seat.unwrap_or(""),
                         )
-                    },
+                    }
                     Some(DistrictType::City) => {
-                        let municipality_cleaned = self.municipality
+                        let municipality_cleaned = self
+                            .municipality
                             .map(|m| m.replace("Township", "Twp"))
                             .unwrap_or_default();
-                        
+
                         format!(
                             "{} {} {} {} county {} {}",
                             self.state.as_ref(),
@@ -356,7 +411,7 @@ impl<'a> OfficeSlugGenerator<'a> {
                             self.district.unwrap_or(""),
                             self.seat.unwrap_or(""),
                         )
-                    },
+                    }
                     Some(DistrictType::School) => {
                         format!(
                             "{} {} {} {} {}",
@@ -366,7 +421,7 @@ impl<'a> OfficeSlugGenerator<'a> {
                             self.district.unwrap_or(""),
                             self.seat.unwrap_or(""),
                         )
-                    },
+                    }
                     Some(DistrictType::Judicial) => {
                         // Don't include district in slug for judicial - it's in the name
                         format!(
@@ -375,7 +430,7 @@ impl<'a> OfficeSlugGenerator<'a> {
                             cleaned_name,
                             self.seat.unwrap_or(""),
                         )
-                    },
+                    }
                     Some(DistrictType::Hospital) => {
                         format!(
                             "{} {} {} {} {}",
@@ -385,7 +440,7 @@ impl<'a> OfficeSlugGenerator<'a> {
                             self.district.unwrap_or(""),
                             self.seat.unwrap_or(""),
                         )
-                    },
+                    }
                     Some(DistrictType::SoilAndWater) => {
                         format!(
                             "{} {} {} county {} {}",
@@ -395,12 +450,13 @@ impl<'a> OfficeSlugGenerator<'a> {
                             self.district.unwrap_or(""),
                             self.seat.unwrap_or(""),
                         )
-                    },
+                    }
                     Some(DistrictType::Park) => {
-                        let municipality_cleaned = self.municipality
+                        let municipality_cleaned = self
+                            .municipality
                             .map(|m| m.replace("Township", "Twp"))
                             .unwrap_or_default();
-                        
+
                         format!(
                             "{} {} {} {} county {} {}",
                             self.state.as_ref(),
@@ -410,7 +466,7 @@ impl<'a> OfficeSlugGenerator<'a> {
                             self.district.unwrap_or(""),
                             self.seat.unwrap_or(""),
                         )
-                    },
+                    }
                     // UsCongressional, StateHouse, StateSenate, Transportation
                     _ => {
                         format!(
@@ -420,14 +476,14 @@ impl<'a> OfficeSlugGenerator<'a> {
                             self.district.unwrap_or(""),
                             self.seat.unwrap_or(""),
                         )
-                    },
+                    }
                 }
-            },
-            
+            }
+
             // National or None
             _ => String::new(),
         };
-        
+
         slugify!(&slug_text)
     }
 }
