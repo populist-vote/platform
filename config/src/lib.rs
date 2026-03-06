@@ -48,6 +48,10 @@ impl Config {
             "https://sahanjournal.com",
             "https://wtip.org/",
             "https://hamlineoracle.com/",
+            "https://www.kut.org/",
+            "https://www.tpr.org/",
+            "https://www.houstonpublicmedia.org/",
+            "https://www.kera.org/",
         ];
         let excluded_origins = ["https://www.mprnews.org/preview/"];
 
