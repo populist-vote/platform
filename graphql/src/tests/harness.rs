@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use std::time::Duration;
 
 use async_graphql::Variables;
 use auth::{create_random_token, create_temporary_username, AccessTokenClaims};
@@ -7,7 +8,7 @@ use jsonwebtoken::{Header, TokenData};
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::{context::ApiContext, new_schema, SessionData};
+use crate::{cache::Cache, context::ApiContext, new_schema, SessionData};
 
 #[derive(Clone)]
 #[allow(dead_code)]
@@ -21,14 +22,15 @@ impl TestHarness {
     pub async fn new() -> anyhow::Result<Self> {
         // Set up fresh test database
         let admin_pool = PgPool::connect("postgres://localhost/postgres").await?;
-        sqlx::query("DROP DATABASE IF EXISTS populist_test WITH (FORCE)")
+        let db_name = format!("populist_test_{}", Uuid::new_v4().simple());
+        sqlx::query(&format!("DROP DATABASE IF EXISTS {} WITH (FORCE)", db_name))
             .execute(&admin_pool)
             .await?;
-        sqlx::query("CREATE DATABASE populist_test")
+        sqlx::query(&format!("CREATE DATABASE {}", db_name))
             .execute(&admin_pool)
             .await?;
 
-        let pool = PgPool::connect("postgres://localhost/populist_test").await?;
+        let pool = PgPool::connect(&format!("postgres://localhost/{}", db_name)).await?;
 
         // Run migrations
         sqlx::migrate!("../db/migrations").run(&pool).await?;
@@ -121,7 +123,11 @@ impl TestHarness {
             async_graphql::Request::new(query)
         };
 
-        let mut schema = new_schema().data(context);
+        let mut schema = new_schema()
+            .data(context)
+            .data(Cache::<String, serde_json::Value>::new(
+                Duration::from_secs(300),
+            ));
 
         if let Some(uid) = user_id {
             let claims = AccessTokenClaims {

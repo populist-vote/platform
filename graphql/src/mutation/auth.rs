@@ -10,8 +10,8 @@ use auth::{
     create_temporary_username, format_auth_cookie, AccessTokenClaims,
 };
 use db::{
-    AddressInput, Coordinates, CreateUserInput, CreateUserWithProfileInput, OrganizationRole,
-    OrganizationRoleType, SystemRoleType, User,
+    AddressInput, Coordinates, CreateUserInput, CreateUserWithProfileInput, OrganizationRoleType,
+    SystemRoleType, User,
 };
 use geocodio::GeocodioProxy;
 use jsonwebtoken::TokenData;
@@ -127,7 +127,10 @@ async fn consume_invite_token(
 
         if let Some(politician_id) = invite.politician_id {
             let politician = db::Politician::find_by_id(db_pool, politician_id).await?;
-            let name = format!("{} {}'s Campaign", politician.first_name, politician.last_name);
+            let name = format!(
+                "{} {}'s Campaign",
+                politician.first_name, politician.last_name
+            );
 
             sqlx::query!(
                 r#"
