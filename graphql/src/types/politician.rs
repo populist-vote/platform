@@ -138,17 +138,23 @@ pub struct RatingResult {
 fn calculate_age(dob: NaiveDate) -> Result<i64> {
     let now = NaiveDate::parse_from_str(&Local::now().format("%m/%d/%Y").to_string(), "%m/%d/%Y")
         .unwrap();
+    calculate_age_from_now(dob, now)
+}
+
+fn calculate_age_from_now(dob: NaiveDate, now: NaiveDate) -> Result<i64> {
     let age = (now - dob).num_days() / 365;
     Ok(age)
 }
 
 #[test]
 fn test_calculate_age() {
+    let now = NaiveDate::from_ymd_opt(2022, 5, 14).unwrap();
+
     let dob = NaiveDate::parse_from_str("05/13/1984", "%m/%d/%Y").unwrap();
-    assert_eq!(calculate_age(dob), Ok(38));
+    assert_eq!(calculate_age_from_now(dob, now), Ok(38));
 
     let dob = NaiveDate::parse_from_str("02/09/1992", "%m/%d/%Y").unwrap();
-    assert_eq!(calculate_age(dob), Ok(30));
+    assert_eq!(calculate_age_from_now(dob, now), Ok(30));
 }
 
 async fn fetch_donations_summary(crp_id: String) -> Result<Option<DonationsSummary>> {
