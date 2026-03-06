@@ -28,14 +28,15 @@ impl AuthQuery {
         #[graphql(validator(email))] email: String,
     ) -> Result<bool, Error> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+        let normalized_email = email.trim().to_lowercase();
 
         // Ensure email is not already in database
         // TODO: handle email aliases
         let existing_user = sqlx::query!(
             r#"
-            SELECT id FROM populist_user WHERE email = $1
+            SELECT id FROM populist_user WHERE email = LOWER($1)
         "#,
-            email
+            normalized_email
         )
         .fetch_optional(&db_pool)
         .await?;

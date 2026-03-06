@@ -18,6 +18,7 @@ use jsonwebtoken::TokenData;
 use mailers::EmailClient;
 use pwhash::bcrypt;
 use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
 use tracing::{instrument, warn};
 
 #[derive(InputObject)]
@@ -25,6 +26,7 @@ use tracing::{instrument, warn};
 pub struct LoginInput {
     email_or_username: String,
     password: String,
+    invite_token: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, InputObject)]
@@ -63,6 +65,93 @@ pub struct InviteUserInput {
 #[derive(Default)]
 pub struct AuthMutation;
 
+fn normalize_email(email: &str) -> String {
+    email.trim().to_lowercase()
+}
+
+async fn upsert_organization_user(
+    db_pool: &PgPool,
+    organization_id: uuid::Uuid,
+    user_id: uuid::Uuid,
+    role: OrganizationRoleType,
+) -> Result<(), Error> {
+    sqlx::query!(
+        r#"
+            INSERT INTO organization_users (organization_id, user_id, role)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (user_id, organization_id)
+            DO UPDATE SET role = EXCLUDED.role
+        "#,
+        organization_id,
+        user_id,
+        role as OrganizationRoleType
+    )
+    .execute(db_pool)
+    .await?;
+
+    Ok(())
+}
+
+async fn consume_invite_token(
+    db_pool: &PgPool,
+    invite_token: &str,
+    email: &str,
+    user_id: uuid::Uuid,
+) -> Result<(), Error> {
+    let invite = sqlx::query!(
+        r#"
+            UPDATE invite_token
+            SET accepted_at = now() AT TIME ZONE 'utc'
+            WHERE token = $1
+            AND LOWER(email) = LOWER($2)
+            AND accepted_at IS NULL
+            AND expires_at > now() AT TIME ZONE 'utc'
+            RETURNING organization_id, politician_id, role AS "role:OrganizationRoleType"
+        "#,
+        uuid::Uuid::parse_str(invite_token)?,
+        normalize_email(email)
+    )
+    .fetch_optional(db_pool)
+    .await?;
+
+    if let Some(invite) = invite {
+        if let Some(organization_id) = invite.organization_id {
+            upsert_organization_user(
+                db_pool,
+                organization_id,
+                user_id,
+                invite.role.unwrap_or(OrganizationRoleType::Member),
+            )
+            .await?;
+        }
+
+        if let Some(politician_id) = invite.politician_id {
+            let politician = db::Politician::find_by_id(db_pool, politician_id).await?;
+            let name = format!("{} {}'s Campaign", politician.first_name, politician.last_name);
+
+            sqlx::query!(
+                r#"
+                    WITH new_org AS (
+                        INSERT INTO organization (name, slug, politician_id)
+                        VALUES ($1, slugify($2), $3)
+                        RETURNING id
+                    )
+                    INSERT INTO organization_users (organization_id, user_id, role)
+                    SELECT id, $4, 'owner' FROM new_org
+                "#,
+                name,
+                name,
+                politician_id,
+                user_id
+            )
+            .execute(db_pool)
+            .await?;
+        }
+    }
+
+    Ok(())
+}
+
 #[Object]
 impl AuthMutation {
     #[graphql(guard = "StaffOnly", visible = "is_admin")]
@@ -86,39 +175,13 @@ impl AuthMutation {
     ) -> Result<Option<String>, Error> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
         let requesting_user = ctx.data::<Option<TokenData<AccessTokenClaims>>>().unwrap();
+        let normalized_email = normalize_email(&input.email);
 
         match requesting_user {
             Some(requesting_user) => {
                 // If input has organization_id, ensure that the requesting user is a member of that organization with at least a role of 'member'
                 if let Some(organization_id) = input.organization_id.as_ref() {
                     let organization_id = uuid::Uuid::parse_str(organization_id).unwrap();
-
-                    // Handle existing user - create the organization_users record, no need to create an invite token
-                    let existing_user = sqlx::query!(
-                        r#"
-                    SELECT id FROM populist_user WHERE email = $1
-                "#,
-                        input.email
-                    )
-                    .fetch_optional(&db_pool)
-                    .await?;
-
-                    if let Some(user) = existing_user {
-                        sqlx::query!(
-                            r#"
-                                INSERT INTO organization_users (organization_id, user_id, role)
-                                VALUES ($1, $2, $3)
-                            "#,
-                            organization_id,
-                            user.id,
-                            input.role.unwrap_or(OrganizationRoleType::Member)
-                                as OrganizationRoleType
-                        )
-                        .execute(&db_pool)
-                        .await?;
-
-                        return Ok(None);
-                    };
 
                     let organization_roles =
                         User::organization_roles(&db_pool, requesting_user.claims.sub).await?;
@@ -132,6 +195,28 @@ impl AuthMutation {
                     } else {
                         return Err(Error::Unauthorized);
                     }
+
+                    // Handle existing user - create the organization_users record, no need to create an invite token
+                    let existing_user = sqlx::query!(
+                        r#"
+                    SELECT id FROM populist_user WHERE email = LOWER($1)
+                "#,
+                        &normalized_email
+                    )
+                    .fetch_optional(&db_pool)
+                    .await?;
+
+                    if let Some(user) = existing_user {
+                        upsert_organization_user(
+                            &db_pool,
+                            organization_id,
+                            user.id,
+                            input.role.unwrap_or(OrganizationRoleType::Member),
+                        )
+                        .await?;
+
+                        return Ok(None);
+                    }
                 }
 
                 let invite = sqlx::query!(
@@ -140,7 +225,7 @@ impl AuthMutation {
                     VALUES ($1, $2, $3, $4, $5, now() AT TIME ZONE 'utc', now() AT TIME ZONE 'utc' + INTERVAL '7 days')
                     RETURNING email, token
                 "#,
-                input.email,
+                &normalized_email,
                 input
                     .organization_id.clone()
                     .map(|id| uuid::Uuid::parse_str(&id.to_string()).unwrap()),
@@ -158,7 +243,7 @@ impl AuthMutation {
                     "{}/register?inviteToken={}&email={}",
                     config::Config::default().web_app_url,
                     invite.token,
-                    input.email
+                    invite.email
                 );
 
                 let organization = if let Some(organization_id) = input.organization_id.as_ref() {
@@ -215,13 +300,14 @@ impl AuthMutation {
         input: BeginUserRegistrationInput,
     ) -> Result<LoginResult, Error> {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
+        let normalized_email = normalize_email(&input.email);
 
         // Check if email already exists
         let existing_user = sqlx::query!(
             r#"
-        SELECT id FROM populist_user WHERE email = $1
+        SELECT id FROM populist_user WHERE email = LOWER($1)
     "#,
-            input.email
+            &normalized_email
         )
         .fetch_optional(&db_pool)
         .await?;
@@ -231,7 +317,7 @@ impl AuthMutation {
         }
 
         // Create a temporary username and confirmation token
-        let temp_username = create_temporary_username(input.email.clone());
+        let temp_username = create_temporary_username(normalized_email.clone());
         let confirmation_token = create_random_token().unwrap();
 
         // Optional address/geocoding handling block
@@ -287,7 +373,7 @@ impl AuthMutation {
                             .map(|d| d.district_number.to_string());
 
                         CreateUserWithProfileInput {
-                            email: input.email.clone(),
+                            email: normalized_email.clone(),
                             username: temp_username,
                             password: input.password,
                             address: Some(AddressInput {
@@ -312,7 +398,7 @@ impl AuthMutation {
                         );
 
                         CreateUserWithProfileInput {
-                            email: input.email.clone(),
+                            email: normalized_email.clone(),
                             username: temp_username,
                             password: input.password,
                             address: Some(address_clone),
@@ -326,7 +412,7 @@ impl AuthMutation {
             None => {
                 // Handle register without address
                 let new_user_input = CreateUserInput {
-                    email: input.email.clone(),
+                    email: normalized_email,
                     username: temp_username,
                     password: input.password,
                     system_role: SystemRoleType::User,
@@ -340,74 +426,11 @@ impl AuthMutation {
         match new_user_result {
             Ok(new_user) => {
                 // Lookup invite_token and assign user to organization / politician
-                let mut organization_roles = vec![];
-                if let Some(invite_token) = input.invite_token {
-                    // Update invite_token record to set accepted_at time
-                    let invite = sqlx::query!(
-                    r#"
-                    UPDATE invite_token
-                    SET accepted_at = now() AT TIME ZONE 'utc'
-                    WHERE token = $1
-                    AND email = $2
-                    AND accepted_at IS NULL
-                    RETURNING email, organization_id, politician_id, role AS "role:OrganizationRoleType"
-                "#,
-                    uuid::Uuid::parse_str(&invite_token).unwrap(),
-                    input.email
-                )
-                .fetch_optional(&db_pool)
-                .await?;
-
-                    if let Some(invite) = invite {
-                        if let Some(organization_id) = invite.organization_id {
-                            let organization_role = OrganizationRole {
-                                organization_id,
-                                role: invite.role.unwrap_or(OrganizationRoleType::Member),
-                            };
-                            organization_roles.push(organization_role);
-                            sqlx::query!(
-                                r#"
-                            INSERT INTO organization_users (organization_id, user_id, role)
-                            VALUES ($1, $2, $3)
-                        "#,
-                                organization_id,
-                                new_user.id,
-                                invite.role.unwrap_or(OrganizationRoleType::Member)
-                                    as OrganizationRoleType
-                            )
-                            .execute(&db_pool)
-                            .await?;
-                        }
-
-                        if let Some(politician_id) = invite.politician_id {
-                            let politician =
-                                db::Politician::find_by_id(&db_pool, politician_id).await?;
-                            // Create a new organization for the politician's campaign
-                            let name = format!(
-                                "{} {}'s Campaign",
-                                politician.first_name, politician.last_name
-                            );
-
-                            sqlx::query!(
-                                r#"
-                            WITH new_org AS (
-                                INSERT INTO organization (name, slug, politician_id)
-                                VALUES ($1, slugify($2), $3)
-                                RETURNING id
-                            )
-                            INSERT INTO organization_users (organization_id, user_id, role)
-                            SELECT id, $4, 'owner' FROM new_org
-                        "#,
-                                name,
-                                name,
-                                politician_id,
-                                new_user.id
-                            )
-                            .execute(&db_pool)
-                            .await?;
-                        }
-                    }
+                if let Some(invite_token) = input.invite_token.as_deref() {
+                    consume_invite_token(&db_pool, invite_token, &new_user.email, new_user.id)
+                        .await?;
                 }
+                let organization_roles = User::organization_roles(&db_pool, new_user.id).await?;
 
                 let access_token =
                     create_access_token_for_user(new_user.clone(), organization_roles)?;
@@ -488,6 +511,9 @@ impl AuthMutation {
             let password_is_valid = bcrypt::verify(input.password, &user.password);
 
             if password_is_valid {
+                if let Some(invite_token) = input.invite_token.as_deref() {
+                    consume_invite_token(&db_pool, invite_token, &user.email, user.id).await?;
+                }
                 let organization_roles = User::organization_roles(&db_pool, user.id).await?;
                 let access_token = create_access_token_for_user(user.clone(), organization_roles)?;
                 ctx.insert_http_header(
