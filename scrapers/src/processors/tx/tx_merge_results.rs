@@ -506,8 +506,8 @@ pub async fn merge_stg_tx_results_hart_to_production(
 }
 
 /// Merge ingest_staging.stg_tx_results_other into production.
-/// Same logic as merge_stg_tx_results_hart_to_production: match by ref_key, update race_candidates.votes and race totals;
-/// unmatched rows are recorded in ingest_staging.stg_tx_results_other_unmatched.
+/// Match by ref_key; update race_candidates.votes; update race from staging: total_votes → race.total_votes, precincts_reporting → num_precincts_reporting, precincts_total → total_precincts.
+/// Unmatched rows are recorded in ingest_staging.stg_tx_results_other_unmatched.
 pub async fn merge_stg_tx_results_other_to_production(
     pool: &PgPool,
     dry_run: bool,
