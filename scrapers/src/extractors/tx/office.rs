@@ -513,6 +513,8 @@ pub fn extract_office_district(input: &str, seat: Option<&str>) -> Option<String
             Regex::new(r"(?i)number\s+([0-9][0-9A-Za-z-]*)").unwrap(),
             // [9] "Position N" (e.g. Position 5, Position 7)
             Regex::new(r"(?i)position\s+([0-9]+)").unwrap(),
+            // [10] "Precinct Chair" + number/list/alpha (e.g. "Precinct Chair 324", "Precinct Chair, Pct 2", "Precinct Chair - 4B"); only used in step 7
+            Regex::new(r"(?i)precinct\s+chair\s*[,]?\s*(?:\s*-\s*)?\s*(?:pct\.?\s*)?([0-9][0-9\s,&A-Za-z]*)").unwrap(),
         ]
     });
 
@@ -598,20 +600,16 @@ pub fn extract_office_district(input: &str, seat: Option<&str>) -> Option<String
         }
     }
 
-    // 7. Accounts for strings like "Precinct Chair, Pct 2"
+    // 7. "Precinct Chair" + number/list/alpha (e.g. "Precinct Chair 324", "Precinct Chair, Pct 2", "Precinct Chair - 4B"); [10] matches directly
     if input_lower.contains("precinct chair") {
-        let stripped = {
-            let pos = input_lower.find("precinct chair").unwrap();
-            let len = "precinct chair".len();
-            let before = input_lower[..pos].trim_end();
-            let after = input_lower[pos + len..].trim_start();
-            normalize_whitespace(&format!("{} {}", before, after))
-        };
-        if let Some(caps) = extractors[2].captures(&stripped) {
+        if let Some(caps) = extractors[10].captures(input) {
             if let Some(m) = caps.get(1) {
                 let s = m.as_str().trim();
                 if !s.is_empty() {
-                    return Some(normalize_precinct_district_list(s));
+                    if s.contains('&') || s.contains(',') {
+                        return Some(normalize_precinct_district_list(s));
+                    }
+                    return Some(s.to_string());
                 }
             }
         }

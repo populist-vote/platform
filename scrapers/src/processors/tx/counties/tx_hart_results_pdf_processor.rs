@@ -1,7 +1,7 @@
 //! Texas Hart/CIRA Cumulative Election Results PDF → CSV.
 //!
 //! Parses PDF text (proposition, general, primary), extracts race/choice/party and vote columns.
-//! Output is PDF-style CSV: col_order as headers (e.g. Absentee Voting, Early Voting,
+//! Output is PDF-style CSV: col_order as headers (e.g. Ballot by Mail, Early Voting,
 //! Election Day Voting, Total) with votes and pct per cell, then summary columns (Cast Votes,
 //! Undervotes, Overvotes) per voting method, plus precinct and county.
 
@@ -16,28 +16,45 @@ use regex::Regex;
 
 // ── Patterns (equivalent to Python) ───────────────────────────────────────────
 
-/// Four pairs of (votes, percent) at end of candidate/prop/summary lines.
-const VOTE_TAIL_8: &str = r"([\d,]+)\s+([\d.]+%)\s+([\d,]+)\s+([\d.]+%)\s+([\d,]+)\s+([\d.]+%)\s+([\d,]+)\s+([\d.]+%)";
+/// One (votes, percent) pair for variable-column matching.
+static VOTE_PAIR_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"([\d,]+)\s*([\d.]+%?)").unwrap());
 
-static CANDIDATE_WITH_PARTY_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(&format!(
-        r"^(.+?)\s+(REP|DEM|LIB|GRN|IND|NPA|\(W\))\s+{}",
-        VOTE_TAIL_8
-    ))
-    .unwrap()
+/// One numeric value per column (no percent). Used for Undervotes/Overvotes summary lines.
+/// Optional decimal part (e.g. 10.0) so one number stays one value and indices don't shift.
+static VOTE_VALUE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"([\d,]+(?:\.\d*)?)").unwrap());
+
+/// Prefix for candidate-with-party lines: name and party, then vote tail.
+static CANDIDATE_WITH_PARTY_PREFIX_RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"^(.+?)\s+(REP|DEM|LIB|GRN|IND|NPA|\(W\))\s+(.+)$").unwrap()
 });
 
-static CANDIDATE_NO_PARTY_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(&format!(r"^(.+?)\s+{}", VOTE_TAIL_8)).unwrap());
+/// Prefix for summary lines: "Cast Votes:" etc then vote tail.
+static SUMMARY_PREFIX_RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"^(Cast Votes:|Undervotes:|Overvotes:|Rejected write-in votes:|Unresolved write-in votes:)\s+(.+)$").unwrap()
+});
 
-static PROP_CHOICE_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(&format!(r"^(FOR|AGAINST)\s+{}", VOTE_TAIL_8)).unwrap());
+/// Captures proposition choice (FOR, AGAINST, Yes, or No) and vote tail. \b ensures "Yes"/"No" are whole words (not "Yesterday"/"Nothing").
+static PROPOSITION_CHOICE_PARSE_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^(FOR|AGAINST|Yes|No)\b\s+(.+)$").unwrap());
 
+/// Detects proposition choice lines (FOR/AGAINST/Yes/No + vote data) so we don't treat them as race titles. \b for whole-word Yes/No.
+static PROPOSITION_CHOICE_DETECT_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^(FOR|AGAINST|Yes|No)\b\s+.+[\d,]+").unwrap());
+
+/// Detect candidate-with-party line: has party code then a vote-like tail (at least one pair).
+static CANDIDATE_WITH_PARTY_RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"^(.+?)\s+(REP|DEM|LIB|GRN|IND|NPA|\(W\))\s+.+[\d,]+\s+[\d.]+%").unwrap()
+});
+
+/// Detect candidate-without-party: line ending with vote-like tail (at least one pair).
+static CANDIDATE_NO_PARTY_RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"^.+\s+[\d,]+\s+[\d.]+%\s*$").unwrap()
+});
+
+/// Detect summary line.
 static SUMMARY_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(
-        r"^(Cast Votes:|Undervotes:|Overvotes:|Rejected write-in votes:|Unresolved write-in votes:)\s+([\d,]+)\s*([\d.%]*)\s+([\d,]+)\s*([\d.%]*)\s+([\d,]+)\s*([\d.%]*)\s+([\d,]+)\s*([\d.%]*)",
-    )
-    .unwrap()
+    Regex::new(r"^(Cast Votes:|Undervotes:|Overvotes:|Rejected write-in votes:|Unresolved write-in votes:)\s+").unwrap()
 });
 
 static HEADER_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^Choice\s+Party\s+(.+)").unwrap());
@@ -51,7 +68,8 @@ static PER_RACE_PRECINCTS_RE: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"^(\d+)\s+(\d+)\s+([\d.]+%)\s+([\d,]+)\s+([\d,]+)\s+([\d.]+%)").unwrap()
 });
 
-static SKIP_RE: Lazy<Regex> = Lazy::new(|| {
+/// Lines that are not race titles (boilerplate, metadata, headers). Skip these when detecting race/contest names.
+static NON_RACE_TITLE_LINE_RE: Lazy<Regex> = Lazy::new(|| {
     Regex::new(
         r"^(Choice\s|Cumulative Results|Run Time|Run Date|Registered Voters|Precincts Reporting|Precincts Counted|Unofficial|Official|Page \d+|\d+ of \d+|\d+/\d+/\d+|\*\*\*|PRIMARY ELECTION|GENERAL ELECTION|CONSTITUTIONAL AMENDMENT|NOVEMBER|MARCH|JOINT PRIMARY|Counted\s+Total\s+Percent|Voters|Ballots\s+Registered)",
     )
@@ -92,27 +110,90 @@ impl HartPdfResult {
     }
 }
 
-fn parse_column_order(header_rest: &str) -> Vec<String> {
-    let labels = [
-        "Election Day Voting",
-        "Absentee Voting",
-        "Early Voting",
-        "Total",
-    ];
-    let mut positions: Vec<(usize, String)> = labels
+/// Extract all (votes, pct) pairs from a line tail in left-to-right order.
+fn parse_vote_pairs(tail: &str) -> Vec<(String, String)> {
+    VOTE_PAIR_RE
+        .captures_iter(tail)
+        .filter_map(|cap| {
+            let votes = cap.get(1)?.as_str().to_string();
+            let pct = cap.get(2)?.as_str().to_string();
+            Some((votes, pct))
+        })
+        .collect()
+}
+
+/// Extract numeric values only (one per column), for summary lines that have no pct (e.g. Undervotes, Overvotes).
+fn parse_vote_values_single(tail: &str) -> Vec<String> {
+    VOTE_VALUE_RE
+        .find_iter(tail)
+        .map(|m| m.as_str().to_string())
+        .collect()
+}
+
+/// Column header phrases (case-insensitive) that map to our canonical CSV column names.
+/// (phrase to find in header, canonical CSV column name). Matching is case-insensitive; phrases are lowercase here for consistency.
+/// "election day" matches both "Election Day" and "Election Day Voting".
+const COLUMN_PHRASES: &[(&str, &str)] = &[
+    ("election day", "Election Day Voting"),
+    ("early voting", "Early Voting"),
+    ("ballot by mail", "Ballot by Mail"),
+    ("absentee voting", "Ballot by Mail"),
+    ("total", "Total"),
+];
+
+/// Phrases that identify columns we skip (e.g. provisional). Use only full column names:
+/// "provisional" alone would also match inside "EV Provisional" and create a duplicate entry,
+/// shifting Total's pdf_index to 6 when there are only 6 columns (0-5), so Total would be missing.
+const COLUMN_SKIP_PHRASES: &[&str] = &["ev provisional", "ed provisional"];
+
+/// Parsed column order: canonical names and their 0-based PDF column indices (so we can skip provisional).
+fn parse_column_order(header_rest: &str) -> (Vec<String>, Vec<usize>) {
+    let header_lower = header_rest.to_lowercase();
+
+    // For each canonical, take leftmost phrase position (dedupe e.g. "Election day" vs "Election Day Voting").
+    let mut by_canonical: HashMap<String, usize> = HashMap::new();
+    for (phrase, canonical) in COLUMN_PHRASES {
+        if let Some(pos) = header_lower.find(&phrase.to_lowercase()) {
+            by_canonical
+                .entry(canonical.to_string())
+                .and_modify(|p| {
+                    if pos < *p {
+                        *p = pos;
+                    }
+                })
+                .or_insert(pos);
+        }
+    }
+
+    // Collect (position, optional canonical). None = skip column (provisional).
+    let mut entries: Vec<(usize, Option<String>)> = by_canonical
         .into_iter()
-        .map(String::from)
-        .filter_map(|label| header_rest.find(&label).map(|pos| (pos, label)))
+        .map(|(c, pos)| (pos, Some(c)))
         .collect();
-    positions.sort_by_key(|(pos, _)| *pos);
-    positions.into_iter().map(|(_, label)| label).collect()
+    for phrase in COLUMN_SKIP_PHRASES {
+        if let Some(pos) = header_lower.find(&phrase.to_lowercase()) {
+            entries.push((pos, None));
+        }
+    }
+
+    // Sort by position; PDF column index is 0, 1, 2, ... by order in header.
+    entries.sort_by_key(|(pos, _)| *pos);
+    let mut col_order: Vec<String> = Vec::new();
+    let mut col_indices: Vec<usize> = Vec::new();
+    for (pdf_index, (_, canonical)) in entries.into_iter().enumerate() {
+        if let Some(c) = canonical {
+            col_order.push(c);
+            col_indices.push(pdf_index);
+        }
+    }
+    (col_order, col_indices)
 }
 
 fn looks_like_race(line: &str) -> bool {
-    if line.is_empty() || SKIP_RE.is_match(line) {
+    if line.is_empty() || NON_RACE_TITLE_LINE_RE.is_match(line) {
         return false;
     }
-    if PROP_CHOICE_RE.is_match(line) || SUMMARY_RE.is_match(line) {
+    if PROPOSITION_CHOICE_DETECT_RE.is_match(line) || SUMMARY_RE.is_match(line) {
         return false;
     }
     if CANDIDATE_WITH_PARTY_RE.is_match(line) || PER_RACE_PRECINCTS_RE.is_match(line) {
@@ -136,31 +217,32 @@ fn clean_name(name: &str) -> String {
 fn make_row(
     race: &str,
     col_order: &[String],
+    col_indices: &[usize],
     choice: &str,
     party: &str,
-    groups: &[String],
+    pairs: &[(String, String)],
     precincts_counted: &str,
     precincts_total: &str,
     precincts_pct: &str,
 ) -> ParsedRow {
-    let mut mapping: std::collections::HashMap<String, (String, String)> =
-        std::collections::HashMap::new();
-    for (i, col) in col_order.iter().enumerate() {
-        let idx = i * 2;
-        if idx + 1 < groups.len() {
-            let votes = groups[idx].replace(',', "");
-            let pct = groups[idx + 1].clone();
-            mapping.insert(col.clone(), (votes, pct));
-        }
-    }
-    let get = |col: &str| {
-        mapping
-            .get(col)
-            .cloned()
-            .unwrap_or_else(|| (String::new(), String::new()))
-    };
-    let (tot_v, tot_p) = get("Total");
-    let column_pairs: Vec<(String, String)> = col_order.iter().map(|c| get(c)).collect();
+    // Map by PDF column index: i-th output column uses pairs[col_indices[i]] (so we skip provisional).
+    let column_pairs: Vec<(String, String)> = col_order
+        .iter()
+        .enumerate()
+        .map(|(i, _col)| {
+            let idx = col_indices.get(i).copied().unwrap_or(i);
+            pairs
+                .get(idx)
+                .map(|(v, p)| (v.replace(',', ""), p.clone()))
+                .unwrap_or_else(|| (String::new(), String::new()))
+        })
+        .collect();
+    let (tot_v, tot_p) = col_order
+        .iter()
+        .position(|c| c.as_str() == "Total")
+        .and_then(|i| column_pairs.get(i))
+        .map(|(v, p)| (v.clone(), p.clone()))
+        .unwrap_or_else(|| (String::new(), String::new()));
     ParsedRow {
         race: race.to_string(),
         choice: choice.to_string(),
@@ -232,12 +314,15 @@ pub fn parse_hart_pdf(
 
     let mut rows: Vec<ParsedRow> = Vec::new();
     let mut current_race: Option<String> = None;
-    let mut col_order: Vec<String> = vec![
-        "Absentee Voting".into(),
+    let default_order = vec![
+        "Ballot by Mail".into(),
         "Early Voting".into(),
         "Election Day Voting".into(),
         "Total".into(),
     ];
+    let default_indices = vec![0, 1, 2, 3];
+    let mut col_order: Vec<String> = default_order.clone();
+    let mut col_indices: Vec<usize> = default_indices.clone();
 
     let mut doc_precincts_counted = String::new();
     let mut doc_precincts_total = String::new();
@@ -340,14 +425,10 @@ pub fn parse_hart_pdf(
         // Column header
         if let Some(caps) = HEADER_RE.captures(line) {
             let rest = caps.get(1).map(|m| m.as_str()).unwrap_or("");
-            col_order = parse_column_order(rest);
-            if col_order.is_empty() {
-                col_order = vec![
-                    "Absentee Voting".into(),
-                    "Early Voting".into(),
-                    "Election Day Voting".into(),
-                    "Total".into(),
-                ];
+            let (order, indices) = parse_column_order(rest);
+            if !order.is_empty() {
+                col_order = order;
+                col_indices = indices;
             }
             continue;
         }
@@ -382,20 +463,18 @@ pub fn parse_hart_pdf(
             race_precincts_pct.as_str()
         };
 
-        // FOR / AGAINST (proposition)
-        if let Some(caps) = PROP_CHOICE_RE.captures(line) {
+        // Proposition choice (FOR / AGAINST / Yes / No)
+        if let Some(caps) = PROPOSITION_CHOICE_PARSE_RE.captures(line) {
             let choice = caps.get(1).map(|m| m.as_str()).unwrap_or("");
-            let groups: Vec<String> = caps
-                .iter()
-                .skip(2)
-                .filter_map(|m| m.map(|x| x.as_str().to_string()))
-                .collect();
+            let tail = caps.get(2).map(|m| m.as_str()).unwrap_or("");
+            let pairs = parse_vote_pairs(tail);
             rows.push(make_row(
                 race,
                 &col_order,
+                &col_indices,
                 choice,
                 "",
-                &groups,
+                &pairs,
                 p_counted,
                 p_total,
                 p_pct,
@@ -404,42 +483,78 @@ pub fn parse_hart_pdf(
         }
 
         // Summary rows (Cast Votes:, Undervotes:, etc.)
-        if let Some(caps) = SUMMARY_RE.captures(line) {
+        if let Some(caps) = SUMMARY_PREFIX_RE.captures(line) {
             let choice = caps
                 .get(1)
                 .map(|m| m.as_str().trim_end_matches(':'))
                 .unwrap_or("");
-            let groups: Vec<String> = (2..=9)
-                .filter_map(|i| caps.get(i).map(|m| m.as_str().to_string()))
-                .collect();
-            rows.push(make_row(
-                race,
-                &col_order,
-                choice,
-                "",
-                &groups,
-                p_counted,
-                p_total,
-                p_pct,
-            ));
+            let tail = caps.get(2).map(|m| m.as_str()).unwrap_or("");
+            if choice == "Undervotes" || choice == "Overvotes" {
+                // Single value per column (no vote/pct pairs). Some PDFs omit provisional columns on this row,
+                // so we may get fewer values than PDF columns. If value count matches col_order, use 1:1 mapping;
+                // otherwise use col_indices to pick from full PDF column list.
+                let values = parse_vote_values_single(tail);
+                let pairs: Vec<(String, String)> = values
+                    .into_iter()
+                    .map(|v| (v, String::new()))
+                    .collect();
+                if pairs.len() == col_order.len() {
+                    // Row has one value per output column in order (no provisional on this row).
+                    let one_to_one: Vec<usize> = (0..col_order.len()).collect();
+                    rows.push(make_row(
+                        race,
+                        &col_order,
+                        &one_to_one,
+                        choice,
+                        "",
+                        &pairs,
+                        p_counted,
+                        p_total,
+                        p_pct,
+                    ));
+                } else {
+                    rows.push(make_row(
+                        race,
+                        &col_order,
+                        &col_indices,
+                        choice,
+                        "",
+                        &pairs,
+                        p_counted,
+                        p_total,
+                        p_pct,
+                    ));
+                }
+            } else {
+                let pairs = parse_vote_pairs(tail);
+                rows.push(make_row(
+                    race,
+                    &col_order,
+                    &col_indices,
+                    choice,
+                    "",
+                    &pairs,
+                    p_counted,
+                    p_total,
+                    p_pct,
+                ));
+            }
             continue;
         }
 
         // Candidate with party
-        if let Some(caps) = CANDIDATE_WITH_PARTY_RE.captures(line) {
+        if let Some(caps) = CANDIDATE_WITH_PARTY_PREFIX_RE.captures(line) {
             let name = clean_name(caps.get(1).map(|m| m.as_str()).unwrap_or(""));
             let party = caps.get(2).map(|m| m.as_str()).unwrap_or("");
-            let groups: Vec<String> = caps
-                .iter()
-                .skip(3)
-                .filter_map(|m| m.map(|x| x.as_str().to_string()))
-                .collect();
+            let tail = caps.get(3).map(|m| m.as_str()).unwrap_or("");
+            let pairs = parse_vote_pairs(tail);
             rows.push(make_row(
                 race,
                 &col_order,
+                &col_indices,
                 &name,
                 party,
-                &groups,
+                &pairs,
                 p_counted,
                 p_total,
                 p_pct,
@@ -447,24 +562,25 @@ pub fn parse_hart_pdf(
             continue;
         }
 
-        // Candidate without party
-        if let Some(caps) = CANDIDATE_NO_PARTY_RE.captures(line) {
-            let name = clean_name(caps.get(1).map(|m| m.as_str()).unwrap_or(""));
-            let groups: Vec<String> = caps
-                .iter()
-                .skip(2)
-                .filter_map(|m| m.map(|x| x.as_str().to_string()))
-                .collect();
-            rows.push(make_row(
-                race,
-                &col_order,
-                &name,
-                "",
-                &groups,
-                p_counted,
-                p_total,
-                p_pct,
-            ));
+        // Candidate without party: everything before the first vote pair is the name.
+        if CANDIDATE_NO_PARTY_RE.is_match(line) {
+            if let Some(m) = VOTE_PAIR_RE.find(line) {
+                let name = clean_name(line[..m.start()].trim());
+                let tail = &line[m.start()..];
+                let pairs = parse_vote_pairs(tail);
+                rows.push(make_row(
+                    race,
+                    &col_order,
+                    &col_indices,
+                    &name,
+                    "",
+                    &pairs,
+                    p_counted,
+                    p_total,
+                    p_pct,
+                ));
+                continue;
+            }
         }
     }
 

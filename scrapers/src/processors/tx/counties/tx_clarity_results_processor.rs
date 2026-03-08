@@ -5,11 +5,15 @@
 //! Only county-level races are included; matching is driven by string rules derived from
 //! populist-clarity-results-map.csv (see COUNTY_OFFICE_MATCH_RULES). ref_key is built per office type.
 
+use std::collections::HashMap;
 use std::fs;
 use std::io::Cursor;
 use std::path::Path;
+use std::sync::Mutex;
 
 use csv::ReaderBuilder;
+use once_cell::sync::Lazy;
+use regex::Regex;
 use sqlx::PgPool;
 use slugify::slugify;
 
@@ -21,10 +25,13 @@ const DEFAULT_ELECTION_YEAR: i32 = 2026;
 
 /// County office match rule: populist name and strings to match in contest_name (any match = county-level race).
 /// Derived from data/tx/counties/populist-clarity-results-map.csv; update this list when that reference CSV changes.
+/// Match if any match_substring is contained or match_pattern (regex) matches.
 struct CountyOfficeRule {
     populist_office_name: &'static str,
     /// Match if normalized contest_name contains any of these (case-insensitive). Empty = placeholder (no match).
     match_substrings: &'static [&'static str],
+    /// If set, also match when this regex matches the normalized contest_name (e.g. "Precinct N Chair").
+    match_pattern: Option<&'static str>,
 }
 
 /// County-level office matching rules. Order matters: first match wins, so list **more specific**
@@ -36,116 +43,156 @@ const COUNTY_OFFICE_MATCH_RULES: &[CountyOfficeRule] = &[
     CountyOfficeRule {
         populist_office_name: "Judge - County Criminal Court of Appeals",
         match_substrings: &["Judge, County Criminal Court of Appeals"],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "Judge - County Criminal Court at Law",
         match_substrings: &["Judge, County Criminal Court"],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "Judge - County Court at Law",
         match_substrings: &["Judge, County Court at Law", "County Court-at-Law"],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "Judge - Probate Court",
         match_substrings: &["Probate Court"],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "Criminal District Judge",
         match_substrings: &["Criminal District Judge"],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "Criminal District Attorney",
         match_substrings: &["Criminal District Attorney"],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "County Judge",
         match_substrings: &["County Judge"],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "Judge - County Civil Court at Law",
         match_substrings: &[],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "Judge - County Criminal Court of Appeals",
         match_substrings: &[],
+        match_pattern: None,
     },
     // — Clerks: "County & District Clerk" before "District Clerk" / "County Clerk" so when match strings are added it wins
     CountyOfficeRule {
         populist_office_name: "County Attorney",
         match_substrings: &[],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "County & District Clerk",
         match_substrings: &[],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "District Clerk",
         match_substrings: &["District Clerk"],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "County Clerk",
         match_substrings: &["County Clerk"],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "Sheriff & County Tax Assessor-Collector",
         match_substrings: &[],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "Sheriff",
         match_substrings: &[],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "County Tax Assessor-Collector",
         match_substrings: &[],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "County Treasurer",
         match_substrings: &["County Treasurer"],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "County Surveyor",
         match_substrings: &["County Surveyor"],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "County School Trustee",
         match_substrings: &[],
+        match_pattern: None,
     },
     // — Precinct/district-specific: more specific before generic "County Chair" etc.
     CountyOfficeRule {
         populist_office_name: "County Commissioner",
         match_substrings: &["County Commissioner"],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "Justice of the Peace",
         match_substrings: &["Justice of the Peace", "JOP"],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "County Constable",
         match_substrings: &[],
+        match_pattern: None,
     },
     CountyOfficeRule {
         populist_office_name: "Precinct Chair",
         match_substrings: &["Precinct Chair"],
+        match_pattern: Some(r"(?i)precinct\s+[0-9]+\s+chair"),
     },
     CountyOfficeRule {
         populist_office_name: "County Chair",
         match_substrings: &["County Chair"],
+        match_pattern: None,
     },
 ];
 
-/// Returns the first COUNTY_OFFICE_MATCH_RULES entry whose match_substrings match the given
-/// normalized contest_name (any substring contained in contest_name, case-insensitive).
-/// Entries with empty match_substrings are skipped (placeholder until criteria are defined).
+/// Cache of compiled regexes for match_pattern (lazy, one per pattern string).
+static RULE_PATTERN_CACHE: Lazy<Mutex<HashMap<&'static str, Regex>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
+
+fn rule_pattern_matches(contest_lower: &str, pattern: &'static str) -> bool {
+    let mut cache = RULE_PATTERN_CACHE.lock().unwrap();
+    let re = cache
+        .entry(pattern)
+        .or_insert_with(|| Regex::new(pattern).unwrap());
+    re.is_match(contest_lower)
+}
+
+/// Returns the first COUNTY_OFFICE_MATCH_RULES entry whose match_substrings or match_pattern match the given
+/// normalized contest_name (any substring contained, or regex match, case-insensitive).
+/// Entries with empty match_substrings and no match_pattern are skipped (placeholder until criteria are defined).
 fn find_matching_county_office(normalized_contest_name: &str) -> Option<&'static CountyOfficeRule> {
     let contest_lower = normalized_contest_name.to_lowercase();
     for rule in COUNTY_OFFICE_MATCH_RULES {
-        if rule.match_substrings.is_empty() {
+        if rule.match_substrings.is_empty() && rule.match_pattern.is_none() {
             continue;
         }
-        for s in rule.match_substrings {
-            if contest_lower.contains(&s.to_lowercase()) {
-                return Some(rule);
-            }
+        let matched_substring = rule.match_substrings.iter().any(|s| {
+            contest_lower.contains(&s.to_lowercase())
+        });
+        let matched_pattern = rule
+            .match_pattern
+            .map_or(false, |pat| rule_pattern_matches(&contest_lower, pat));
+        if matched_substring || matched_pattern {
+            return Some(rule);
         }
     }
     None
