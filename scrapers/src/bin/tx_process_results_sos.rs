@@ -1,7 +1,7 @@
 //! Texas SOS results processor: reads XML files from scrapers/data/tx/sos
 //! and loads into ingest_staging.stg_tx_results_sos.
 
-use scrapers::processors::tx::tx_sos_results::process_tx_sos_results;
+use scrapers::processors::tx::tx_results::process_tx_sos_results;
 
 #[tokio::main]
 async fn main() {

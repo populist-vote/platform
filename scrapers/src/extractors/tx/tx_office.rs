@@ -346,15 +346,10 @@ fn normalize_county_name(county: &str) -> String {
 }
 
 /// Office names for which county may appear as a suffix (" X COUNTY") in the raw title.
-<<<<<<< HEAD
-const OFFICE_NAMES_ALLOWING_COUNTY_SUFFIX: &[&str] =
-    &["District Attorney", "Judge - Criminal District"];
-=======
 const OFFICE_NAMES_ALLOWING_COUNTY_SUFFIX: &[&str] = &[
     "Criminal District Attorney",
     "Criminal District Judge",
 ];
->>>>>>> 1457630 (add results scraper and ingestion fixes)
 
 /// True if county may appear as a suffix (" X COUNTY") in the office title.
 fn office_name_allows_county_suffix(office_name: Option<&str>) -> bool {
@@ -708,46 +703,6 @@ pub fn extract_office_scope(
         ),
         "Criminal District Attorney" => (PoliticalScope::Local, ElectionScope::County, None),
 
-<<<<<<< HEAD
-        "County Commissioner" => (
-            PoliticalScope::Local,
-            ElectionScope::District,
-            Some(DistrictType::County),
-        ),
-        "County Judge"
-        | "County Clerk"
-        | "District Clerk"
-        | "County Attorney"
-        | "County Treasurer"
-        | "County Surveyor"
-        | "County Tax Assessor-Collector"
-        | "County Chair (D)"
-        | "County Chair (R)"
-        | "County & District Clerk"
-        | "Sheriff"
-        | "Judge - County Court at Law"
-        | "Judge - 1st Multicounty Court at Law"
-        | "Judge - County Civil Court at Law"
-        | "Judge - County Criminal Court of Appeals"
-        | "Judge - County Criminal Court at Law"
-        | "Judge - Probate Court"
-        | "Criminal District Judge" => (PoliticalScope::Local, ElectionScope::County, None),
-        "Justice of the Peace" => (
-            PoliticalScope::Local,
-            ElectionScope::District,
-            Some(DistrictType::JusticeOfThePeace),
-        ),
-        "County Constable" => (
-            PoliticalScope::Local,
-            ElectionScope::District,
-            Some(DistrictType::Constable),
-        ),
-        "Precinct Chair" | "Precinct Chair (D)" | "Precinct Chair (R)" => (
-            PoliticalScope::Local,
-            ElectionScope::District,
-            Some(DistrictType::VotingPrecinct),
-        ),
-=======
         "County Commissioner" => (PoliticalScope::Local, ElectionScope::District, Some(DistrictType::County)),
         "County Judge" | "County Clerk" | "District Clerk" | "County Attorney" | "County Treasurer"
         | "County Surveyor" | "County Tax Assessor-Collector" | "County Chair (D)" | "County Chair (R)" | "County & District Clerk"
@@ -771,7 +726,6 @@ pub fn extract_office_scope(
         "Precinct Chair" | "Precinct Chair (D)" | "Precinct Chair (R)" => {
             (PoliticalScope::Local, ElectionScope::District, Some(DistrictType::VotingPrecinct))
         }
->>>>>>> 1457630 (add results scraper and ingestion fixes)
         _ => return None,
     };
     Some(out)
@@ -838,8 +792,8 @@ pub fn extract_office_district(input: &str, seat: Option<&str>) -> Option<String
             Regex::new(r"(?i)number\s+([0-9][0-9A-Za-z-]*)").unwrap(),
             // [9] "Position N" (e.g. Position 5, Position 7)
             Regex::new(r"(?i)position\s+([0-9]+)").unwrap(),
-            // [10] "Precinct Chair" + number/list/alpha (e.g. "Precinct Chair 324", "Precinct Chair, Pct 2", "Precinct Chair - 4B"); only used in step 7
-            Regex::new(r"(?i)precinct\s+chair\s*[,]?\s*(?:\s*-\s*)?\s*(?:pct\.?\s*)?([0-9][0-9\s,&A-Za-z]*)").unwrap(),
+            // [10] "Precinct Chair" + number/list/alpha (e.g. "Precinct Chair 324", "Precinct Chair, Pct 2", "Precinct Chair - 4B", "Precinct Chair, Precinct 4056"); capture is non-greedy: digits + optional letter, or list (N, M / N & M) so we don't consume trailing "precinct N"
+            Regex::new(r"(?i)precinct\s+chair\s*[,]?\s*(?:\s*-\s*)?\s*(?:pct\.?\s*)?(?:precinct\s+)?\s*([0-9]+[A-Za-z]?(?:\s*[,&]\s*[0-9]+[A-Za-z]?)*)").unwrap(),
         ]
     });
 
@@ -925,7 +879,19 @@ pub fn extract_office_district(input: &str, seat: Option<&str>) -> Option<String
         }
     }
 
-    // 7. "Precinct Chair" + number/list/alpha (e.g. "Precinct Chair 324", "Precinct Chair, Pct 2", "Precinct Chair - 4B"); [10] matches directly
+    // 7. "Precinct Chair" + number/list/alpha (e.g. "Precinct Chair 324", "Precinct Chair, Pct 2", "Precinct Chair - 4B", "Precinct Chair, Precinct 4056"); [10] matches directly
+    if input_lower.contains("precinct chairman") {
+        if let Some(caps) = extractors[2].captures(input) {
+            if let Some(m) = caps.get(1) {
+                let s = m.as_str().trim();
+                if !s.is_empty() {
+                    return Some(normalize_precinct_district_list(s));
+                }
+            }
+        }
+        return None;
+    }
+
     if input_lower.contains("precinct chair") {
         if let Some(caps) = extractors[10].captures(input) {
             if let Some(m) = caps.get(1) {

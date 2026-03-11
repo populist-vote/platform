@@ -1,1 +1,1 @@
-pub mod candidate_filings;
+pub mod mn_candidate_filings;

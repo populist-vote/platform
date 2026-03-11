@@ -6,7 +6,7 @@
 //! Usage: tx_house_scrape_web_contacts [LIMIT]
 //!   LIMIT  optional; max number of candidates to scrape (e.g. 5 for a quick test). If omitted, all candidates are scraped.
 
-use scrapers::tx::candidate_web_scrape;
+use scrapers::tx::tx_candidate_web_scrape;
 
 #[tokio::main]
 async fn main() {
@@ -25,7 +25,7 @@ async fn main() {
     }
     println!();
 
-    match candidate_web_scrape::run(&pool.connection, limit).await {
+    match tx_candidate_web_scrape::run(&pool.connection, limit).await {
         Ok(()) => {
             println!("\n✓ Scrape completed successfully.");
             println!("Review staging: SELECT * FROM ingest_staging.stg_tx_scraped_us_house_candidates;");

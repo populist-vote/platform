@@ -2,6 +2,7 @@ use std::{error::Error, future::Future};
 
 pub mod extractors;
 pub mod generators;
+pub mod mergers;
 pub mod processors;
 pub mod util;
 

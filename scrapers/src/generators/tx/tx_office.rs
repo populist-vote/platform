@@ -201,13 +201,8 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                         )
                     } else {
                         (
-<<<<<<< HEAD
-                            format!("{} County, TX", county),
-                            format!("{} County, TX", county),
-=======
                             format!("{} County, TX{}", county, seat_long),
                             format!("{} County, TX{}", county, seat_short),
->>>>>>> 1457630 (add results scraper and ingestion fixes)
                         )
                     }
                 } else {
@@ -218,18 +213,6 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                 }
             }
 
-<<<<<<< HEAD
-            ElectionScope::District => match self.district_type {
-                Some(DistrictType::UsCongressional) => {
-                    if let Some(district) = self.district {
-                        (
-                            format!("TX - District {}", district),
-                            format!("TX - {}", district),
-                        )
-                    } else {
-                        ("TX".to_string(), "TX".to_string())
-                    }
-=======
             ElectionScope::District => {
                 match self.district_type {
                     Some(DistrictType::UsCongressional) => {
@@ -362,7 +345,6 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                         }
                     }
                     _ => ("TX".to_string(), "TX".to_string()),
->>>>>>> 1457630 (add results scraper and ingestion fixes)
                 }
                 Some(DistrictType::StateHouse) => {
                     if let Some(district) = self.district {

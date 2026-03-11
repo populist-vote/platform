@@ -243,6 +243,18 @@ fn make_row(
         .and_then(|i| column_pairs.get(i))
         .map(|(v, p)| (v.clone(), p.clone()))
         .unwrap_or_else(|| (String::new(), String::new()));
+    let party = if party.is_empty() {
+        let race_lower = race.to_lowercase();
+        if race_lower.contains("republican party") {
+            "REP"
+        } else if race_lower.contains("democratic party") {
+            "DEM"
+        } else {
+            ""
+        }
+    } else {
+        party
+    };
     ParsedRow {
         race: race.to_string(),
         choice: choice.to_string(),
