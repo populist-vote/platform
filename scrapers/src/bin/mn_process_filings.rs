@@ -1,4 +1,4 @@
-use scrapers::processors::mn::candidate_filings::process_mn_candidate_filings;
+use scrapers::processors::mn::mn_candidate_filings::process_mn_candidate_filings;
 
 #[tokio::main]
 async fn main() {

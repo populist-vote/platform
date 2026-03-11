@@ -2,7 +2,7 @@
 //! and populates ingest_staging staging tables (stg_tx_offices, stg_tx_politicians, stg_tx_races, stg_tx_race_candidates).
 //! Merge to production via mn_merge_staging_to_production (or a TX-specific merge) after this.
 
-use scrapers::processors::tx::candidate_filings::process_tx_candidate_filings;
+use scrapers::processors::tx::tx_candidate_filings::process_tx_candidate_filings;
 
 #[tokio::main]
 async fn main() {

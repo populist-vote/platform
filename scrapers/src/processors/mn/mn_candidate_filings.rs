@@ -491,46 +491,46 @@ fn process_office(filing: &CandidateFiling) -> Result<Office, Box<dyn Error>> {
     let office_title = filing.office_title.as_ref().ok_or("Missing office title")?;
     
     // Extract office attributes
-    let name = extractors::mn::office::extract_office_name(office_title);
-    let title = extractors::mn::office::extract_office_title(office_title)
+    let name = extractors::mn::mn_office::extract_office_name(office_title);
+    let title = extractors::mn::mn_office::extract_office_title(office_title)
         .ok_or("Failed to extract office title")?;
-    let chamber = extractors::mn::office::extract_office_chamber(office_title);
+    let chamber = extractors::mn::mn_office::extract_office_chamber(office_title);
     let county_id_int = filing.county_id.as_ref().and_then(|id| id.parse::<i32>().ok());
     
     // Extract district_type and election_scope first (required for political_scope)
-    let district_type = extractors::mn::office::extract_office_district_type(
+    let district_type = extractors::mn::mn_office::extract_office_district_type(
         office_title,
         county_id_int,
     );
-    let election_scope = extractors::mn::office::extract_office_election_scope(
+    let election_scope = extractors::mn::mn_office::extract_office_election_scope(
         office_title,
         county_id_int,
     ).ok_or("Failed to extract election scope")?;
     
     // Extract political_scope using election_scope, name, and district_type
-    let political_scope = extractors::mn::office::extract_office_political_scope(
+    let political_scope = extractors::mn::mn_office::extract_office_political_scope(
         name.as_deref(),
         &election_scope,
         &district_type,
     );
 
     // Extract district and seat
-    let district = extractors::mn::office::extract_office_district(office_title);
-    let seat = extractors::mn::office::extract_office_seat(office_title);
+    let district = extractors::mn::mn_office::extract_office_district(office_title);
+    let seat = extractors::mn::mn_office::extract_office_seat(office_title);
 
     // Extract school and hospital districts
-    let school_district = extractors::mn::office::extract_school_district(office_title);
-    let hospital_district = extractors::mn::office::extract_hospital_district(office_title);
+    let school_district = extractors::mn::mn_office::extract_school_district(office_title);
+    let hospital_district = extractors::mn::mn_office::extract_hospital_district(office_title);
 
     // Extract municipality
-    let municipality = extractors::mn::office::extract_municipality(
+    let municipality = extractors::mn::mn_office::extract_municipality(
         office_title,
         &election_scope,
         &district_type,
     );
 
     // Generate slug and subtitle
-    let slug = generators::mn::office::OfficeSlugGenerator {
+    let slug = generators::mn::mn_office::OfficeSlugGenerator {
         state: &State::MN,
         name: name.as_deref().unwrap_or_default(),
         county: filing.county_name.as_deref(),
@@ -543,7 +543,7 @@ fn process_office(filing: &CandidateFiling) -> Result<Office, Box<dyn Error>> {
         district_type: district_type.as_ref(),
     }.generate();
 
-    let (subtitle, subtitle_short) = generators::mn::office::OfficeSubtitleGenerator {
+    let (subtitle, subtitle_short) = generators::mn::mn_office::OfficeSubtitleGenerator {
         state: &State::MN,
         office_name: name.as_deref(),
         election_scope: &election_scope,
@@ -705,19 +705,19 @@ fn process_race(
     // Extract if this is a special election
     let is_special_election = filing.office_title
         .as_ref()
-        .map(|title| extractors::mn::race::extract_is_special_election(title))
+        .map(|title| extractors::mn::mn_race::extract_is_special_election(title))
         .unwrap_or(false);
 
     // Extract number of positions to elect
     let num_elect = filing.office_title
         .as_ref()
-        .and_then(|title| extractors::mn::race::extract_num_elect(title));
+        .and_then(|title| extractors::mn::mn_race::extract_num_elect(title));
 
     // Extract vote type (ranked choice if "First Choice" is present)
     let vote_type = filing.office_title
         .as_ref()
         .map(|title| {
-            if extractors::mn::race::extract_is_ranked_choice(title) {
+            if extractors::mn::mn_race::extract_is_ranked_choice(title) {
                 VoteType::RankedChoice
             } else {
                 VoteType::Plurality
@@ -729,7 +729,7 @@ fn process_race(
     let party = filing.party_abbreviation.as_deref();
 
     // Generate race title and slug
-    let (title, slug) = generators::mn::race::RaceTitleGenerator::from_source(
+    let (title, slug) = generators::mn::mn_race::RaceTitleGenerator::from_source(
         &RaceType::from_str(race_type)?,
         office,
         is_special_election,

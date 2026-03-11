@@ -2,14 +2,15 @@
 //!
 //! Processes every PDF in `data/tx/counties/hart/input`, converts each to PDF-style CSV
 //! via tx_hart_results_pdf_processor, writes CSVs to `data/tx/counties/hart/output`, then
-//! processes each CSV into ingest_staging.stg_tx_results_hart via tx_hart_results_processor.
+//! processes each CSV into ingest_staging.stg_tx_results_hart via tx_results.
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use sqlx::PgPool;
 
-use crate::processors::tx::counties::{tx_hart_results_pdf_processor, tx_hart_results_processor};
+use crate::processors::tx::tx_hart_results_pdf_processor;
+use crate::processors::tx::tx_results;
 
 /// Recreate staging table once per Hart scrape run (drop then create, before CSVs are processed).
 pub async fn ensure_hart_staging_table(
@@ -152,7 +153,7 @@ pub async fn run(
                     .file_name()
                     .and_then(|s| s.to_str())
                     .unwrap_or("unknown");
-                match tx_hart_results_processor::process_hart_csv(
+                match tx_results::process_hart_csv(
                     pool,
                     &csv_path,
                     source_file,

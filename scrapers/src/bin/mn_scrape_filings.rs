@@ -1,4 +1,4 @@
-use scrapers::mn::sos::{
+use scrapers::mn::{
     get_mn_sos_candidate_filings_fed_state_county,
     get_mn_sos_candidate_filings_fed_state_county_primaries,
     get_mn_sos_candidate_filings_local,

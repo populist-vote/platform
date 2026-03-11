@@ -3,7 +3,7 @@
 //! Reads county_clarity_results_urls.csv (columns: url, county_name, party). Downloads each zip
 //! into `data/tx/counties/clarity` with county name (and optional party) appended to the filename,
 //! uncompresses and renames extracted CSVs with the same suffix, then processes each CSV
-//! via the tx_clarity_results_processor into ingest_staging.stg_tx_results_clarity.
+//! via tx_results into ingest_staging.stg_tx_results_clarity.
 
 use std::fs;
 use std::io::{Cursor, Write};
@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 
 use sqlx::PgPool;
 
-use crate::processors::tx::counties::tx_clarity_results_processor;
+use crate::processors::tx::tx_results;
 
 use csv::{ReaderBuilder, WriterBuilder};
 use zip::ZipArchive;
@@ -257,7 +257,7 @@ pub async fn process_csv(
         .file_name()
         .and_then(|s| s.to_str())
         .unwrap_or("unknown");
-    tx_clarity_results_processor::process_clarity_csv(pool, csv_path, source_file, None).await
+    tx_results::process_clarity_csv(pool, csv_path, source_file, None).await
 }
 
 /// Run the Clarity pipeline: read county_results_urls.csv from `csv_path`, download each zip

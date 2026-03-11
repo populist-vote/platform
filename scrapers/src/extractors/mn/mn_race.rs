@@ -17,7 +17,7 @@ use std::sync::OnceLock;
 /// 
 /// # Examples
 /// ```
-/// use scrapers::extractors::mn::race::extract_is_special_election;
+/// use scrapers::extractors::mn::mn_race::extract_is_special_election;
 /// 
 /// assert_eq!(extract_is_special_election("Mayor (Special Election)"), true);
 /// assert_eq!(extract_is_special_election("Mayor - Special Election"), true);
@@ -40,7 +40,7 @@ pub fn extract_is_special_election(input: &str) -> bool {
 /// 
 /// # Examples
 /// ```
-/// use scrapers::extractors::mn::race::extract_num_elect;
+/// use scrapers::extractors::mn::mn_race::extract_num_elect;
 /// 
 /// assert_eq!(extract_num_elect("City Council Member (Elect 3)"), Some(3));
 /// assert_eq!(extract_num_elect("School Board Member (Elect 2)"), Some(2));
@@ -71,7 +71,7 @@ pub fn extract_num_elect(input: &str) -> Option<i32> {
 /// 
 /// # Examples
 /// ```
-/// use scrapers::extractors::mn::race::extract_is_ranked_choice;
+/// use scrapers::extractors::mn::mn_race::extract_is_ranked_choice;
 /// 
 /// assert_eq!(extract_is_ranked_choice("Mayor - First Choice"), true);
 /// assert_eq!(extract_is_ranked_choice("Mayor (First Choice)"), true);

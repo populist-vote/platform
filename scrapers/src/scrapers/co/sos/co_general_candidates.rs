@@ -4,9 +4,9 @@ use regex::Regex;
 use scraper::{Html, Selector};
 
 use crate::{
-    extractors::co::office::{extract_office_meta, extract_office_seat, extract_office_district},
-    generators::co::office::{OfficeSubtitleGenerator, OfficeSlugGenerator},
-    generators::co::race::RaceTitleGenerator,
+    extractors::co::co_office::{extract_office_meta, extract_office_seat, extract_office_district},
+    generators::co::co_office::{OfficeSubtitleGenerator, OfficeSlugGenerator},
+    generators::co::co_race::RaceTitleGenerator,
     generators::election::{GeneralElectionDateGenerator, ElectionTitleGenerator},
     generators::party::PartySlugGenerator,
     generators::politician::{PoliticianSlugGenerator, PoliticianRefKeyGenerator},

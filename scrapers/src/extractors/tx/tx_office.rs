@@ -513,8 +513,8 @@ pub fn extract_office_district(input: &str, seat: Option<&str>) -> Option<String
             Regex::new(r"(?i)number\s+([0-9][0-9A-Za-z-]*)").unwrap(),
             // [9] "Position N" (e.g. Position 5, Position 7)
             Regex::new(r"(?i)position\s+([0-9]+)").unwrap(),
-            // [10] "Precinct Chair" + number/list/alpha (e.g. "Precinct Chair 324", "Precinct Chair, Pct 2", "Precinct Chair - 4B"); only used in step 7
-            Regex::new(r"(?i)precinct\s+chair\s*[,]?\s*(?:\s*-\s*)?\s*(?:pct\.?\s*)?([0-9][0-9\s,&A-Za-z]*)").unwrap(),
+            // [10] "Precinct Chair" + number/list/alpha (e.g. "Precinct Chair 324", "Precinct Chair, Pct 2", "Precinct Chair - 4B", "Precinct Chair, Precinct 4056"); capture is non-greedy: digits + optional letter, or list (N, M / N & M) so we don't consume trailing "precinct N"
+            Regex::new(r"(?i)precinct\s+chair\s*[,]?\s*(?:\s*-\s*)?\s*(?:pct\.?\s*)?(?:precinct\s+)?\s*([0-9]+[A-Za-z]?(?:\s*[,&]\s*[0-9]+[A-Za-z]?)*)").unwrap(),
         ]
     });
 
@@ -600,7 +600,19 @@ pub fn extract_office_district(input: &str, seat: Option<&str>) -> Option<String
         }
     }
 
-    // 7. "Precinct Chair" + number/list/alpha (e.g. "Precinct Chair 324", "Precinct Chair, Pct 2", "Precinct Chair - 4B"); [10] matches directly
+    // 7. "Precinct Chair" + number/list/alpha (e.g. "Precinct Chair 324", "Precinct Chair, Pct 2", "Precinct Chair - 4B", "Precinct Chair, Precinct 4056"); [10] matches directly
+    if input_lower.contains("precinct chairman") {
+        if let Some(caps) = extractors[2].captures(input) {
+            if let Some(m) = caps.get(1) {
+                let s = m.as_str().trim();
+                if !s.is_empty() {
+                    return Some(normalize_precinct_district_list(s));
+                }
+            }
+        }
+        return None;
+    }
+
     if input_lower.contains("precinct chair") {
         if let Some(caps) = extractors[10].captures(input) {
             if let Some(m) = caps.get(1) {

@@ -338,7 +338,7 @@ async fn process_and_insert_tx_filing(
         let state_id = filing
             .office_title
             .as_ref()
-            .map(|t| generators::tx::office::office_state_id("tx-sos", strip_unexpired_term(t).trim()));
+            .map(|t| generators::tx::tx_office::office_state_id("tx-sos", strip_unexpired_term(t).trim()));
         insert_staging_office(pool, &office, state_id.as_ref()).await?;
     }
     let resolved_office_id = office_id.unwrap_or(office.id);
@@ -399,7 +399,7 @@ fn strip_unexpired_term(raw: &str) -> String {
 }
 
 fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error>> {
-    use crate::extractors::tx::office;
+    use crate::extractors::tx::tx_office as office;
 
     let raw_filing_title = filing.office_title.as_ref().ok_or("Missing office title")?;
     let raw_filing_title_cleaned = strip_unexpired_term(raw_filing_title);
@@ -433,7 +433,7 @@ fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error
     )
     .ok_or("Failed to extract office scope")?;
 
-    let slug = generators::tx::office::OfficeSlugGenerator {
+    let slug = generators::tx::tx_office::OfficeSlugGenerator {
         state: &State::TX,
         name: &name,
         county: county.as_deref(),
@@ -447,7 +447,7 @@ fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error
     }
     .generate();
 
-    let (subtitle, subtitle_short) = generators::tx::office::OfficeSubtitleGenerator {
+    let (subtitle, subtitle_short) = generators::tx::tx_office::OfficeSubtitleGenerator {
         state: &State::TX,
         office_name: Some(&name),
         election_scope: &election_scope,
@@ -461,7 +461,7 @@ fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error
     }
     .generate();
 
-    let priority = generators::tx::office::office_priority(&title, county.as_deref(), district.as_deref());
+    let priority = generators::tx::tx_office::office_priority(&title, county.as_deref(), district.as_deref());
 
     Ok(Office {
         id: Uuid::new_v4(),
@@ -633,16 +633,16 @@ fn process_tx_race(
     let is_special_election = filing
         .office_title
         .as_ref()
-        .map(|t| extractors::tx::race::extract_is_special_election(t))
+        .map(|t| extractors::tx::tx_race::extract_is_special_election(t))
         .unwrap_or(false);
-    let num_elect = filing.office_title.as_ref().and_then(|t| extractors::tx::race::extract_num_elect(t));
+    let num_elect = filing.office_title.as_ref().and_then(|t| extractors::tx::tx_race::extract_num_elect(t));
 
     let party_fec = filing
         .party
         .as_deref()
         .and_then(extractors::party::extract_party_fec_code);
 
-    let (title, slug) = generators::tx::race::RaceTitleGenerator::from_source(
+    let (title, slug) = generators::tx::tx_race::RaceTitleGenerator::from_source(
         &RaceType::from_str(race_type)?,
         office,
         is_special_election,

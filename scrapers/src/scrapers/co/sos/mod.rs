@@ -1,1 +1,1 @@
-pub mod general_candidates;
+pub mod co_general_candidates;
