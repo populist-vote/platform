@@ -118,7 +118,7 @@ SELECT
                 r#",
 update_race_candidates AS (
   UPDATE race_candidates rc
-  SET votes = m.votes_for_candidate::integer
+  SET votes = COALESCE(m.votes_for_candidate::integer, rc.votes)
   FROM matched m
   WHERE rc.ref_key = m.ref_key
   RETURNING rc.ref_key
@@ -345,6 +345,56 @@ pub async fn merge_stg_tx_results_other_to_production(
         pool,
         "stg_tx_results_other",
         "stg_tx_results_other_unmatched",
+        dry_run,
+        test_merge,
+    )
+    .await
+}
+
+/// Ensure ingest_staging schema and stg_tx_results_sos_civix_unmatched table exist.
+async fn ensure_unmatched_table_civix(pool: &PgPool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    sqlx::query("CREATE SCHEMA IF NOT EXISTS ingest_staging")
+        .execute(pool)
+        .await?;
+
+    sqlx::query("DROP TABLE IF EXISTS ingest_staging.stg_tx_results_sos_civix_unmatched")
+        .execute(pool)
+        .await?;
+
+    sqlx::query(
+        r#"
+        CREATE TABLE ingest_staging.stg_tx_results_sos_civix_unmatched (
+            id BIGSERIAL PRIMARY KEY,
+            ref_key TEXT NOT NULL,
+            office_name TEXT,
+            candidate_name TEXT,
+            election_year INTEGER,
+            party TEXT,
+            source_file TEXT,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
+        )
+        "#,
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+/// Merge ingest_staging.stg_tx_results_sos_civix into production.
+/// Table has the same structure as stg_tx_results_sos; merge uses merge_staging_to_production_cte directly.
+/// NULL staging values do not overwrite production (COALESCE in the CTE).
+/// Unmatched rows are recorded in ingest_staging.stg_tx_results_sos_civix_unmatched.
+pub async fn merge_stg_tx_results_sos_civix_to_production(
+    pool: &PgPool,
+    dry_run: bool,
+    test_merge: bool,
+) -> Result<MergeStats, Box<dyn std::error::Error + Send + Sync>> {
+    ensure_unmatched_table_civix(pool).await?;
+    merge_staging_to_production_cte(
+        pool,
+        "stg_tx_results_sos_civix",
+        "stg_tx_results_sos_civix_unmatched",
         dry_run,
         test_merge,
     )
