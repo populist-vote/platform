@@ -1,0 +1,128 @@
+warning: unused variable: `school_subdistrict`
+  --> db/src/filters/mn.rs:16:5
+   |
+16 |     school_subdistrict: Option<String>,
+   |     ^^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_school_subdistrict`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `db` (lib) generated 1 warning
+warning: unused import: `default_capture`
+ --> scrapers/src/extractors/mn/mn_office.rs:5:25
+  |
+5 | use crate::extractors::{default_capture, owned_capture};
+  |                         ^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `default_capture` and `owned_capture`
+  --> scrapers/src/extractors/tx/tx_office.rs:11:25
+   |
+11 | use crate::extractors::{default_capture, owned_capture};
+   |                         ^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^
+
+warning: unused import: `crate::util::extensions::*`
+ --> scrapers/src/generators/mn/mn_race.rs:6:5
+  |
+6 | use crate::util::extensions::*;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `slugify::slugify`
+  --> scrapers/src/processors/tx/tx_candidate_filings.rs:14:5
+   |
+14 | use slugify::slugify;
+   |     ^^^^^^^^^^^^^^^^
+
+warning: value assigned to `final_incoming_slug` is never read
+    --> scrapers/src/processors/tx/tx_candidate_filings.rs:1075:13
+     |
+1075 |     let mut final_incoming_slug = politician.slug.clone();
+     |             ^^^^^^^^^^^^^^^^^^^
+     |
+     = help: maybe it is overwritten before being read?
+     = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `county`
+  --> scrapers/src/generators/tx/tx_office.rs:15:5
+   |
+15 |     county: Option<&str>,
+   |     ^^^^^^ help: if this is intentional, prefix it with an underscore: `_county`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> scrapers/src/scrapers/tx/counties/tx_clarity_results.rs:221:13
+    |
+221 |         let mut out_path = out_dir.join(base);
+    |             ----^^^^^^^^
+    |             |
+    |             help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `total_votes` and `total_pct` are never read
+  --> scrapers/src/processors/tx/tx_hart_results_pdf_processor.rs:89:5
+   |
+85 | struct ParsedRow {
+   |        --------- fields in this struct
+...
+89 |     total_votes: String,
+   |     ^^^^^^^^^^^
+90 |     total_pct: String,
+   |     ^^^^^^^^^
+   |
+   = note: `ParsedRow` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `office_name` is never read
+   --> scrapers/src/processors/tx/tx_results.rs:531:5
+    |
+530 | struct ParsedContestName {
+    |        ----------------- field in this struct
+531 |     office_name: String,
+    |     ^^^^^^^^^^^
+    |
+    = note: `ParsedContestName` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+
+warning: field `ballots_cast` is never read
+   --> scrapers/src/processors/tx/tx_results.rs:761:5
+    |
+751 | struct ClarityCsvRow {
+    |        ------------- field in this struct
+...
+761 |     ballots_cast: Option<i64>,
+    |     ^^^^^^^^^^^^
+    |
+    = note: `ClarityCsvRow` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: field `ballots_cast` is never read
+    --> scrapers/src/processors/tx/tx_results.rs:1119:5
+     |
+1107 | struct OtherCsvRow {
+     |        ----------- field in this struct
+...
+1119 |     ballots_cast: Option<i64>,
+     |     ^^^^^^^^^^^^
+     |
+     = note: `OtherCsvRow` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: `scrapers` (lib) generated 11 warnings (run `cargo fix --lib -p scrapers` to apply 5 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.24s
+warning: the following packages contain code that will be rejected by a future version of Rust: num-bigint-dig v0.8.4
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`
+     Running `/Users/Henry/Code/populist/platform/target/debug/tx_scrape_civix_fed_rep`
+[civix] selecting election in modal...
+[civix] modal: 3 mat-select(s)
+[civix] dropdown 0 ("Select Race")
+[civix] dropdown 1 ("2026")
+[civix] dropdown 2 ("Select Election")
+[civix] opening "Select Election" dropdown (index 2)
+[civix] scrollIntoView + click() executed
+[civix] get_open_dropdown_options: no options after 3s. Diagnostic: Null
+[civix] options (0): 
+[civix] option "2026 Republican Primary Election" not found in dropdown
+[civix] waiting for results to load...
+[civix] current_race/section: Federal Offices
+[civix] table_rows count: 0
+[civix] total rows scraped: 0
+Wrote 0 rows to /Users/Henry/Code/populist/platform/scrapers/data/tx/sos/sos-results-fed-rep.csv
