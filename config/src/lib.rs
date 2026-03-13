@@ -52,6 +52,10 @@ impl Config {
             "https://www.tpr.org/",
             "https://www.houstonpublicmedia.org/",
             "https://www.kera.org/",
+            "https://www.populist.us/",
+            "https://www.marfapublicradio.org/",
+            "https://www.kedt.org/",
+            "https://radio.kttz.org/",
         ];
         let excluded_origins = ["https://www.mprnews.org/preview/"];
 
