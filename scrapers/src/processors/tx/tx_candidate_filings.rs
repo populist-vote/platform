@@ -346,9 +346,10 @@ async fn process_and_insert_tx_filing(
     let office = process_tx_office(filing)?;
     let office_id = get_staging_office_id_by_slug(pool, &office.slug).await?;
     if office_id.is_none() {
-        let state_id = filing.office_title.as_ref().map(|t| {
-            generators::politician::PoliticianRefKeyGenerator::new("tx-sos", t).generate()
-        });
+        let state_id = filing
+            .office_title
+            .as_ref()
+            .map(|t| generators::tx::tx_office::office_state_id("tx-sos", strip_unexpired_term(t).trim()));
         insert_staging_office(pool, &office, state_id.as_ref()).await?;
     }
     let resolved_office_id = office_id.unwrap_or(office.id);
@@ -381,10 +382,17 @@ async fn process_and_insert_tx_filing(
 
     insert_staging_race(pool, &race).await?;
 
-    let race_id = get_staging_race_id_by_slug(pool, &race.slug)
-        .await?
-        .unwrap_or(race.id);
-    let race_candidate_ref_key = process_tx_race_candidate_ref_key(filing);
+    let race_id = get_staging_race_id_by_slug(pool, &race.slug).await?.unwrap_or(race.id);
+    let raw_office_title = filing.office_title.as_deref().unwrap_or("");
+    let office_title = strip_unexpired_term(raw_office_title).trim().to_string();
+    let candidate_name = filing.candidate_name.as_deref().unwrap_or("");
+    let race_candidate_ref_key = generators::politician::PoliticianRefKeyGenerator::new(
+        "tx-primaries",
+        ELECTION_YEAR,
+        &office_title,
+        Some(candidate_name),
+    )
+    .generate();
     insert_staging_race_candidate(pool, race_id, &politician, &race_candidate_ref_key).await?;
 
     Ok(())
@@ -404,7 +412,7 @@ fn strip_unexpired_term(raw: &str) -> String {
 }
 
 fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error>> {
-    use crate::extractors::tx::office;
+    use crate::extractors::tx::tx_office as office;
 
     let raw_filing_title = filing.office_title.as_ref().ok_or("Missing office title")?;
     let raw_filing_title_cleaned = strip_unexpired_term(raw_filing_title);
@@ -428,8 +436,8 @@ fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error
 
     // Extract and strip the seat from the office title (before scope, so scope can use seat for some offices)
     let (seat, office_title_no_seat) = office::extract_office_seat(office_title);
-    // Extract the district from the office title (so district can also be used for some scopes)
-    let district = office::extract_office_district(&office_title_no_seat);
+    // Extract the district from the office title (seat passed for Harris County Department of Education, etc.)
+    let district = office::extract_office_district(&office_title_no_seat, seat.as_deref());
     let (political_scope, election_scope, district_type) = office::extract_office_scope(
         &name,
         county.as_deref(),
@@ -438,7 +446,7 @@ fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error
     )
     .ok_or("Failed to extract office scope")?;
 
-    let slug = generators::tx::office::OfficeSlugGenerator {
+    let slug = generators::tx::tx_office::OfficeSlugGenerator {
         state: &State::TX,
         name: &name,
         county: county.as_deref(),
@@ -452,7 +460,7 @@ fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error
     }
     .generate();
 
-    let (subtitle, subtitle_short) = generators::tx::office::OfficeSubtitleGenerator {
+    let (subtitle, subtitle_short) = generators::tx::tx_office::OfficeSubtitleGenerator {
         state: &State::TX,
         office_name: Some(&name),
         election_scope: &election_scope,
@@ -466,8 +474,7 @@ fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error
     }
     .generate();
 
-    let priority =
-        generators::tx::office::office_priority(&title, county.as_deref(), district.as_deref());
+    let priority = generators::tx::tx_office::office_priority(&title, county.as_deref(), district.as_deref());
 
     Ok(Office {
         id: Uuid::new_v4(),
@@ -505,17 +512,16 @@ async fn process_tx_politician(
         .as_ref()
         .ok_or("Missing candidate name")?;
     let candidate_name = extractors::politician::normalize_name(candidate_name_raw);
-    let ref_key_input = format!(
-        "{} {} {} {}",
+    let raw_office_title = filing.office_title.as_deref().unwrap_or("");
+    let office_title = strip_unexpired_term(raw_office_title).trim().to_string();
+
+    let ref_key = generators::politician::PoliticianRefKeyGenerator::new(
+        "TX-SOS",
         ELECTION_YEAR,
-        filing.office_title.as_deref().unwrap_or(""),
-        candidate_name,
-        filing.status.as_deref().unwrap_or(""),
+        &office_title,
+        Some(&candidate_name),
     )
-    .trim()
-    .to_string();
-    let ref_key =
-        generators::politician::PoliticianRefKeyGenerator::new("TX-SOS", &ref_key_input).generate();
+    .generate();
 
     // Resolve party_id from production party table
     // If no party or empty, use "UN" (unaffiliated)
@@ -649,19 +655,16 @@ fn process_tx_race(
     let is_special_election = filing
         .office_title
         .as_ref()
-        .map(|t| extractors::tx::race::extract_is_special_election(t))
+        .map(|t| extractors::tx::tx_race::extract_is_special_election(t))
         .unwrap_or(false);
-    let num_elect = filing
-        .office_title
-        .as_ref()
-        .and_then(|t| extractors::tx::race::extract_num_elect(t));
+    let num_elect = filing.office_title.as_ref().and_then(|t| extractors::tx::tx_race::extract_num_elect(t));
 
     let party_fec = filing
         .party
         .as_deref()
         .and_then(extractors::party::extract_party_fec_code);
 
-    let (title, slug) = generators::tx::race::RaceTitleGenerator::from_source(
+    let (title, slug) = generators::tx::tx_race::RaceTitleGenerator::from_source(
         &RaceType::from_str(race_type)?,
         office,
         is_special_election,
@@ -694,15 +697,6 @@ fn process_tx_race(
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
     })
-}
-
-fn process_tx_race_candidate_ref_key(filing: &TxCandidateFiling) -> String {
-    let office_title = filing.office_title.as_deref().unwrap_or("");
-    let candidate_name = filing.candidate_name.as_deref().unwrap_or("");
-    slugify!(&format!(
-        "tx-primaries-{}-{}-{}",
-        ELECTION_YEAR, office_title, candidate_name
-    ))
 }
 
 /// Build an address object from the filing (street → line_1, city → city, state → state, country = USA).

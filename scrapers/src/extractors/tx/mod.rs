@@ -1,2 +1,2 @@
-pub mod office;
-pub mod race;
+pub mod tx_office;
+pub mod tx_race;
