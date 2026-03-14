@@ -2,7 +2,7 @@ use std::sync::OnceLock;
 
 use regex::Regex;
 
-use crate::extractors::{default_capture, owned_capture};
+use crate::extractors::owned_capture;
 use db::{DistrictType, ElectionScope};
 
 static CHAMBER_MATCHERS: OnceLock<Vec<(Regex, db::Chamber)>> = OnceLock::new();

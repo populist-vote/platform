@@ -4,15 +4,10 @@ use regex::Regex;
 use scraper::{Html, Selector};
 
 use crate::{
-    extractors::co::co_office::{extract_office_meta, extract_office_seat, extract_office_district},
-    generators::co::co_office::{OfficeSubtitleGenerator, OfficeSlugGenerator},
-    generators::co::co_race::RaceTitleGenerator,
-    generators::election::{GeneralElectionDateGenerator, ElectionTitleGenerator},
-    generators::party::PartySlugGenerator,
-    generators::politician::{PoliticianSlugGenerator, PoliticianRefKeyGenerator},
+    extractors::co::co_office::{extract_office_district, extract_office_meta, extract_office_seat},
     extractors::party::extract_party_name,
-    generators::co::office::{OfficeSlugGenerator, OfficeSubtitleGenerator},
-    generators::co::race::RaceTitleGenerator,
+    generators::co::co_office::{OfficeSlugGenerator, OfficeSubtitleGenerator},
+    generators::co::co_race::RaceTitleGenerator,
     generators::election::{ElectionTitleGenerator, GeneralElectionDateGenerator},
     generators::party::PartySlugGenerator,
     generators::politician::{PoliticianRefKeyGenerator, PoliticianSlugGenerator},

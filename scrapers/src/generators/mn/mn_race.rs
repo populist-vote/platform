@@ -3,8 +3,6 @@ use std::sync::OnceLock;
 use regex::Regex;
 use slugify::slugify;
 
-use crate::util::extensions::*;
-
 pub struct RaceTitleGenerator<'a> {
     pub race_type: &'a db::RaceType,
     pub election_scope: &'a db::ElectionScope,

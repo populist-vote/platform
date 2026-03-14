@@ -8,7 +8,6 @@ use std::sync::OnceLock;
 use regex::Regex;
 
 use crate::extractors::politician::title_case;
-use crate::extractors::{default_capture, owned_capture};
 
 /// Strip "COUNTY_NAME - " prefix from raw title; returns (county_name_if_any, rest).
 /// Only accepts the prefix when it matches a valid Texas county (TEXAS_COUNTIES), same as strip_county_suffix.
