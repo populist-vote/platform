@@ -8,7 +8,6 @@ use crate::extractors;
 use crate::generators;
 use db::{Office, Politician, Race, RaceType, State, VoteType};
 use serde_json::Value as JSON;
-use slugify::slugify;
 use sqlx::FromRow;
 use sqlx::PgPool;
 use std::error::Error;
@@ -1121,7 +1120,7 @@ async fn insert_staging_politician(
 
     // Not same person: find next free slug. For each candidate slug that already exists, run email+address conflict test again.
     let base_slug = &politician.slug;
-    let mut final_incoming_slug = politician.slug.clone();
+    let final_incoming_slug;
     let mut n = 1u32;
     loop {
         let candidate = format!("{}-{}", base_slug, n);

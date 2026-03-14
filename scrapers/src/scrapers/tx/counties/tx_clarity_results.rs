@@ -218,7 +218,7 @@ pub fn unzip_into_dir(
             continue;
         }
         let base = Path::new(name).file_name().unwrap_or_else(|| std::ffi::OsStr::new(name));
-        let mut out_path = out_dir.join(base);
+        let out_path = out_dir.join(base);
         if entry.is_dir() {
             fs::create_dir_all(&out_path)?;
         } else {
