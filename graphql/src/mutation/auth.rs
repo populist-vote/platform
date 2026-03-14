@@ -1,4 +1,4 @@
-    use crate::{
+use crate::{
     context::ApiContext,
     guard::StaffOnly,
     is_admin,
@@ -179,7 +179,6 @@ impl AuthMutation {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
         let requesting_user = ctx.data::<Option<TokenData<AccessTokenClaims>>>().unwrap();
         let normalized_email = normalize_email(&input.email);
-        let normalized_email = normalize_email(&input.email);
 
         match requesting_user {
             Some(requesting_user) => {
@@ -198,28 +197,6 @@ impl AuthMutation {
                         }
                     } else {
                         return Err(Error::Unauthorized);
-                    }
-
-                    // Handle existing user - create the organization_users record, no need to create an invite token
-                    let existing_user = sqlx::query!(
-                        r#"
-                    SELECT id FROM populist_user WHERE email = LOWER($1)
-                "#,
-                        &normalized_email
-                    )
-                    .fetch_optional(&db_pool)
-                    .await?;
-
-                    if let Some(user) = existing_user {
-                        upsert_organization_user(
-                            &db_pool,
-                            organization_id,
-                            user.id,
-                            input.role.unwrap_or(OrganizationRoleType::Member),
-                        )
-                        .await?;
-
-                        return Ok(None);
                     }
 
                     // Handle existing user - create the organization_users record, no need to create an invite token
@@ -537,9 +514,6 @@ impl AuthMutation {
             let password_is_valid = bcrypt::verify(input.password, &user.password);
 
             if password_is_valid {
-                if let Some(invite_token) = input.invite_token.as_deref() {
-                    consume_invite_token(&db_pool, invite_token, &user.email, user.id).await?;
-                }
                 if let Some(invite_token) = input.invite_token.as_deref() {
                     consume_invite_token(&db_pool, invite_token, &user.email, user.id).await?;
                 }
