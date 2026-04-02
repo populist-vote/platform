@@ -247,6 +247,59 @@ impl Race {
         Ok(record)
     }
 
+    /// For each (office_id, is_special_election) pair, returns all primary races that have no
+    /// winner_ids set. Used to show runoffs/undecided primaries alongside general races.
+    pub async fn primary_races_for_general(
+        db_pool: &PgPool,
+        office_inputs: &[(uuid::Uuid, bool)],
+    ) -> Result<Vec<Self>, sqlx::Error> {
+        if office_inputs.is_empty() {
+            return Ok(vec![]);
+        }
+        let (office_ids, is_special_flags): (Vec<_>, Vec<_>) =
+            office_inputs.iter().copied().unzip();
+        let records = sqlx::query_as!(
+            Race,
+            r#"
+            SELECT
+                r.id,
+                r.slug,
+                r.title,
+                r.office_id,
+                r.race_type AS "race_type:RaceType",
+                r.vote_type AS "vote_type:VoteType",
+                r.party_id,
+                r.state AS "state:State",
+                r.description,
+                r.ballotpedia_link,
+                r.early_voting_begins_date,
+                r.winner_ids,
+                r.total_votes,
+                r.num_precincts_reporting,
+                r.total_precincts,
+                r.official_website,
+                r.election_id,
+                r.is_special_election,
+                r.num_elect,
+                r.created_at,
+                r.updated_at
+            FROM race r
+            JOIN (
+                SELECT * FROM unnest($1::uuid[], $2::boolean[])
+                AS t(office_id, is_special_election)
+            ) i ON r.office_id = i.office_id AND r.is_special_election = i.is_special_election
+            WHERE r.race_type = 'primary'
+              AND (r.winner_ids IS NULL OR r.winner_ids = '{}')
+            ORDER BY r.office_id, r.is_special_election, r.election_id, r.id
+            "#,
+            &office_ids,
+            &is_special_flags,
+        )
+        .fetch_all(db_pool)
+        .await?;
+        Ok(records)
+    }
+
     pub async fn filter(db_pool: &PgPool, input: RaceFilter) -> Result<Vec<Self>, sqlx::Error> {
         let office_titles = match input.office_titles {
             Some(office_titles) => office_titles.iter().map(|t| format!("'{}'", t)).join(","),

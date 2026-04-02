@@ -1,7 +1,13 @@
-use async_graphql::{Context, FieldResult, Object};
+use async_graphql::{Context, FieldResult, InputObject, Object};
 use db::{Race, RaceFilter};
 
 use crate::{context::ApiContext, relay, types::RaceResult};
+
+#[derive(InputObject)]
+pub struct PrimaryRaceOfficeInput {
+    pub office_id: String,
+    pub is_special_election: bool,
+}
 
 #[derive(Default)]
 pub struct RaceQuery;
@@ -41,5 +47,23 @@ impl RaceQuery {
         let record = Race::find_by_slug(&db_pool, slug).await?;
 
         Ok(record.into())
+    }
+
+    /// For each (officeId, isSpecialElection) pair, returns all primary races with no winners set.
+    /// Used to show runoffs/undecided primaries alongside general races.
+    async fn primary_races_for_general(
+        &self,
+        ctx: &Context<'_>,
+        office_inputs: Vec<PrimaryRaceOfficeInput>,
+    ) -> FieldResult<Vec<RaceResult>> {
+        let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let inputs: Vec<(uuid::Uuid, bool)> = office_inputs
+            .into_iter()
+            .filter_map(|i| {
+                uuid::Uuid::parse_str(&i.office_id).ok().map(|id| (id, i.is_special_election))
+            })
+            .collect();
+        let records = Race::primary_races_for_general(&db_pool, &inputs).await?;
+        Ok(records.into_iter().map(RaceResult::from).collect())
     }
 }
