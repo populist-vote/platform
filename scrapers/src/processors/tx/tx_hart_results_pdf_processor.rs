@@ -134,17 +134,17 @@ fn parse_vote_values_single(tail: &str) -> Vec<String> {
 /// (phrase to find in header, canonical CSV column name). Matching is case-insensitive; phrases are lowercase here for consistency.
 /// "election day" matches both "Election Day" and "Election Day Voting".
 const COLUMN_PHRASES: &[(&str, &str)] = &[
-    ("election day", "Election Day Voting"),
-    ("early voting", "Early Voting"),
     ("ballot by mail", "Ballot by Mail"),
     ("absentee voting", "Ballot by Mail"),
+    ("election day", "Election Day Voting"),
+    ("early voting", "Early Voting"),
+    ("absentee", "Ballot by Mail"),
     ("total", "Total"),
 ];
 
-/// Phrases that identify columns we skip (e.g. provisional). Use only full column names:
-/// "provisional" alone would also match inside "EV Provisional" and create a duplicate entry,
-/// shifting Total's pdf_index to 6 when there are only 6 columns (0-5), so Total would be missing.
-const COLUMN_SKIP_PHRASES: &[&str] = &["ev provisional", "ed provisional"];
+/// Phrases that identify columns we skip (e.g. provisional). Each phrase can match multiple columns;
+/// we add one skip entry per occurrence so "provisional" skips "EV Provisional", "ED Provisional", and standalone "Provisional".
+const COLUMN_SKIP_PHRASES: &[&str] = &["limited", "provisional"];
 
 /// Parsed column order: canonical names and their 0-based PDF column indices (so we can skip provisional).
 fn parse_column_order(header_rest: &str) -> (Vec<String>, Vec<usize>) {
@@ -171,8 +171,12 @@ fn parse_column_order(header_rest: &str) -> (Vec<String>, Vec<usize>) {
         .map(|(c, pos)| (pos, Some(c)))
         .collect();
     for phrase in COLUMN_SKIP_PHRASES {
-        if let Some(pos) = header_lower.find(&phrase.to_lowercase()) {
+        let phrase_lower = phrase.to_lowercase();
+        let mut search_from = 0;
+        while let Some(rel_pos) = header_lower[search_from..].find(&phrase_lower) {
+            let pos = search_from + rel_pos;
             entries.push((pos, None));
+            search_from = pos + 1;
         }
     }
 

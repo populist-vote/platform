@@ -12,7 +12,7 @@ pub fn office_state_id(source: &str, office_title: &str) -> String {
 /// Returns the priority for the given office title. Matches populist-office-titles-map.csv (office_title → priority).
 pub fn office_priority(
     office_title: &str,
-    _county: Option<&str>,
+    county: Option<&str>,
     district: Option<&str>,
 ) -> Option<i32> {
     let priority = match office_title.trim() {
