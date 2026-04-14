@@ -56,8 +56,12 @@ impl Config {
             "https://www.marfapublicradio.org/",
             "https://www.kedt.org/",
             "https://radio.kttz.org/",
+            "https://populist.us/",
         ];
-        let excluded_origins = ["https://www.mprnews.org/preview/"];
+        let excluded_origins = [
+            "https://www.mprnews.org/preview/",
+            "https://populist.us/embeds/preview/",
+        ];
 
         allowed_origins
             .iter()
