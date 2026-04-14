@@ -83,7 +83,7 @@ impl EmbedResult {
             SELECT url, last_ping_at, page_title FROM embed_origin WHERE embed_id = $1
             AND url NOT LIKE '%localhost:3030%'
             AND url NOT LIKE '%staging.populist.us%'
-            AND url NOT LIKE '%populist.us%'
+            AND url NOT LIKE '%populist.us/embeds/preview%'
         "#,
             uuid::Uuid::parse_str(&self.id.as_str()).unwrap(),
         )
