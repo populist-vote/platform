@@ -149,16 +149,15 @@ fn compute_office_subtitle(office: &Office, use_short: bool) -> Option<String> {
 #[ComplexObject]
 impl OfficeResult {
     async fn incumbents(&self, ctx: &Context<'_>) -> Result<Vec<PoliticianResult>> {
-        let politicians = ctx
+        let office_id = OfficeId(uuid::Uuid::parse_str(&self.id).unwrap());
+        let mut by_office = ctx
             .data::<ApiContext>()?
             .loaders
             .politician_loader
-            .load_many(vec![OfficeId(uuid::Uuid::parse_str(&self.id).unwrap())])
+            .load_many(vec![office_id.clone()])
             .await?;
+        let politicians = by_office.remove(&office_id).unwrap_or_default();
         let politician_results = politicians
-            .values()
-            .cloned()
-            .collect::<Vec<Politician>>()
             .into_iter()
             .map(PoliticianResult::from)
             .collect();
