@@ -70,25 +70,33 @@ impl Loader<PoliticianSlug> for PoliticianLoader {
 }
 
 impl Loader<OfficeId> for PoliticianLoader {
-    type Value = Politician;
+    /// All politicians holding this office (`politician.office_id`); may be empty or many rows per office.
+    type Value = Vec<Politician>;
     type Error = FieldError;
 
     async fn load(&self, keys: &[OfficeId]) -> Result<HashMap<OfficeId, Self::Value>, Self::Error> {
+        if keys.is_empty() {
+            return Ok(HashMap::new());
+        }
+
         let query = format!(
-            r#"SELECT * FROM politician WHERE office_id IN ({})"#,
+            r#"SELECT * FROM politician WHERE office_id IN ({}) ORDER BY last_name ASC, first_name ASC, id ASC"#,
             keys.iter().map(|k| format!("'{}'", k.0)).join(",")
         );
 
-        let cache = sqlx::query_as(&query)
-            .fetch(&self.0)
-            .map_ok(|politician: Politician| {
-                (
-                    OfficeId(politician.office_id.unwrap_or_default()),
-                    politician,
-                )
-            })
-            .try_collect()
-            .await?;
+        let rows: Vec<Politician> = sqlx::query_as(&query).fetch_all(&self.0).await?;
+
+        let mut cache: HashMap<OfficeId, Vec<Politician>> =
+            keys.iter().cloned().map(|k| (k, Vec::new())).collect();
+
+        for politician in rows {
+            if let Some(oid) = politician.office_id {
+                let key = OfficeId(oid);
+                if let Some(vec) = cache.get_mut(&key) {
+                    vec.push(politician);
+                }
+            }
+        }
 
         Ok(cache)
     }
