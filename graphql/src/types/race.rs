@@ -303,6 +303,7 @@ impl RaceResult {
 
     async fn related_embeds(&self, ctx: &Context<'_>) -> Result<Vec<EmbedResult>> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let race_id = uuid::Uuid::parse_str(self.id.as_str())?;
         let embeds = sqlx::query_as!(
             Embed,
             r#"
@@ -320,8 +321,15 @@ impl RaceResult {
             FROM embed
             WHERE
                 attributes->>'raceId' = $1
+                OR attributes->>'politicianId' IN (
+                    SELECT candidate_id::text
+                    FROM race_candidates
+                    WHERE race_id = $2
+                      AND is_running = TRUE
+                )
         "#,
-            self.id.to_string()
+            race_id.to_string(),
+            race_id
         )
         .fetch_all(&db_pool)
         .await?;
