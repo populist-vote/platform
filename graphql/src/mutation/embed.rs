@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use async_graphql::{Context, InputObject, Object, Result, SimpleObject};
 use auth::AccessTokenClaims;
 use config::Config;
-use db::{Embed, UpsertEmbedInput};
+use db::{DateTime, Embed, UpsertEmbedInput};
 use jsonwebtoken::TokenData;
 use url::{Position, Url};
 
