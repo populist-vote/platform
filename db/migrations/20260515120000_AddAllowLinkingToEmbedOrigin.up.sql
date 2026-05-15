@@ -1,0 +1,2 @@
+ALTER TABLE embed_origin
+ADD COLUMN IF NOT EXISTS allow_linking BOOLEAN NOT NULL DEFAULT true;

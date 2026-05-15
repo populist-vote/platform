@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use async_graphql::{Context, InputObject, Object, Result, SimpleObject};
 use auth::AccessTokenClaims;
 use config::Config;
-use db::{DateTime, Embed, UpsertEmbedInput};
+use db::{Embed, UpsertEmbedInput};
 use jsonwebtoken::TokenData;
 use url::{Position, Url};
 
@@ -27,6 +27,9 @@ struct DeleteEmbedResult {
 struct PingEmbedOriginInput {
     embed_id: uuid::Uuid,
     url: String,
+    /// When false, this host URL is omitted from My Ballot “More Info” related links. Defaults to true when omitted (backwards compatible).
+    #[graphql(default)]
+    allow_linking: Option<bool>,
 }
 
 #[Object]
@@ -72,17 +75,21 @@ impl EmbedMutation {
 
         match Config::is_allowed_origin(&cleaned) {
             true => {
+                let allow_linking = input.allow_linking.unwrap_or(true);
                 let record = sqlx::query_as!(
                     EmbedOriginResult,
                     r#"
-                    INSERT INTO embed_origin (embed_id, url)
-                    VALUES ($1, $2)
+                    INSERT INTO embed_origin (embed_id, url, allow_linking)
+                    VALUES ($1, $2, $3)
                     ON CONFLICT (embed_id, url)
-                    DO UPDATE SET last_ping_at = CURRENT_TIMESTAMP
-                    RETURNING url, last_ping_at as "last_ping_at: DateTime", page_title
+                    DO UPDATE SET
+                        last_ping_at = CURRENT_TIMESTAMP,
+                        allow_linking = EXCLUDED.allow_linking
+                    RETURNING url, last_ping_at as "last_ping_at: DateTime", page_title, allow_linking
                 "#,
                     input.embed_id,
-                    cleaned
+                    cleaned,
+                    allow_linking
                 )
                 .fetch_one(&db_pool)
                 .await?;
