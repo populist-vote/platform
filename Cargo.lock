@@ -1760,6 +1760,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "embed_validation"
+version = "0.1.0"
+dependencies = [
+ "regex",
+ "reqwest 0.12.9",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "encode_unicode"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2197,6 +2207,7 @@ dependencies = [
  "csv",
  "db",
  "dotenv",
+ "embed_validation",
  "futures",
  "geocodio",
  "http 0.2.12",
@@ -2210,6 +2221,7 @@ dependencies = [
  "pwhash",
  "rand",
  "regex",
+ "reqwest 0.12.9",
  "rust-s3",
  "serde",
  "serde_json",
@@ -4940,13 +4952,14 @@ dependencies = [
  "csv",
  "db",
  "dotenv",
+ "embed_validation",
  "html2text",
  "indicatif",
  "legiscan",
  "open-fec",
  "pdf-extract 0.7.10",
  "regex",
- "reqwest 0.11.27",
+ "reqwest 0.12.9",
  "scraper",
  "select",
  "serde",

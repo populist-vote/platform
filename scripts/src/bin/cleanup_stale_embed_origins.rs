@@ -1,6 +1,9 @@
 use colored::*;
+use embed_validation::{
+    default_http_client, page_fetch_cache_ttl, verify_embed_on_page_cached, PageFetchCache,
+    VerificationMode, VerifyResult,
+};
 use indicatif::{ProgressBar, ProgressStyle};
-use regex::Regex;
 use std::error::Error;
 use std::process;
 use std::time::Instant;
@@ -9,6 +12,12 @@ struct EmbedOrigin {
     embed_id: uuid::Uuid,
     url: String,
     page_title: Option<String>,
+}
+
+enum CheckResult {
+    Valid(Option<String>),
+    NotFound,
+    EmbedNotPresent,
 }
 
 async fn cleanup_stale_embed_origins(dry_run: bool, verbose: bool) -> Result<(), Box<dyn Error>> {
@@ -31,7 +40,6 @@ async fn cleanup_stale_embed_origins(dry_run: bool, verbose: bool) -> Result<(),
     db::init_pool().await.unwrap();
     let db_pool = db::pool().await;
 
-    // Fetch all embed origins
     let origins = sqlx::query_as!(
         EmbedOrigin,
         r#"
@@ -51,7 +59,6 @@ async fn cleanup_stale_embed_origins(dry_run: bool, verbose: bool) -> Result<(),
         return Ok(());
     }
 
-    // Create progress bar
     let pb = ProgressBar::new(total_count as u64);
     pb.set_style(
         ProgressStyle::default_bar()
@@ -62,10 +69,8 @@ async fn cleanup_stale_embed_origins(dry_run: bool, verbose: bool) -> Result<(),
             .progress_chars("#>-"),
     );
 
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(10))
-        .user_agent("Mozilla/5.0 (compatible; PopulistBot/1.0; +https://populist.us)")
-        .build()?;
+    let client = default_http_client()?;
+    let page_cache = PageFetchCache::new(page_fetch_cache_ttl());
 
     let mut valid_count = 0;
     let mut invalid_count = 0;
@@ -78,17 +83,15 @@ async fn cleanup_stale_embed_origins(dry_run: bool, verbose: bool) -> Result<(),
     for origin in origins {
         pb.inc(1);
 
-        // Check if the embed is still present on the page
-        match check_embed_exists(&client, &origin.url, &origin.embed_id).await {
+        match check_embed_exists(&client, &page_cache, &origin.url, &origin.embed_id).await {
             Ok(CheckResult::Valid(page_title)) => {
                 valid_count += 1;
 
-                // Update page title if it's different from what we have or if we don't have one
                 let should_update = match (&page_title, &origin.page_title) {
                     (Some(new_title), Some(old_title)) => new_title != old_title,
-                    (Some(_), None) => true, // We have a new title but didn't have one before
-                    (None, Some(_)) => false, // Don't overwrite existing title with None
-                    (None, None) => false,   // Both are None, no update needed
+                    (Some(_), None) => true,
+                    (None, Some(_)) => false,
+                    (None, None) => false,
                 };
 
                 if should_update {
@@ -104,7 +107,6 @@ async fn cleanup_stale_embed_origins(dry_run: bool, verbose: bool) -> Result<(),
                         println!("   New: {:?}", page_title);
                     }
 
-                    // Only update title in production mode, not dry-run
                     if !dry_run {
                         match sqlx::query!(
                             r#"
@@ -132,7 +134,6 @@ async fn cleanup_stale_embed_origins(dry_run: bool, verbose: bool) -> Result<(),
                 }
             }
             Ok(CheckResult::NotFound) => {
-                // Page doesn't exist (404) - delete the record
                 not_found_count += 1;
                 not_found_urls.push(origin.url.clone());
 
@@ -157,7 +158,6 @@ async fn cleanup_stale_embed_origins(dry_run: bool, verbose: bool) -> Result<(),
                 }
             }
             Ok(CheckResult::EmbedNotPresent) => {
-                // Page exists but embed is not present - delete the record
                 invalid_count += 1;
                 deleted_urls.push(origin.url.clone());
 
@@ -190,7 +190,6 @@ async fn cleanup_stale_embed_origins(dry_run: bool, verbose: bool) -> Result<(),
 
     pb.finish_with_message("Done!");
 
-    // Print summary
     println!("\n{}", "═".repeat(60));
     println!("{}", "Summary".bright_white().bold());
     println!("{}", "═".repeat(60));
@@ -274,149 +273,30 @@ async fn cleanup_stale_embed_origins(dry_run: bool, verbose: bool) -> Result<(),
     Ok(())
 }
 
-enum CheckResult {
-    Valid(Option<String>), // Contains the page title
-    NotFound,
-    EmbedNotPresent,
-}
-
-fn extract_page_title(html: &str) -> Option<String> {
-    // Extract only the <head> section
-    let head_regex = Regex::new(r"(?is)<head[^>]*>(.*?)</head>").unwrap();
-    let head_content = head_regex
-        .captures(html)
-        .and_then(|caps| caps.get(1).map(|m| m.as_str()))?; // Return None if no <head> found
-
-    // Priority 1: Look for <title> tag within <head>
-    let title_regex = Regex::new(r"(?i)<title[^>]*>(.*?)</title>").unwrap();
-    if let Some(caps) = title_regex.captures(head_content) {
-        if let Some(title_text) = caps.get(1).map(|m| m.as_str().trim().to_string()) {
-            if !title_text.is_empty() {
-                return Some(title_text);
-            }
-        }
-    }
-
-    // Priority 2: Look for meta tag with name="title"
-    let meta_title_exact_regex = Regex::new(
-        r#"(?i)<meta[^>]*name=["']title["'][^>]*content=["']([^"']*)["'][^>]*>|<meta[^>]*content=["']([^"']*)["'][^>]*name=["']title["'][^>]*>"#
-    ).unwrap();
-
-    if let Some(caps) = meta_title_exact_regex.captures(head_content) {
-        let content = caps
-            .get(1)
-            .or_else(|| caps.get(2))
-            .map(|m| m.as_str().trim().to_string());
-
-        if let Some(title) = content {
-            if !title.is_empty() {
-                return Some(title);
-            }
-        }
-    }
-
-    // Priority 3: Look for other meta tags with "title" in the name property
-    // This includes og:title, twitter:title, etc.
-    let meta_title_regex = Regex::new(
-        r#"(?i)<meta[^>]*(?:name|property)=["']([^"']*title[^"']*)["'][^>]*content=["']([^"']*)["'][^>]*>|<meta[^>]*content=["']([^"']*)["'][^>]*(?:name|property)=["']([^"']*title[^"']*)["'][^>]*>"#
-    ).unwrap();
-
-    if let Some(caps) = meta_title_regex.captures(head_content) {
-        // The content might be in group 2 or group 3 depending on attribute order
-        let content = caps
-            .get(2)
-            .or_else(|| caps.get(3))
-            .map(|m| m.as_str().trim().to_string());
-
-        if let Some(title) = content {
-            if !title.is_empty() {
-                return Some(title);
-            }
-        }
-    }
-
-    None
-}
-
 async fn check_embed_exists(
     client: &reqwest::Client,
+    page_cache: &PageFetchCache,
     url: &str,
     embed_id: &uuid::Uuid,
 ) -> Result<CheckResult, Box<dyn Error>> {
-    // Fetch the HTML content
-    let response = client.get(url).send().await?;
-
-    // Check if page exists (404 means page is gone)
-    if response.status() == reqwest::StatusCode::NOT_FOUND {
-        return Ok(CheckResult::NotFound);
+    match verify_embed_on_page_cached(
+        client,
+        Some(page_cache),
+        url,
+        embed_id,
+        VerificationMode::Lenient,
+    )
+    .await
+    {
+        VerifyResult::Present { page_title } => Ok(CheckResult::Valid(page_title)),
+        VerifyResult::PageNotFound => Ok(CheckResult::NotFound),
+        VerifyResult::NotPresent => Ok(CheckResult::EmbedNotPresent),
+        VerifyResult::FetchFailed { message } => Err(message.into()),
     }
-
-    if !response.status().is_success() {
-        return Err(format!("HTTP {}", response.status()).into());
-    }
-
-    let html = response.text().await?;
-
-    // Extract page title from HTML
-    let page_title = extract_page_title(&html);
-
-    // Check for various patterns that indicate the embed is present
-    let embed_id_str = embed_id.to_string();
-
-    // Pattern 1: Direct embed ID in script tag or data attribute
-    if html.contains(&embed_id_str) {
-        return Ok(CheckResult::Valid(page_title));
-    }
-
-    // Pattern 2: Check for populist embed script with the ID
-    let script_pattern = Regex::new(&format!(
-        r#"(?i)(populist.*embed|embed.*populist).*{}|{}.*(?:populist.*embed|embed.*populist)"#,
-        regex::escape(&embed_id_str),
-        regex::escape(&embed_id_str)
-    ))?;
-
-    if script_pattern.is_match(&html) {
-        return Ok(CheckResult::Valid(page_title));
-    }
-
-    // Pattern 3: Check for iframe with embed ID
-    let iframe_pattern = Regex::new(&format!(
-        r#"<iframe[^>]*{}[^>]*>"#,
-        regex::escape(&embed_id_str)
-    ))?;
-
-    if iframe_pattern.is_match(&html) {
-        return Ok(CheckResult::Valid(page_title));
-    }
-
-    // Pattern 4: Check for data attributes with embed ID
-    let data_attr_pattern = Regex::new(&format!(
-        r#"data-[^=]*=["']?[^"']*{}[^"']*["']?"#,
-        regex::escape(&embed_id_str)
-    ))?;
-
-    if data_attr_pattern.is_match(&html) {
-        return Ok(CheckResult::Valid(page_title));
-    }
-
-    // Pattern 5: Check for div with populist embed class and ID
-    let div_pattern = Regex::new(&format!(
-        r#"<div[^>]*(?:class=["'][^"']*populist[^"']*["']|id=["'][^"']*populist[^"']*["'])[^>]*>[^<]*{}|<div[^>]*>[^<]*{}[^<]*(?:class=["'][^"']*populist[^"']*["']|id=["'][^"']*populist[^"']*["'])"#,
-        regex::escape(&embed_id_str),
-        regex::escape(&embed_id_str)
-    ))?;
-
-    if div_pattern.is_match(&html) {
-        return Ok(CheckResult::Valid(page_title));
-    }
-
-    // If none of the patterns match, the embed is not present
-    Ok(CheckResult::EmbedNotPresent)
 }
 
 #[tokio::main]
 async fn main() {
-    // Check for flags
     let args: Vec<String> = std::env::args().collect();
     let dry_run = args.contains(&"--dry-run".to_string());
     let verbose = args.contains(&"--verbose".to_string()) || args.contains(&"-v".to_string());

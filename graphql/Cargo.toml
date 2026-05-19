@@ -8,6 +8,8 @@ publish = false
 auth = { path = "../auth" }
 config = { path = "../config" }
 db = { path = "../db" }
+embed_validation = { path = "../embed_validation" }
+reqwest = { version = "0.12.7", default-features = false, features = ["rustls-tls"] }
 mailers = { path = "../mailers" }
 open-secrets = { path = "../open-secrets" }
 async-graphql = { version = "7.0.3", features = [
