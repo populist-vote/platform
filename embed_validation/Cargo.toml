@@ -1,0 +1,13 @@
+[package]
+name = "embed_validation"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+regex = "1.10.6"
+reqwest = { version = "0.12.7", default-features = false, features = ["rustls-tls"] }
+uuid = "1.1.2"
+
+[dev-dependencies]
+tokio = { version = "1.21.1", features = ["macros", "rt-multi-thread"] }

@@ -4,6 +4,7 @@ members = [
     "auth",
     "config",
     "db",
+    "embed_validation",
     "graphql",
     "mailers",
     "scripts",

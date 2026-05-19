@@ -41,6 +41,16 @@ impl Default for Config {
 }
 
 impl Config {
+    /// When true, `ping_embed_origin` fetches the host page and requires embed markup before insert.
+    pub fn embed_origin_verify_enabled() -> bool {
+        env::var("EMBED_ORIGIN_VERIFY")
+            .map(|v| {
+                let lower = v.to_lowercase();
+                lower == "true" || lower == "1" || lower == "yes"
+            })
+            .unwrap_or(false)
+    }
+
     pub fn is_allowed_origin(url: &str) -> bool {
         let allowed_origins = [
             "https://www.mprnews.org",

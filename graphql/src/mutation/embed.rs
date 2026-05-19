@@ -1,9 +1,11 @@
 use std::collections::HashMap;
+use std::sync::OnceLock;
 
 use async_graphql::{Context, InputObject, Object, Result, SimpleObject};
 use auth::AccessTokenClaims;
 use config::Config;
 use db::{DateTime, Embed, UpsertEmbedInput};
+use embed_validation::{default_http_client, verify_embed_on_page, VerificationMode, VerifyResult};
 use jsonwebtoken::TokenData;
 use url::{Position, Url};
 
@@ -27,9 +29,16 @@ struct DeleteEmbedResult {
 struct PingEmbedOriginInput {
     embed_id: uuid::Uuid,
     url: String,
-    /// When false, this host URL is omitted from My Ballot “More Info” related links. Defaults to true when omitted (backwards compatible).
+    /// When false, this host URL is omitted from My Ballot “More Info” related links. Defaults to true when omitted.
     #[graphql(default)]
     allow_linking: Option<bool>,
+}
+
+fn http_client() -> &'static reqwest::Client {
+    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
+    CLIENT.get_or_init(|| {
+        default_http_client().expect("failed to build embed validation HTTP client")
+    })
 }
 
 #[Object]
@@ -73,34 +82,89 @@ impl EmbedMutation {
         let cleaned = parse_url_and_retain_token_param(&input.url).ok_or("Invalid URL")?;
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
 
-        match Config::is_allowed_origin(&cleaned) {
-            true => {
-                let allow_linking = input.allow_linking.unwrap_or(true);
-                let record = sqlx::query_as!(
-                    EmbedOriginResult,
-                    r#"
-                    INSERT INTO embed_origin (embed_id, url, allow_linking)
-                    VALUES ($1, $2, $3)
-                    ON CONFLICT (embed_id, url)
-                    DO UPDATE SET
-                        last_ping_at = CURRENT_TIMESTAMP,
-                        allow_linking = EXCLUDED.allow_linking
-                    RETURNING url, last_ping_at as "last_ping_at: DateTime", page_title, allow_linking
-                "#,
-                    input.embed_id,
-                    cleaned,
-                    allow_linking
-                )
-                .fetch_one(&db_pool)
-                .await?;
-
-                Ok(record)
-            }
-            _ => {
-                tracing::warn!("Rejected URL: {}", cleaned);
-                Err("URL is not an allowed Populist origin".into())
-            }
+        if !Config::is_allowed_origin(&cleaned) {
+            tracing::warn!("Rejected URL: {}", cleaned);
+            return Err("URL is not an allowed Populist origin".into());
         }
+
+        let allow_linking = input.allow_linking.unwrap_or(true);
+
+        let already_tracked = sqlx::query_scalar!(
+            r#"
+            SELECT EXISTS(
+                SELECT 1 FROM embed_origin
+                WHERE embed_id = $1 AND url = $2
+            ) as "exists!"
+            "#,
+            input.embed_id,
+            cleaned
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        // Validate host-page markup only when creating a new (embed_id, url) row.
+        // Repeat iframe loads just refresh last_ping_at; stale rows are handled by cleanup.
+        let page_title = if Config::embed_origin_verify_enabled() && !already_tracked {
+            match verify_embed_on_page(
+                http_client(),
+                &cleaned,
+                &input.embed_id,
+                VerificationMode::Strict,
+            )
+            .await
+            {
+                VerifyResult::Present { page_title } => page_title,
+                VerifyResult::NotPresent => {
+                    tracing::warn!(
+                        embed_id = %input.embed_id,
+                        url = %cleaned,
+                        "Rejected ping: embed not found on host page"
+                    );
+                    return Err("Embed not found on host page".into());
+                }
+                VerifyResult::PageNotFound => {
+                    tracing::warn!(
+                        embed_id = %input.embed_id,
+                        url = %cleaned,
+                        "Rejected ping: host page not found"
+                    );
+                    return Err("Host page not found".into());
+                }
+                VerifyResult::FetchFailed { message } => {
+                    tracing::warn!(
+                        embed_id = %input.embed_id,
+                        url = %cleaned,
+                        error = %message,
+                        "Rejected ping: could not verify embed on host page"
+                    );
+                    return Err("Could not verify embed on host page; try again later".into());
+                }
+            }
+        } else {
+            None
+        };
+
+        let record = sqlx::query_as!(
+            EmbedOriginResult,
+            r#"
+            INSERT INTO embed_origin (embed_id, url, allow_linking, page_title)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (embed_id, url)
+            DO UPDATE SET
+                last_ping_at = CURRENT_TIMESTAMP,
+                allow_linking = EXCLUDED.allow_linking,
+                page_title = COALESCE(EXCLUDED.page_title, embed_origin.page_title)
+            RETURNING url, last_ping_at as "last_ping_at: DateTime", page_title, allow_linking
+            "#,
+            input.embed_id,
+            cleaned,
+            allow_linking,
+            page_title
+        )
+        .fetch_one(&db_pool)
+        .await?;
+
+        Ok(record)
     }
 
     // Needs an org guard

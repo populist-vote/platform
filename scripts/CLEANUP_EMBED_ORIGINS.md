@@ -6,7 +6,7 @@ This script validates and cleans up stale records in the `embed_origin` table by
 
 ## Problem It Solves
 
-When embeds are removed from websites, the `embed_origin` table retains the old records because the `ping_embed_origin` mutation only inserts/updates records, never deletes them. This leads to:
+When embeds are removed from websites, the `embed_origin` table can retain old records. With `EMBED_ORIGIN_VERIFY=true`, new rows require embed markup on the host page; this script removes rows that fail **lenient** checks. Stale data leads to:
 
 - "More Info" links pointing to pages without embeds
 - Stale data accumulating in the database
@@ -22,12 +22,13 @@ The script:
    - HTML `<title>` tag within `<head>`
    - Meta tag with exact `name="title"`
    - Other meta tags with "title" in the name/property (e.g., `og:title`, `twitter:title`)
-4. Scans the HTML content for the embed ID using multiple patterns:
-   - Direct embed ID presence in the HTML
-   - Populist embed script tags with the ID
-   - iframes containing the embed ID
-   - Data attributes with the embed ID
-   - Div elements with populist classes/IDs containing the embed ID
+4. Scans the HTML via the shared `embed_validation` crate (`VerificationMode::Lenient`), including direct UUID presence, widget markup, iframes, and related patterns
+
+`ping_embed_origin` uses **strict** mode from the same crate when `EMBED_ORIGIN_VERIFY=true` (see `platform/config` and `platform/embed_validation`).
+
+Verification runs only when inserting a **new** `(embed_id, url)` row. If the row already exists, later pings only update `last_ping_at` (no host-page fetch). Stale or removed embeds are handled by this cleanup script.
+
+When validating new rows, host-page HTML is cached in memory per URL for `EMBED_ORIGIN_CACHE_TTL_SECS` (default **60**), so multiple new embeds on one article share a single HTTP GET per cache window.
 5. **Updates page titles** if they've changed (in both dry-run and production mode)
 6. If the embed is NOT found, marks the record for deletion
 7. If the page returns 404, marks the record for deletion
@@ -222,6 +223,7 @@ Possible improvements:
 
 ## Related Files
 
+- `/platform/embed_validation/` - shared host-page verification (strict + lenient)
 - `/platform/graphql/src/mutation/embed.rs` - `ping_embed_origin` mutation
 - `/platform/graphql/src/types/embed.rs` - `origins` resolver
 - `/web/components/MyBallotEmbed/MyBallotEmbed.tsx` - `RelatedEmbedLinks` component
