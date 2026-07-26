@@ -1,5 +1,4 @@
 #[cfg(test)]
-
 mod tests {
     use crate::tests::harness::TestHarness;
     use rand::seq::SliceRandom;
@@ -87,7 +86,7 @@ mod tests {
                 .execute_query(
                     create_statement_query,
                     Some(async_graphql::Variables::from_json(statement_variables)),
-                    Some(user_id.clone()),
+                    Some(*user_id),
                     None,
                 )
                 .await?;
@@ -163,7 +162,7 @@ mod tests {
             let user_id = &user_ids[user_idx];
             let statement_id = statement_ids.choose(&mut rng).unwrap();
             let vote_type = get_vote_type(user_idx);
-            vote_pairs.push((user_id.clone(), statement_id.clone(), vote_type));
+            vote_pairs.push((*user_id, statement_id.clone(), vote_type));
         }
 
         for (user_id, statement_id, vote_type) in vote_pairs {
@@ -233,7 +232,7 @@ mod tests {
                 Some(async_graphql::Variables::from_json(serde_json::json!({
                     "id": conversation_id
                 }))),
-                Some(user_ids[0].clone()),
+                Some(user_ids[0]),
                 None,
             )
             .await?;
@@ -311,6 +310,7 @@ mod tests {
             }
         }
 
+        harness.cleanup().await?;
         Ok(())
     }
 }

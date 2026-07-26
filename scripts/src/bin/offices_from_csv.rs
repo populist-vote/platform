@@ -16,7 +16,7 @@ async fn upsert_offices() -> Result<(), Box<dyn Error>> {
         let input: UpsertOfficeInput = result?;
         let _office = Office::upsert(&pool.connection, &input)
             .await
-            .expect(format!("Failed to upsert office: {:?}", input.slug).as_str());
+            .unwrap_or_else(|_| panic!("Failed to upsert office: {:?}", input.slug));
     }
 
     sp.stop();

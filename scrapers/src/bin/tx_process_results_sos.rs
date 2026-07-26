@@ -13,7 +13,10 @@ async fn main() {
 
     match process_tx_sos_results(&pool.connection, true).await {
         Ok((files, rows)) => {
-            println!("\n✓ Processed {} file(s), {} rows loaded into ingest_staging.stg_tx_results_sos", files, rows);
+            println!(
+                "\n✓ Processed {} file(s), {} rows loaded into ingest_staging.stg_tx_results_sos",
+                files, rows
+            );
             println!("\n  SELECT * FROM ingest_staging.stg_tx_results_sos;");
         }
         Err(e) => {

@@ -15,6 +15,7 @@ pub struct UserResult {
 }
 
 #[derive(InputObject)]
+#[allow(dead_code)]
 pub struct UpdateUserProfileInput {
     pub email: Option<String>,
     pub username: Option<String>,

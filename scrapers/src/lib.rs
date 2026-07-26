@@ -1,3 +1,5 @@
+#![allow(clippy::too_many_arguments, clippy::type_complexity)]
+
 use std::{error::Error, future::Future};
 
 pub mod extractors;

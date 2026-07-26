@@ -8,6 +8,5 @@ pub use mn_candidate_filings_fed_state_county::{
     get_mn_sos_candidate_filings_fed_state_county_primaries,
 };
 pub use mn_candidate_filings_local::{
-    get_mn_sos_candidate_filings_local,
-    get_mn_sos_candidate_filings_local_primaries,
+    get_mn_sos_candidate_filings_local, get_mn_sos_candidate_filings_local_primaries,
 };

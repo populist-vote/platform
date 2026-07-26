@@ -77,6 +77,7 @@ struct TimeSeriesPoint {
 }
 
 #[derive(SimpleObject)]
+#[allow(dead_code)]
 struct ParticipationBucket {
     vote_count: i64,
     participant_count: i64,
@@ -731,12 +732,9 @@ impl ConversationResult {
             .collect();
 
         let overview =
-            match generate_opinion_summary(consensus_opinions.clone(), divisive_opinions.clone())
+            generate_opinion_summary(consensus_opinions.clone(), divisive_opinions.clone())
                 .await
-            {
-                Ok(summary) => Some(summary),
-                Err(_) => None,
-            };
+                .ok();
 
         let analysis = OpinionAnalysis {
             overview,
@@ -1534,7 +1532,7 @@ async fn generate_group_summary(
                     content: prompt,
                     name: None,
                 }])
-                .temperature(0.7)
+                .temperature(0.7_f32)
                 .max_tokens(40_u16)
                 .build()?,
         )
@@ -1605,7 +1603,7 @@ async fn generate_opinion_summary(
                     content: prompt,
                     name: None,
                 }])
-                .temperature(0.7)
+                .temperature(0.7_f32)
                 .max_tokens(320_u16)
                 .build()?,
         )

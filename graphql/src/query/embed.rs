@@ -116,10 +116,7 @@ impl EmbedQuery {
         .fetch_all(&db_pool)
         .await?;
 
-        let results = records
-            .into_iter()
-            .map(EnhancedEmbedOriginResult::from)
-            .collect();
+        let results = records.into_iter().collect();
 
         Ok(results)
     }

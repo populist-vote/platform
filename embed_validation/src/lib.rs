@@ -7,9 +7,7 @@ mod cache;
 use std::time::Duration;
 use uuid::Uuid;
 
-pub use cache::{
-    global_page_fetch_cache, page_fetch_cache_ttl, PageFetchCache, PageFetchResult,
-};
+pub use cache::{global_page_fetch_cache, page_fetch_cache_ttl, PageFetchCache, PageFetchResult};
 
 use regex::Regex;
 
@@ -46,14 +44,7 @@ pub async fn verify_embed_on_page(
     embed_id: &Uuid,
     mode: VerificationMode,
 ) -> VerifyResult {
-    verify_embed_on_page_cached(
-        client,
-        Some(global_page_fetch_cache()),
-        url,
-        embed_id,
-        mode,
-    )
-    .await
+    verify_embed_on_page_cached(client, Some(global_page_fetch_cache()), url, embed_id, mode).await
 }
 
 /// Fetches `url` with an optional per-request cache, then checks `embed_id` in the HTML.
@@ -301,24 +292,21 @@ mod tests {
 
     #[test]
     fn lenient_accepts_bare_uuid() {
-        let html = r#"<script>window.config = {"id": "086b0f58-6cf1-4d89-bef8-56c7cbd6a606"};</script>"#;
+        let html =
+            r#"<script>window.config = {"id": "086b0f58-6cf1-4d89-bef8-56c7cbd6a606"};</script>"#;
         assert!(lenient_embed_present(html, EMBED_ID));
     }
 
     #[test]
     fn strict_rejects_different_embed_id() {
-        let html =
-            r#"<div class="populist-embed" data-embed-id="00000000-0000-0000-0000-000000000001"></div>"#;
+        let html = r#"<div class="populist-embed" data-embed-id="00000000-0000-0000-0000-000000000001"></div>"#;
         assert!(!strict_embed_present(html, EMBED_ID));
     }
 
     #[test]
     fn extract_page_title_from_head() {
         let html = "<html><head><title>Texas Runoffs</title></head><body></body></html>";
-        assert_eq!(
-            extract_page_title(html),
-            Some("Texas Runoffs".to_string())
-        );
+        assert_eq!(extract_page_title(html), Some("Texas Runoffs".to_string()));
     }
 
     #[test]

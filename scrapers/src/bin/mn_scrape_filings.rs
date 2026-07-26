@@ -1,11 +1,5 @@
-use scrapers::mn::{
-    get_mn_sos_candidate_filings_fed_state_county,
-    get_mn_sos_candidate_filings_fed_state_county_primaries, get_mn_sos_candidate_filings_local,
-    get_mn_sos_candidate_filings_local_primaries,
-};
+use scrapers::mn::get_mn_sos_candidate_filings_local;
 use std::io::{self, Write};
-use std::thread;
-use std::time::Duration;
 use thirtyfour::prelude::*;
 
 async fn close_driver(driver: WebDriver) -> Result<(), Box<dyn std::error::Error>> {

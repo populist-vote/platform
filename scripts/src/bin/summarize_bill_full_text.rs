@@ -10,7 +10,6 @@ use std::error::Error;
 use std::fmt;
 use std::io::{self, Write};
 use std::time::Instant;
-use tokio;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]

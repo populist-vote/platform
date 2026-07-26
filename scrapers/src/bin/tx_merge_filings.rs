@@ -1,6 +1,8 @@
 //! Merges staging data from ingest_staging.stg_tx_* into production tables (office, politician, race, race_candidates).
 //! Run after process_tx_candidate_filings. Resolves by slug for offices/races and by ref_key/slug/email/phone for politicians.
 
+#![allow(clippy::too_many_arguments, clippy::type_complexity)]
+
 use db::{
     Address, Chamber, DistrictType, ElectionScope, InsertAddressInput, Office, PoliticalScope,
     Politician, Race, RaceCandidate, RaceType, State, UpdatePoliticianInput, UpsertOfficeInput,
@@ -109,7 +111,9 @@ async fn main() {
 
     println!("=== Merge TX staging → production ===\n");
     if overwrite_race_candidates {
-        println!("(--overwrite-rcs: existing race_candidates with same ref_key will be replaced)\n");
+        println!(
+            "(--overwrite-rcs: existing race_candidates with same ref_key will be replaced)\n"
+        );
     }
 
     if let Err(e) = run_merge(db, overwrite_race_candidates).await {
@@ -119,7 +123,10 @@ async fn main() {
     println!("\n✓ Merge completed successfully.");
 }
 
-async fn run_merge(pool: &PgPool, overwrite_race_candidates: bool) -> Result<(), Box<dyn std::error::Error>> {
+async fn run_merge(
+    pool: &PgPool,
+    overwrite_race_candidates: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     // 1. Offices: upsert by slug, build stg_office_id -> prod_office_id
     println!("Merging offices...");
     let stg_offices: Vec<StgOffice> = sqlx::query_as(
@@ -187,9 +194,15 @@ async fn run_merge(pool: &PgPool, overwrite_race_candidates: bool) -> Result<(),
             }
         }
     }
-    println!("  Exact matches (slug+email/phone/address → updated): {}", exact_match_count);
+    println!(
+        "  Exact matches (slug+email/phone/address → updated): {}",
+        exact_match_count
+    );
     println!("  slug + flagged: {}", exact_flagged_count);
-    println!("  Addresses: {} inserted, {} existing (reused)", addresses_inserted, addresses_reused);
+    println!(
+        "  Addresses: {} inserted, {} existing (reused)",
+        addresses_inserted, addresses_reused
+    );
 
     // 3. Races: upsert by slug with prod office_id; build stg_race_id -> prod_race_id
     println!("Merging races...");
@@ -249,12 +262,11 @@ async fn run_merge(pool: &PgPool, overwrite_race_candidates: bool) -> Result<(),
                     }
                 } else {
                     // Skip if incoming ref_key already exists in production (avoid duplicate ref_key)
-                    let exists: Option<(i32,)> = sqlx::query_as(
-                        "SELECT 1 FROM race_candidates WHERE ref_key = $1 LIMIT 1",
-                    )
-                    .bind(key.as_str())
-                    .fetch_optional(pool)
-                    .await?;
+                    let exists: Option<(i32,)> =
+                        sqlx::query_as("SELECT 1 FROM race_candidates WHERE ref_key = $1 LIMIT 1")
+                            .bind(key.as_str())
+                            .fetch_optional(pool)
+                            .await?;
                     if exists.is_some() {
                         skipped_ref_key += 1;
                         continue;
@@ -277,9 +289,15 @@ async fn run_merge(pool: &PgPool, overwrite_race_candidates: bool) -> Result<(),
     }
     println!("  Race_candidates: {} new links", inserted);
     if overwrite_race_candidates {
-        println!("  Race_candidates overwritten (existing ref_key replaced by incoming): {}", overwritten_ref_key);
+        println!(
+            "  Race_candidates overwritten (existing ref_key replaced by incoming): {}",
+            overwritten_ref_key
+        );
     } else {
-        println!("  Race_candidates skipped (existing ref_key): {}", skipped_ref_key);
+        println!(
+            "  Race_candidates skipped (existing ref_key): {}",
+            skipped_ref_key
+        );
     }
 
     Ok(())
@@ -289,40 +307,9 @@ fn parse_state(s: Option<&String>) -> Option<State> {
     s.and_then(|s| State::from_str(s.trim()).ok())
 }
 
-/// Only treat as same person when home states match. If either is missing, we don't reject on state.
-fn same_home_state(stg: Option<State>, prod: Option<State>) -> bool {
-    match (stg, prod) {
-        (Some(a), Some(b)) => a == b,
-        _ => true,
-    }
-}
-
-/// True if slugs are equal or one is the other with a numeric suffix (e.g. "nameslug" and "nameslug-1", or "nameslug-2" and "nameslug").
-fn same_slug_or_increment(a: &str, b: &str) -> bool {
-    if a == b {
-        return true;
-    }
-    let suffix_is_numeric = |s: &str| s.chars().all(|c| c.is_ascii_digit()) && !s.is_empty();
-    // a is "b-N"?
-    if a.len() > b.len() + 1 && a.starts_with(b) && a.as_bytes()[b.len()] == b'-' {
-        if suffix_is_numeric(&a[b.len() + 1..]) {
-            return true;
-        }
-    }
-    // b is "a-N"?
-    if b.len() > a.len() + 1 && b.starts_with(a) && b.as_bytes()[a.len()] == b'-' {
-        if suffix_is_numeric(&b[a.len() + 1..]) {
-            return true;
-        }
-    }
-    false
-}
-
 /// If slug has form "base-N" (N numeric), return Some(base); else None.
 fn base_slug_if_increment(slug: &str) -> Option<String> {
-    let Some(dash_pos) = slug.rfind('-') else {
-        return None;
-    };
+    let dash_pos = slug.rfind('-')?;
     let suffix = &slug[dash_pos + 1..];
     if suffix.chars().all(|c| c.is_ascii_digit()) && !suffix.is_empty() {
         Some(slug[..dash_pos].to_string())
@@ -461,6 +448,7 @@ async fn update_matched_politician_from_staging(
             None
         },
         official_website_url: None,
+        ballotpedia_url: None,
         campaign_website_url: stg.campaign_website_url.clone(),
         facebook_url: None,
         twitter_url: None,
@@ -941,7 +929,8 @@ async fn resolve_or_upsert_politician(
     // for each test email, phone, address;
     // if any match → update existing politician and record to helper tables
     // else insert (and record to inserted_politicians_with_same_slug only when we had slug candidates)
-    let base_slug: String = base_slug_if_increment(&stg.slug).unwrap_or_else(|| stg.slug.to_string());
+    let base_slug: String =
+        base_slug_if_increment(&stg.slug).unwrap_or_else(|| stg.slug.to_string());
     let candidates: Vec<(uuid::Uuid, String, Option<State>, Option<uuid::Uuid>, Option<String>, Option<String>)> = sqlx::query_as(
         r#"SELECT id, slug, home_state AS "home_state:State", residence_address_id, email, phone FROM politician WHERE slug = $1 OR slug LIKE $1 || '-%'"#,
     )
@@ -963,8 +952,10 @@ async fn resolve_or_upsert_politician(
     let mut updated: Vec<(uuid::Uuid, &'static str)> = Vec::new();
 
     // If no matching slugs, skip to insert incoming politician
-    
-    for (id, prod_slug, _prod_home_state, prod_residence_address_id, prod_email, prod_phone) in &candidates {
+
+    for (id, prod_slug, _prod_home_state, prod_residence_address_id, prod_email, prod_phone) in
+        &candidates
+    {
         // If slug + flagged, treat as same person without requiring email/phone/address match
         if stg.treat_exact_slug_as_same_person && stg.slug == *prod_slug {
             apply_match_and_record(
@@ -1122,6 +1113,7 @@ async fn resolve_or_upsert_politician(
         thumbnail_image_url: None,
         assets: stg.assets.clone(),
         official_website_url: None,
+        ballotpedia_url: None,
         campaign_website_url: stg.campaign_website_url.clone(),
         facebook_url: None,
         twitter_url: None,

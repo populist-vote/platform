@@ -28,7 +28,9 @@ async fn main() {
     match tx_candidate_web_scrape::run(&pool.connection, limit).await {
         Ok(()) => {
             println!("\n✓ Scrape completed successfully.");
-            println!("Review staging: SELECT * FROM ingest_staging.stg_tx_scraped_us_house_candidates;");
+            println!(
+                "Review staging: SELECT * FROM ingest_staging.stg_tx_scraped_us_house_candidates;"
+            );
         }
         Err(e) => {
             eprintln!("\n✗ Scrape failed: {}", e);

@@ -15,6 +15,7 @@ scrapers = { path = "../scrapers" }
 tokio = { version = "1.21.1", features = ["full"] }
 async-graphql = { version = "7.0.3", features = ["apollo_tracing"] }
 serde_json = "1.0.68"
+serde = { version = "1.0", features = ["derive"] }
 jsonwebtoken = "7.2.0"
 time = "0.3.36"
 dotenv = "*"
@@ -30,7 +31,7 @@ tower-http = { version = "0.5.2", features = ["cors"] }
 tower-cookies = { version = "0.10.0" }
 http = "0.2.8"
 tokio-cron-scheduler = "0.9.4"
-uuid = "1.7.0"
+uuid = { version = "1.7.0", features = ["v4"] }
 regex = "1.10.6"
 reqwest = "0.12.7"
 slugify = "0.1.0"
@@ -44,3 +45,8 @@ axum-prometheus = "0.8.0"
 lazy_static = "1.5.0"
 async-trait = "0.1.88"
 rustls = "0.23.31"
+strum = "0.22.0"
+
+[dev-dependencies]
+http-body-util = "0.1"
+tower = { version = "0.5", features = ["util"] }

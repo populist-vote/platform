@@ -332,7 +332,7 @@ async fn insert_staging_office(
     .bind(&office.title)
     .bind(&office.subtitle)
     .bind(&office.subtitle_short)
-    .bind(office.office_type.as_ref().map(|o| o.as_str()))
+    .bind(office.office_type.as_deref())
     .bind(office.chamber.map(|c| format!("{:?}", c)))
     .bind(office.district_type.map(|d| format!("{:?}", d)))
     .bind(format!("{:?}", office.political_scope))
@@ -405,7 +405,7 @@ async fn insert_staging_politician(
     .bind(&politician.tiktok_url)
     .bind(&politician.email)
     .bind(&politician.phone)
-    .bind(&politician.votesmart_candidate_id)
+    .bind(politician.votesmart_candidate_id)
     .bind(&politician.votesmart_candidate_bio)
     .bind(&politician.votesmart_candidate_ratings)
     .bind(politician.legiscan_people_id)
@@ -520,18 +520,18 @@ fn process_office(filing: &CandidateFiling) -> Result<Office, Box<dyn Error>> {
     let title = extractors::mn::mn_office::extract_office_title(office_title)
         .ok_or("Failed to extract office title")?;
     let chamber = extractors::mn::mn_office::extract_office_chamber(office_title);
-    let county_id_int = filing.county_id.as_ref().and_then(|id| id.parse::<i32>().ok());
-    
+    let county_id_int = filing
+        .county_id
+        .as_ref()
+        .and_then(|id| id.parse::<i32>().ok());
+
     // Extract district_type and election_scope first (required for political_scope)
-    let district_type = extractors::mn::mn_office::extract_office_district_type(
-        office_title,
-        county_id_int,
-    );
-    let election_scope = extractors::mn::mn_office::extract_office_election_scope(
-        office_title,
-        county_id_int,
-    ).ok_or("Failed to extract election scope")?;
-    
+    let district_type =
+        extractors::mn::mn_office::extract_office_district_type(office_title, county_id_int);
+    let election_scope =
+        extractors::mn::mn_office::extract_office_election_scope(office_title, county_id_int)
+            .ok_or("Failed to extract election scope")?;
+
     // Extract political_scope using election_scope, name, and district_type
     let political_scope = extractors::mn::mn_office::extract_office_political_scope(
         name.as_deref(),
@@ -615,8 +615,11 @@ async fn process_politician(
     filing: &CandidateFiling,
 ) -> Result<Politician, Box<dyn Error>> {
     let office_title = filing.office_title.as_deref().unwrap_or("");
-    let candidate_name = filing.candidate_name.as_ref().ok_or("Missing candidate name")?;
-    
+    let candidate_name = filing
+        .candidate_name
+        .as_ref()
+        .ok_or("Missing candidate name")?;
+
     // Generate politician slug
     let slug = generators::politician::PoliticianSlugGenerator::new(candidate_name).generate();
 
@@ -628,7 +631,7 @@ async fn process_politician(
         Some(candidate_name),
     )
     .generate();
-    
+
     // Resolve party_id from production party table
     // If no party_abbreviation or empty, use "UN" (unaffiliated)
     let fec_code = if let Some(party_abbrev) = &filing.party_abbreviation {
@@ -724,8 +727,8 @@ fn process_race(
     race_type: &str,
 ) -> Result<Race, Box<dyn Error>> {
     // Hardcoded election ID for 2025 General Election
-    let election_id = Uuid::parse_str("a81f4a62-69d6-48f9-b704-c0151a42b8c8")
-        .expect("Invalid election UUID");
+    let election_id =
+        Uuid::parse_str("a81f4a62-69d6-48f9-b704-c0151a42b8c8").expect("Invalid election UUID");
 
     // Extract if this is a special election
     let is_special_election = filing
@@ -763,7 +766,8 @@ fn process_race(
         is_special_election,
         party,
         ELECTION_YEAR,
-    ).generate();
+    )
+    .generate();
 
     // Create race record: use resolved office_id from stg_mn_offices if present, otherwise office.id
     let resolved_office_id = office_id.unwrap_or(office.id);

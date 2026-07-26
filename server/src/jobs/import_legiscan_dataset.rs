@@ -117,7 +117,7 @@ pub async fn run(params: ImportSessionDataParams) -> Result<(), Box<dyn Error>> 
         new_bills.len().to_string().bright_green().bold()
     );
 
-    for (_, bill) in new_bills.iter() {
+    for bill in new_bills.values() {
         let legiscan_last_action = match bill.history.last() {
             Some(action) => action,
             None => {
@@ -131,8 +131,8 @@ pub async fn run(params: ImportSessionDataParams) -> Result<(), Box<dyn Error>> 
             id: None,
             slug: Some(slugify!(&format_args!(
                 "{}{}{}",
-                &bill.state.clone(),
-                &bill.bill_number,
+                bill.state.clone(),
+                bill.bill_number,
                 format_args!("-{}", params.year) // Using params.year instead of hardcoded year
             )
             .to_string())),

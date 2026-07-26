@@ -15,8 +15,8 @@ use csv::{ReaderBuilder, StringRecord};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use roxmltree::Document;
-use sqlx::PgPool;
 use slugify::slugify;
+use sqlx::PgPool;
 
 use crate::extractors::politician;
 use crate::extractors::tx::tx_office::{extract_office_district, extract_office_seat};
@@ -49,7 +49,9 @@ pub struct StgTxResultRow {
     pub source_file: Option<String>,
 }
 
-pub async fn ensure_staging_table(pool: &PgPool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+pub async fn ensure_staging_table(
+    pool: &PgPool,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     sqlx::query("CREATE SCHEMA IF NOT EXISTS ingest_staging")
         .execute(pool)
         .await?;
@@ -93,19 +95,24 @@ pub fn list_tx_sos_xml_files() -> Result<Vec<PathBuf>, Box<dyn std::error::Error
     let mut files: Vec<_> = fs::read_dir(&dir)?
         .filter_map(|e| e.ok())
         .map(|e| e.path())
-        .filter(|p| p.extension().map_or(false, |e| e == "xml"))
+        .filter(|p| p.extension().is_some_and(|e| e == "xml"))
         .collect();
     files.sort();
     Ok(files)
 }
 
 fn attr_parse_u64(node: &roxmltree::Node, name: &str) -> Option<u64> {
-    node.attribute(name).and_then(|s| u64::from_str(s.trim()).ok())
+    node.attribute(name)
+        .and_then(|s| u64::from_str(s.trim()).ok())
 }
 
 fn normalize_candidate_name(raw: &str) -> Option<String> {
     let without_incumbent = raw.trim().replace("(I)", "").trim().to_string();
-    Some(politician::strip_accents(&without_incumbent).trim().to_string())
+    Some(
+        politician::strip_accents(&without_incumbent)
+            .trim()
+            .to_string(),
+    )
 }
 
 fn parse_party_from_election_name(name: &str) -> Option<String> {
@@ -133,7 +140,10 @@ fn parse_year_from_election_date(date: Option<&str>) -> Option<i32> {
     year_str.parse().ok()
 }
 
-pub fn parse_tx_sos_xml(content: &str, source_file: &str) -> Result<Vec<StgTxResultRow>, Box<dyn std::error::Error + Send + Sync>> {
+pub fn parse_tx_sos_xml(
+    content: &str,
+    source_file: &str,
+) -> Result<Vec<StgTxResultRow>, Box<dyn std::error::Error + Send + Sync>> {
     let doc = Document::parse(content)?;
     let root = doc.root_element();
     let mut rows = Vec::new();
@@ -143,7 +153,10 @@ pub fn parse_tx_sos_xml(content: &str, source_file: &str) -> Result<Vec<StgTxRes
         let party = parse_party_from_election_name(election_name);
         let race_type = parse_race_type_from_election_name(election_name);
         let election_year = parse_year_from_election_date(election_date);
-        for race in election_result.children().filter(|n| n.has_tag_name("Race")) {
+        for race in election_result
+            .children()
+            .filter(|n| n.has_tag_name("Race"))
+        {
             let office_name = race.attribute("name").map(|s| s.trim().to_string());
             let office_key = race.attribute("key").map(String::from);
             let precincts_reporting = race
@@ -456,7 +469,7 @@ fn find_matching_county_office(normalized_contest_name: &str) -> Option<&'static
             .any(|s| contest_lower.contains(&s.to_lowercase()));
         let matched_pattern = rule
             .match_pattern
-            .map_or(false, |pat| rule_pattern_matches(&contest_lower, pat));
+            .is_some_and(|pat| rule_pattern_matches(&contest_lower, pat));
         if !matched_substring && !matched_pattern {
             continue;
         }
@@ -492,7 +505,7 @@ fn remove_substring_ignore_ascii_case(s: &str, phrase: &str) -> String {
 fn normalize_contest_name(s: &str) -> String {
     let mut s: String = remove_substring_ignore_ascii_case(s.trim(), "unexpired term")
         .trim()
-        .trim_end_matches(|c| c == ' ' || c == '-')
+        .trim_end_matches([' ', '-'])
         .into();
     let suffix1 = " - Vote for none or one";
     if s.len() >= suffix1.len() && s[s.len() - suffix1.len()..].eq_ignore_ascii_case(suffix1) {
@@ -500,27 +513,36 @@ fn normalize_contest_name(s: &str) -> String {
     }
     let suffix_rep = " - Republican Party";
     let suffix_dem = " - Democratic Party";
-    if s.len() >= suffix_rep.len() && s[s.len() - suffix_rep.len()..].eq_ignore_ascii_case(suffix_rep) {
+    if s.len() >= suffix_rep.len()
+        && s[s.len() - suffix_rep.len()..].eq_ignore_ascii_case(suffix_rep)
+    {
         s = s[..s.len() - suffix_rep.len()].trim_end().to_string();
-    } else if s.len() >= suffix_dem.len() && s[s.len() - suffix_dem.len()..].eq_ignore_ascii_case(suffix_dem) {
+    } else if s.len() >= suffix_dem.len()
+        && s[s.len() - suffix_dem.len()..].eq_ignore_ascii_case(suffix_dem)
+    {
         s = s[..s.len() - suffix_dem.len()].trim_end().to_string();
     }
     let suffix_d = " (D)";
     let suffix_r = " (R)";
     if s.len() >= suffix_d.len() && s[s.len() - suffix_d.len()..].eq_ignore_ascii_case(suffix_d) {
         s = s[..s.len() - suffix_d.len()].trim_end().to_string();
-    } else if s.len() >= suffix_r.len() && s[s.len() - suffix_r.len()..].eq_ignore_ascii_case(suffix_r) {
+    } else if s.len() >= suffix_r.len()
+        && s[s.len() - suffix_r.len()..].eq_ignore_ascii_case(suffix_r)
+    {
         s = s[..s.len() - suffix_r.len()].trim_end().to_string();
     }
     let prefix_rep = "REP - ";
     let prefix_dem = "DEM - ";
     if s.len() >= prefix_rep.len() && s[..prefix_rep.len()].eq_ignore_ascii_case(prefix_rep) {
         s = s[prefix_rep.len()..].trim_start().to_string();
-    } else if s.len() >= prefix_dem.len() && s[..prefix_dem.len()].eq_ignore_ascii_case(prefix_dem) {
+    } else if s.len() >= prefix_dem.len() && s[..prefix_dem.len()].eq_ignore_ascii_case(prefix_dem)
+    {
         s = s[prefix_dem.len()..].trim_start().to_string();
     }
     let suffix_vote1 = "(Vote for 1)";
-    if s.len() >= suffix_vote1.len() && s[s.len() - suffix_vote1.len()..].eq_ignore_ascii_case(suffix_vote1) {
+    if s.len() >= suffix_vote1.len()
+        && s[s.len() - suffix_vote1.len()..].eq_ignore_ascii_case(suffix_vote1)
+    {
         s = s[..s.len() - suffix_vote1.len()].trim_end().to_string();
     }
     s
@@ -528,19 +550,14 @@ fn normalize_contest_name(s: &str) -> String {
 
 #[derive(Debug, Clone)]
 struct ParsedContestName {
-    office_name: String,
     district: Option<String>,
     seat: Option<String>,
 }
 
-fn parse_contest_name_for_office(rule: &CountyOfficeRule, contest_name: &str) -> ParsedContestName {
+fn parse_contest_name_for_office(contest_name: &str) -> ParsedContestName {
     let (seat, stripped) = extract_office_seat(contest_name);
     let district = extract_office_district(&stripped, None);
-    ParsedContestName {
-        office_name: rule.populist_office_name.to_string(),
-        district,
-        seat,
-    }
+    ParsedContestName { district, seat }
 }
 
 fn push_slug(parts: &mut Vec<String>, s: &str) {
@@ -627,7 +644,9 @@ fn build_ref_key_for_county_race(
             push_slug(&mut parts, office_name);
             push_slug(&mut parts, candidate);
         }
-        "Judge - County Civil Court at Law" | "Judge - County Court at Law" | "Judge - County Criminal Court of Appeals" => {
+        "Judge - County Civil Court at Law"
+        | "Judge - County Court at Law"
+        | "Judge - County Criminal Court of Appeals" => {
             push_slug(&mut parts, county);
             push_slug(&mut parts, office_name);
             if let Some(d) = district {
@@ -757,8 +776,6 @@ struct ClarityCsvRow {
     party_name: Option<String>,
     #[serde(rename = "total votes")]
     total_votes: Option<i64>,
-    #[serde(rename = "ballots cast")]
-    ballots_cast: Option<i64>,
     #[serde(rename = "percent of votes")]
     percent_of_votes: Option<String>,
     #[serde(rename = "num Precinct total")]
@@ -768,7 +785,10 @@ struct ClarityCsvRow {
     county: Option<String>,
 }
 
-fn total_votes_from_percent(candidate_votes: Option<i64>, percent_of_votes: Option<&str>) -> Option<i64> {
+fn total_votes_from_percent(
+    candidate_votes: Option<i64>,
+    percent_of_votes: Option<&str>,
+) -> Option<i64> {
     let votes = candidate_votes?;
     let pct_str = percent_of_votes?.trim().trim_end_matches('%').trim();
     if pct_str.is_empty() {
@@ -810,7 +830,7 @@ pub fn parse_clarity_csv(
             Some(r) => r,
             None => continue,
         };
-        let parsed = parse_contest_name_for_office(rule, &normalized_contest);
+        let parsed = parse_contest_name_for_office(&normalized_contest);
         let county_name = raw.county.as_deref().filter(|s| !s.trim().is_empty());
         let candidate_name = raw
             .choice_name
@@ -826,7 +846,8 @@ pub fn parse_clarity_csv(
             raw.party_name.as_deref(),
             year,
         );
-        let total_votes = total_votes_from_percent(raw.total_votes, raw.percent_of_votes.as_deref());
+        let total_votes =
+            total_votes_from_percent(raw.total_votes, raw.percent_of_votes.as_deref());
         rows.push(StgTxClarityResultRow {
             office_name: Some(rule.populist_office_name.to_string()),
             office_key: None,
@@ -970,7 +991,7 @@ pub fn parse_hart_csv(
             Some(r) => r,
             None => continue,
         };
-        let parsed = parse_contest_name_for_office(rule, &normalized_contest);
+        let parsed = parse_contest_name_for_office(&normalized_contest);
         let county_name = county_idx
             .and_then(|i| record.get(i))
             .map(|s| s.trim())
@@ -983,12 +1004,12 @@ pub fn parse_hart_csv(
             .map(|s| s.trim())
             .filter(|s| !s.is_empty())
             .map(|s| s.to_string());
-        let votes_for_candidate = total_idx.and_then(|i| record.get(i)).and_then(|s| {
-            s.trim().replace(',', "").parse::<i64>().ok()
-        });
-        let total_votes = total_cast_votes_idx.and_then(|i| record.get(i)).and_then(|s| {
-            s.trim().replace(',', "").parse::<i64>().ok()
-        });
+        let votes_for_candidate = total_idx
+            .and_then(|i| record.get(i))
+            .and_then(|s| s.trim().replace(',', "").parse::<i64>().ok());
+        let total_votes = total_cast_votes_idx
+            .and_then(|i| record.get(i))
+            .and_then(|s| s.trim().replace(',', "").parse::<i64>().ok());
         let precincts_reporting = precincts_counted_idx
             .and_then(|i| record.get(i))
             .and_then(|s| s.trim().replace(',', "").parse::<i64>().ok());
@@ -1115,8 +1136,6 @@ struct OtherCsvRow {
     votes_for_candidate: Option<i64>,
     #[serde(rename = "total votes")]
     total_votes: Option<i64>,
-    #[serde(rename = "ballots cast")]
-    ballots_cast: Option<i64>,
     #[serde(rename = "percent of votes")]
     percent_of_votes: Option<String>,
     #[serde(rename = "num Precinct total")]
@@ -1150,7 +1169,7 @@ pub fn parse_other_csv(
             Some(r) => r,
             None => continue,
         };
-        let parsed = parse_contest_name_for_office(rule, &normalized_contest);
+        let parsed = parse_contest_name_for_office(&normalized_contest);
         let county_name = raw.county.as_deref().filter(|s| !s.trim().is_empty());
         let candidate_name = raw
             .choice_name
@@ -1166,8 +1185,9 @@ pub fn parse_other_csv(
             raw.party_name.as_deref(),
             year,
         );
-        let total_votes = raw.total_votes
-            .or_else(|| total_votes_from_percent(raw.votes_for_candidate, raw.percent_of_votes.as_deref()));
+        let total_votes = raw.total_votes.or_else(|| {
+            total_votes_from_percent(raw.votes_for_candidate, raw.percent_of_votes.as_deref())
+        });
         rows.push(StgTxOtherResultRow {
             office_name: Some(rule.populist_office_name.to_string()),
             office_key: None,

@@ -46,7 +46,9 @@ pub struct MergeStats {
 
 /// Ensure ingest_staging schema and stg_tx_results_sos_unmatched table exist.
 /// Drops the unmatched table each run so each run starts with an empty table.
-async fn ensure_unmatched_table(pool: &PgPool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn ensure_unmatched_table(
+    pool: &PgPool,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     sqlx::query("CREATE SCHEMA IF NOT EXISTS ingest_staging")
         .execute(pool)
         .await?;
@@ -80,6 +82,7 @@ async fn ensure_unmatched_table(pool: &PgPool) -> Result<(), Box<dyn std::error:
 /// - insert_unmatched: INSERT into unmatched table for rows with no race_candidates.ref_key match.
 /// - matched: source INNER JOIN race_candidates.
 /// - When !dry_run: UPDATE race_candidates and race FROM matched.
+///
 /// Returns stats from the final SELECT.
 async fn merge_staging_to_production_cte(
     pool: &PgPool,
@@ -114,8 +117,7 @@ SELECT
         )
     } else {
         (
-            format!(
-                r#",
+            r#",
 update_race_candidates AS (
   UPDATE race_candidates rc
   SET votes = COALESCE(m.votes_for_candidate::integer, rc.votes)
@@ -132,7 +134,7 @@ update_race AS (
   WHERE r.id = m.race_id
   RETURNING r.id
 )"#
-            ),
+            .to_string(),
             r#"
 SELECT
   (SELECT count(*)::bigint FROM source) AS staging_rows,
@@ -164,10 +166,7 @@ matched AS (
 ){}
 {}
 "#,
-        source_cte,
-        unmatched_table,
-        update_ctes,
-        stats_select
+        source_cte, unmatched_table, update_ctes, stats_select
     );
 
     let row: MergeStatsRow = sqlx::query_as(&query).fetch_one(pool).await?;
@@ -181,7 +180,9 @@ matched AS (
 }
 
 /// Ensure ingest_staging schema and stg_tx_results_clarity_unmatched table exist.
-async fn ensure_unmatched_table_clarity(pool: &PgPool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn ensure_unmatched_table_clarity(
+    pool: &PgPool,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     sqlx::query("CREATE SCHEMA IF NOT EXISTS ingest_staging")
         .execute(pool)
         .await?;
@@ -211,7 +212,9 @@ async fn ensure_unmatched_table_clarity(pool: &PgPool) -> Result<(), Box<dyn std
 }
 
 /// Ensure ingest_staging schema and stg_tx_results_hart_unmatched table exist.
-async fn ensure_unmatched_table_hart(pool: &PgPool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn ensure_unmatched_table_hart(
+    pool: &PgPool,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     sqlx::query("CREATE SCHEMA IF NOT EXISTS ingest_staging")
         .execute(pool)
         .await?;
@@ -241,7 +244,9 @@ async fn ensure_unmatched_table_hart(pool: &PgPool) -> Result<(), Box<dyn std::e
 }
 
 /// Ensure ingest_staging schema and stg_tx_results_other_unmatched table exist.
-async fn ensure_unmatched_table_other(pool: &PgPool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn ensure_unmatched_table_other(
+    pool: &PgPool,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     sqlx::query("CREATE SCHEMA IF NOT EXISTS ingest_staging")
         .execute(pool)
         .await?;
@@ -275,6 +280,7 @@ async fn ensure_unmatched_table_other(pool: &PgPool) -> Result<(), Box<dyn std::
 /// - Rows with no matching ref_key are recorded in ingest_staging.stg_tx_results_sos_unmatched.
 /// - When dry_run is true, no updates are written to production (race_candidates, race), but unmatched rows are still inserted into stg_tx_results_sos_unmatched.
 /// - When test_merge is true, only rows with office_name = "U. S. Senator" are processed.
+///
 /// Uses a single CTE-based SQL (like MN SoS results) instead of a per-row loop.
 pub async fn merge_stg_tx_results_sos_to_production(
     pool: &PgPool,
@@ -352,7 +358,9 @@ pub async fn merge_stg_tx_results_other_to_production(
 }
 
 /// Ensure ingest_staging schema and stg_tx_results_sos_civix_unmatched table exist.
-async fn ensure_unmatched_table_civix(pool: &PgPool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn ensure_unmatched_table_civix(
+    pool: &PgPool,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     sqlx::query("CREATE SCHEMA IF NOT EXISTS ingest_staging")
         .execute(pool)
         .await?;

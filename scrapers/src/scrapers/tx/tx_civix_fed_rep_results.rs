@@ -19,7 +19,8 @@ use thirtyfour::prelude::*;
 use crate::generators::politician::PoliticianRefKeyGenerator;
 
 static RE_NORMALIZE_RACE_STAR: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)star_rate").unwrap());
-static RE_NORMALIZE_RACE_CLICK: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)click for contest details").unwrap());
+static RE_NORMALIZE_RACE_CLICK: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(?i)click for contest details").unwrap());
 
 /// Set to true to print debug info to stderr (options count, table row count, etc.).
 const DEBUG_SCRAPE: bool = true;
@@ -142,7 +143,10 @@ async fn select_election_in_modal(
         Ok(e) => e,
         Err(_) => {
             debug("modal: no mat-form-field.mat-mdc-form-field-type-mat-select found, trying mat-form-field");
-            driver.find_all(By::Css("mat-form-field")).await.unwrap_or_default()
+            driver
+                .find_all(By::Css("mat-form-field"))
+                .await
+                .unwrap_or_default()
         }
     };
     debug(&format!("modal: {} mat-form-field(s)", elems.len()));
@@ -159,7 +163,11 @@ async fn select_election_in_modal(
             .collect::<Vec<_>>()
             .join(" ");
         let label_lower = label.to_lowercase();
-        let label_display = if label.is_empty() { "?" } else { label.as_str() };
+        let label_display = if label.is_empty() {
+            "?"
+        } else {
+            label.as_str()
+        };
         debug(&format!("form-field {} (\"{}\")", i, label_display));
         if label_lower.contains(&ident_lower) {
             election_dropdown = Some((i, form_field));
@@ -170,12 +178,18 @@ async fn select_election_in_modal(
     let (i, form_field) = match election_dropdown {
         Some(p) => p,
         None => {
-            debug(&format!("no mat-form-field with \"{}\" found", dropdown_identifier));
+            debug(&format!(
+                "no mat-form-field with \"{}\" found",
+                dropdown_identifier
+            ));
             return Ok(());
         }
     };
 
-    debug(&format!("opening dropdown (form-field index {}, identifier \"{}\")", i, dropdown_identifier));
+    debug(&format!(
+        "opening dropdown (form-field index {}, identifier \"{}\")",
+        i, dropdown_identifier
+    ));
 
     let elem_value = match form_field.to_json() {
         Ok(v) => v,
@@ -191,8 +205,14 @@ async fn select_election_in_modal(
         var cls = (el.className && typeof el.className === 'string') ? el.className : '';
         return tag + ' class=' + cls.substring(0, 100);
     "#;
-    if let Ok(v) = driver.execute(describe_el_js, vec![elem_value.clone()]).await {
-        let desc: String = v.convert::<Option<String>>().unwrap_or(None).unwrap_or_else(|| "?".into());
+    if let Ok(v) = driver
+        .execute(describe_el_js, vec![elem_value.clone()])
+        .await
+    {
+        let desc: String = v
+            .convert::<Option<String>>()
+            .unwrap_or(None)
+            .unwrap_or_else(|| "?".into());
         debug(&format!("element to click: {}", desc));
     }
 
@@ -245,7 +265,12 @@ async fn select_election_in_modal(
     };
 
     if DEBUG_SCRAPE {
-        let preview: String = options.iter().take(5).cloned().collect::<Vec<_>>().join(" | ");
+        let preview: String = options
+            .iter()
+            .take(5)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join(" | ");
         let more = if options.len() > 5 { " ..." } else { "" };
         debug(&format!("options ({}): {}{}", options.len(), preview, more));
     }
@@ -255,7 +280,10 @@ async fn select_election_in_modal(
         click_update_election(driver).await?;
     } else {
         let _ = form_field.click().await;
-        debug(&format!("option \"{}\" not found in dropdown", option_to_select));
+        debug(&format!(
+            "option \"{}\" not found in dropdown",
+            option_to_select
+        ));
     }
     Ok(())
 }
@@ -283,7 +311,10 @@ async fn click_option_by_text(
             return Ok(true);
         }
     }
-    let opts = driver.find_all(By::Css("[role='option']")).await.unwrap_or_default();
+    let opts = driver
+        .find_all(By::Css("[role='option']"))
+        .await
+        .unwrap_or_default();
     for el in opts {
         let option_text = el.text().await.unwrap_or_default();
         if normalize_for_match(&option_text).eq_ignore_ascii_case(&target) {
@@ -295,7 +326,9 @@ async fn click_option_by_text(
 }
 
 /// Click "Update Election" to apply the selection and load results (modal closes, page loads with race="All", Federal Offices tab).
-async fn click_update_election(driver: &WebDriver) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn click_update_election(
+    driver: &WebDriver,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Prefer exact "Update Election" so we don't click a different Update button.
     let xpaths = [
         "//button[contains(normalize-space(.), 'Update Election')]",
@@ -340,7 +373,10 @@ async fn capture_visible_race_offices(
     table_rows: &mut Vec<Vec<String>>,
     seen_race_choice: &mut HashSet<(String, String)>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let office_elems = driver.find_all(By::Css("app-race-office")).await.unwrap_or_default();
+    let office_elems = driver
+        .find_all(By::Css("app-race-office"))
+        .await
+        .unwrap_or_default();
     for office_el in office_elems {
         let race_name = match office_el.find(By::Css("mat-card > *")).await {
             Ok(el) => el.text().await.unwrap_or_default(),
@@ -410,7 +446,11 @@ fn parse_table_rows_to_result_rows(table_rows: &[Vec<String>]) -> Vec<ResultRow>
             "tx-primaries",
             2026,
             &race,
-            if choice.is_empty() { None } else { Some(choice.as_str()) },
+            if choice.is_empty() {
+                None
+            } else {
+                Some(choice.as_str())
+            },
         )
         .generate();
         rows.push(ResultRow {
@@ -429,7 +469,11 @@ fn parse_table_rows_to_result_rows(table_rows: &[Vec<String>]) -> Vec<ResultRow>
             r.total_votes = tot;
         }
     }
-    let races_needing_sum: HashSet<String> = rows.iter().filter(|r| r.total_votes == 0).map(|r| r.race.clone()).collect();
+    let races_needing_sum: HashSet<String> = rows
+        .iter()
+        .filter(|r| r.total_votes == 0)
+        .map(|r| r.race.clone())
+        .collect();
     let sums_by_race: std::collections::HashMap<String, u64> = rows
         .iter()
         .filter(|r| races_needing_sum.contains(&r.race))
@@ -484,7 +528,10 @@ async fn click_tab_by_label(
             if let Ok(span_json) = span_el.to_json() {
                 if driver.execute(click_js, vec![span_json]).await.is_ok() {
                     if DEBUG_SCRAPE {
-                        eprintln!("[civix] click_tab_by_label: clicked span with text \"{}\"", normalize_tab_text(&text));
+                        eprintln!(
+                            "[civix] click_tab_by_label: clicked span with text \"{}\"",
+                            normalize_tab_text(&text)
+                        );
                     }
                     tokio::time::sleep(Duration::from_millis(400)).await;
                     return Ok(true);
@@ -501,13 +548,19 @@ async fn click_tab_by_label(
         };
         let tab_count = tabs.len();
         if DEBUG_SCRAPE && tab_count == 0 {
-            eprintln!("[civix] click_tab_by_label: selector {} found 0 tabs", selector);
+            eprintln!(
+                "[civix] click_tab_by_label: selector {} found 0 tabs",
+                selector
+            );
         }
         for tab in tabs {
             let text = tab.text().await.unwrap_or_default();
             let text_norm = normalize_tab_text(&text);
             if DEBUG_SCRAPE && !text_norm.is_empty() {
-                eprintln!("[civix] click_tab_by_label: tab text (normalized) = \"{}\"", text_norm);
+                eprintln!(
+                    "[civix] click_tab_by_label: tab text (normalized) = \"{}\"",
+                    text_norm
+                );
             }
             if text_norm.contains(&label_norm) {
                 let tab_json = match tab.to_json() {
@@ -524,7 +577,10 @@ async fn click_tab_by_label(
                     return Ok(true);
                 }
                 if DEBUG_SCRAPE {
-                    eprintln!("[civix] click_tab_by_label: JS click failed for tab \"{}\"", text_norm);
+                    eprintln!(
+                        "[civix] click_tab_by_label: JS click failed for tab \"{}\"",
+                        text_norm
+                    );
                 }
             }
         }
@@ -548,7 +604,10 @@ pub async fn scrape_civix_one_election(
     } else {
         "Democratic"
     };
-    debug(&format!("scrape_civix_one_election: {} primary (fresh session)", election_name));
+    debug(&format!(
+        "scrape_civix_one_election: {} primary (fresh session)",
+        election_name
+    ));
 
     driver.goto(CIVIX_RACES_URL).await?;
     driver
@@ -601,7 +660,10 @@ pub async fn scrape_civix_one_election(
             tokio::time::sleep(Duration::from_millis(500)).await;
         }
 
-        let viewport = driver.find(By::Css("cdk-virtual-scroll-viewport")).await.ok();
+        let viewport = driver
+            .find(By::Css("cdk-virtual-scroll-viewport"))
+            .await
+            .ok();
         let viewport_json = viewport
             .as_ref()
             .and_then(|el| el.to_json().ok())
@@ -615,32 +677,53 @@ pub async fn scrape_civix_one_election(
                     .await
                     .ok()
                     .and_then(|v| v.convert::<JsonValue>().ok())
-                    .and_then(|j| {
+                    .map(|j| {
                         let obj = match &j {
                             JsonValue::Object(m) if m.contains_key("scrollHeight") => m,
-                            JsonValue::Object(m) => m.get("value").and_then(|v| v.as_object()).unwrap_or(m),
-                            _ => return Some(false),
+                            JsonValue::Object(m) => {
+                                m.get("value").and_then(|v| v.as_object()).unwrap_or(m)
+                            }
+                            _ => return false,
                         };
-                        let sh = obj.get("scrollHeight").and_then(|v| v.as_i64()).unwrap_or(0);
-                        let ch = obj.get("clientHeight").and_then(|v| v.as_i64()).unwrap_or(0);
+                        let sh = obj
+                            .get("scrollHeight")
+                            .and_then(|v| v.as_i64())
+                            .unwrap_or(0);
+                        let ch = obj
+                            .get("clientHeight")
+                            .and_then(|v| v.as_i64())
+                            .unwrap_or(0);
                         let st = obj.get("scrollTop").and_then(|v| v.as_i64()).unwrap_or(0);
-                        Some(st + ch >= sh && sh > 0)
+                        st + ch >= sh && sh > 0
                     })
                     .unwrap_or(false);
 
                 if at_bottom && step > 0 {
-                    debug(&format!("{} ({}): virtual scroll at bottom after {} steps", tab_label, election_name, step));
+                    debug(&format!(
+                        "{} ({}): virtual scroll at bottom after {} steps",
+                        tab_label, election_name, step
+                    ));
                     break;
                 }
                 if step >= MAX_VIRTUAL_SCROLL_STEPS {
-                    debug(&format!("{} ({}): virtual scroll hit max steps", tab_label, election_name));
+                    debug(&format!(
+                        "{} ({}): virtual scroll hit max steps",
+                        tab_label, election_name
+                    ));
                     break;
                 }
 
-                capture_visible_race_offices(driver, &mut table_rows, &mut seen_race_choice).await?;
+                capture_visible_race_offices(driver, &mut table_rows, &mut seen_race_choice)
+                    .await?;
 
                 let _ = driver
-                    .execute(scroll_js, vec![viewport_json.clone(), JsonValue::from(VIRTUAL_SCROLL_STEP_PX)])
+                    .execute(
+                        scroll_js,
+                        vec![
+                            viewport_json.clone(),
+                            JsonValue::from(VIRTUAL_SCROLL_STEP_PX),
+                        ],
+                    )
                     .await;
                 tokio::time::sleep(Duration::from_millis(SCROLL_WAIT_MS)).await;
                 step += 1;
@@ -648,11 +731,20 @@ pub async fn scrape_civix_one_election(
         } else {
             let n = table_rows.len();
             capture_visible_race_offices(driver, &mut table_rows, &mut seen_race_choice).await?;
-            debug(&format!("{} ({}): no viewport, single pass ({} new rows)", tab_label, election_name, table_rows.len() - n));
+            debug(&format!(
+                "{} ({}): no viewport, single pass ({} new rows)",
+                tab_label,
+                election_name,
+                table_rows.len() - n
+            ));
         }
     }
 
-    debug(&format!("table_rows count ({}): {}", election_name, table_rows.len()));
+    debug(&format!(
+        "table_rows count ({}): {}",
+        election_name,
+        table_rows.len()
+    ));
     let rows = parse_table_rows_to_result_rows(&table_rows);
     debug(&format!("{} rows parsed: {}", election_name, rows.len()));
     Ok(rows)
@@ -665,14 +757,26 @@ pub async fn scrape_civix_fed_rep_results(
     scrape_civix_one_election(driver, true).await
 }
 
-pub fn write_results_csv(rows: &[ResultRow], path: &std::path::Path) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+pub fn write_results_csv(
+    rows: &[ResultRow],
+    path: &std::path::Path,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
     let mut wtr = WriterBuilder::new().from_path(path)?;
-    wtr.write_record(&["ref_key", "Race", "Choice", "Party", "early_votes", "votes_for_candidate", "total_votes", "vote_pct"])?;
+    wtr.write_record([
+        "ref_key",
+        "Race",
+        "Choice",
+        "Party",
+        "early_votes",
+        "votes_for_candidate",
+        "total_votes",
+        "vote_pct",
+    ])?;
     for r in rows {
-        wtr.write_record(&[
+        wtr.write_record([
             &r.ref_key,
             &r.race,
             &r.choice,

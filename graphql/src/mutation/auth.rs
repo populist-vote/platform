@@ -360,19 +360,19 @@ impl AuthMutation {
                         let congressional_district = primary_result
                             .congressional_districts
                             .as_ref()
-                            .and_then(|cds| cds.get(0))
+                            .and_then(|cds| cds.first())
                             .map(|cd| cd.district_number.to_string());
 
                         let state_house_district = primary_result
                             .state_legislative_districts
                             .as_ref()
-                            .and_then(|sld| sld.house.get(0))
+                            .and_then(|sld| sld.house.first())
                             .map(|d| d.district_number.to_string());
 
                         let state_senate_district = primary_result
                             .state_legislative_districts
                             .as_ref()
-                            .and_then(|sld| sld.senate.get(0))
+                            .and_then(|sld| sld.senate.first())
                             .map(|d| d.district_number.to_string());
 
                         CreateUserWithProfileInput {

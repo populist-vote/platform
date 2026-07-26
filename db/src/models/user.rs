@@ -84,12 +84,14 @@ pub enum OrganizationRoleType {
     Copy,
     Eq,
     PartialEq,
+    Default,
     Enum,
     clap::ValueEnum,
 )]
 #[sqlx(type_name = "system_role_type", rename_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum SystemRoleType {
+    #[default]
     User,
     Staff,
     Superuser,
@@ -105,12 +107,6 @@ impl std::str::FromStr for SystemRoleType {
             "superuser" | "super_user" | "super-user" => Ok(SystemRoleType::Superuser),
             other => Err(format!("invalid system role: {}", other)),
         }
-    }
-}
-
-impl Default for SystemRoleType {
-    fn default() -> Self {
-        SystemRoleType::User
     }
 }
 

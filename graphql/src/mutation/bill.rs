@@ -47,8 +47,8 @@ impl BillMutation {
     async fn upsert_bill(&self, ctx: &Context<'_>, input: UpsertBillInput) -> Result<BillResult> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let new_record = Bill::upsert(&db_pool, &input).await?;
-        if input.arguments.is_some() {
-            handle_nested_arguments(&db_pool, new_record.id, input.arguments.unwrap()).await?;
+        if let Some(arguments) = input.arguments {
+            handle_nested_arguments(&db_pool, new_record.id, arguments).await?;
         }
         Ok(BillResult::from(new_record))
     }

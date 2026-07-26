@@ -81,13 +81,24 @@ fn test_create_temporary_username() {
 #[test]
 fn test_format_auth_cookie() {
     let token = "test";
+    let config = config::Config::default();
+    let before = chrono::Utc::now();
     let result = format_auth_cookie(TokenType::Access, token);
-    assert_eq!(
-        result,
-        format!(
-            "access_token=test; HttpOnly; SameSite=Lax; Secure; Domain=localhost; Expires={};",
-            (chrono::Utc::now() + chrono::Duration::try_days(30).unwrap())
-                .format("%a, %d %b %Y %T GMT")
-        )
+    let expected_prefix = format!(
+        "access_token=test; HttpOnly; SameSite={}; Secure; Domain={}; Expires=",
+        config.same_site, config.root_domain
     );
+    assert!(result.starts_with(&expected_prefix));
+    assert!(result.ends_with(" GMT;"));
+
+    let expires = result
+        .strip_prefix(&expected_prefix)
+        .and_then(|value| value.strip_suffix(';'))
+        .unwrap();
+    let expires = chrono::NaiveDateTime::parse_from_str(expires, "%a, %d %b %Y %T GMT")
+        .unwrap()
+        .and_utc();
+    let lifetime = expires - before;
+    assert!(lifetime >= chrono::Duration::try_minutes(14).unwrap());
+    assert!(lifetime <= chrono::Duration::try_minutes(15).unwrap());
 }

@@ -55,6 +55,7 @@ pub async fn send_slack_notification(
 }
 
 #[tokio::test]
+#[ignore = "requires a real SLACK_WEBHOOK_URL and sends an external notification"]
 async fn test_send_slack_notification_success() {
     dotenv::dotenv().ok();
     let title = "Test Notification";

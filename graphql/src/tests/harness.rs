@@ -1,27 +1,40 @@
 use std::net::SocketAddr;
+use std::str::FromStr;
 use std::time::Duration;
 
 use async_graphql::Variables;
 use auth::{create_random_token, create_temporary_username, AccessTokenClaims};
 use db::{AddressInput, CreateUserWithProfileInput};
 use jsonwebtoken::{Header, TokenData};
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::{cache::Cache, context::ApiContext, new_schema, SessionData};
 
-#[derive(Clone)]
 #[allow(dead_code)]
 pub struct TestHarness {
     pub pool: PgPool,
+    database_name: String,
+    admin_options: PgConnectOptions,
 }
 
 #[allow(dead_code)]
 impl TestHarness {
     /// Creates a new test harness with a fresh database
     pub async fn new() -> anyhow::Result<Self> {
+        dotenv::dotenv().ok();
+        let database_url = std::env::var("TEST_DATABASE_URL")
+            .or_else(|_| std::env::var("DATABASE_URL"))
+            .unwrap_or_else(|_| "postgres://localhost/postgres".to_string());
+        let connect_options = PgConnectOptions::from_str(&database_url)?;
+
         // Set up fresh test database
-        let admin_pool = PgPool::connect("postgres://localhost/postgres").await?;
+        let admin_options = connect_options.clone().database("postgres");
+        let admin_pool = PgPoolOptions::new()
+            .max_connections(1)
+            .connect_with(admin_options.clone())
+            .await?;
         let db_name = format!("populist_test_{}", Uuid::new_v4().simple());
         sqlx::query(&format!("DROP DATABASE IF EXISTS {} WITH (FORCE)", db_name))
             .execute(&admin_pool)
@@ -30,15 +43,37 @@ impl TestHarness {
             .execute(&admin_pool)
             .await?;
 
-        let pool = PgPool::connect(&format!("postgres://localhost/{}", db_name)).await?;
+        let pool = PgPoolOptions::new()
+            .connect_with(connect_options.database(&db_name))
+            .await?;
 
         // Run migrations
         sqlx::migrate!("../db/migrations").run(&pool).await?;
 
-        let harness = Self { pool };
+        let harness = Self {
+            pool,
+            database_name: db_name,
+            admin_options,
+        };
         harness.clear_tables().await?;
 
         Ok(harness)
+    }
+
+    pub async fn cleanup(self) -> anyhow::Result<()> {
+        self.pool.close().await;
+        let admin_pool = PgPoolOptions::new()
+            .max_connections(1)
+            .connect_with(self.admin_options)
+            .await?;
+        sqlx::query(&format!(
+            "DROP DATABASE IF EXISTS {} WITH (FORCE)",
+            self.database_name
+        ))
+        .execute(&admin_pool)
+        .await?;
+        admin_pool.close().await;
+        Ok(())
     }
 
     /// Creates a new user with the given permissions and returns their ID

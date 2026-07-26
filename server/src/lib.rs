@@ -1,12 +1,16 @@
+#![recursion_limit = "256"]
+
 use async_graphql::extensions::ApolloTracing;
 use axum::routing::get;
 use axum_server::tls_rustls::RustlsConfig;
+use db::FullState;
 use dotenv::dotenv;
 use graphql::{cache::Cache, context::ApiContext, new_schema};
 use metrics::metrics_auth;
 use rustls::crypto::ring::default_provider;
 use rustls::crypto::CryptoProvider;
 use std::{net::SocketAddr, path::PathBuf, time::Duration};
+use strum::IntoEnumIterator;
 use tokio::net::TcpListener;
 use tower_cookies::CookieManagerLayer;
 use tower_http::cors::CorsLayer;
@@ -16,6 +20,7 @@ mod cron;
 pub mod jobs;
 pub mod metrics;
 mod postgres;
+pub mod rest;
 pub mod slack;
 pub use cron::init_job_schedule;
 pub use jobs::*;
@@ -85,15 +90,23 @@ pub async fn run() {
     let port = std::env::var("PORT").unwrap_or_else(|_| "1234".to_string());
     let addr: SocketAddr = format!("0.0.0.0:{}", port).parse().unwrap();
 
-    let app = axum::Router::new()
+    let graphql_router = axum::Router::new()
         .route("/", get(graphql_playground).post(graphql_handler))
+        .with_state(schema);
+
+    let app = axum::Router::new()
+        .merge(graphql_router)
+        .merge(rest::router(
+            db::State::iter()
+                .map(|state| rest::StateResource::new(state.to_string(), state.full_state()))
+                .collect(),
+        ))
         .nest(
             "/metrics",
             axum::Router::new()
                 .route("/", get(metrics::metrics_handler))
                 .layer(axum::middleware::from_fn(metrics_auth)),
         )
-        .with_state(schema)
         .layer(axum::middleware::from_fn(metrics::track_metrics))
         .layer(CorsLayer::very_permissive())
         .layer(CookieManagerLayer::new());

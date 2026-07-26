@@ -299,7 +299,7 @@ mod tests {
 
         for (input, expected) in tests {
             assert_eq!(
-                extract_office_district(input).as_ref().map(String::as_str),
+                extract_office_district(input).as_deref(),
                 expected,
                 "\n\n  Test Case: '{input}'\n"
             );
@@ -316,7 +316,7 @@ mod tests {
 
         for (input, expected) in tests {
             assert_eq!(
-                extract_office_seat(input).as_ref().map(String::as_str),
+                extract_office_seat(input).as_deref(),
                 expected,
                 "\n\n  Test Case: '{input}'\n"
             );

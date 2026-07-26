@@ -5,8 +5,6 @@ use std::process;
 use std::time::Instant;
 
 async fn create_fec_senate_candidates() -> Result<(), Box<dyn Error>> {
-    db::init_pool().await.unwrap();
-    let pool = db::pool().await;
     let start = Instant::now();
     let mut sp = Spinner::new(
         Spinners::Dots5,

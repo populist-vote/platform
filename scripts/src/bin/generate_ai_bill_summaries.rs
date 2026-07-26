@@ -60,7 +60,7 @@ async fn generate_ai_summaries(session_id: Uuid) -> Result<(), Box<dyn Error>> {
             if response
                 .headers()
                 .get("content-type")
-                .map_or(false, |v| v != "application/pdf")
+                .is_some_and(|v| v != "application/pdf")
             {
                 println!("\n🔍 PDF not directly accessible, searching in webpage...");
                 let html = response.text().await?;

@@ -21,6 +21,7 @@ async fn seed_embed_origin_titles() -> Result<(), Box<dyn Error>> {
     .fetch_all(&db_pool.connection)
     .await?;
 
+    let title_regex = Regex::new(r"(?i)<title>(.*?)</title>").unwrap();
     for origin in origins {
         let url = origin.url;
 
@@ -29,11 +30,8 @@ async fn seed_embed_origin_titles() -> Result<(), Box<dyn Error>> {
         match html {
             Ok(html) => {
                 let html = html.text().await?;
-                // Regex to capture the content within the <title> tag
-                let re = Regex::new(r"(?i)<title>(.*?)</title>").unwrap(); // (?i) makes it case-insensitive
-
                 // Extract the title using the regex
-                let fetched_page_title = re
+                let fetched_page_title = title_regex
                     .captures(&html)
                     .and_then(|caps| caps.get(1).map(|title| title.as_str().trim().to_string()))
                     .unwrap_or_default(); // Return an empty string if no title is found

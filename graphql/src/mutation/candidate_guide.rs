@@ -94,8 +94,8 @@ impl CandidateGuideMutation {
         let upsert = CandidateGuide::upsert(&db_pool, &input).await?;
 
         // Created embeds of type candidate_guide for each race associated with the candidate guide
-        if input.race_ids.is_some() {
-            for race_id in input.race_ids.unwrap() {
+        if let Some(race_ids) = input.race_ids {
+            for race_id in race_ids {
                 let embed_input = UpsertEmbedInput {
                     id: None,
                     organization_id: Some(organization_id),
@@ -355,9 +355,9 @@ impl CandidateGuideMutation {
             for record in records {
                 let full_name = format!(
                     "{first_name} {last_name} {suffix}",
-                    first_name = &record.preferred_name.as_ref().unwrap_or(&record.first_name),
-                    last_name = &record.last_name,
-                    suffix = &record.suffix.as_ref().unwrap_or(&"".to_string())
+                    first_name = record.preferred_name.as_ref().unwrap_or(&record.first_name),
+                    last_name = record.last_name,
+                    suffix = record.suffix.as_ref().unwrap_or(&"".to_string())
                 )
                 .trim_end()
                 .to_string();

@@ -84,6 +84,7 @@ mod tests {
             "invited existing user should be added to organization membership after login"
         );
 
+        harness.cleanup().await?;
         Ok(())
     }
 }

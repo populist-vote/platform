@@ -4,8 +4,16 @@ Populist Database Interface, GraphQL API Server, and Command Line Utilities
 
 ## Getting Started
 
-To clone this repository, run `git clone --recurse-submodules -j8 https://github.com/populist-vote/platform.git`
-Make sure you have [Rust installed] on your machine. Next, you'll need the [sqlx-cli] installed to manage the database connection and run migrations. To do so, run `cargo install sqlx-cli --features postgres`
+To clone this repository, run `git clone --recurse-submodules -j8 https://github.com/populist-vote/platform.git`.
+Make sure you have [Rust installed] on your machine. On macOS, install the
+remaining local dependencies with:
+
+```bash
+brew install postgresql@17 postgis mkcert
+cargo install sqlx-cli --no-default-features --features rustls,postgres
+cargo install cargo-watch
+mkcert -install
+```
 
 First copy the `.env.example` file to `.env` which is .gitignored.
 
@@ -13,7 +21,21 @@ First copy the `.env.example` file to `.env` which is .gitignored.
 cp .env.example .env
 ```
 
-For local development, its best to create a local copy of our staging database on Heroku. Once you have access to our Heroku account and have logged in with the Heroku CLI, you can do so by running
+Set `DATABASE_URL` to your local database. A fresh database can be prepared with:
+
+```bash
+sqlx database create
+sqlx migrate run --source db/migrations
+psql "$DATABASE_URL" -f db/scripts/bootstrap_local_gis.sql
+```
+
+The GIS bootstrap creates empty Texas boundary tables required by SQLx's
+compile-time validation. Load the official shapefiles separately when testing
+Texas address-to-district lookups.
+
+Alternatively, create a local copy of the staging database from Heroku. Once
+you have access to the Heroku account and have logged in with the Heroku CLI,
+run:
 
 ```bash
 ./scripts/refresh_local_db.sh populist-api-staging
@@ -40,7 +62,19 @@ To run certain mutations and queries which require staff or superuser permission
 
 ## Testing
 
-`cargo test`
+Run the deterministic first-party checks with:
+
+```bash
+cargo fmt --all -- --check
+cargo check --workspace --all-targets
+cargo test --workspace
+cargo clippy --workspace --all-targets --no-deps -- -D warnings
+```
+
+The Geocodio, LegiScan, OpenSecrets, and VoteSmart clients are workspace
+dependencies but are excluded as direct workspace members because their own
+tests call live, credentialed APIs. Test those clients from their directories
+when valid API credentials are available.
 
 ## Deploying
 

@@ -98,9 +98,7 @@ fn county_from_filename(filename_stem: &str) -> String {
 /// Run the Hart pipeline: process every PDF in data/tx/counties/hart/input, write PDF-style CSVs
 /// to data/tx/counties/hart/output, then process each CSV into ingest_staging.stg_tx_results_hart.
 /// County is parsed from each filename (cumulative_{county}_{party}.pdf) and passed to the processor.
-pub async fn run(
-    pool: &PgPool,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+pub async fn run(pool: &PgPool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let input_dir = hart_input_path();
     let output_dir = hart_output_path();
 
@@ -115,10 +113,7 @@ pub async fn run(
     let pdf_files: Vec<PathBuf> = fs::read_dir(&input_dir)?
         .filter_map(|e| e.ok())
         .map(|e| e.path())
-        .filter(|p| {
-            p.extension()
-                .map_or(false, |e| e.eq_ignore_ascii_case("pdf"))
-        })
+        .filter(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case("pdf")))
         .collect();
 
     if pdf_files.is_empty() {
@@ -128,7 +123,11 @@ pub async fn run(
 
     ensure_hart_staging_table(pool).await?;
 
-    println!("Found {} PDF(s) in {}", pdf_files.len(), input_dir.display());
+    println!(
+        "Found {} PDF(s) in {}",
+        pdf_files.len(),
+        input_dir.display()
+    );
     println!("Output: {}\n", output_dir.display());
 
     for pdf_path in &pdf_files {
@@ -140,7 +139,16 @@ pub async fn run(
         let csv_path = output_dir.join(&csv_name);
         let county = county_from_filename(base);
 
-        println!("Processing {} -> {} (county: {})", pdf_path.file_name().unwrap_or_default().to_string_lossy(), csv_name, if county.is_empty() { "auto-detect" } else { &county });
+        println!(
+            "Processing {} -> {} (county: {})",
+            pdf_path.file_name().unwrap_or_default().to_string_lossy(),
+            csv_name,
+            if county.is_empty() {
+                "auto-detect"
+            } else {
+                &county
+            }
+        );
 
         match tx_hart_results_pdf_processor::parse_hart_pdf_to_csv(
             pdf_path,
@@ -153,14 +161,7 @@ pub async fn run(
                     .file_name()
                     .and_then(|s| s.to_str())
                     .unwrap_or("unknown");
-                match tx_results::process_hart_csv(
-                    pool,
-                    &csv_path,
-                    source_file,
-                    None,
-                )
-                .await
-                {
+                match tx_results::process_hart_csv(pool, &csv_path, source_file, None).await {
                     Ok(n) => println!("  ✓ {} rows -> ingest_staging.stg_tx_results_hart", n),
                     Err(e) => eprintln!("  ✗ Staging load error: {}", e),
                 }

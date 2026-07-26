@@ -73,6 +73,7 @@ pub struct PoliticianAssets {
 }
 
 #[derive(SimpleObject, Debug, Clone)]
+#[allow(dead_code)]
 pub struct SponsoredBillResult {
     id: ID,
     title: String,
@@ -513,10 +514,7 @@ impl PoliticianResult {
 
     pub async fn donations_by_industry(&self) -> Result<Option<DonationsByIndustry>> {
         if let Some(crp_id) = &self.crp_candidate_id {
-            let donations_by_industry = match fetch_donations_by_industry(crp_id.into()).await {
-                Ok(donations) => Some(donations),
-                Err(_) => None,
-            };
+            let donations_by_industry = fetch_donations_by_industry(crp_id.into()).await.ok();
             Ok(donations_by_industry)
         } else {
             Ok(None)

@@ -6,7 +6,7 @@ use db::{
         enums::{FullState, PoliticalScope, State},
         office::Office,
     },
-    Chamber, DistrictType, ElectionScope, Politician,
+    Chamber, DistrictType, ElectionScope,
 };
 
 #[derive(SimpleObject, Debug, Clone)]

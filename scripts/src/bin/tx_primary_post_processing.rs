@@ -147,8 +147,7 @@ runoff_races AS (
     HAVING MAX(ranked.votes::float / NULLIF(ranked.total_votes, 0)) < 0.50
        AND COUNT(DISTINCT rc_all.candidate_id) > 2
 )"#,
-        PRIMARY_ELECTION_ID,
-        STATE
+        PRIMARY_ELECTION_ID, STATE
     )
 }
 
@@ -225,7 +224,8 @@ fn general_stage_cte_sql(dry_run: bool) -> String {
     CROSS JOIN LATERAL unnest(aw.winner_ids) AS u(candidate_id)"#,
         )
     };
-    let (general_candidates_insert, all_general_races_cte, update_primary_winners_sql) = if dry_run {
+    let (general_candidates_insert, all_general_races_cte, update_primary_winners_sql) = if dry_run
+    {
         (
             "INSERT INTO ingest_staging.tx_general_race_candidates (race_id, candidate_id)",
             r#",
@@ -387,15 +387,26 @@ async fn run_post_processing(pool: &sqlx::PgPool, dry_run: bool) -> Result<(), B
         .fetch_one(pool)
         .await?;
 
-    let dest = if dry_run { "staging" } else { "production (race, race_candidates)" };
+    let dest = if dry_run {
+        "staging"
+    } else {
+        "production (race, race_candidates)"
+    };
     println!("--- Summary ---");
     println!("  Runoff races inserted:        {}", r.n_runoff_races);
     println!("  Runoff race_candidates:       {}", r.n_runoff_candidates);
     println!("  General races inserted:      {}", r.n_general_races);
     println!("  General race_candidates:     {}", r.n_general_candidates);
     println!("  Destination:                 {}", dest);
-    if r.n_runoff_races == 0 && r.n_runoff_candidates == 0 && r.n_general_races == 0 && r.n_general_candidates == 0 {
-        println!("  (No races found for state {} and primary election.)", STATE);
+    if r.n_runoff_races == 0
+        && r.n_runoff_candidates == 0
+        && r.n_general_races == 0
+        && r.n_general_candidates == 0
+    {
+        println!(
+            "  (No races found for state {} and primary election.)",
+            STATE
+        );
     }
     if dry_run {
         println!("\nReview: SELECT * FROM ingest_staging.tx_primary_runoff_races; SELECT * FROM ingest_staging.tx_primary_runoff_race_candidates;");

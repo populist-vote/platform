@@ -19,9 +19,9 @@ impl Loader<uuid::Uuid> for IssueTagLoader {
     type Value = IssueTag;
     type Error = FieldError;
 
-    async fn load<'a>(
+    async fn load(
         &self,
-        keys: &'a [uuid::Uuid],
+        keys: &[uuid::Uuid],
     ) -> Result<HashMap<uuid::Uuid, Self::Value>, Self::Error> {
         let query = format!(
             r#"SELECT * FROM issue_tag WHERE id IN ({})"#,

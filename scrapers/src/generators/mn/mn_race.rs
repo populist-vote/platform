@@ -58,11 +58,7 @@ impl<'a> RaceTitleGenerator<'a> {
         if let Some(subtitle) = self.office_subtitle {
             if !subtitle.is_empty() {
                 // Remove "MN - " prefix if it exists to avoid duplication
-                let cleaned_subtitle = if subtitle.starts_with("MN - ") {
-                    &subtitle[5..] // Skip "MN - "
-                } else {
-                    subtitle
-                };
+                let cleaned_subtitle = subtitle.strip_prefix("MN - ").unwrap_or(subtitle);
 
                 // Only add if there's content after cleaning
                 if !cleaned_subtitle.is_empty() {
@@ -112,65 +108,77 @@ mod tests {
         let tests: Vec<((&'static str, &'static str), RaceTitleGenerator)> = vec![
             (
                 (
-                    "CO Supreme Court Justice General 2024",
-                    "co-supreme-court-justice-general-2024",
+                    "MN - Supreme Court Justice - General - 2024",
+                    "mn-supreme-court-justice-general-2024",
                 ),
                 RaceTitleGenerator {
                     race_type: &db::RaceType::General,
                     election_scope: &db::ElectionScope::State,
                     office_name: Some("Supreme Court Justice"),
-                    state: Some(&db::State::CO),
+                    office_subtitle: None,
+                    state: Some(&db::State::MN),
                     county: None,
                     district: None,
                     seat: None,
+                    is_special_election: false,
+                    party: None,
                     year: 2024,
                 },
             ),
             (
                 (
-                    "CO U.S. House District 1 General 2024",
-                    "co-us-house-district-1-general-2024",
+                    "MN - U.S. House - District 1 - General - 2024",
+                    "mn-us-house-district-1-general-2024",
                 ),
                 RaceTitleGenerator {
                     race_type: &db::RaceType::General,
                     election_scope: &db::ElectionScope::State,
                     office_name: Some("U.S. House"),
-                    state: Some(&db::State::CO),
+                    office_subtitle: Some("MN - District 1"),
+                    state: Some(&db::State::MN),
                     county: None,
                     district: Some("1"),
                     seat: None,
+                    is_special_election: false,
+                    party: None,
                     year: 2024,
                 },
             ),
             (
                 (
-                    "CO Board of Regents At Large General 2024",
-                    "co-board-of-regents-at-large-general-2024",
+                    "MN - Board of Regents - At Large - General - 2024",
+                    "mn-board-of-regents-at-large-general-2024",
                 ),
                 RaceTitleGenerator {
                     race_type: &db::RaceType::General,
                     election_scope: &db::ElectionScope::State,
                     office_name: Some("Board of Regents"),
-                    state: Some(&db::State::CO),
+                    office_subtitle: Some("MN - At Large"),
+                    state: Some(&db::State::MN),
                     county: None,
                     district: None,
                     seat: Some("At Large"),
+                    is_special_election: false,
+                    party: None,
                     year: 2024,
                 },
             ),
             (
                 (
-                    "CO County Court Judge Adams County General 2024",
-                    "co-county-court-judge-adams-county-general-2024",
+                    "MN - County Court Judge - Adams County, MN - General - 2024",
+                    "mn-county-court-judge-adams-county-mn-general-2024",
                 ),
                 RaceTitleGenerator {
                     race_type: &db::RaceType::General,
                     election_scope: &db::ElectionScope::County,
                     office_name: Some("County Court Judge"),
-                    state: Some(&db::State::CO),
+                    office_subtitle: Some("Adams County, MN"),
+                    state: Some(&db::State::MN),
                     county: Some("Adams"),
                     district: None,
                     seat: None,
+                    is_special_election: false,
+                    party: None,
                     year: 2024,
                 },
             ),

@@ -12,7 +12,7 @@ pub fn office_state_id(source: &str, office_title: &str) -> String {
 /// Returns the priority for the given office title. Matches populist-office-titles-map.csv (office_title → priority).
 pub fn office_priority(
     office_title: &str,
-    county: Option<&str>,
+    _county: Option<&str>,
     district: Option<&str>,
 ) -> Option<i32> {
     let priority = match office_title.trim() {
@@ -96,7 +96,11 @@ pub fn office_priority(
 /// Formats district value for display in a list. Splits only on commas so values like "19-1" stay intact.
 /// "1, 2" → "1 & 2", "1, 2, 3" → "1, 2, 3", "19-1" → "19-1".
 fn format_district_list(district: &str) -> String {
-    let parts: Vec<&str> = district.split(',').map(|s| s.trim()).filter(|s| !s.is_empty()).collect();
+    let parts: Vec<&str> = district
+        .split(',')
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .collect();
     match parts.len() {
         0 => district.trim().to_string(),
         1 => parts[0].to_string(),
@@ -146,15 +150,21 @@ impl<'a> OfficeSubtitleGenerator<'a> {
         // County School Trustee: county + " County, TX" + format_seat_subtitle(seat, "Position") + district (before election_scope match)
         if self.office_name == Some("County School Trustee") {
             if let Some(county) = self.county {
-                let (seat_long, seat_short) = self.seat
+                let (seat_long, seat_short) = self
+                    .seat
                     .as_ref()
                     .map(|s| format_seat_subtitle(s, "Position"))
                     .unwrap_or_default();
-                let (district_long, district_short) = self.district
+                let (district_long, district_short) = self
+                    .district
                     .map(|d| format_district_subtitle(d, "Precinct"))
                     .unwrap_or_default();
-                let long = format!("{} County, TX{}{}", county, seat_long, district_long).trim_end().to_string();
-                let short = format!("{} County, TX{}{}", county, seat_short, district_short).trim_end().to_string();
+                let long = format!("{} County, TX{}{}", county, seat_long, district_long)
+                    .trim_end()
+                    .to_string();
+                let short = format!("{} County, TX{}{}", county, seat_short, district_short)
+                    .trim_end()
+                    .to_string();
                 return (long, short);
             }
         }
@@ -166,7 +176,8 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                 {
                     ("Texas".to_string(), "TX".to_string())
                 } else if let (Some(district), Some(seat)) = (self.district, self.seat) {
-                    let (district_long, district_short) = format_district_subtitle(district, "District");
+                    let (district_long, district_short) =
+                        format_district_subtitle(district, "District");
                     let (seat_long, seat_short) = format_seat_subtitle(seat, "Seat");
                     (
                         format!("TX{}{}", district_long, seat_long),
@@ -181,7 +192,8 @@ impl<'a> OfficeSubtitleGenerator<'a> {
             }
 
             ElectionScope::County => {
-                let (seat_long, seat_short) = self.seat
+                let (seat_long, seat_short) = self
+                    .seat
                     .as_ref()
                     .map(|s| format_seat_subtitle(s, "Seat"))
                     .unwrap_or_default();
@@ -206,146 +218,165 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                         )
                     }
                 } else {
-                    (
-                        format!("Texas{}", seat_long),
-                        format!("TX{}", seat_short),
-                    )
+                    (format!("Texas{}", seat_long), format!("TX{}", seat_short))
                 }
             }
 
-            ElectionScope::District => {
-                match self.district_type {
-                    Some(DistrictType::UsCongressional) => {
-                        let (district_long, district_short) = self.district
-                            .map(|d| format_district_subtitle(d, "District"))
-                            .unwrap_or_default();
-                        if self.district.is_some() {
-                            (format!("TX{}", district_long), format!("TX{}", district_short))
-                        } else {
-                            ("TX".to_string(), "TX".to_string())
-                        }
+            ElectionScope::District => match self.district_type {
+                Some(DistrictType::UsCongressional) => {
+                    let (district_long, district_short) = self
+                        .district
+                        .map(|d| format_district_subtitle(d, "District"))
+                        .unwrap_or_default();
+                    if self.district.is_some() {
+                        (
+                            format!("TX{}", district_long),
+                            format!("TX{}", district_short),
+                        )
+                    } else {
+                        ("TX".to_string(), "TX".to_string())
                     }
-                    Some(DistrictType::StateHouse) => {
-                        let (district_long, district_short) = self.district
-                            .map(|d| format_district_subtitle(d, "House District"))
-                            .unwrap_or_default();
-                        if self.district.is_some() {
-                            (format!("TX{}", district_long), format!("TX{}", district_short))
-                        } else {
-                            ("TX".to_string(), "TX".to_string())
-                        }
-                    }
-                    Some(DistrictType::StateSenate) => {
-                        let (district_long, district_short) = self.district
-                            .map(|d| format_district_subtitle(d, "Senate District"))
-                            .unwrap_or_default();
-                        if self.district.is_some() {
-                            (format!("TX{}", district_long), format!("TX{}", district_short))
-                        } else {
-                            ("TX".to_string(), "TX".to_string())
-                        }
-                    }
-                    Some(DistrictType::County) => {
-                        if let Some(county) = self.county {
-                            let (district_long, district_short) = self.district
-                                .map(|d| format_district_subtitle(d, "Precinct"))
-                                .unwrap_or_default();
-                            let (seat_long, seat_short) = self.seat
-                                .as_ref()
-                                .map(|s| format_seat_subtitle(s, "Place"))
-                                .unwrap_or_default();
-                            if self.district.is_some() {
-                                (
-                                    format!("{} County, TX{}{}", county, district_long, seat_long),
-                                    format!("{} County, TX{}{}", county, district_short, seat_short),
-                                )
-                            } else {
-                                (
-                                    format!("{} County, TX{}", county, seat_long),
-                                    format!("{} County, TX{}", county, seat_short),
-                                )
-                            }
-                        } else {
-                            ("TX".to_string(), "TX".to_string())
-                        }
-                    }
-                    Some(DistrictType::Judicial) => {
-                        let (district_long, district_short) = self.district
-                            .map(|d| format_district_subtitle(d, "District"))
-                            .unwrap_or_default();
-                        if self.district.is_some() {
-                            let (seat_long, seat_short) = self.seat
-                                .as_ref()
-                                .map(|s| format_seat_subtitle(s, "Seat"))
-                                .unwrap_or_else(|| (String::new(), String::new()));
-                            (
-                                format!("TX{}{}", district_long, seat_long),
-                                format!("TX{}{}", district_short, seat_short),
-                            )
-                        } else if let Some(seat) = self.seat {
-                            let (long, short) = format_seat_subtitle(seat, "Seat");
-                            (format!("TX{}", long), format!("TX{}", short))
-                        } else {
-                            ("TX".to_string(), "TX".to_string())
-                        }
-                    }
-                    Some(DistrictType::School) | Some(DistrictType::BoardOfEducation) => {
-                        let (district_long, district_short) = self.district
-                            .map(|d| format_district_subtitle(d, "District"))
-                            .unwrap_or_default();
-                        if self.district.is_some() {
-                            let (seat_long, seat_short) = self.seat
-                                .as_ref()
-                                .map(|s| format_seat_subtitle(s, "Place"))
-                                .unwrap_or_default();
-                            (
-                                format!("TX{}{}", district_long, seat_long),
-                                format!("TX{}{}", district_short, seat_short),
-                            )
-                        } else {
-                            ("TX".to_string(), "TX".to_string())
-                        }
-                    }
-                    Some(DistrictType::CourtOfAppeals) => {
-                        let (district_long, district_short) = self.district
-                            .map(|d| format_district_subtitle(d, "District"))
-                            .unwrap_or_default();
-                        if self.district.is_some() {
-                            let (seat_long, seat_short) = self.seat
-                                .as_ref()
-                                .map(|s| format_seat_subtitle(s, "Seat"))
-                                .unwrap_or_else(|| (String::new(), String::new()));
-                            (
-                                format!("TX{}{}", district_long, seat_long),
-                                format!("TX{}{}", district_short, seat_short),
-                            )
-                        } else if let Some(seat) = self.seat {
-                            let (long, short) = format_seat_subtitle(seat, "Seat");
-                            (format!("TX{}", long), format!("TX{}", short))
-                        } else {
-                            ("TX".to_string(), "TX".to_string())
-                        }
-                    }
-                    Some(DistrictType::JusticeOfThePeace) | Some(DistrictType::Constable) | Some(DistrictType::VotingPrecinct) => {
-                        if let Some(county) = self.county {
-                            let base = format!("{} County, TX", county);
-                            let (district_long, district_short) = self.district
-                                .map(|d| format_district_subtitle(d, "Precinct"))
-                                .unwrap_or_default();
-                            let (seat_long, seat_short) = self.seat
-                                .as_ref()
-                                .map(|s| format_seat_subtitle(s, "Place"))
-                                .unwrap_or_default();
-                            (
-                                format!("{}{}{}", base, district_long, seat_long),
-                                format!("{}{}{}", base, district_short, seat_short),
-                            )
-                        } else {
-                            ("TX".to_string(), "TX".to_string())
-                        }
-                    }
-                    _ => ("TX".to_string(), "TX".to_string()),
                 }
+                Some(DistrictType::StateHouse) => {
+                    let (district_long, district_short) = self
+                        .district
+                        .map(|d| format_district_subtitle(d, "House District"))
+                        .unwrap_or_default();
+                    if self.district.is_some() {
+                        (
+                            format!("TX{}", district_long),
+                            format!("TX{}", district_short),
+                        )
+                    } else {
+                        ("TX".to_string(), "TX".to_string())
+                    }
+                }
+                Some(DistrictType::StateSenate) => {
+                    let (district_long, district_short) = self
+                        .district
+                        .map(|d| format_district_subtitle(d, "Senate District"))
+                        .unwrap_or_default();
+                    if self.district.is_some() {
+                        (
+                            format!("TX{}", district_long),
+                            format!("TX{}", district_short),
+                        )
+                    } else {
+                        ("TX".to_string(), "TX".to_string())
+                    }
+                }
+                Some(DistrictType::County) => {
+                    if let Some(county) = self.county {
+                        let (district_long, district_short) = self
+                            .district
+                            .map(|d| format_district_subtitle(d, "Precinct"))
+                            .unwrap_or_default();
+                        let (seat_long, seat_short) = self
+                            .seat
+                            .as_ref()
+                            .map(|s| format_seat_subtitle(s, "Place"))
+                            .unwrap_or_default();
+                        if self.district.is_some() {
+                            (
+                                format!("{} County, TX{}{}", county, district_long, seat_long),
+                                format!("{} County, TX{}{}", county, district_short, seat_short),
+                            )
+                        } else {
+                            (
+                                format!("{} County, TX{}", county, seat_long),
+                                format!("{} County, TX{}", county, seat_short),
+                            )
+                        }
+                    } else {
+                        ("TX".to_string(), "TX".to_string())
+                    }
+                }
+                Some(DistrictType::Judicial) => {
+                    let (district_long, district_short) = self
+                        .district
+                        .map(|d| format_district_subtitle(d, "District"))
+                        .unwrap_or_default();
+                    if self.district.is_some() {
+                        let (seat_long, seat_short) = self
+                            .seat
+                            .as_ref()
+                            .map(|s| format_seat_subtitle(s, "Seat"))
+                            .unwrap_or_else(|| (String::new(), String::new()));
+                        (
+                            format!("TX{}{}", district_long, seat_long),
+                            format!("TX{}{}", district_short, seat_short),
+                        )
+                    } else if let Some(seat) = self.seat {
+                        let (long, short) = format_seat_subtitle(seat, "Seat");
+                        (format!("TX{}", long), format!("TX{}", short))
+                    } else {
+                        ("TX".to_string(), "TX".to_string())
+                    }
+                }
+                Some(DistrictType::School) | Some(DistrictType::BoardOfEducation) => {
+                    let (district_long, district_short) = self
+                        .district
+                        .map(|d| format_district_subtitle(d, "District"))
+                        .unwrap_or_default();
+                    if self.district.is_some() {
+                        let (seat_long, seat_short) = self
+                            .seat
+                            .as_ref()
+                            .map(|s| format_seat_subtitle(s, "Place"))
+                            .unwrap_or_default();
+                        (
+                            format!("TX{}{}", district_long, seat_long),
+                            format!("TX{}{}", district_short, seat_short),
+                        )
+                    } else {
+                        ("TX".to_string(), "TX".to_string())
+                    }
+                }
+                Some(DistrictType::CourtOfAppeals) => {
+                    let (district_long, district_short) = self
+                        .district
+                        .map(|d| format_district_subtitle(d, "District"))
+                        .unwrap_or_default();
+                    if self.district.is_some() {
+                        let (seat_long, seat_short) = self
+                            .seat
+                            .as_ref()
+                            .map(|s| format_seat_subtitle(s, "Seat"))
+                            .unwrap_or_else(|| (String::new(), String::new()));
+                        (
+                            format!("TX{}{}", district_long, seat_long),
+                            format!("TX{}{}", district_short, seat_short),
+                        )
+                    } else if let Some(seat) = self.seat {
+                        let (long, short) = format_seat_subtitle(seat, "Seat");
+                        (format!("TX{}", long), format!("TX{}", short))
+                    } else {
+                        ("TX".to_string(), "TX".to_string())
+                    }
+                }
+                Some(DistrictType::JusticeOfThePeace)
+                | Some(DistrictType::Constable)
+                | Some(DistrictType::VotingPrecinct) => {
+                    if let Some(county) = self.county {
+                        let base = format!("{} County, TX", county);
+                        let (district_long, district_short) = self
+                            .district
+                            .map(|d| format_district_subtitle(d, "Precinct"))
+                            .unwrap_or_default();
+                        let (seat_long, seat_short) = self
+                            .seat
+                            .as_ref()
+                            .map(|s| format_seat_subtitle(s, "Place"))
+                            .unwrap_or_default();
+                        (
+                            format!("{}{}{}", base, district_long, seat_long),
+                            format!("{}{}{}", base, district_short, seat_short),
+                        )
+                    } else {
+                        ("TX".to_string(), "TX".to_string())
+                    }
+                }
+                _ => ("TX".to_string(), "TX".to_string()),
             },
 
             ElectionScope::National => ("".to_string(), "".to_string()),

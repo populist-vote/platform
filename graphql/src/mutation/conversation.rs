@@ -14,6 +14,7 @@ use crate::{context::ApiContext, is_admin, types::ConversationResult, SessionDat
 pub struct ConversationMutation;
 
 #[derive(Default)]
+#[allow(dead_code)]
 pub struct StatementMutation;
 
 #[derive(InputObject)]
@@ -354,7 +355,7 @@ impl ConversationMutation {
 }
 
 #[Object]
-
+#[allow(dead_code)]
 impl StatementMutation {
     pub async fn record_view(
         &self,

@@ -40,6 +40,7 @@ pub struct VotingGuideCandidateResult {
 }
 
 #[derive(SimpleObject, Debug, Clone)]
+#[allow(dead_code)]
 pub struct ElectionVotingGuides {
     pub election: ElectionResult,
     pub voting_guides: Vec<VotingGuideResult>,

@@ -37,7 +37,7 @@ async fn organization_issue_tags_from_csv() -> Result<(), Box<dyn Error>> {
         )
         .fetch_one(&pool.connection)
         .await
-        .expect(format!("Failed to insert race_candidate: {:?}", input).as_str());
+        .unwrap_or_else(|_| panic!("Failed to insert race_candidate: {:?}", input));
     }
 
     sp.stop();

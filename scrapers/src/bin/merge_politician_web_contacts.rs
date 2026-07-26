@@ -8,8 +8,6 @@ use sqlx::PgPool;
 #[derive(Debug, sqlx::FromRow)]
 struct StagingRow {
     politician_id: uuid::Uuid,
-    source_url: Option<String>,
-    source_type: Option<String>,
     campaign_website_url: Option<String>,
     official_website_url: Option<String>,
     facebook_url: Option<String>,
@@ -28,7 +26,9 @@ async fn main() {
     let pool = db::pool().await;
     let db = &pool.connection;
 
-    println!("=== Merge politician web contacts (stg_tx_scraped_us_house_candidates) → production ===\n");
+    println!(
+        "=== Merge politician web contacts (stg_tx_scraped_us_house_candidates) → production ===\n"
+    );
 
     match run_merge(db).await {
         Ok(n) => println!("\n✓ Merge completed. Updated {} politician(s).", n),
@@ -42,7 +42,7 @@ async fn main() {
 async fn run_merge(pool: &PgPool) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
     let rows: Vec<StagingRow> = sqlx::query_as(
         r#"
-        SELECT politician_id, source_url, source_type, campaign_website_url, official_website_url,
+        SELECT politician_id, campaign_website_url, official_website_url,
                facebook_url, twitter_url, instagram_url, tiktok_url, youtube_url, linkedin_url,
                email, thumbnail_image_url
         FROM ingest_staging.stg_tx_scraped_us_house_candidates

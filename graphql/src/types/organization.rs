@@ -153,7 +153,7 @@ impl OrganizationResult {
             .map(|r| PendingInviteResult {
                 token: ID::from(r.token),
                 email: r.email,
-                role: r.role.map(OrganizationRoleType::from),
+                role: r.role,
                 created_at: r.created_at,
                 accepted_at: r.accepted_at,
             })

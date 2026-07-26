@@ -17,17 +17,15 @@ use regex::Regex;
 // ── Patterns (equivalent to Python) ───────────────────────────────────────────
 
 /// One (votes, percent) pair for variable-column matching.
-static VOTE_PAIR_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"([\d,]+)\s*([\d.]+%?)").unwrap());
+static VOTE_PAIR_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"([\d,]+)\s*([\d.]+%?)").unwrap());
 
 /// One numeric value per column (no percent). Used for Undervotes/Overvotes summary lines.
 /// Optional decimal part (e.g. 10.0) so one number stays one value and indices don't shift.
 static VOTE_VALUE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"([\d,]+(?:\.\d*)?)").unwrap());
 
 /// Prefix for candidate-with-party lines: name and party, then vote tail.
-static CANDIDATE_WITH_PARTY_PREFIX_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^(.+?)\s+(REP|DEM|LIB|GRN|IND|NPA|\(W\))\s+(.+)$").unwrap()
-});
+static CANDIDATE_WITH_PARTY_PREFIX_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^(.+?)\s+(REP|DEM|LIB|GRN|IND|NPA|\(W\))\s+(.+)$").unwrap());
 
 /// Prefix for summary lines: "Cast Votes:" etc then vote tail.
 static SUMMARY_PREFIX_RE: Lazy<Regex> = Lazy::new(|| {
@@ -48,9 +46,8 @@ static CANDIDATE_WITH_PARTY_RE: Lazy<Regex> = Lazy::new(|| {
 });
 
 /// Detect candidate-without-party: line ending with vote-like tail (at least one pair).
-static CANDIDATE_NO_PARTY_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^.+\s+[\d,]+\s+[\d.]+%\s*$").unwrap()
-});
+static CANDIDATE_NO_PARTY_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^.+\s+[\d,]+\s+[\d.]+%\s*$").unwrap());
 
 /// Detect summary line.
 static SUMMARY_RE: Lazy<Regex> = Lazy::new(|| {
@@ -78,6 +75,14 @@ static NON_RACE_TITLE_LINE_RE: Lazy<Regex> = Lazy::new(|| {
 
 /// Line that ends with number and percent (trailing vote-like); used to reject race titles.
 static ENDS_NUM_PCT_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\d+\s+[\d.]+%\s*$").unwrap());
+static REGISTERED_VOTERS_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^Registered Voters\s*$").unwrap());
+static PRECINCTS_REPORTING_LABEL_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^Precincts Reporting\s*$").unwrap());
+static PRECINCTS_VOTERS_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^Precincts\s+Voters\s*$").unwrap());
+static COUNTED_TOTAL_PERCENT_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^Counted\s+Total\s+Percent").unwrap());
 
 // ── Internal parsed row (CIRA format) ─────────────────────────────────────────
 
@@ -86,8 +91,6 @@ struct ParsedRow {
     race: String,
     choice: String,
     party: String,
-    total_votes: String,
-    total_pct: String,
     /// Per-column (votes, pct) pairs in col_order order, for PDF-style CSV output.
     column_pairs: Vec<(String, String)>,
     precincts_counted: String,
@@ -241,12 +244,6 @@ fn make_row(
                 .unwrap_or_else(|| (String::new(), String::new()))
         })
         .collect();
-    let (tot_v, tot_p) = col_order
-        .iter()
-        .position(|c| c.as_str() == "Total")
-        .and_then(|i| column_pairs.get(i))
-        .map(|(v, p)| (v.clone(), p.clone()))
-        .unwrap_or_else(|| (String::new(), String::new()));
     let party = if party.is_empty() {
         let race_lower = race.to_lowercase();
         if race_lower.contains("republican party") {
@@ -263,8 +260,6 @@ fn make_row(
         race: race.to_string(),
         choice: choice.to_string(),
         party: party.to_string(),
-        total_votes: tot_v,
-        total_pct: tot_p,
         column_pairs,
         precincts_counted: precincts_counted.to_string(),
         precincts_total: precincts_total.to_string(),
@@ -316,15 +311,13 @@ pub fn parse_hart_pdf(
     county_name: &str,
 ) -> Result<HartPdfResult, Box<dyn std::error::Error + Send + Sync>> {
     let bytes = fs::read(pdf_path)?;
-    let text = extract_text_from_mem(&bytes)
-        .map_err(|e| format!("PDF text extraction failed: {}", e))?;
+    let text =
+        extract_text_from_mem(&bytes).map_err(|e| format!("PDF text extraction failed: {}", e))?;
 
     let detected_county = detect_county_from_text(&text);
     println!(
         "County: scanned from PDF = {}, passed in = '{}'",
-        detected_county
-            .as_deref()
-            .unwrap_or("(none)"),
+        detected_county.as_deref().unwrap_or("(none)"),
         county_name
     );
 
@@ -363,12 +356,22 @@ pub fn parse_hart_pdf(
         }
         if saw_precincts_in_prescan {
             if let Some(caps) = PRECINCTS_REPORTING_RE.captures(line) {
-                doc_precincts_counted = caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default();
-                doc_precincts_total = caps.get(2).map(|m| m.as_str().to_string()).unwrap_or_default();
-                doc_precincts_pct = caps.get(3).map(|m| m.as_str().to_string()).unwrap_or_default();
+                doc_precincts_counted = caps
+                    .get(1)
+                    .map(|m| m.as_str().to_string())
+                    .unwrap_or_default();
+                doc_precincts_total = caps
+                    .get(2)
+                    .map(|m| m.as_str().to_string())
+                    .unwrap_or_default();
+                doc_precincts_pct = caps
+                    .get(3)
+                    .map(|m| m.as_str().to_string())
+                    .unwrap_or_default();
                 break;
             }
-            if line.split_whitespace().count() > 3 || line.starts_with(|c: char| c.is_ascii_digit()) {
+            if line.split_whitespace().count() > 3 || line.starts_with(|c: char| c.is_ascii_digit())
+            {
                 saw_precincts_in_prescan = false;
             }
         }
@@ -387,16 +390,13 @@ pub fn parse_hart_pdf(
         }
 
         // Don't use "X of Y = Z%" that follows Registered Voters (we never use Registered Voters).
-        if Regex::new(r"^Registered Voters\s*$").unwrap().is_match(line) {
+        if REGISTERED_VOTERS_RE.is_match(line) {
             saw_precincts_reporting_label = false;
             continue;
         }
 
         // Detect "Precincts Reporting" label (doc-wide)
-        if Regex::new(r"^Precincts Reporting\s*$")
-            .unwrap()
-            .is_match(line)
-        {
+        if PRECINCTS_REPORTING_LABEL_RE.is_match(line) {
             saw_precincts_reporting_label = true;
             continue;
         }
@@ -405,15 +405,25 @@ pub fn parse_hart_pdf(
         if saw_precincts_reporting_label {
             if let Some(caps) = PRECINCTS_REPORTING_RE.captures(line) {
                 saw_precincts_reporting_label = false;
-                doc_precincts_counted = caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default();
-                doc_precincts_total = caps.get(2).map(|m| m.as_str().to_string()).unwrap_or_default();
-                doc_precincts_pct = caps.get(3).map(|m| m.as_str().to_string()).unwrap_or_default();
+                doc_precincts_counted = caps
+                    .get(1)
+                    .map(|m| m.as_str().to_string())
+                    .unwrap_or_default();
+                doc_precincts_total = caps
+                    .get(2)
+                    .map(|m| m.as_str().to_string())
+                    .unwrap_or_default();
+                doc_precincts_pct = caps
+                    .get(3)
+                    .map(|m| m.as_str().to_string())
+                    .unwrap_or_default();
                 race_precincts_counted.clear();
                 race_precincts_total.clear();
                 race_precincts_pct.clear();
                 continue;
             }
-            if line.split_whitespace().count() <= 3 && !line.starts_with(|c: char| c.is_ascii_digit())
+            if line.split_whitespace().count() <= 3
+                && !line.starts_with(|c: char| c.is_ascii_digit())
             {
                 continue;
             }
@@ -421,19 +431,28 @@ pub fn parse_hart_pdf(
         }
 
         // Per-race precincts header (Matagorda style)
-        if Regex::new(r"^Precincts\s+Voters\s*$").unwrap().is_match(line) {
+        if PRECINCTS_VOTERS_RE.is_match(line) {
             saw_per_race_header = true;
             continue;
         }
         if saw_per_race_header {
-            if Regex::new(r"^Counted\s+Total\s+Percent").unwrap().is_match(line) {
+            if COUNTED_TOTAL_PERCENT_RE.is_match(line) {
                 continue;
             }
             saw_per_race_header = false;
             if let Some(caps) = PER_RACE_PRECINCTS_RE.captures(line) {
-                race_precincts_counted = caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default();
-                race_precincts_total = caps.get(2).map(|m| m.as_str().to_string()).unwrap_or_default();
-                race_precincts_pct = caps.get(3).map(|m| m.as_str().to_string()).unwrap_or_default();
+                race_precincts_counted = caps
+                    .get(1)
+                    .map(|m| m.as_str().to_string())
+                    .unwrap_or_default();
+                race_precincts_total = caps
+                    .get(2)
+                    .map(|m| m.as_str().to_string())
+                    .unwrap_or_default();
+                race_precincts_pct = caps
+                    .get(3)
+                    .map(|m| m.as_str().to_string())
+                    .unwrap_or_default();
                 continue;
             }
         }
@@ -510,10 +529,8 @@ pub fn parse_hart_pdf(
                 // so we may get fewer values than PDF columns. If value count matches col_order, use 1:1 mapping;
                 // otherwise use col_indices to pick from full PDF column list.
                 let values = parse_vote_values_single(tail);
-                let pairs: Vec<(String, String)> = values
-                    .into_iter()
-                    .map(|v| (v, String::new()))
-                    .collect();
+                let pairs: Vec<(String, String)> =
+                    values.into_iter().map(|v| (v, String::new())).collect();
                 if pairs.len() == col_order.len() {
                     // Row has one value per output column in order (no provisional on this row).
                     let one_to_one: Vec<usize> = (0..col_order.len()).collect();
@@ -653,11 +670,7 @@ pub fn write_pdf_style_csv(
         if SUMMARY_VOTE_COLUMN_SUFFIXES.contains(&row.choice.as_str()) {
             continue;
         }
-        let mut record: Vec<String> = vec![
-            row.race.clone(),
-            row.choice.clone(),
-            row.party.clone(),
-        ];
+        let mut record: Vec<String> = vec![row.race.clone(), row.choice.clone(), row.party.clone()];
         let race_summaries = race_summary_columns.get(&row.race);
         for (i, (votes, pct)) in row.column_pairs.iter().enumerate() {
             record.push(votes.clone());
@@ -693,7 +706,11 @@ pub fn parse_hart_pdf_to_csv(
         None => pdf_path
             .parent()
             .unwrap_or_else(|| Path::new("."))
-            .join(pdf_path.file_stem().unwrap_or(std::ffi::OsStr::new("output")))
+            .join(
+                pdf_path
+                    .file_stem()
+                    .unwrap_or(std::ffi::OsStr::new("output")),
+            )
             .with_extension("csv"),
     };
     write_pdf_style_csv(&result, &csv_path_final)?;

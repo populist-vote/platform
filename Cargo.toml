@@ -10,10 +10,7 @@ members = [
     "scripts",
     "scrapers",
     "server",
-    "geocodio",
-    "votesmart",
-    "legiscan",
     "open-fec",
-    "open-secrets",
 ]
+exclude = ["geocodio", "legiscan", "open-secrets", "votesmart"]
 resolver = "2"

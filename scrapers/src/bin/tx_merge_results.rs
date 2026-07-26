@@ -39,13 +39,25 @@ async fn main() {
     if run_all || do_sos {
         ran_any = true;
         println!("--- SOS (ingest_staging.stg_tx_results_sos) ---");
-        match tx_results::merge_stg_tx_results_sos_to_production(&pool.connection, dry_run, test_merge).await {
+        match tx_results::merge_stg_tx_results_sos_to_production(
+            &pool.connection,
+            dry_run,
+            test_merge,
+        )
+        .await
+        {
             Ok(stats) => {
                 println!("  Staging rows processed: {}", stats.staging_rows);
                 println!("  Matched: {}", stats.matched);
-                println!("  Unmatched (stg_tx_results_sos_unmatched): {}", stats.unmatched);
+                println!(
+                    "  Unmatched (stg_tx_results_sos_unmatched): {}",
+                    stats.unmatched
+                );
                 if !dry_run {
-                    println!("  race_candidates updated: {}", stats.race_candidates_updated);
+                    println!(
+                        "  race_candidates updated: {}",
+                        stats.race_candidates_updated
+                    );
                     println!("  races updated: {}", stats.races_updated);
                 }
                 println!();
@@ -60,13 +72,25 @@ async fn main() {
     if run_all || do_clarity {
         ran_any = true;
         println!("--- Clarity (ingest_staging.stg_tx_results_clarity) ---");
-        match tx_results::merge_stg_tx_results_clarity_to_production(&pool.connection, dry_run, test_merge).await {
+        match tx_results::merge_stg_tx_results_clarity_to_production(
+            &pool.connection,
+            dry_run,
+            test_merge,
+        )
+        .await
+        {
             Ok(stats) => {
                 println!("  Staging rows processed: {}", stats.staging_rows);
                 println!("  Matched: {}", stats.matched);
-                println!("  Unmatched (stg_tx_results_clarity_unmatched): {}", stats.unmatched);
+                println!(
+                    "  Unmatched (stg_tx_results_clarity_unmatched): {}",
+                    stats.unmatched
+                );
                 if !dry_run {
-                    println!("  race_candidates updated: {}", stats.race_candidates_updated);
+                    println!(
+                        "  race_candidates updated: {}",
+                        stats.race_candidates_updated
+                    );
                     println!("  races updated: {}", stats.races_updated);
                 }
                 println!();
@@ -81,13 +105,25 @@ async fn main() {
     if run_all || do_hart {
         ran_any = true;
         println!("--- Hart (ingest_staging.stg_tx_results_hart) ---");
-        match tx_results::merge_stg_tx_results_hart_to_production(&pool.connection, dry_run, test_merge).await {
+        match tx_results::merge_stg_tx_results_hart_to_production(
+            &pool.connection,
+            dry_run,
+            test_merge,
+        )
+        .await
+        {
             Ok(stats) => {
                 println!("  Staging rows processed: {}", stats.staging_rows);
                 println!("  Matched: {}", stats.matched);
-                println!("  Unmatched (stg_tx_results_hart_unmatched): {}", stats.unmatched);
+                println!(
+                    "  Unmatched (stg_tx_results_hart_unmatched): {}",
+                    stats.unmatched
+                );
                 if !dry_run {
-                    println!("  race_candidates updated: {}", stats.race_candidates_updated);
+                    println!(
+                        "  race_candidates updated: {}",
+                        stats.race_candidates_updated
+                    );
                     println!("  races updated: {}", stats.races_updated);
                 }
                 println!();
@@ -102,13 +138,25 @@ async fn main() {
     if run_all || do_other {
         ran_any = true;
         println!("--- Other (ingest_staging.stg_tx_results_other) ---");
-        match tx_results::merge_stg_tx_results_other_to_production(&pool.connection, dry_run, test_merge).await {
+        match tx_results::merge_stg_tx_results_other_to_production(
+            &pool.connection,
+            dry_run,
+            test_merge,
+        )
+        .await
+        {
             Ok(stats) => {
                 println!("  Staging rows processed: {}", stats.staging_rows);
                 println!("  Matched: {}", stats.matched);
-                println!("  Unmatched (stg_tx_results_other_unmatched): {}", stats.unmatched);
+                println!(
+                    "  Unmatched (stg_tx_results_other_unmatched): {}",
+                    stats.unmatched
+                );
                 if !dry_run {
-                    println!("  race_candidates updated: {}", stats.race_candidates_updated);
+                    println!(
+                        "  race_candidates updated: {}",
+                        stats.race_candidates_updated
+                    );
                     println!("  races updated: {}", stats.races_updated);
                 }
                 println!();
@@ -123,13 +171,25 @@ async fn main() {
     if run_all || do_civix {
         ran_any = true;
         println!("--- Civix (ingest_staging.stg_tx_results_sos_civix) ---");
-        match tx_results::merge_stg_tx_results_sos_civix_to_production(&pool.connection, dry_run, test_merge).await {
+        match tx_results::merge_stg_tx_results_sos_civix_to_production(
+            &pool.connection,
+            dry_run,
+            test_merge,
+        )
+        .await
+        {
             Ok(stats) => {
                 println!("  Staging rows processed: {}", stats.staging_rows);
                 println!("  Matched: {}", stats.matched);
-                println!("  Unmatched (stg_tx_results_sos_civix_unmatched): {}", stats.unmatched);
+                println!(
+                    "  Unmatched (stg_tx_results_sos_civix_unmatched): {}",
+                    stats.unmatched
+                );
                 if !dry_run {
-                    println!("  race_candidates updated: {}", stats.race_candidates_updated);
+                    println!(
+                        "  race_candidates updated: {}",
+                        stats.race_candidates_updated
+                    );
                     println!("  races updated: {}", stats.races_updated);
                 }
                 println!();

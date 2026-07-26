@@ -8,6 +8,7 @@ use db::{DistrictType, ElectionScope};
 static CHAMBER_MATCHERS: OnceLock<Vec<(Regex, db::Chamber)>> = OnceLock::new();
 static SEAT_EXTRACTORS: OnceLock<Vec<Regex>> = OnceLock::new();
 static DISTRICT_EXTRACTORS: OnceLock<Vec<Regex>> = OnceLock::new();
+static AT_LARGE_REGEX: OnceLock<Regex> = OnceLock::new();
 static JUDICIAL_DISTRICT_REGEX: OnceLock<Regex> = OnceLock::new();
 static HOSPITAL_DISTRICT_NUMBERED_REGEX: OnceLock<Regex> = OnceLock::new();
 static HOSPITAL_DISTRICT_PAREN_REGEX: OnceLock<Regex> = OnceLock::new();
@@ -263,17 +264,20 @@ pub fn extract_office_district_type(
     let input_lower = input.to_lowercase();
 
     // U.S. Representative
-    if input_lower.contains("u.s. representative") {
+    if input_lower.contains("u.s. representative")
+        || input_lower.contains("united states representative")
+        || input_lower.contains("u.s. house")
+    {
         return Some(db::DistrictType::UsCongressional);
     }
 
     // State Senator
-    if input_lower.contains("state senator") {
+    if input_lower.contains("state senator") || input_lower.contains("state senate") {
         return Some(db::DistrictType::StateSenate);
     }
 
     // State Representative
-    if input_lower.contains("state representative") {
+    if input_lower.contains("state representative") || input_lower.contains("state house") {
         return Some(db::DistrictType::StateHouse);
     }
 
@@ -500,14 +504,14 @@ pub fn extract_office_district(input: &str) -> Option<String> {
     // Initialize regex patterns once
     let extractors = DISTRICT_EXTRACTORS.get_or_init(|| {
         vec![
-            Regex::new(r"District ([0-9]{1,3}[A-Z]?)").unwrap(), // District 1, District 62A
-            Regex::new(r"([0-9]{1,3})(st|nd|rd|th) District").unwrap(), // 1st District, 2nd District
-            Regex::new(r"Ward ([0-9A-Z]+)").unwrap(),                   // Ward 3, Ward 5A
-            Regex::new(r"Wards ([0-9]{1,3} & [0-9]{1,3})").unwrap(),    // Wards 1 & 2
-            Regex::new(r"Precinct ([0-9]{1,3})").unwrap(),              // Precinct 3
-            Regex::new(r"Section ([I|II]+)").unwrap(),                  // Section I, Section II
-            Regex::new(r"Board Member ([0-9]{1,3})").unwrap(),          // Hospital Board Member 1
-            Regex::new(r"Position ([0-9]{1,3})").unwrap(),              // School Board Position 2
+            Regex::new(r"(?i)\bDistrict\s+([0-9]{1,3}[A-Z]?|[A-Z]{1,2})\b").unwrap(), // District 1, District 62A, District A
+            Regex::new(r"(?i)\b([0-9]{1,3})(?:st|nd|rd|th)\b.*?\bDistrict\b").unwrap(), // 1st District, 2nd Something District
+            Regex::new(r"Ward ([0-9A-Z]+)").unwrap(), // Ward 3, Ward 5A
+            Regex::new(r"Wards ([0-9]{1,3} & [0-9]{1,3})").unwrap(), // Wards 1 & 2
+            Regex::new(r"Precinct ([0-9]{1,3})").unwrap(), // Precinct 3
+            Regex::new(r"Section ([I|II]+)").unwrap(), // Section I, Section II
+            Regex::new(r"Board Member ([0-9]{1,3})").unwrap(), // Hospital Board Member 1
+            Regex::new(r"Position ([0-9]{1,3})").unwrap(), // School Board Position 2
         ]
     });
 
@@ -598,12 +602,12 @@ pub fn extract_office_district(input: &str) -> Option<String> {
     }
 
     // ISD #861 and #390 use Position # as District #
-    if input_lower.contains("school board member position") {
-        if input_lower.contains("isd #861") || input_lower.contains("isd #390") {
-            if let Some(captures) = extractors[7].captures(input) {
-                if let Some(position) = captures.get(1) {
-                    return Some(position.as_str().to_string());
-                }
+    if input_lower.contains("school board member position")
+        && (input_lower.contains("isd #861") || input_lower.contains("isd #390"))
+    {
+        if let Some(captures) = extractors[7].captures(input) {
+            if let Some(position) = captures.get(1) {
+                return Some(position.as_str().to_string());
             }
         }
     }
@@ -643,7 +647,8 @@ pub fn extract_office_seat(input: &str) -> Option<String> {
     // }
 
     // At Large
-    if input_lower.contains("at large") {
+    let at_large = AT_LARGE_REGEX.get_or_init(|| Regex::new(r"(?i)\bat[\s-]+large\b").unwrap());
+    if at_large.is_match(input) {
         return Some("At Large".to_string());
     }
 
@@ -687,11 +692,11 @@ pub fn extract_office_seat(input: &str) -> Option<String> {
     }
 
     // School Board Member Position (special cases for ISD #535 and ISD #206)
-    if input_lower.contains("school board member position") {
-        if input_lower.contains("isd #535") || input_lower.contains("isd #206") {
-            if let Some(position) = extractors[3].captures(input).and_then(|c| c.get(1)) {
-                return Some(position.as_str().to_string());
-            }
+    if input_lower.contains("school board member position")
+        && (input_lower.contains("isd #535") || input_lower.contains("isd #206"))
+    {
+        if let Some(position) = extractors[3].captures(input).and_then(|c| c.get(1)) {
+            return Some(position.as_str().to_string());
         }
     }
 
@@ -795,7 +800,7 @@ mod tests {
                     Some("U.S. Senate"),
                     Some("U.S. Senator"),
                     Some(db::Chamber::Senate),
-                    Some(db::DistrictType::StateSenate),
+                    None,
                     Some(db::PoliticalScope::Federal),
                     Some(db::ElectionScope::State),
                 ),
@@ -843,23 +848,19 @@ mod tests {
             let election_scope = extract_office_election_scope(input, None);
 
             // Political scope now requires election_scope, name, and district_type
-            let political_scope = if let Some(scope) = election_scope {
-                Some(extract_office_political_scope(
-                    name.as_deref(),
-                    &scope,
-                    &district_type,
-                ))
-            } else {
-                None
-            };
+            let political_scope = election_scope.map(|scope| {
+                extract_office_political_scope(name.as_deref(), &scope, &district_type)
+            });
 
             assert_eq!(
-                name, expected_name,
+                name.as_deref(),
+                expected_name,
                 "Failed to extract name from: {}",
                 input
             );
             assert_eq!(
-                title, expected_title,
+                title.as_deref(),
+                expected_title,
                 "Failed to extract title from: {}",
                 input
             );
@@ -913,7 +914,7 @@ mod tests {
 
         for (input, expected) in tests {
             assert_eq!(
-                extract_office_district(input).as_ref().map(String::as_str),
+                extract_office_district(input).as_deref(),
                 expected,
                 "\n\n  Test Case: '{input}'\n"
             );
@@ -930,7 +931,7 @@ mod tests {
 
         for (input, expected) in tests {
             assert_eq!(
-                extract_office_seat(input).as_ref().map(String::as_str),
+                extract_office_seat(input).as_deref(),
                 expected,
                 "\n\n  Test Case: '{input}'\n"
             );

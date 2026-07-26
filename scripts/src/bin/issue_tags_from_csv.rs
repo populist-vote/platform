@@ -18,7 +18,7 @@ async fn upsert_issue_tags_from_csv() -> Result<(), Box<dyn Error>> {
 
         let _issue_tag = IssueTag::upsert(&pool.connection, &input)
             .await
-            .expect(format!("Failed to upsert issue tag: {:?}", input.slug).as_str());
+            .unwrap_or_else(|_| panic!("Failed to upsert issue tag: {:?}", input.slug));
     }
 
     sp.stop();

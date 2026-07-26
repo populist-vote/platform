@@ -163,24 +163,31 @@ mod tests {
     #[test]
     fn test_config_default() {
         let config = Config::default();
-        assert_eq!(config.environment, Environment::Local);
-        assert_eq!(config.web_app_url.to_string(), "http://localhost:3030/");
+        let expected_environment = env::var("ENVIRONMENT")
+            .unwrap_or_else(|_| "local".to_string())
+            .parse()
+            .unwrap();
+        assert_eq!(config.environment, expected_environment);
+
+        let expected_url = match expected_environment {
+            Environment::Production => "https://www.populist.us/",
+            Environment::Staging => "https://staging.populist.us/",
+            _ => "http://localhost:3030/",
+        };
+        assert_eq!(config.web_app_url.as_str(), expected_url);
     }
 
     #[test]
     fn test_is_allowed_origin() {
-        assert_eq!(Config::is_allowed_origin("https://www.mprnews.org"), true);
-        assert_eq!(
-            Config::is_allowed_origin("https://www.mprnews.org/some-great-article"),
-            true
-        );
-        assert_eq!(
-            Config::is_allowed_origin("https://www.mprnews.org/story/breaking-news-with-populist"),
-            true
-        );
-        assert_eq!(
-            Config::is_allowed_origin("https://www.mprnews.org/preview/whatever"),
-            false
-        );
+        assert!(Config::is_allowed_origin("https://www.mprnews.org"));
+        assert!(Config::is_allowed_origin(
+            "https://www.mprnews.org/some-great-article"
+        ));
+        assert!(Config::is_allowed_origin(
+            "https://www.mprnews.org/story/breaking-news-with-populist"
+        ));
+        assert!(!Config::is_allowed_origin(
+            "https://www.mprnews.org/preview/whatever"
+        ));
     }
 }

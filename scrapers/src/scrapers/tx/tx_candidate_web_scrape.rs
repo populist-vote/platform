@@ -12,7 +12,8 @@ use url::Url;
 
 const ELECTION_ID_TX_MARCH3_PRIMARY: &str = "0d586931-c119-4fe7-814f-f679e91282a8";
 const REQUEST_DELAY_MS: u64 = 2000;
-const USER_AGENT: &str = "Mozilla/5.0 (compatible; PopulistCandidateScraper/1.0; +https://populist.us)";
+const USER_AGENT: &str =
+    "Mozilla/5.0 (compatible; PopulistCandidateScraper/1.0; +https://populist.us)";
 
 /// Words that must appear in the URL or page title to consider a site a campaign site. Easy to extend.
 const CAMPAIGN_SITE_KEYWORDS: &[&str] = &["congress", "texas"];
@@ -63,7 +64,7 @@ pub struct StagingRow {
 }
 
 fn has_manual_data(c: &CandidateRow) -> bool {
-    let has = |s: &Option<String>| s.as_ref().map_or(false, |t| !t.trim().is_empty());
+    let has = |s: &Option<String>| s.as_ref().is_some_and(|t| !t.trim().is_empty());
     has(&c.facebook_url)
         || has(&c.twitter_url)
         || has(&c.instagram_url)
@@ -73,7 +74,9 @@ fn has_manual_data(c: &CandidateRow) -> bool {
 }
 
 /// Create ingest_staging schema and stg_tx_scraped_us_house_candidates table.
-pub async fn ensure_staging_table(pool: &PgPool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+pub async fn ensure_staging_table(
+    pool: &PgPool,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     sqlx::query("CREATE SCHEMA IF NOT EXISTS ingest_staging")
         .execute(pool)
         .await?;
@@ -110,7 +113,9 @@ pub async fn ensure_staging_table(pool: &PgPool) -> Result<(), Box<dyn std::erro
 }
 
 /// Load TX U.S. House candidates for the March 3 primary (excludes rows with manual data in code; DB returns all).
-pub async fn load_candidates(pool: &PgPool) -> Result<Vec<CandidateRow>, Box<dyn std::error::Error + Send + Sync>> {
+pub async fn load_candidates(
+    pool: &PgPool,
+) -> Result<Vec<CandidateRow>, Box<dyn std::error::Error + Send + Sync>> {
     let rows = sqlx::query_as::<_, CandidateRow>(
         r#"
         SELECT DISTINCT
@@ -228,11 +233,16 @@ fn looks_like_campaign_site(
     preferred_name: Option<&str>,
 ) -> bool {
     let url_lower = url.to_lowercase();
-    if url_lower.contains("facebook.com") || url_lower.contains("twitter.com") || url_lower.contains("x.com")
-        || url_lower.contains("instagram.com") || url_lower.contains("tiktok.com")
-        || url_lower.contains("youtube.com") || url_lower.contains("linkedin.com")
+    if url_lower.contains("facebook.com")
+        || url_lower.contains("twitter.com")
+        || url_lower.contains("x.com")
+        || url_lower.contains("instagram.com")
+        || url_lower.contains("tiktok.com")
+        || url_lower.contains("youtube.com")
+        || url_lower.contains("linkedin.com")
         || url_lower.contains("ballotpedia.org")
-        || url_lower.contains("house.gov") || url_lower.contains("senate.gov")
+        || url_lower.contains("house.gov")
+        || url_lower.contains("senate.gov")
     {
         return false;
     }
@@ -272,7 +282,11 @@ fn looks_like_ballotpedia_candidate(url: &str) -> bool {
 }
 
 /// Search for a URL (campaign or official or Ballotpedia) via DuckDuckGo; returns first plausible URL.
-async fn search_first_result<F>(client: &reqwest::Client, query: &str, filter: F) -> Result<Option<String>, reqwest::Error>
+async fn search_first_result<F>(
+    client: &reqwest::Client,
+    query: &str,
+    filter: F,
+) -> Result<Option<String>, reqwest::Error>
 where
     F: Fn(&str) -> bool,
 {
@@ -289,11 +303,16 @@ where
 /// URL-only check: exclude social, gov, ballotpedia so we don't fetch them when looking for campaign sites.
 fn url_fails_campaign_exclude(url: &str) -> bool {
     let lower = url.to_lowercase();
-    lower.contains("facebook.com") || lower.contains("twitter.com") || lower.contains("x.com")
-        || lower.contains("instagram.com") || lower.contains("tiktok.com")
-        || lower.contains("youtube.com") || lower.contains("linkedin.com")
+    lower.contains("facebook.com")
+        || lower.contains("twitter.com")
+        || lower.contains("x.com")
+        || lower.contains("instagram.com")
+        || lower.contains("tiktok.com")
+        || lower.contains("youtube.com")
+        || lower.contains("linkedin.com")
         || lower.contains("ballotpedia.org")
-        || lower.contains("house.gov") || lower.contains("senate.gov")
+        || lower.contains("house.gov")
+        || lower.contains("senate.gov")
 }
 
 /// Search DuckDuckGo for a campaign site, then fetch each candidate URL and check URL + page title
@@ -319,7 +338,10 @@ async fn search_first_campaign_site(
             Err(_) => continue,
         };
         let title = extract_page_title(&page_html, &url);
-        eprintln!("title of url tested: {}", title.as_deref().unwrap_or("(none)"));
+        eprintln!(
+            "title of url tested: {}",
+            title.as_deref().unwrap_or("(none)")
+        );
         if looks_like_campaign_site(
             &url,
             title.as_deref(),
@@ -354,10 +376,19 @@ fn extract_social_and_email(html: &str, base_url: &str) -> (Vec<(String, String)
         if href.is_empty() {
             continue;
         }
-        let full = base.join(href).ok().map(|u| u.to_string()).unwrap_or_else(|| href.to_string());
+        let full = base
+            .join(href)
+            .ok()
+            .map(|u| u.to_string())
+            .unwrap_or_else(|| href.to_string());
         let lower = full.to_lowercase();
         if lower.contains("mailto:") {
-            let addr = href.strip_prefix("mailto:").unwrap_or(href).split_whitespace().next().unwrap_or("");
+            let addr = href
+                .strip_prefix("mailto:")
+                .unwrap_or(href)
+                .split_whitespace()
+                .next()
+                .unwrap_or("");
             if !addr.is_empty() && addr.contains('@') {
                 email = email.or(Some(addr.to_string()));
             }
@@ -435,10 +466,15 @@ fn extract_profile_image(html: &str, base_url: &str) -> Option<String> {
     let base = Url::parse(base_url).unwrap_or_else(|_| Url::parse("https://example.com").unwrap());
     let doc = Html::parse_document(html);
 
-    let meta_selector = Selector::parse(r#"meta[property="og:image"]"#).unwrap_or_else(|_| unreachable!());
+    let meta_selector =
+        Selector::parse(r#"meta[property="og:image"]"#).unwrap_or_else(|_| unreachable!());
     for el in doc.select(&meta_selector) {
         if let Some(c) = el.value().attr("content") {
-            let full = base.join(c.trim()).ok().map(|u| u.to_string()).unwrap_or_else(|| c.to_string());
+            let full = base
+                .join(c.trim())
+                .ok()
+                .map(|u| u.to_string())
+                .unwrap_or_else(|| c.to_string());
             if !full.is_empty() {
                 return Some(full);
             }
@@ -449,10 +485,18 @@ fn extract_profile_image(html: &str, base_url: &str) -> Option<String> {
     for el in doc.select(&img_selector) {
         let src = el.value().attr("src").unwrap_or("");
         let lower = src.to_lowercase();
-        if lower.contains("logo") || lower.contains("icon") || lower.contains("button") || lower.contains("sprite") {
+        if lower.contains("logo")
+            || lower.contains("icon")
+            || lower.contains("button")
+            || lower.contains("sprite")
+        {
             continue;
         }
-        let full = base.join(src.trim()).ok().map(|u| u.to_string()).unwrap_or_else(|| src.to_string());
+        let full = base
+            .join(src.trim())
+            .ok()
+            .map(|u| u.to_string())
+            .unwrap_or_else(|| src.to_string());
         if !full.is_empty() {
             return Some(full);
         }
@@ -468,7 +512,8 @@ fn extract_campaign_website_from_ballotpedia(html: &str, base_url: &str) -> Opti
     for el in doc.select(&link_selector) {
         let href = el.value().attr("href")?;
         let text = el.text().collect::<String>().to_lowercase();
-        if (text.contains("campaign website") || text.contains("website")) && !href.starts_with("#") {
+        if (text.contains("campaign website") || text.contains("website")) && !href.starts_with("#")
+        {
             let full = base.join(href.trim()).ok().map(|u| u.to_string())?;
             if !full.contains("ballotpedia.org") {
                 return Some(full);
@@ -531,7 +576,10 @@ pub async fn upsert_staging_row(
 
 /// Run the full scrape: load candidates, for each (skip manual, search official, resolve scrape URL, fetch, extract, write staging).
 /// If `limit` is `Some(n)`, only the first `n` candidates are scraped (useful for testing or incremental runs).
-pub async fn run(pool: &PgPool, limit: Option<usize>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+pub async fn run(
+    pool: &PgPool,
+    limit: Option<usize>,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     ensure_staging_table(pool).await?;
     let mut candidates = load_candidates(pool).await?;
     if let Some(n) = limit {
@@ -547,7 +595,12 @@ pub async fn run(pool: &PgPool, limit: Option<usize>) -> Result<(), Box<dyn std:
     let total = candidates.len();
     eprintln!("Processing {} candidate(s)\n", total);
     for (i, c) in candidates.iter().enumerate() {
-        eprintln!("[{}/{}] {}", i + 1, total, c.full_name.as_deref().unwrap_or(&c.slug));
+        eprintln!(
+            "[{}/{}] {}",
+            i + 1,
+            total,
+            c.full_name.as_deref().unwrap_or(&c.slug)
+        );
 
         if has_manual_data(c) {
             eprintln!("  → skip: already has manual data (campaign/social URLs set)");
@@ -588,16 +641,21 @@ pub async fn run(pool: &PgPool, limit: Option<usize>) -> Result<(), Box<dyn std:
             }
         }
 
-        let (source_url, source_type, campaign_website_url) = if let Some(ref u) = c.campaign_website_url {
-            if !u.trim().is_empty() {
-                eprintln!("  → source: DB campaign_site: {}", u);
-                (Some(u.clone()), Some("campaign_site".to_string()), Some(u.clone()))
+        let (source_url, source_type, campaign_website_url) =
+            if let Some(ref u) = c.campaign_website_url {
+                if !u.trim().is_empty() {
+                    eprintln!("  → source: DB campaign_site: {}", u);
+                    (
+                        Some(u.clone()),
+                        Some("campaign_site".to_string()),
+                        Some(u.clone()),
+                    )
+                } else {
+                    (None, None, None)
+                }
             } else {
                 (None, None, None)
-            }
-        } else {
-            (None, None, None)
-        };
+            };
 
         let (source_url, source_type, campaign_website_url) = if source_url.is_some() {
             (source_url, source_type, campaign_website_url)
@@ -619,13 +677,26 @@ pub async fn run(pool: &PgPool, limit: Option<usize>) -> Result<(), Box<dyn std:
             {
                 Ok(Some(url)) => {
                     eprintln!("  → campaign site found: {}", url);
-                    (Some(url.clone()), Some("web_search_campaign".to_string()), Some(url))
+                    (
+                        Some(url.clone()),
+                        Some("web_search_campaign".to_string()),
+                        Some(url),
+                    )
                 }
                 _ => {
                     let query_ballot = format!("{} ballotpedia", name);
-                    eprintln!("  → campaign site: (none), trying Ballotpedia: {}", query_ballot);
+                    eprintln!(
+                        "  → campaign site: (none), trying Ballotpedia: {}",
+                        query_ballot
+                    );
                     tokio::time::sleep(delay).await;
-                    match search_first_result(&client, &query_ballot, looks_like_ballotpedia_candidate).await {
+                    match search_first_result(
+                        &client,
+                        &query_ballot,
+                        looks_like_ballotpedia_candidate,
+                    )
+                    .await
+                    {
                         Ok(Some(url)) => {
                             eprintln!("  → ballotpedia found: {}", url);
                             (Some(url.clone()), Some("ballotpedia".to_string()), None)
@@ -720,7 +791,11 @@ pub async fn run(pool: &PgPool, limit: Option<usize>) -> Result<(), Box<dyn std:
             "  → extracted: campaign={} email={} thumbnail={} fb={} twitter={} ig={}",
             campaign_website_url.as_deref().unwrap_or("(none)"),
             if email.is_some() { "yes" } else { "no" },
-            if thumbnail_image_url.is_some() { "yes" } else { "no" },
+            if thumbnail_image_url.is_some() {
+                "yes"
+            } else {
+                "no"
+            },
             if facebook_url.is_some() { "yes" } else { "no" },
             if twitter_url.is_some() { "yes" } else { "no" },
             if instagram_url.is_some() { "yes" } else { "no" },

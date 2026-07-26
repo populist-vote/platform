@@ -112,7 +112,10 @@ pub async fn process_tx_municipal_filings(pool: &PgPool) -> Result<(), Box<dyn E
 
     println!("\n=== TX municipal processing complete ===");
     println!("Successfully processed: {}", processed_count);
-    println!("Skipped (status not Active/Unopposed): {}", skipped_status_count);
+    println!(
+        "Skipped (status not Active/Unopposed): {}",
+        skipped_status_count
+    );
     println!("Errors: {}", error_count);
     println!("\nStaging tables (merge not in tx_merge_filings yet):");
     println!("  - ingest_staging.stg_tx_muni_offices");
@@ -339,9 +342,7 @@ fn should_ingest_municipal_filing_status(status: Option<&str>) -> bool {
     status
         .map(str::trim)
         .filter(|s| !s.is_empty())
-        .is_some_and(|s| {
-            s.eq_ignore_ascii_case("Active") || s.eq_ignore_ascii_case("Unopposed")
-        })
+        .is_some_and(|s| s.eq_ignore_ascii_case("Active") || s.eq_ignore_ascii_case("Unopposed"))
 }
 
 /// Returns `Ok(false)` if the row is skipped because `status` is not Active or Unopposed.
@@ -368,7 +369,8 @@ async fn process_and_insert_tx_muni_filing(
     let address: Option<TxStagingAddress> = None;
     // TODO(custom): derive address from `place_fips` or other columns if desired.
 
-    let politician_inserted = insert_staging_muni_politician(pool, &mut politician, address).await?;
+    let politician_inserted =
+        insert_staging_muni_politician(pool, &mut politician, address).await?;
 
     if !politician_inserted {
         let name = politician.full_name.as_deref().unwrap_or("(no name)");
@@ -412,20 +414,11 @@ fn process_tx_muni_office(filing: &TxMunicipalFiling) -> Result<Office, Box<dyn 
     let name = office::extract_office_name(raw_filing_title, None)
         .ok_or("Failed to extract office name")?;
 
-    let county = filing
-        .county
-        .clone()
-        .filter(|c| !c.trim().is_empty());
+    let county = filing.county.clone().filter(|c| !c.trim().is_empty());
 
-    let seat = filing
-        .seat
-        .clone()
-        .filter(|s| !s.trim().is_empty());
+    let seat = filing.seat.clone().filter(|s| !s.trim().is_empty());
 
-    let district = filing
-        .district
-        .clone()
-        .filter(|d| !d.trim().is_empty());
+    let district = filing.district.clone().filter(|d| !d.trim().is_empty());
 
     let title = office::extract_office_title(&name).unwrap_or_default();
 
@@ -477,7 +470,8 @@ fn process_tx_muni_office(filing: &TxMunicipalFiling) -> Result<Office, Box<dyn 
     }
     .generate();
 
-    let priority = generators::tx::tx_office::office_priority(&title, county.as_deref(), district.as_deref());
+    let priority =
+        generators::tx::tx_office::office_priority(&title, county.as_deref(), district.as_deref());
 
     Ok(Office {
         id: Uuid::new_v4(),
@@ -622,14 +616,10 @@ async fn process_tx_muni_politician(
 
     let title = extractors::politician::title_case;
     let first_name = title(&name_parts.first);
-    let middle_name = name_parts.middle.as_deref().map(|s| title(s));
-    let last_name = name_parts
-        .last
-        .as_deref()
-        .map(|s| title(s))
-        .unwrap_or_default();
-    let suffix = name_parts.suffix.as_deref().map(|s| title(s));
-    let preferred_name = name_parts.preferred.as_deref().map(|s| title(s));
+    let middle_name = name_parts.middle.as_deref().map(&title);
+    let last_name = name_parts.last.as_deref().map(&title).unwrap_or_default();
+    let suffix = name_parts.suffix.as_deref().map(&title);
+    let preferred_name = name_parts.preferred.as_deref().map(&title);
     let full_name_display = title(&candidate_name);
     let slug = generators::politician::PoliticianSlugGenerator::new(&full_name_display)
         .with_state("TX")
@@ -710,12 +700,11 @@ async fn get_staging_muni_office_id_by_slug(
     pool: &PgPool,
     slug: &str,
 ) -> Result<Option<Uuid>, Box<dyn Error>> {
-    let row: Option<(Uuid,)> = sqlx::query_as(
-        "SELECT id FROM ingest_staging.stg_tx_muni_offices WHERE slug = $1",
-    )
-    .bind(slug)
-    .fetch_optional(pool)
-    .await?;
+    let row: Option<(Uuid,)> =
+        sqlx::query_as("SELECT id FROM ingest_staging.stg_tx_muni_offices WHERE slug = $1")
+            .bind(slug)
+            .fetch_optional(pool)
+            .await?;
     Ok(row.map(|(id,)| id))
 }
 
@@ -723,12 +712,11 @@ async fn get_staging_muni_race_id_by_slug(
     pool: &PgPool,
     slug: &str,
 ) -> Result<Option<Uuid>, Box<dyn Error>> {
-    let row: Option<(Uuid,)> = sqlx::query_as(
-        "SELECT id FROM ingest_staging.stg_tx_muni_races WHERE slug = $1",
-    )
-    .bind(slug)
-    .fetch_optional(pool)
-    .await?;
+    let row: Option<(Uuid,)> =
+        sqlx::query_as("SELECT id FROM ingest_staging.stg_tx_muni_races WHERE slug = $1")
+            .bind(slug)
+            .fetch_optional(pool)
+            .await?;
     Ok(row.map(|(id,)| id))
 }
 
@@ -754,7 +742,7 @@ async fn insert_staging_muni_office(
     .bind(&office.title)
     .bind(&office.subtitle)
     .bind(&office.subtitle_short)
-    .bind(office.office_type.as_ref().map(|o| o.as_str()))
+    .bind(office.office_type.as_deref())
     .bind(office.chamber.as_ref().map(|c| format!("{:?}", c)))
     .bind(office.district_type.as_ref().map(|d| format!("{:?}", d)))
     .bind(format!("{:?}", office.political_scope))
@@ -832,7 +820,7 @@ async fn execute_staging_muni_politician_insert(
     .bind(&politician.tiktok_url)
     .bind(&politician.email)
     .bind(&politician.phone)
-    .bind(&politician.votesmart_candidate_id)
+    .bind(politician.votesmart_candidate_id)
     .bind(&politician.votesmart_candidate_bio)
     .bind(&politician.votesmart_candidate_ratings)
     .bind(politician.legiscan_people_id)
@@ -959,11 +947,9 @@ async fn apply_same_person_updates_and_dupes_muni(
     incoming_address: Option<&TxStagingAddress>,
     incoming_slug_used: &str,
 ) -> Result<(), Box<dyn Error>> {
-    if emails_equal_not_both_empty {
-        if existing_residence_address_id.is_none() {
-            if let Some(addr) = incoming_address {
-                insert_staging_muni_address_for_politician(pool, addr, existing_id, true).await?;
-            }
+    if emails_equal_not_both_empty && existing_residence_address_id.is_none() {
+        if let Some(addr) = incoming_address {
+            insert_staging_muni_address_for_politician(pool, addr, existing_id, true).await?;
         }
     }
     if let Some(incoming_trimmed) = politician
@@ -972,11 +958,13 @@ async fn apply_same_person_updates_and_dupes_muni(
         .map(|e| e.trim())
         .filter(|e| !e.is_empty())
     {
-        sqlx::query(r#"UPDATE ingest_staging.stg_tx_muni_politicians SET email = $1 WHERE id = $2"#)
-            .bind(incoming_trimmed)
-            .bind(existing_id)
-            .execute(pool)
-            .await?;
+        sqlx::query(
+            r#"UPDATE ingest_staging.stg_tx_muni_politicians SET email = $1 WHERE id = $2"#,
+        )
+        .bind(incoming_trimmed)
+        .bind(existing_id)
+        .execute(pool)
+        .await?;
     }
     record_politician_muni_dupe(
         pool,

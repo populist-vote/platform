@@ -1,3 +1,5 @@
+#![recursion_limit = "256"]
+
 pub mod cache;
 pub mod context;
 pub mod guard;
@@ -90,10 +92,10 @@ pub async fn upload_to_s3(file: File, directory: String) -> Result<Url, Error> {
         HeaderName::from_static("content-type"),
         "multipart/form-data".parse().unwrap(),
     );
-    let path = format!("{}/{}", directory, &file.filename);
+    let path = format!("{}/{}", directory, file.filename);
     bucket
         .put_object_with_content_type(
-            format!("{}/{}", directory, &file.filename),
+            format!("{}/{}", directory, file.filename),
             &file.content,
             &file.mimetype.unwrap_or_default(),
         )

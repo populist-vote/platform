@@ -75,7 +75,7 @@ pub async fn run() -> anyhow::Result<()> {
 }
 
 #[tokio::test]
-
+#[ignore = "requires a real LEGISCAN_API_KEY and calls the external LegiScan API"]
 async fn test_update_legiscan_bill_data() {
     let _ = tracing_subscriber::fmt::try_init();
     let _ = db::init_pool().await;

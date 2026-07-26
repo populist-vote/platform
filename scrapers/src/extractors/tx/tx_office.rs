@@ -46,7 +46,7 @@ fn normalize_whitespace(s: &str) -> String {
 fn strip_county_suffix(input: &str) -> (Option<String>, String) {
     let trimmed = input.trim();
     let input_upper = trimmed.to_uppercase();
-    let mut counties: Vec<&str> = TEXAS_COUNTIES.iter().copied().collect();
+    let mut counties: Vec<&str> = TEXAS_COUNTIES.to_vec();
     counties.sort_by_key(|c| std::cmp::Reverse(c.len()));
 
     for county in counties {
@@ -345,10 +345,8 @@ fn normalize_county_name(county: &str) -> String {
 }
 
 /// Office names for which county may appear as a suffix (" X COUNTY") in the raw title.
-const OFFICE_NAMES_ALLOWING_COUNTY_SUFFIX: &[&str] = &[
-    "Criminal District Attorney",
-    "Criminal District Judge",
-];
+const OFFICE_NAMES_ALLOWING_COUNTY_SUFFIX: &[&str] =
+    &["Criminal District Attorney", "Criminal District Judge"];
 
 /// True if county may appear as a suffix (" X COUNTY") in the office title.
 fn office_name_allows_county_suffix(office_name: Option<&str>) -> bool {
@@ -702,29 +700,56 @@ pub fn extract_office_scope(
         ),
         "Criminal District Attorney" => (PoliticalScope::Local, ElectionScope::County, None),
 
-        "County Commissioner" => (PoliticalScope::Local, ElectionScope::District, Some(DistrictType::County)),
-        "County Judge" | "County Clerk" | "District Clerk" | "County Attorney" | "County Treasurer"
-        | "County Surveyor" | "County Tax Assessor-Collector" | "County Chair (D)" | "County Chair (R)" | "County & District Clerk"
-        | "Sheriff" | "Judge - County Court at Law" | "Judge - 1st Multicounty Court at Law" | "Judge - County Civil Court at Law"
-        | "Judge - County Criminal Court of Appeals" | "Judge - County Criminal Court at Law"
-        | "Judge - Probate Court" | "Criminal District Judge" => (PoliticalScope::Local, ElectionScope::County, None),
+        "County Commissioner" => (
+            PoliticalScope::Local,
+            ElectionScope::District,
+            Some(DistrictType::County),
+        ),
+        "County Judge"
+        | "County Clerk"
+        | "District Clerk"
+        | "County Attorney"
+        | "County Treasurer"
+        | "County Surveyor"
+        | "County Tax Assessor-Collector"
+        | "County Chair (D)"
+        | "County Chair (R)"
+        | "County & District Clerk"
+        | "Sheriff"
+        | "Judge - County Court at Law"
+        | "Judge - 1st Multicounty Court at Law"
+        | "Judge - County Civil Court at Law"
+        | "Judge - County Criminal Court of Appeals"
+        | "Judge - County Criminal Court at Law"
+        | "Judge - Probate Court"
+        | "Criminal District Judge" => (PoliticalScope::Local, ElectionScope::County, None),
         "Justice of the Peace" => {
             if district.map(|d| !d.trim().is_empty()).unwrap_or(false) {
-                (PoliticalScope::Local, ElectionScope::District, Some(DistrictType::JusticeOfThePeace))
+                (
+                    PoliticalScope::Local,
+                    ElectionScope::District,
+                    Some(DistrictType::JusticeOfThePeace),
+                )
             } else {
                 (PoliticalScope::Local, ElectionScope::County, None)
             }
         }
         "County Constable" => {
             if district.map(|d| !d.trim().is_empty()).unwrap_or(false) {
-                (PoliticalScope::Local, ElectionScope::District, Some(DistrictType::Constable))
+                (
+                    PoliticalScope::Local,
+                    ElectionScope::District,
+                    Some(DistrictType::Constable),
+                )
             } else {
                 (PoliticalScope::Local, ElectionScope::County, None)
             }
         }
-        "Precinct Chair" | "Precinct Chair (D)" | "Precinct Chair (R)" => {
-            (PoliticalScope::Local, ElectionScope::District, Some(DistrictType::VotingPrecinct))
-        }
+        "Precinct Chair" | "Precinct Chair (D)" | "Precinct Chair (R)" => (
+            PoliticalScope::Local,
+            ElectionScope::District,
+            Some(DistrictType::VotingPrecinct),
+        ),
         _ => return None,
     };
     Some(out)
@@ -825,7 +850,9 @@ pub fn extract_office_district(input: &str, seat: Option<&str>) -> Option<String
     }
 
     // 3. Precinct list (guard: precinct but not precinct chair)
-    if (input_lower.contains("precinct") || input_lower.contains("pct")) && !input_lower.contains("precinct chair") {
+    if (input_lower.contains("precinct") || input_lower.contains("pct"))
+        && !input_lower.contains("precinct chair")
+    {
         if let Some(caps) = extractors[2].captures(input) {
             if let Some(m) = caps.get(1) {
                 let s = m.as_str().trim();

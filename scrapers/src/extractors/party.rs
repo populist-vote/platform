@@ -101,7 +101,7 @@ mod tests {
     }
 
     #[test]
-    fn extract_party_fec_code() {
+    fn extract_party_fec_code_cases() {
         let tests: Vec<(&'static str, Option<&'static str>)> = vec![
             ("R", Some("REP")),
             ("r", Some("REP")),

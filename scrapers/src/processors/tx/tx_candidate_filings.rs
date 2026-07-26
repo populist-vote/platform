@@ -345,10 +345,9 @@ async fn process_and_insert_tx_filing(
     let office = process_tx_office(filing)?;
     let office_id = get_staging_office_id_by_slug(pool, &office.slug).await?;
     if office_id.is_none() {
-        let state_id = filing
-            .office_title
-            .as_ref()
-            .map(|t| generators::tx::tx_office::office_state_id("tx-sos", strip_unexpired_term(t).trim()));
+        let state_id = filing.office_title.as_ref().map(|t| {
+            generators::tx::tx_office::office_state_id("tx-sos", strip_unexpired_term(t).trim())
+        });
         insert_staging_office(pool, &office, state_id.as_ref()).await?;
     }
     let resolved_office_id = office_id.unwrap_or(office.id);
@@ -381,7 +380,9 @@ async fn process_and_insert_tx_filing(
 
     insert_staging_race(pool, &race).await?;
 
-    let race_id = get_staging_race_id_by_slug(pool, &race.slug).await?.unwrap_or(race.id);
+    let race_id = get_staging_race_id_by_slug(pool, &race.slug)
+        .await?
+        .unwrap_or(race.id);
     let raw_office_title = filing.office_title.as_deref().unwrap_or("");
     let office_title = strip_unexpired_term(raw_office_title).trim().to_string();
     let candidate_name = filing.candidate_name.as_deref().unwrap_or("");
@@ -473,7 +474,8 @@ fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error
     }
     .generate();
 
-    let priority = generators::tx::tx_office::office_priority(&title, county.as_deref(), district.as_deref());
+    let priority =
+        generators::tx::tx_office::office_priority(&title, county.as_deref(), district.as_deref());
 
     Ok(Office {
         id: Uuid::new_v4(),
@@ -570,14 +572,10 @@ async fn process_tx_politician(
     // Apply title case after extraction
     let title = extractors::politician::title_case;
     let first_name = title(&name_parts.first);
-    let middle_name = name_parts.middle.as_deref().map(|s| title(s));
-    let last_name = name_parts
-        .last
-        .as_deref()
-        .map(|s| title(s))
-        .unwrap_or_default();
-    let suffix = name_parts.suffix.as_deref().map(|s| title(s));
-    let preferred_name = name_parts.preferred.as_deref().map(|s| title(s));
+    let middle_name = name_parts.middle.as_deref().map(&title);
+    let last_name = name_parts.last.as_deref().map(&title).unwrap_or_default();
+    let suffix = name_parts.suffix.as_deref().map(&title);
+    let preferred_name = name_parts.preferred.as_deref().map(&title);
     let full_name_display = title(&candidate_name);
     let slug = generators::politician::PoliticianSlugGenerator::new(&full_name_display)
         .with_state("TX")
@@ -656,7 +654,10 @@ fn process_tx_race(
         .as_ref()
         .map(|t| extractors::tx::tx_race::extract_is_special_election(t))
         .unwrap_or(false);
-    let num_elect = filing.office_title.as_ref().and_then(|t| extractors::tx::tx_race::extract_num_elect(t));
+    let num_elect = filing
+        .office_title
+        .as_ref()
+        .and_then(|t| extractors::tx::tx_race::extract_num_elect(t));
 
     let party_fec = filing
         .party
@@ -702,26 +703,26 @@ fn process_tx_race(
 /// Returns None if the filing has no usable address (both line_1 and city empty).
 /// Trim and collapse multiple whitespace to a single space.
 fn normalize_address_string(s: &str) -> String {
-    s.trim().split_whitespace().collect::<Vec<_>>().join(" ")
+    s.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 fn process_tx_address(filing: &TxCandidateFiling) -> Option<TxStagingAddress> {
     let line_1 = filing
         .address_street
         .as_deref()
-        .map(|s| normalize_address_string(s))
+        .map(normalize_address_string)
         .filter(|s| !s.is_empty())
         .unwrap_or_default();
     let city = filing
         .address_city
         .as_deref()
-        .map(|s| normalize_address_string(s))
+        .map(normalize_address_string)
         .filter(|s| !s.is_empty())
         .unwrap_or_default();
     let state = filing
         .address_state
         .as_deref()
-        .map(|s| normalize_address_string(s))
+        .map(normalize_address_string)
         .filter(|s| !s.is_empty())
         .unwrap_or_else(|| "TX".to_string());
     let country = "USA".to_string();
@@ -784,7 +785,7 @@ async fn insert_staging_office(
     .bind(&office.title)
     .bind(&office.subtitle)
     .bind(&office.subtitle_short)
-    .bind(office.office_type.as_ref().map(|o| o.as_str()))
+    .bind(office.office_type.as_deref())
     .bind(office.chamber.as_ref().map(|c| format!("{:?}", c)))
     .bind(office.district_type.as_ref().map(|d| format!("{:?}", d)))
     .bind(format!("{:?}", office.political_scope))
@@ -863,7 +864,7 @@ async fn execute_staging_politician_insert(
     .bind(&politician.tiktok_url)
     .bind(&politician.email)
     .bind(&politician.phone)
-    .bind(&politician.votesmart_candidate_id)
+    .bind(politician.votesmart_candidate_id)
     .bind(&politician.votesmart_candidate_bio)
     .bind(&politician.votesmart_candidate_ratings)
     .bind(politician.legiscan_people_id)

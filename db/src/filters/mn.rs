@@ -1,6 +1,7 @@
 use crate::State;
 use sqlx::{Postgres, QueryBuilder};
 
+#[allow(clippy::too_many_arguments)]
 pub fn apply_mn_filters(
     builder: &mut QueryBuilder<Postgres>,
     state: State,
@@ -13,7 +14,7 @@ pub fn apply_mn_filters(
     judicial_district: Option<String>,
     school_district: Option<String>,
     school_district_type: Option<String>,
-    school_subdistrict: Option<String>,
+    _school_subdistrict: Option<String>,
     ward: Option<String>,
     soil_and_water_district: Option<String>,
     hospital_district: Option<String>,

@@ -31,14 +31,14 @@ async fn handle_nested_issue_tags(
     politician_id: uuid::Uuid,
     issue_tags_input: CreateOrConnectIssueTagInput,
 ) -> Result<(), Error> {
-    if issue_tags_input.create.is_some() {
-        for input in issue_tags_input.create.unwrap() {
+    if let Some(inputs) = issue_tags_input.create {
+        for input in inputs {
             let new_issue_tag = IssueTag::upsert(db_pool, &input).await?;
             Politician::connect_issue_tag(db_pool, politician_id, new_issue_tag.id).await?;
         }
     }
-    if issue_tags_input.connect.is_some() {
-        for issue_tag_id in issue_tags_input.connect.unwrap() {
+    if let Some(issue_tag_ids) = issue_tags_input.connect {
+        for issue_tag_id in issue_tag_ids {
             // figure out how to accept slugs and IDs here, that'd be great
             Politician::connect_issue_tag(
                 db_pool,
@@ -56,8 +56,8 @@ async fn handle_nested_organization_endorsements(
     politician_id: uuid::Uuid,
     organizations_input: CreateOrConnectOrganizationInput,
 ) -> Result<(), Error> {
-    if organizations_input.create.is_some() {
-        for input in organizations_input.create.unwrap() {
+    if let Some(inputs) = organizations_input.create {
+        for input in inputs {
             let new_organization = Organization::create(db_pool, &input).await?;
             Politician::connect_organization(
                 db_pool,
@@ -67,8 +67,8 @@ async fn handle_nested_organization_endorsements(
             .await?;
         }
     }
-    if organizations_input.connect.is_some() {
-        for organization_identifier in organizations_input.connect.unwrap() {
+    if let Some(organization_identifiers) = organizations_input.connect {
+        for organization_identifier in organization_identifiers {
             match uuid::Uuid::from_str(organization_identifier.as_str()) {
                 Ok(org_id) => {
                     Politician::connect_organization(
@@ -98,8 +98,8 @@ async fn handle_nested_politician_endorsements(
     politician_id: uuid::Uuid,
     politicians_input: CreateOrConnectPoliticianInput,
 ) -> Result<(), Error> {
-    if politicians_input.create.is_some() {
-        for input in politicians_input.create.unwrap() {
+    if let Some(inputs) = politicians_input.create {
+        for input in inputs {
             let new_politician = Politician::insert(db_pool, &input).await?;
             Politician::connect_politician(
                 db_pool,
@@ -109,8 +109,8 @@ async fn handle_nested_politician_endorsements(
             .await?;
         }
     }
-    if politicians_input.connect.is_some() {
-        for politician_identifier in politicians_input.connect.unwrap() {
+    if let Some(politician_identifiers) = politicians_input.connect {
+        for politician_identifier in politician_identifiers {
             match uuid::Uuid::from_str(politician_identifier.as_str()) {
                 Ok(pol_endorsement_id) => {
                     Politician::connect_politician(
@@ -146,26 +146,22 @@ impl PoliticianMutation {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let new_record = Politician::insert(&db_pool, &input).await?;
         // be sure to handle None inputs from GraphQL
-        if input.issue_tags.is_some() {
-            handle_nested_issue_tags(&db_pool, new_record.id, input.issue_tags.unwrap()).await?;
+        if let Some(issue_tags) = input.issue_tags {
+            handle_nested_issue_tags(&db_pool, new_record.id, issue_tags).await?;
         }
 
-        if input.organization_endorsements.is_some() {
+        if let Some(organization_endorsements) = input.organization_endorsements {
             handle_nested_organization_endorsements(
                 &db_pool,
                 new_record.id,
-                input.organization_endorsements.unwrap(),
+                organization_endorsements,
             )
             .await?;
         }
 
-        if input.politician_endorsements.is_some() {
-            handle_nested_politician_endorsements(
-                &db_pool,
-                new_record.id,
-                input.politician_endorsements.unwrap(),
-            )
-            .await?;
+        if let Some(politician_endorsements) = input.politician_endorsements {
+            handle_nested_politician_endorsements(&db_pool, new_record.id, politician_endorsements)
+                .await?;
         }
 
         Ok(PoliticianResult::from(new_record))
@@ -185,26 +181,22 @@ impl PoliticianMutation {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let new_record = Politician::update(&db_pool, &input).await?;
         // be sure to handle None inputs from GraphQL
-        if input.issue_tags.is_some() {
-            handle_nested_issue_tags(&db_pool, new_record.id, input.issue_tags.unwrap()).await?;
+        if let Some(issue_tags) = input.issue_tags {
+            handle_nested_issue_tags(&db_pool, new_record.id, issue_tags).await?;
         }
 
-        if input.organization_endorsements.is_some() {
+        if let Some(organization_endorsements) = input.organization_endorsements {
             handle_nested_organization_endorsements(
                 &db_pool,
                 new_record.id,
-                input.organization_endorsements.unwrap(),
+                organization_endorsements,
             )
             .await?;
         }
 
-        if input.politician_endorsements.is_some() {
-            handle_nested_politician_endorsements(
-                &db_pool,
-                new_record.id,
-                input.politician_endorsements.unwrap(),
-            )
-            .await?;
+        if let Some(politician_endorsements) = input.politician_endorsements {
+            handle_nested_politician_endorsements(&db_pool, new_record.id, politician_endorsements)
+                .await?;
         }
 
         Ok(PoliticianResult::from(new_record))

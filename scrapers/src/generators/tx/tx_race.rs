@@ -55,11 +55,7 @@ impl<'a> RaceTitleGenerator<'a> {
 
         if let Some(subtitle) = self.office_subtitle {
             if !subtitle.is_empty() {
-                let cleaned = if subtitle.starts_with("TX - ") {
-                    &subtitle[5..]
-                } else {
-                    subtitle
-                };
+                let cleaned = subtitle.strip_prefix("TX - ").unwrap_or(subtitle);
                 if !cleaned.is_empty() {
                     parts.push(cleaned.to_string());
                 }

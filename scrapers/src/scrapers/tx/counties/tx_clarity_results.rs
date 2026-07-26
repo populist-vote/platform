@@ -132,7 +132,9 @@ fn add_county_column_to_csv(
 }
 
 /// Load URL + county_name + optional party from county_clarity_results_urls.csv (columns: url, county_name, party).
-pub fn load_county_clarity_results_urls(path: &Path) -> Result<Vec<CountyClarityResultsUrl>, Box<dyn std::error::Error + Send + Sync>> {
+pub fn load_county_clarity_results_urls(
+    path: &Path,
+) -> Result<Vec<CountyClarityResultsUrl>, Box<dyn std::error::Error + Send + Sync>> {
     let mut rdr = ReaderBuilder::new().from_path(path)?;
     let mut rows = Vec::new();
     for result in rdr.records() {
@@ -145,7 +147,11 @@ pub fn load_county_clarity_results_urls(path: &Path) -> Result<Vec<CountyClarity
                 .map(|s| s.trim().to_string())
                 .filter(|s| !s.is_empty());
             if !url.is_empty() && !url.starts_with('#') {
-                rows.push(CountyClarityResultsUrl { url, county_name, party });
+                rows.push(CountyClarityResultsUrl {
+                    url,
+                    county_name,
+                    party,
+                });
             }
         }
     }
@@ -217,7 +223,9 @@ pub fn unzip_into_dir(
         if name.ends_with('/') || name.contains("__MACOSX") {
             continue;
         }
-        let base = Path::new(name).file_name().unwrap_or_else(|| std::ffi::OsStr::new(name));
+        let base = Path::new(name)
+            .file_name()
+            .unwrap_or_else(|| std::ffi::OsStr::new(name));
         let out_path = out_dir.join(base);
         if entry.is_dir() {
             fs::create_dir_all(&out_path)?;
@@ -283,24 +291,43 @@ pub async fn run(
     let client = reqwest::Client::new();
 
     for row in &rows {
-        let zip_filename = zip_filename_for_url_county_party(
-            &row.url,
-            &row.county_name,
-            row.party.as_deref(),
-        );
+        let zip_filename =
+            zip_filename_for_url_county_party(&row.url, &row.county_name, row.party.as_deref());
         let file_suffix = if let Some(ref p) = row.party {
-            format!("{}_{}", sanitize_for_filename(&row.county_name), sanitize_for_filename(p))
+            format!(
+                "{}_{}",
+                sanitize_for_filename(&row.county_name),
+                sanitize_for_filename(p)
+            )
         } else {
             sanitize_for_filename(&row.county_name)
         };
         let zip_path = data_dir.join(&zip_filename);
-        println!("Downloading {} -> {} ({}{})", row.url, zip_path.display(), row.county_name, row.party.as_deref().map(|p| format!(", {}", p)).unwrap_or_default());
+        println!(
+            "Downloading {} -> {} ({}{})",
+            row.url,
+            zip_path.display(),
+            row.county_name,
+            row.party
+                .as_deref()
+                .map(|p| format!(", {}", p))
+                .unwrap_or_default()
+        );
         download_to_path(&client, &row.url, &zip_path).await?;
-        println!("Unzipping {} -> {} (CSVs renamed with suffix: {})", zip_path.display(), data_dir.display(), file_suffix);
+        println!(
+            "Unzipping {} -> {} (CSVs renamed with suffix: {})",
+            zip_path.display(),
+            data_dir.display(),
+            file_suffix
+        );
         unzip_into_dir(
             &zip_path,
             &data_dir,
-            if file_suffix.is_empty() { None } else { Some(file_suffix.as_str()) },
+            if file_suffix.is_empty() {
+                None
+            } else {
+                Some(file_suffix.as_str())
+            },
             Some(&row.county_name),
         )?;
         fs::remove_file(&zip_path)?;
@@ -310,7 +337,7 @@ pub async fn run(
     let csv_files: Vec<PathBuf> = fs::read_dir(&data_dir)?
         .filter_map(|e| e.ok())
         .map(|e| e.path())
-        .filter(|p| p.extension().map_or(false, |e| e.eq_ignore_ascii_case("csv")))
+        .filter(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case("csv")))
         .collect();
 
     for csv_path in csv_files {

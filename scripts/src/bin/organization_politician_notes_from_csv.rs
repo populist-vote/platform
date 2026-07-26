@@ -67,15 +67,10 @@ async fn organization_politician_notes_from_csv() -> Result<(), Box<dyn Error>> 
             })
         ).execute(&pool.connection)
         .await
-        .expect(
-            format!(
-                "Something went wrong inserting organization politician note for organization_id: {}, politician_id: {}, election_id: {}",
+        .unwrap_or_else(|_| panic!("Something went wrong inserting organization politician note for organization_id: {}, politician_id: {}, election_id: {}",
                 input.organization_id,
                 input.politician_id,
-                input.election_id
-            )
-            .as_str(),
-        );
+                input.election_id));
     }
 
     sp.stop();

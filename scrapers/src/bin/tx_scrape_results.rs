@@ -140,17 +140,18 @@ async fn run_sos(
             }
         }
         sftp.stop().await;
-        println!("\nDownloaded {} file(s) to {}", downloaded, local_dir.display());
+        println!(
+            "\nDownloaded {} file(s) to {}",
+            downloaded,
+            local_dir.display()
+        );
     }
 
     if do_process {
         println!("\n=== Running TX SOS Results Processor ===\n");
         let pool = db::pool().await;
-        match scrapers::processors::tx::tx_results::process_tx_sos_results(
-            &pool.connection,
-            true,
-        )
-        .await
+        match scrapers::processors::tx::tx_results::process_tx_sos_results(&pool.connection, true)
+            .await
         {
             Ok((files, rows)) => {
                 println!(
@@ -160,7 +161,7 @@ async fn run_sos(
             }
             Err(e) => {
                 eprintln!("\n✗ Processor error: {}", e);
-                return Err(e.into());
+                return Err(e);
             }
         }
     }
@@ -175,9 +176,7 @@ async fn run_clarity(
         "Data dir: {}\n",
         scrapers::tx::counties::tx_clarity_results::clarity_data_path().display()
     );
-    scrapers::tx::counties::tx_clarity_results::run(&db::pool().await.connection, csv_path)
-        .await
-        .map_err(|e| e.into())
+    scrapers::tx::counties::tx_clarity_results::run(&db::pool().await.connection, csv_path).await
 }
 
 async fn run_hart() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -190,9 +189,7 @@ async fn run_hart() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         "Output: {}\n",
         scrapers::tx::counties::tx_hart_results::hart_output_path().display()
     );
-    scrapers::tx::counties::tx_hart_results::run(&db::pool().await.connection)
-        .await
-        .map_err(|e| e.into())
+    scrapers::tx::counties::tx_hart_results::run(&db::pool().await.connection).await
 }
 
 async fn run_other() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -249,10 +246,7 @@ async fn run_other() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .expect("read dir")
         .filter_map(|e| e.ok())
         .map(|e| e.path())
-        .filter(|p| {
-            p.extension()
-                .map_or(false, |e| e.eq_ignore_ascii_case("csv"))
-        })
+        .filter(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case("csv")))
         .collect();
 
     if csv_files.is_empty() {
@@ -267,8 +261,7 @@ async fn run_other() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             .file_name()
             .and_then(|s| s.to_str())
             .unwrap_or("unknown");
-        match tx_results::process_other_csv(db, csv_path, source_file, None).await
-        {
+        match tx_results::process_other_csv(db, csv_path, source_file, None).await {
             Ok(n) => {
                 println!("  {}: {} rows", csv_path.display(), n);
                 total_rows += n;

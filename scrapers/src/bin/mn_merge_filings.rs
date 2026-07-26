@@ -294,6 +294,7 @@ async fn update_matched_politician_from_staging(
         thumbnail_image_url: None,
         assets: None,
         official_website_url: None,
+        ballotpedia_url: None,
         campaign_website_url: stg.campaign_website_url.clone(),
         facebook_url: None,
         twitter_url: None,
@@ -315,6 +316,8 @@ async fn update_matched_politician_from_staging(
         fec_candidate_id: None,
         race_wins: None,
         race_losses: None,
+        residence_address_id: None,
+        campaign_address_id: None,
     };
     Politician::update(pool, &input).await?;
     Ok(())
@@ -419,6 +422,7 @@ async fn resolve_or_upsert_politician(
         thumbnail_image_url: None,
         assets: None,
         official_website_url: None,
+        ballotpedia_url: None,
         campaign_website_url: stg.campaign_website_url.clone(),
         facebook_url: None,
         twitter_url: None,
@@ -440,6 +444,8 @@ async fn resolve_or_upsert_politician(
         fec_candidate_id: None,
         race_wins: None,
         race_losses: None,
+        residence_address_id: None,
+        campaign_address_id: None,
     };
     let prod = Politician::upsert_from_source(pool, &input).await?;
     Ok((prod.id, false))

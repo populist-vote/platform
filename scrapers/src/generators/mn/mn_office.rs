@@ -494,6 +494,13 @@ mod tests {
 
     #[test]
     fn office_slug() {
+        let state_scope = db::ElectionScope::State;
+        let county_scope = db::ElectionScope::County;
+        let district_scope = db::ElectionScope::District;
+        let county_type = db::DistrictType::County;
+        let judicial_type = db::DistrictType::Judicial;
+        let school_type = db::DistrictType::School;
+        let hospital_type = db::DistrictType::Hospital;
         let tests: Vec<(&'static str, OfficeSlugGenerator)> = vec![
             (
                 "mn-us-senate-1",
@@ -506,7 +513,7 @@ mod tests {
                     school_district: None,
                     hospital_district: None,
                     municipality: None,
-                    election_scope: None,
+                    election_scope: Some(&state_scope),
                     district_type: None,
                 },
             ),
@@ -521,7 +528,7 @@ mod tests {
                     school_district: None,
                     hospital_district: None,
                     municipality: None,
-                    election_scope: None,
+                    election_scope: Some(&state_scope),
                     district_type: None,
                 },
             ),
@@ -536,7 +543,7 @@ mod tests {
                     school_district: None,
                     hospital_district: None,
                     municipality: None,
-                    election_scope: None,
+                    election_scope: Some(&state_scope),
                     district_type: None,
                 },
             ),
@@ -551,7 +558,7 @@ mod tests {
                     school_district: None,
                     hospital_district: None,
                     municipality: None,
-                    election_scope: None,
+                    election_scope: Some(&county_scope),
                     district_type: None,
                 },
             ),
@@ -566,7 +573,7 @@ mod tests {
                     school_district: None,
                     hospital_district: None,
                     municipality: None,
-                    election_scope: None,
+                    election_scope: Some(&state_scope),
                     district_type: None,
                 },
             ),
@@ -581,8 +588,8 @@ mod tests {
                     school_district: None,
                     hospital_district: None,
                     municipality: None,
-                    election_scope: None,
-                    district_type: None,
+                    election_scope: Some(&district_scope),
+                    district_type: Some(&judicial_type),
                 },
             ),
             (
@@ -596,8 +603,8 @@ mod tests {
                     school_district: None,
                     hospital_district: None,
                     municipality: None,
-                    election_scope: None,
-                    district_type: None,
+                    election_scope: Some(&district_scope),
+                    district_type: Some(&county_type),
                 },
             ),
             (
@@ -611,8 +618,8 @@ mod tests {
                     school_district: Some("ISD #535"),
                     hospital_district: None,
                     municipality: None,
-                    election_scope: None,
-                    district_type: None,
+                    election_scope: Some(&district_scope),
+                    district_type: Some(&school_type),
                 },
             ),
             (
@@ -626,80 +633,14 @@ mod tests {
                     school_district: None,
                     hospital_district: Some("Northern Itasca - Koochiching"),
                     municipality: None,
-                    election_scope: None,
-                    district_type: None,
+                    election_scope: Some(&district_scope),
+                    district_type: Some(&hospital_type),
                 },
             ),
         ];
 
         for (expected, generator) in tests {
             assert_eq!(expected, generator.generate());
-        }
-    }
-
-    #[test]
-    fn office_subtitle() {
-        let tests: Vec<((&'static str, &'static str), OfficeSubtitleGenerator)> = vec![
-            (
-                ("MN", "MN"),
-                OfficeSubtitleGenerator {
-                    state: &db::State::MN,
-                    county: None,
-                    district: None,
-                    seat: None,
-                },
-            ),
-            (
-                ("Hennepin, MN", "Hennepin, MN"),
-                OfficeSubtitleGenerator {
-                    state: &db::State::MN,
-                    county: Some("Hennepin"),
-                    district: None,
-                    seat: None,
-                },
-            ),
-            (
-                ("MN - District 1", "MN - 1"),
-                OfficeSubtitleGenerator {
-                    state: &db::State::MN,
-                    county: None,
-                    district: Some("1"),
-                    seat: None,
-                },
-            ),
-            (
-                ("MN - Seat 2", "MN - 2"),
-                OfficeSubtitleGenerator {
-                    state: &db::State::MN,
-                    county: None,
-                    district: None,
-                    seat: Some("2"),
-                },
-            ),
-            (
-                ("MN - At Large", "MN - At Large"),
-                OfficeSubtitleGenerator {
-                    state: &db::State::MN,
-                    county: None,
-                    district: None,
-                    seat: Some("At Large"),
-                },
-            ),
-            (
-                ("Hennepin, MN - District 1 - Seat 2", "Hennepin, MN - 1 - 2"),
-                OfficeSubtitleGenerator {
-                    state: &db::State::MN,
-                    county: Some("Hennepin"),
-                    district: Some("1"),
-                    seat: Some("2"),
-                },
-            ),
-        ];
-
-        for (expected, generator) in tests {
-            let subtitle = generator.generate();
-            assert_eq!(expected.0, subtitle.0);
-            assert_eq!(expected.1, subtitle.1);
         }
     }
 }

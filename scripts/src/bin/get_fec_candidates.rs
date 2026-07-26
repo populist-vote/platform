@@ -36,7 +36,7 @@ async fn run() -> Result<(), Box<dyn Error>> {
             office_sought: Some("H".into()),
             per_page: Some(100), // Max is 100
             sort: Some("candidate_status".into()),
-            page: Some(page.into()),
+            page: Some(page),
             ..CandidatesQuery::default()
         };
         let res = proxy.get_candidates(query).await?;
@@ -65,14 +65,14 @@ async fn run() -> Result<(), Box<dyn Error>> {
     sqlx::query(&query).execute(&pool.connection).await?;
 
     // Insert results into temp table
-    sqlx::query!(
+    sqlx::query(
         r#"
         INSERT INTO p6t_federal.fec_house_candidates_2024
         SELECT * FROM json_populate_recordset(null::p6t_federal.fec_house_candidates_2024, $1::json)
         "#,
-        // Parse vec of json objects into string, then parse string into jsonb...ick
-        serde_json::to_string(&results)?.parse::<serde_json::Value>()?
     )
+    // Parse vec of JSON objects into a string, then parse the string into JSON.
+    .bind(serde_json::to_string(&results)?.parse::<serde_json::Value>()?)
     .execute(&pool.connection)
     .await?;
 

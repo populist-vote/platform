@@ -16,7 +16,7 @@ async fn upsert_races() -> Result<(), Box<dyn Error>> {
         let input: UpsertRaceInput = result?;
         let _race = Race::upsert(&pool.connection, &input)
             .await
-            .expect(format!("Failed to upsert race: {:?}", input.slug).as_str());
+            .unwrap_or_else(|_| panic!("Failed to upsert race: {:?}", input.slug));
     }
 
     sp.stop();

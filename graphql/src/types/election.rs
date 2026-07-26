@@ -317,7 +317,7 @@ async fn get_races_by_address_id(
     if user_address_data.state == State::MN {
         apply_mn_filters(
             &mut builder,
-            user_address_data.state.clone(),
+            user_address_data.state,
             user_address_data.county.as_deref(),
             city.clone(),
             user_address_data.congressional_district.clone(),
@@ -352,7 +352,7 @@ async fn get_races_by_address_id(
         );
         apply_tx_filters(
             &mut builder,
-            user_address_data.state.clone(),
+            user_address_data.state,
             user_address_data.county.as_deref(),
             tx_precinct.clone(),
             tx_congressional_district.clone(),
@@ -402,7 +402,7 @@ impl ElectionResult {
         let before_offset = before
             .as_ref()
             .and_then(|b| Base64Cursor::decode_cursor(b).ok())
-            .map(|c| usize::from(c));
+            .map(usize::from);
 
         // Determine range
         let limit = first.or(last).unwrap_or(default_page_size);

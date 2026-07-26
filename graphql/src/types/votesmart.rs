@@ -14,6 +14,7 @@ pub struct VsRating {
     pub timespan: Value,
 }
 #[derive(SimpleObject, Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct VsCategoryItem {
     pub category_id: i32,
     pub name: Value,

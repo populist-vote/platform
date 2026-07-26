@@ -104,10 +104,7 @@ fn word_to_title(w: &str) -> String {
         return format!("O'{rest_title}");
     }
     // Normal title case: first char upper, rest lower
-    let mut all = first
-        .into_iter()
-        .chain(second.into_iter())
-        .chain(rest.chars());
+    let mut all = first.into_iter().chain(second).chain(rest.chars());
     match all.next() {
         None => String::new(),
         Some(f) => f
@@ -135,9 +132,7 @@ fn title_case_phrase(s: &str) -> String {
                 .map(|part| {
                     part.split('.')
                         .map(|seg| {
-                            if is_roman_numeral(seg) {
-                                seg.to_uppercase()
-                            } else if is_two_letter_all_caps(seg) {
+                            if is_roman_numeral(seg) || is_two_letter_all_caps(seg) {
                                 seg.to_uppercase()
                             } else {
                                 word_to_title(seg)
@@ -344,9 +339,8 @@ fn extract_last_name(input: &str) -> (String, Option<String>) {
             let prefix_formatted = if prefix_str.eq_ignore_ascii_case("van")
                 || prefix_str.eq_ignore_ascii_case("von")
                 || prefix_str.eq_ignore_ascii_case("del")
+                || prefix_str.ends_with('.')
             {
-                prefix_str.to_string()
-            } else if prefix_str.ends_with('.') {
                 prefix_str.to_string()
             } else {
                 format!("{}.", prefix_str)
@@ -374,7 +368,7 @@ fn extract_last_name(input: &str) -> (String, Option<String>) {
 
 /// Normalize whitespace: collapse runs of whitespace to single space, trim, and remove spaces around hyphens.
 fn normalize_whitespace(s: &str) -> String {
-    let collapsed: String = s.trim().split_whitespace().collect::<Vec<_>>().join(" ");
+    let collapsed: String = s.split_whitespace().collect::<Vec<_>>().join(" ");
     collapsed
         .split('-')
         .map(|part| part.trim())
@@ -392,10 +386,7 @@ pub(crate) fn strip_accents(s: &str) -> String {
 /// Replace '' and directional/curly double quotes with ASCII ".
 fn normalize_quotes(s: &str) -> String {
     s.replace("''", "\"")
-        .replace('\u{201C}', "\"") // "
-        .replace('\u{201D}', "\"") // "
-        .replace('\u{201E}', "\"") // „
-        .replace('\u{201F}', "\"") // ‟
+        .replace(['\u{201C}', '\u{201D}', '\u{201E}', '\u{201F}'], "\"") // ‟
 }
 
 /// Strip "dr." (case-insensitive) from the string only when not inside single quotes, double quotes, or parentheses.

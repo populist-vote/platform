@@ -1,6 +1,7 @@
 use crate::State;
 use sqlx::{Postgres, QueryBuilder};
 
+#[allow(clippy::too_many_arguments)]
 pub fn apply_tx_filters(
     builder: &mut QueryBuilder<Postgres>,
     state: State,

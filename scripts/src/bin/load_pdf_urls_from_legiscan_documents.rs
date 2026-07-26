@@ -59,7 +59,7 @@ async fn get_pdf_urls(file_path: PathBuf) -> Result<(), Box<dyn Error>> {
         record_count += 1;
         sp = Spinner::new(
             Spinners::Dots5,
-            format!("Processed {} records...", record_count).into(),
+            format!("Processed {} records...", record_count),
         );
     }
 

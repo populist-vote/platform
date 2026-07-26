@@ -13,13 +13,8 @@ pub struct PageFetchCache {
 
 #[derive(Debug, Clone)]
 enum CacheEntry {
-    Html {
-        body: Arc<str>,
-        stored_at: Instant,
-    },
-    NotFound {
-        stored_at: Instant,
-    },
+    Html { body: Arc<str>, stored_at: Instant },
+    NotFound { stored_at: Instant },
 }
 
 /// Result of fetching (or reading from cache) a host page's HTML.
@@ -85,11 +80,7 @@ impl PageFetchCache {
     }
 
     /// Returns cached HTML / 404 when fresh; otherwise fetches and updates the cache.
-    pub async fn fetch_page(
-        &self,
-        client: &reqwest::Client,
-        url: &str,
-    ) -> PageFetchResult {
+    pub async fn fetch_page(&self, client: &reqwest::Client, url: &str) -> PageFetchResult {
         if let Some(cached) = self.get_if_fresh(url) {
             return cached;
         }

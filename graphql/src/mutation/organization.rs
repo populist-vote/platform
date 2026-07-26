@@ -27,8 +27,8 @@ pub async fn handle_nested_issue_tags(
     associated_record_id: uuid::Uuid,
     issue_tags_input: CreateOrConnectIssueTagInput,
 ) -> Result<(), Error> {
-    if issue_tags_input.create.is_some() {
-        for input in issue_tags_input.create.unwrap() {
+    if let Some(inputs) = issue_tags_input.create {
+        for input in inputs {
             let new_issue_tag = IssueTag::upsert(db_pool, &input).await?;
             Organization::connect_issue_tag(
                 db_pool,
@@ -38,8 +38,8 @@ pub async fn handle_nested_issue_tags(
             .await?;
         }
     }
-    if issue_tags_input.connect.is_some() {
-        for issue_tag_identifier in issue_tags_input.connect.unwrap() {
+    if let Some(issue_tag_identifiers) = issue_tags_input.connect {
+        for issue_tag_identifier in issue_tag_identifiers {
             match uuid::Uuid::from_str(issue_tag_identifier.as_str()) {
                 Ok(issue_tag_id) => {
                     Organization::connect_issue_tag(
@@ -77,8 +77,8 @@ impl OrganizationMutation {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
         let new_record = Organization::update(&db_pool, &input).await?;
 
-        if input.issue_tags.is_some() {
-            handle_nested_issue_tags(&db_pool, new_record.id, input.issue_tags.unwrap()).await?;
+        if let Some(issue_tags) = input.issue_tags {
+            handle_nested_issue_tags(&db_pool, new_record.id, issue_tags).await?;
         }
 
         Ok(OrganizationResult::from(new_record))

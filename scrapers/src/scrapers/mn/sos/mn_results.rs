@@ -94,14 +94,7 @@ pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
         let table_name = format!(
             "p6t_state_mn.results_{}_{}",
             url.split('/')
-                .filter_map(|segment| {
-                    if segment.len() == 8 && segment.chars().all(|c| c.is_numeric()) {
-                        Some(segment)
-                    } else {
-                        None
-                    }
-                })
-                .next()
+                .find(|segment| { segment.len() == 8 && segment.chars().all(|c| c.is_numeric()) })
                 .unwrap_or_else(|| {
                     tracing::warn!("No valid date segment found in URL: {}", url);
                     "unknown"

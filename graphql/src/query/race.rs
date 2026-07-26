@@ -60,7 +60,9 @@ impl RaceQuery {
         let inputs: Vec<(uuid::Uuid, bool)> = office_inputs
             .into_iter()
             .filter_map(|i| {
-                uuid::Uuid::parse_str(&i.office_id).ok().map(|id| (id, i.is_special_election))
+                uuid::Uuid::parse_str(&i.office_id)
+                    .ok()
+                    .map(|id| (id, i.is_special_election))
             })
             .collect();
         let records = Race::primary_races_for_general(&db_pool, &inputs).await?;
