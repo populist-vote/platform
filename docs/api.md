@@ -38,6 +38,17 @@ GET /api/v1/
 GET /api/v1/health
 ```
 
+The ballot-by-address dataset endpoint is:
+
+```http
+POST /api/v1/elections/{electionId}/ballot
+```
+
+See the [client integration guide](rest/ballot-by-address.md), the
+[OpenAPI 3.1 contract](rest/openapi.yaml), and the checked-in
+[examples](rest/examples/). The guide documents address handling, geographic
+coverage, retry behavior, stable errors, and client acceptance tests.
+
 ## Adding Endorsements to Politicians
 
 You can use the GraphQL playground to run mutations to add new or existing politicians and organizations as endorsements. See [the readme](README.md) to get setup with an authorization token for the playground. A sample mutation to create new _and_ connect existing politicians as politician endorsements looks like this:

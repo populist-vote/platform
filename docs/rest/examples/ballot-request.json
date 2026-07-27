@@ -1,0 +1,9 @@
+{
+  "address": {
+    "line1": "123 Main St",
+    "city": "Minneapolis",
+    "state": "MN",
+    "postalCode": "55401",
+    "country": "US"
+  }
+}

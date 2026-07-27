@@ -18,10 +18,14 @@ use db::{
     },
     Address, AddressInput, Election, ElectionScope, Race,
 };
+use futures::FutureExt;
 use geocodio::GeocodioProxy;
 use jsonwebtoken::TokenData;
 use sqlx::{Postgres, QueryBuilder};
+use std::{panic::AssertUnwindSafe, time::Duration};
 use uuid::Uuid;
+
+const GEOCODING_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(SimpleObject, Clone, Debug)]
 #[graphql(complex)]
@@ -40,12 +44,26 @@ pub struct ElectionRaceFilter {
     query: Option<String>,
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct ProcessedAddress {
+    pub id: Uuid,
+    pub created: bool,
+}
+
 pub async fn process_address_with_geocodio(
     db_pool: &sqlx::PgPool,
     address: AddressInput,
 ) -> Result<Uuid, Error> {
+    Ok(process_address_with_geocodio_status(db_pool, address)
+        .await?
+        .id)
+}
+
+pub async fn process_address_with_geocodio_status(
+    db_pool: &sqlx::PgPool,
+    address: AddressInput,
+) -> Result<ProcessedAddress, Error> {
     let address_clone = address.clone();
-    let geocodio = GeocodioProxy::new().unwrap();
 
     let existing_address = sqlx::query!(
         r#"
@@ -55,7 +73,7 @@ pub async fn process_address_with_geocodio(
             address
         WHERE
             line_1 = $1 AND
-            line_2 = $2 AND
+            line_2 IS NOT DISTINCT FROM $2 AND
             city = $3 AND
             state = $4 AND
             country = $5 AND
@@ -72,39 +90,77 @@ pub async fn process_address_with_geocodio(
     .await?;
 
     if let Some(address) = existing_address {
-        return Ok(address.id);
+        return Ok(ProcessedAddress {
+            id: address.id,
+            created: false,
+        });
     }
 
     // Process address with geocodio
-    let geocode_result = geocodio
-        .geocode(
-            geocodio::AddressParams::AddressInput(geocodio::AddressInput {
-                line_1: address.line_1,
-                line_2: address.line_2,
-                city: address.city,
-                state: address.state.to_string(),
-                country: address.country,
-                postal_code: address.postal_code,
-            }),
-            Some(&["cd118", "stateleg-next"]),
-        )
-        .await;
+    let geocodio = GeocodioProxy::new()?;
+    let geocoding = AssertUnwindSafe(geocodio.geocode(
+        geocodio::AddressParams::AddressInput(geocodio::AddressInput {
+            line_1: address.line_1,
+            line_2: address.line_2,
+            city: address.city,
+            state: address.state.to_string(),
+            country: address.country,
+            postal_code: address.postal_code,
+        }),
+        Some(&["cd118", "stateleg-next"]),
+    ))
+    .catch_unwind();
+    let geocodio_data = match tokio::time::timeout(GEOCODING_TIMEOUT, geocoding).await {
+        Ok(Ok(result)) => result?,
+        Ok(Err(_)) => {
+            return Err(Error::GeocodioError(geocodio::Error::Api(
+                "geocoding request panicked".to_string(),
+            )));
+        }
+        Err(_) => {
+            return Err(Error::GeocodioError(geocodio::Error::Api(
+                "geocoding request timed out".to_string(),
+            )));
+        }
+    };
 
-    if let Ok(geocodio_data) = geocode_result {
-        let city = geocodio_data.results[0]
+    if let Some(primary_result) = geocodio_data.results.first() {
+        if primary_result
+            .address_components
+            .state
+            .as_deref()
+            .is_some_and(|state| !state.eq_ignore_ascii_case(address_clone.state.as_ref()))
+        {
+            return Err(Error::BadInput {
+                field: "address.state".to_string(),
+                message: "The geocoded address did not match the requested state.".to_string(),
+            });
+        }
+        let city = primary_result
             .address_components
             .city
             .clone()
             .unwrap_or(address_clone.city);
-        let coordinates = geocodio_data.results[0].location.clone();
-        let county = geocodio_data.results[0].address_components.county.clone();
-        let primary_result = geocodio_data.results[0].fields.as_ref().unwrap();
-        let congressional_district =
-            &primary_result.congressional_districts.as_ref().unwrap()[0].district_number;
-        let state_legislative_districts =
-            primary_result.state_legislative_districts.as_ref().unwrap();
-        let state_house_district = &state_legislative_districts.house[0].district_number;
-        let state_senate_district = &state_legislative_districts.senate[0].district_number;
+        let coordinates = primary_result.location.clone();
+        let county = primary_result.address_components.county.clone();
+        let congressional_district = primary_result
+            .fields
+            .as_ref()
+            .and_then(|fields| fields.congressional_districts.as_ref())
+            .and_then(|districts| districts.first())
+            .map(|district| district.district_number.to_string());
+        let state_house_district = primary_result
+            .fields
+            .as_ref()
+            .and_then(|fields| fields.state_legislative_districts.as_ref())
+            .and_then(|districts| districts.house.first())
+            .map(|district| district.district_number.clone());
+        let state_senate_district = primary_result
+            .fields
+            .as_ref()
+            .and_then(|fields| fields.state_legislative_districts.as_ref())
+            .and_then(|districts| districts.senate.first())
+            .map(|district| district.district_number.clone());
 
         let temp_address_record = sqlx::query!(r#"
                     INSERT INTO address (line_1, line_2, city, state, county, country, postal_code, lon, lat, geog, geom, congressional_district, state_senate_district, state_house_district)
@@ -131,7 +187,7 @@ pub async fn process_address_with_geocodio(
             coordinates.longitude,
             coordinates.latitude,
             format!("POINT({} {})", coordinates.longitude, coordinates.latitude), // A string we pass into ST_GeomFromText function
-            &congressional_district.to_string(),
+            congressional_district,
             state_senate_district,
             state_house_district
             ).fetch_one(db_pool).await?;
@@ -156,7 +212,10 @@ pub async fn process_address_with_geocodio(
         //     }
         // });
 
-        Ok(address_id)
+        Ok(ProcessedAddress {
+            id: address_id,
+            created: true,
+        })
     } else {
         Err(Error::BadInput {
             field: "address".to_string(),
@@ -165,11 +224,11 @@ pub async fn process_address_with_geocodio(
     }
 }
 
-async fn get_races_by_address_id(
+pub async fn get_races_by_address_id(
     db_pool: &sqlx::PgPool,
     election_id: &Uuid,
     address_id: &Uuid,
-) -> Result<Vec<RaceResult>, Error> {
+) -> Result<Vec<Race>, Error> {
     // 1. Fetch base address info
     let user_address_data = sqlx::query!(
         r#"
@@ -368,13 +427,96 @@ async fn get_races_by_address_id(
         );
     }
 
-    builder.push(") ORDER BY o.priority ASC NULLS LAST, (regexp_match(o.district, '^[0-9]+'))[1]::int ASC NULLS LAST, COALESCE(o.district, '') ASC, (regexp_match(o.seat, '^[0-9]+'))[1]::int ASC NULLS LAST, COALESCE(o.seat, '') ASC, title DESC");
+    builder.push(") ORDER BY o.priority ASC NULLS LAST, (regexp_match(o.district, '^[0-9]+'))[1]::int ASC NULLS LAST, COALESCE(o.district, '') ASC, (regexp_match(o.seat, '^[0-9]+'))[1]::int ASC NULLS LAST, COALESCE(o.seat, '') ASC, title DESC, r.id ASC");
 
     // 5. Run query
     let query = builder.build_query_as::<Race>();
     let records = query.fetch_all(db_pool).await?;
 
-    Ok(records.into_iter().map(RaceResult::from).collect())
+    Ok(records)
+}
+
+pub async fn get_ballot_measures_by_address_id(
+    db_pool: &sqlx::PgPool,
+    election_id: &Uuid,
+    address_id: &Uuid,
+) -> Result<Vec<BallotMeasure>, Error> {
+    let user_address_data = sqlx::query!(
+        r#"
+        SELECT a.state AS "state:State"
+        FROM address AS a
+        WHERE a.id = $1
+        "#,
+        address_id
+    )
+    .fetch_one(db_pool)
+    .await?;
+
+    let user_address_extended_mn = if user_address_data.state == State::MN {
+        Address::extended_mn_by_address_id(db_pool, address_id).await?
+    } else {
+        None
+    };
+    let county_fips = user_address_extended_mn
+        .as_ref()
+        .and_then(|address| address.county_fips.clone());
+    let municipality_fips = user_address_extended_mn
+        .as_ref()
+        .and_then(|address| address.municipality_fips.as_deref())
+        .map(|fips| fips.trim_start_matches('0').to_string());
+    let school_district = user_address_extended_mn
+        .as_ref()
+        .and_then(|address| address.school_district_number.as_deref())
+        .map(|district| district.trim_start_matches('0').to_string());
+
+    let records = sqlx::query_as!(
+        BallotMeasure,
+        r#"
+        SELECT
+            bm.id,
+            bm.slug,
+            bm.title,
+            bm.description,
+            bm.status AS "status:BallotMeasureStatus",
+            bm.ballot_measure_code,
+            bm.measure_type,
+            bm.definitions,
+            bm.official_summary,
+            bm.populist_summary,
+            bm.full_text_url,
+            bm.election_id,
+            bm.state AS "state:State",
+            bm.county,
+            bm.municipality,
+            bm.school_district,
+            bm.county_fips,
+            bm.municipality_fips,
+            bm.yes_votes,
+            bm.no_votes,
+            bm.num_precincts_reporting,
+            bm.total_precincts,
+            bm.election_scope AS "election_scope:ElectionScope",
+            bm.created_at,
+            bm.updated_at
+        FROM ballot_measure bm
+        WHERE
+            bm.election_id = $1
+            AND bm.state = $2::state
+            AND (bm.county_fips IS NULL OR bm.county_fips = $3)
+            AND (bm.municipality_fips IS NULL OR bm.municipality_fips = $4)
+            AND (bm.school_district IS NULL OR bm.school_district = $5)
+        ORDER BY bm.title ASC, bm.id ASC
+        "#,
+        election_id,
+        user_address_data.state as State,
+        county_fips,
+        municipality_fips,
+        school_district
+    )
+    .fetch_all(db_pool)
+    .await?;
+
+    Ok(records)
 }
 
 #[ComplexObject]
@@ -518,7 +660,7 @@ impl ElectionResult {
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
         let address_id = process_address_with_geocodio(&db_pool, address).await?;
         let races = get_races_by_address_id(&db_pool, &election_id, &address_id).await?;
-        Ok(races)
+        Ok(races.into_iter().map(RaceResult::from).collect())
     }
 
     /// Show races relevant to the user based on their address
@@ -535,7 +677,7 @@ impl ElectionResult {
                 println!("address_id = {:?}", address_id);
                 let results = get_races_by_address_id(&db_pool, &election_id, &address_id).await?;
 
-                Ok(results)
+                Ok(results.into_iter().map(RaceResult::from).collect())
             } else {
                 tracing::debug!("No address found with user address data");
                 Err(Error::UserAddressNotFound)
@@ -642,102 +784,13 @@ impl ElectionResult {
         let election_id = uuid::Uuid::parse_str(&self.id)?;
         let db_pool = ctx.data::<ApiContext>().unwrap().pool.clone();
         let address_id = process_address_with_geocodio(&db_pool, address).await?;
-        let user_address_data = sqlx::query!(
-            r#"
-            SELECT
-                a.congressional_district,
-                a.state_senate_district,
-                a.state_house_district,
-                a.state AS "state:State",
-                a.postal_code,
-                a.county,
-                a.city
-            FROM
-                address AS a
-            WHERE
-                
-                a.id = $1
-            "#,
-            address_id
+        Ok(
+            get_ballot_measures_by_address_id(&db_pool, &election_id, &address_id)
+                .await?
+                .into_iter()
+                .map(BallotMeasureResult::from)
+                .collect(),
         )
-        .fetch_one(&db_pool)
-        .await?;
-
-        let user_address_extended_mn =
-            Address::extended_mn_by_address_id(&db_pool, &address_id).await?;
-
-        let county_fips = user_address_extended_mn
-            .clone()
-            .and_then(|a| a.county_fips.clone());
-
-        let municipality_fips = user_address_extended_mn
-            .clone()
-            .map(|a| {
-                a.municipality_fips
-                    .map(|d| d.as_str().trim_start_matches('0').to_string())
-            })
-            .unwrap_or(None);
-
-        let school_district = user_address_extended_mn
-            .clone()
-            .map(|a| {
-                a.school_district_number
-                    .map(|d| d.as_str().trim_start_matches('0').to_string())
-            })
-            .unwrap_or(None);
-
-        println!("county_fips = {:?}", county_fips);
-        println!("municipality_fips = {:?}", municipality_fips);
-        println!("school_district = {:?}", school_district);
-
-        // Only handling statewide ballot measures for now
-        let records = sqlx::query_as!(
-            BallotMeasure,
-            r#"
-            SELECT
-                bm.id,
-                bm.slug,
-                bm.title,
-                bm.description,
-                bm.status AS "status:BallotMeasureStatus",
-                bm.ballot_measure_code,
-                bm.measure_type,
-                bm.definitions,
-                bm.official_summary,
-                bm.populist_summary,
-                bm.full_text_url,
-                bm.election_id,
-                bm.state AS "state:State",
-                bm.county,
-                bm.municipality, 
-                bm.school_district,
-                bm.county_fips,
-                bm.municipality_fips,
-                bm.yes_votes,
-                bm.no_votes,
-                bm.num_precincts_reporting,
-                bm.total_precincts,
-                bm.election_scope AS "election_scope:ElectionScope",
-                bm.created_at,
-                bm.updated_at
-            FROM
-                ballot_measure bm
-            WHERE
-                bm.election_id = $1
-                AND bm.state = $2::state
-                AND (bm.county_fips IS NULL OR bm.county_fips = $3)
-                AND (bm.municipality_fips IS NULL OR bm.municipality_fips = $4)
-                AND (bm.school_district IS NULL OR bm.school_district = $5)
-            "#,
-            &election_id,
-            user_address_data.state as State,
-            county_fips,
-            municipality_fips,
-            school_district
-        )
-        .fetch_all(&db_pool)
-        .await?;
-        Ok(records.into_iter().map(BallotMeasureResult::from).collect())
     }
 }
 

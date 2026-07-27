@@ -1,0 +1,106 @@
+{
+  "data": {
+    "election": {
+      "id": "7f7f1111-2222-4333-8444-555555555555",
+      "slug": "minnesota-general-election-2026",
+      "title": "Minnesota General Election",
+      "description": null,
+      "state": "MN",
+      "electionDate": "2026-11-03"
+    },
+    "races": [
+      {
+        "id": "11111111-2222-4333-8444-555555555555",
+        "slug": "minneapolis-mayor-2026",
+        "title": "Mayor",
+        "electionId": "7f7f1111-2222-4333-8444-555555555555",
+        "officeId": "22222222-3333-4444-8555-666666666666",
+        "raceType": "general",
+        "voteType": "plurality",
+        "state": "MN",
+        "electionDate": "2026-11-03",
+        "isSpecialElection": false,
+        "numElect": 1,
+        "party": null,
+        "office": {
+          "id": "22222222-3333-4444-8555-666666666666",
+          "name": "Minneapolis Mayor",
+          "title": "Mayor",
+          "subtitle": "Minneapolis, MN",
+          "subtitleShort": "Minneapolis, MN",
+          "state": "MN",
+          "county": "Hennepin",
+          "municipality": "Minneapolis",
+          "district": null,
+          "seat": null,
+          "electionScope": "city",
+          "districtType": null,
+          "politicalScope": "local",
+          "incumbents": [
+            {
+              "id": "33333333-4444-4555-8666-777777777777",
+              "fullName": "Jordan Rivera",
+              "party": {
+                "name": "Example Party",
+                "fecCode": null
+              },
+              "thumbnailImageUrl": null,
+              "assets": {
+                "thumbnailImage160": null
+              }
+            }
+          ]
+        },
+        "candidates": [
+          {
+            "id": "44444444-5555-4666-8777-888888888888",
+            "slug": "alex-morgan",
+            "fullName": "Alex Morgan",
+            "email": null,
+            "phone": null,
+            "party": {
+              "name": "Example Party",
+              "fecCode": null
+            },
+            "thumbnailImageUrl": null,
+            "assets": {
+              "thumbnailImage160": null
+            }
+          }
+        ],
+        "results": {
+          "totalVotes": null,
+          "precinctReportingPercentage": null,
+          "votesByCandidate": [
+            {
+              "candidateId": "44444444-5555-4666-8777-888888888888",
+              "votes": null,
+              "votePercentage": null
+            }
+          ],
+          "winners": []
+        },
+        "relatedEmbeds": []
+      }
+    ],
+    "ballotMeasures": [
+      {
+        "id": "55555555-6666-4777-8888-999999999999",
+        "title": "Example City Question",
+        "description": "An illustrative ballot measure.",
+        "state": "MN",
+        "ballotMeasureCode": "Question 1",
+        "yesVotes": null,
+        "noVotes": null,
+        "numPrecinctsReporting": null,
+        "totalPrecincts": null,
+        "electionScope": "city"
+      }
+    ],
+    "coverage": {
+      "races": "address_specific",
+      "ballotMeasures": "address_specific",
+      "warnings": []
+    }
+  }
+}

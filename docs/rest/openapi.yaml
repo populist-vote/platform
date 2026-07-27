@@ -1,0 +1,858 @@
+openapi: 3.1.0
+info:
+  title: Populist Ballot by Address API
+  version: 1.0.0
+  description: |
+    Resolves Populist election data for a US address. Results are informational
+    and are not an official sample ballot, voter-registration check,
+    polling-place lookup, or statement of voter eligibility.
+servers:
+  - url: /
+    description: Relative to the environment base URL supplied during onboarding
+security: []
+paths:
+  /api/v1/elections/{electionId}/ballot:
+    post:
+      operationId: getBallotByAddress
+      summary: Resolve ballot data for an address
+      description: |
+        Returns election details, ordered races, candidates, reported results,
+        ballot measures, and explicit geographic coverage metadata. The optional
+        endorserId filters each race's candidate array only.
+      parameters:
+        - name: electionId
+          in: path
+          required: true
+          description: Election UUID obtained through client configuration.
+          schema:
+            type: string
+            format: uuid
+        - name: endorserId
+          in: query
+          required: false
+          description: |
+            Organization UUID used to filter candidates to that organization's
+            endorsements. Races and results remain present.
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/RequestId"
+      requestBody:
+        required: true
+        description: JSON request body, limited to 8 KiB.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BallotRequest"
+            examples:
+              minneapolis:
+                summary: Minnesota address
+                value:
+                  address:
+                    line1: 123 Main St
+                    city: Minneapolis
+                    state: MN
+                    postalCode: "55401"
+                    country: US
+      responses:
+        "200":
+          description: Ballot data resolved
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/NoStore"
+            Pragma:
+              description: Legacy cache-prevention directive.
+              schema:
+                type: string
+                const: no-cache
+            X-Content-Type-Options:
+              $ref: "#/components/headers/NoSniff"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BallotResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "422":
+          $ref: "#/components/responses/InvalidAddress"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+        "504":
+          $ref: "#/components/responses/RequestTimeout"
+components:
+  parameters:
+    RequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      description: |
+        Caller correlation ID. Values longer than 128 bytes or invalid as an
+        HTTP header value are replaced. Do not include personal data.
+      schema:
+        type: string
+        maxLength: 128
+  headers:
+    RequestId:
+      description: Caller-supplied or server-generated request correlation ID.
+      schema:
+        type: string
+    NoStore:
+      description: Prevents storage of address-derived responses.
+      schema:
+        type: string
+        const: no-store
+    NoSniff:
+      description: Disables MIME-type sniffing.
+      schema:
+        type: string
+        const: nosniff
+    RetryAfter:
+      description: Minimum retry delay in seconds.
+      schema:
+        type: string
+        const: "5"
+  responses:
+    BadRequest:
+      description: Invalid path parameter, query parameter, or JSON body
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+        X-Content-Type-Options:
+          $ref: "#/components/headers/NoSniff"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          examples:
+            invalidBody:
+              value:
+                type: about:blank
+                title: Bad Request
+                status: 400
+                code: invalid_body
+                detail: The JSON request body is invalid.
+                instance: /api/v1/elections/not-a-uuid/ballot
+    NotFound:
+      description: Election does not exist
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+        X-Content-Type-Options:
+          $ref: "#/components/headers/NoSniff"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    MethodNotAllowed:
+      description: HTTP method is not supported
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+        X-Content-Type-Options:
+          $ref: "#/components/headers/NoSniff"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    PayloadTooLarge:
+      description: Request body exceeds 8 KiB
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+        X-Content-Type-Options:
+          $ref: "#/components/headers/NoSniff"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UnsupportedMediaType:
+      description: Content-Type is not application/json
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+        X-Content-Type-Options:
+          $ref: "#/components/headers/NoSniff"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    InvalidAddress:
+      description: Address fields are invalid or the address cannot be resolved
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+        X-Content-Type-Options:
+          $ref: "#/components/headers/NoSniff"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+          example:
+            type: about:blank
+            title: Unprocessable Entity
+            status: 422
+            code: invalid_address
+            detail: The address could not be resolved to a voting location.
+            instance: /api/v1/elections/7f7f1111-2222-4333-8444-555555555555/ballot
+    RateLimited:
+      description: Server ballot-lookup capacity is exhausted
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+        Retry-After:
+          $ref: "#/components/headers/RetryAfter"
+        X-Content-Type-Options:
+          $ref: "#/components/headers/NoSniff"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    InternalError:
+      description: Unexpected application or database failure
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+        X-Content-Type-Options:
+          $ref: "#/components/headers/NoSniff"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    ServiceUnavailable:
+      description: Address service is temporarily unavailable
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+        Retry-After:
+          $ref: "#/components/headers/RetryAfter"
+        X-Content-Type-Options:
+          $ref: "#/components/headers/NoSniff"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    RequestTimeout:
+      description: Ballot lookup exceeded its application deadline
+      headers:
+        X-Request-Id:
+          $ref: "#/components/headers/RequestId"
+        Cache-Control:
+          $ref: "#/components/headers/NoStore"
+        X-Content-Type-Options:
+          $ref: "#/components/headers/NoSniff"
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+  schemas:
+    StateCode:
+      type: string
+      enum:
+        - AL
+        - AK
+        - AS
+        - AZ
+        - AR
+        - CA
+        - CO
+        - CT
+        - DC
+        - FM
+        - DE
+        - FL
+        - GA
+        - GU
+        - HI
+        - ID
+        - IL
+        - IN
+        - IA
+        - KS
+        - KY
+        - LA
+        - ME
+        - MH
+        - MD
+        - MA
+        - MI
+        - MN
+        - MS
+        - MO
+        - MT
+        - NE
+        - NV
+        - NH
+        - NJ
+        - NM
+        - NY
+        - NC
+        - ND
+        - MP
+        - OH
+        - OK
+        - OR
+        - PW
+        - PA
+        - PR
+        - RI
+        - SC
+        - SD
+        - TN
+        - TX
+        - UT
+        - VT
+        - VI
+        - VA
+        - WA
+        - WV
+        - WI
+        - WY
+    BallotRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - address
+      properties:
+        address:
+          $ref: "#/components/schemas/Address"
+    Address:
+      type: object
+      additionalProperties: false
+      required:
+        - line1
+        - city
+        - state
+        - postalCode
+      properties:
+        line1:
+          type: string
+          minLength: 1
+          maxLength: 200
+        line2:
+          type:
+            - string
+            - "null"
+          maxLength: 200
+          description: Accepted but intentionally ignored for geocoding and storage.
+        city:
+          type: string
+          minLength: 1
+          maxLength: 100
+        state:
+          type: string
+          pattern: '^[A-Za-z]{2}$'
+          description: Case-insensitive valid US state or territory code.
+        postalCode:
+          type: string
+          pattern: '^[0-9]{5}(-[0-9]{4})?$'
+        country:
+          type:
+            - string
+            - "null"
+          default: US
+          description: Case-insensitive US or USA; normalized to US.
+          pattern: '^[Uu][Ss]([Aa])?$'
+    BallotResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/BallotData"
+    BallotData:
+      type: object
+      additionalProperties: false
+      required:
+        - election
+        - races
+        - ballotMeasures
+        - coverage
+      properties:
+        election:
+          $ref: "#/components/schemas/Election"
+        races:
+          type: array
+          items:
+            $ref: "#/components/schemas/Race"
+        ballotMeasures:
+          type: array
+          items:
+            $ref: "#/components/schemas/BallotMeasure"
+        coverage:
+          $ref: "#/components/schemas/Coverage"
+    CoverageLevel:
+      type: string
+      enum:
+        - address_specific
+        - statewide_only
+    Coverage:
+      type: object
+      additionalProperties: false
+      required:
+        - races
+        - ballotMeasures
+        - warnings
+      properties:
+        races:
+          $ref: "#/components/schemas/CoverageLevel"
+        ballotMeasures:
+          $ref: "#/components/schemas/CoverageLevel"
+        warnings:
+          type: array
+          items:
+            type: string
+    Election:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - slug
+        - title
+        - description
+        - state
+        - electionDate
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        title:
+          type: string
+        description:
+          type:
+            - string
+            - "null"
+        state:
+          oneOf:
+            - $ref: "#/components/schemas/StateCode"
+            - type: "null"
+        electionDate:
+          type: string
+          format: date
+    Race:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - slug
+        - title
+        - electionId
+        - officeId
+        - raceType
+        - voteType
+        - state
+        - electionDate
+        - isSpecialElection
+        - numElect
+        - party
+        - office
+        - candidates
+        - results
+        - relatedEmbeds
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        title:
+          type: string
+        electionId:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        officeId:
+          type: string
+          format: uuid
+        raceType:
+          type: string
+          enum: [primary, general]
+        voteType:
+          type: string
+          enum: [plurality, rankedchoice]
+        state:
+          oneOf:
+            - $ref: "#/components/schemas/StateCode"
+            - type: "null"
+        electionDate:
+          type: string
+          format: date
+        isSpecialElection:
+          type: boolean
+        numElect:
+          type:
+            - integer
+            - "null"
+          format: int32
+        party:
+          oneOf:
+            - $ref: "#/components/schemas/Party"
+            - type: "null"
+        office:
+          $ref: "#/components/schemas/Office"
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/Candidate"
+        results:
+          $ref: "#/components/schemas/RaceResults"
+        relatedEmbeds:
+          type: array
+          items:
+            $ref: "#/components/schemas/RelatedEmbed"
+    Office:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+        - title
+        - subtitle
+        - subtitleShort
+        - state
+        - county
+        - municipality
+        - district
+        - seat
+        - electionScope
+        - districtType
+        - politicalScope
+        - incumbents
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: [string, "null"]
+        title:
+          type: string
+        subtitle:
+          type: [string, "null"]
+        subtitleShort:
+          type: [string, "null"]
+        state:
+          oneOf:
+            - $ref: "#/components/schemas/StateCode"
+            - type: "null"
+        county:
+          type: [string, "null"]
+        municipality:
+          type: [string, "null"]
+        district:
+          type: [string, "null"]
+        seat:
+          type: [string, "null"]
+        electionScope:
+          $ref: "#/components/schemas/ElectionScope"
+        districtType:
+          oneOf:
+            - $ref: "#/components/schemas/DistrictType"
+            - type: "null"
+        politicalScope:
+          type: string
+          enum: [local, state, federal]
+        incumbents:
+          type: array
+          items:
+            $ref: "#/components/schemas/Incumbent"
+    ElectionScope:
+      type: string
+      enum: [national, state, county, city, district]
+    DistrictType:
+      type: string
+      enum:
+        - us_congressional
+        - state_senate
+        - state_house
+        - school
+        - city
+        - county
+        - judicial
+        - hospital
+        - soil_and_water
+        - transportation
+        - park
+        - board_of_education
+        - court_of_appeals
+        - justice_of_the_peace
+        - constable
+        - voting_precinct
+    Party:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - fecCode
+      properties:
+        name:
+          type: string
+        fecCode:
+          type: [string, "null"]
+    Assets:
+      type: object
+      additionalProperties: false
+      required:
+        - thumbnailImage160
+      properties:
+        thumbnailImage160:
+          type: [string, "null"]
+          format: uri
+    Candidate:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - slug
+        - fullName
+        - email
+        - phone
+        - party
+        - thumbnailImageUrl
+        - assets
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: [string, "null"]
+        phone:
+          type: [string, "null"]
+        party:
+          oneOf:
+            - $ref: "#/components/schemas/Party"
+            - type: "null"
+        thumbnailImageUrl:
+          type: [string, "null"]
+          format: uri
+        assets:
+          $ref: "#/components/schemas/Assets"
+    Incumbent:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - fullName
+        - party
+        - thumbnailImageUrl
+        - assets
+      properties:
+        id:
+          type: string
+          format: uuid
+        fullName:
+          type: string
+        party:
+          oneOf:
+            - $ref: "#/components/schemas/Party"
+            - type: "null"
+        thumbnailImageUrl:
+          type: [string, "null"]
+          format: uri
+        assets:
+          $ref: "#/components/schemas/Assets"
+    RaceResults:
+      type: object
+      additionalProperties: false
+      required:
+        - totalVotes
+        - precinctReportingPercentage
+        - votesByCandidate
+        - winners
+      properties:
+        totalVotes:
+          type: [integer, "null"]
+          format: int32
+        precinctReportingPercentage:
+          type: [number, "null"]
+          format: double
+        votesByCandidate:
+          type: array
+          items:
+            $ref: "#/components/schemas/CandidateVotes"
+        winners:
+          type: array
+          items:
+            $ref: "#/components/schemas/IdReference"
+    CandidateVotes:
+      type: object
+      additionalProperties: false
+      required:
+        - candidateId
+        - votes
+        - votePercentage
+      properties:
+        candidateId:
+          type: string
+          format: uuid
+        votes:
+          type: [integer, "null"]
+          format: int32
+        votePercentage:
+          type: [number, "null"]
+          format: double
+    IdReference:
+      type: object
+      additionalProperties: false
+      required: [id]
+      properties:
+        id:
+          type: string
+          format: uuid
+    RelatedEmbed:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - organizationId
+        - embedType
+        - race
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        embedType:
+          type: string
+          enum:
+            - legislation
+            - legislation_tracker
+            - politician
+            - question
+            - poll
+            - race
+            - candidate_guide
+            - my_ballot
+            - conversation
+        race:
+          oneOf:
+            - $ref: "#/components/schemas/RaceReference"
+            - type: "null"
+    RaceReference:
+      type: object
+      additionalProperties: false
+      required: [title]
+      properties:
+        title:
+          type: string
+    BallotMeasure:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - description
+        - state
+        - ballotMeasureCode
+        - yesVotes
+        - noVotes
+        - numPrecinctsReporting
+        - totalPrecincts
+        - electionScope
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: [string, "null"]
+        state:
+          $ref: "#/components/schemas/StateCode"
+        ballotMeasureCode:
+          type: string
+        yesVotes:
+          type: [integer, "null"]
+          format: int32
+        noVotes:
+          type: [integer, "null"]
+          format: int32
+        numPrecinctsReporting:
+          type: [integer, "null"]
+          format: int32
+        totalPrecincts:
+          type: [integer, "null"]
+          format: int32
+        electionScope:
+          oneOf:
+            - $ref: "#/components/schemas/ElectionScope"
+            - type: "null"
+    Problem:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - title
+        - status
+        - code
+        - detail
+        - instance
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        code:
+          type: string
+          enum:
+            - invalid_path_parameter
+            - invalid_parameter
+            - malformed_query
+            - invalid_body
+            - resource_not_found
+            - method_not_allowed
+            - payload_too_large
+            - unsupported_media_type
+            - invalid_address
+            - rate_limited
+            - internal_error
+            - address_service_unavailable
+            - request_timeout
+        detail:
+          type: string
+        instance:
+          type: string

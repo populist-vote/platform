@@ -32,7 +32,10 @@ pub use bill::BillResult;
 pub use candidate_guide::*;
 pub use committee::CommitteeResult;
 pub use conversation::ConversationResult;
-pub use election::ElectionResult;
+pub use election::{
+    get_ballot_measures_by_address_id, get_races_by_address_id, process_address_with_geocodio,
+    process_address_with_geocodio_status, ElectionResult, ProcessedAddress,
+};
 pub use embed::*;
 pub use errors::Error;
 pub use health::Heartbeat;

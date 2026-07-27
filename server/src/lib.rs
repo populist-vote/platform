@@ -100,6 +100,7 @@ pub async fn run() {
             db::State::iter()
                 .map(|state| rest::StateResource::new(state.to_string(), state.full_state()))
                 .collect(),
+            pool.connection.clone(),
         ))
         .nest(
             "/metrics",

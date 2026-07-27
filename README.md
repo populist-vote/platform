@@ -60,6 +60,50 @@ To start the api server, run `cargo watch -x run` which will type check, compile
 
 To run certain mutations and queries which require staff or superuser permissions, you can add an `Authorization` token to the HTTP headers section of the playground. You can login to `https://staging.populist.us` or `https://populist.us` and grab the value from the `access_token` cookie in your browsers developer tools. Add this to the http headers like so: `"Authorization" : "Bearer <TOKEN>"`
 
+### REST API
+
+Versioned REST endpoints are available under `/api/v1`. The API index is at
+`GET /api/v1/`.
+
+Resolve the races and ballot measures for an address in a specific election
+with:
+
+```http
+POST /api/v1/elections/{electionId}/ballot
+Content-Type: application/json
+
+{
+  "address": {
+    "line1": "123 Main St",
+    "line2": "Apt 4",
+    "city": "Minneapolis",
+    "state": "MN",
+    "postalCode": "55401",
+    "country": "US"
+  }
+}
+```
+
+Add `?endorserId={organizationId}` to restrict each race's candidates to those
+endorsed by that organization. The response includes the election, ordered
+races with offices, candidates and results, and address-matched ballot
+measures. Address data is not returned, and successful responses use
+`Cache-Control: no-store`.
+
+REST errors use `application/problem+json` with stable machine-readable `code`
+values.
+
+The client integration guide, complete examples, and machine-readable contract
+are in:
+
+- [`docs/rest/ballot-by-address.md`](docs/rest/ballot-by-address.md)
+- [`docs/rest/openapi.yaml`](docs/rest/openapi.yaml)
+- [`docs/rest/examples/`](docs/rest/examples/)
+
+Maintainers can run the deterministic ballot REST gate with
+`./scripts/check_ballot_rest.sh`. A bounded, reviewable Codex hardening loop is
+documented in [`docs/rest/agent-loop.md`](docs/rest/agent-loop.md).
+
 ## Testing
 
 Run the deterministic first-party checks with:

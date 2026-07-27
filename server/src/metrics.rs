@@ -1,6 +1,6 @@
 use async_graphql::extensions::{Extension, ExtensionContext, ExtensionFactory, NextExecute};
-use axum::http::Request;
 use axum::middleware::Next;
+use axum::{extract::MatchedPath, http::Request};
 use db::DatabasePool;
 use lazy_static::lazy_static;
 use prometheus::{
@@ -165,7 +165,11 @@ pub async fn metrics_handler() -> String {
 // Enhanced middleware for tracking HTTP requests with additional metrics
 pub async fn track_metrics(req: Request<axum::body::Body>, next: Next) -> axum::response::Response {
     let method = req.method().to_string();
-    let path = req.uri().path().to_string();
+    let path = req
+        .extensions()
+        .get::<MatchedPath>()
+        .map(|path| path.as_str().to_string())
+        .unwrap_or_else(|| req.uri().path().to_string());
 
     // Estimate request size (headers + body if available)
     let request_size = req.headers().iter().fold(0, |acc, (name, value)| {
