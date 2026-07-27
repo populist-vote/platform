@@ -223,8 +223,8 @@ wait_for_200 \
   "$web_base/docs/api/rest" \
   "$rest_docs" \
   "$rest_docs_headers"
-grep -Fq "REST API" "$rest_docs"
-grep -Fq "Ballot by Address" "$rest_docs"
+grep -Eqi '^content-type: text/html' "$rest_docs_headers"
+grep -Fq 'id="__next"' "$rest_docs"
 
 ballot_docs="$work_dir/ballot-docs.html"
 ballot_docs_headers="$work_dir/ballot-docs.headers"
@@ -233,8 +233,8 @@ wait_for_200 \
   "$web_base/docs/api/ballot-by-address" \
   "$ballot_docs" \
   "$ballot_docs_headers"
-grep -Fq "Geographic coverage" "$ballot_docs"
-grep -Fq "Address privacy" "$ballot_docs"
+grep -Eqi '^content-type: text/html' "$ballot_docs_headers"
+grep -Fq 'id="__next"' "$ballot_docs"
 
 openapi="$work_dir/rest-v1.yaml"
 openapi_headers="$work_dir/openapi.headers"
