@@ -104,6 +104,10 @@ Maintainers can run the deterministic ballot REST gate with
 `./scripts/check_ballot_rest.sh`. A bounded, reviewable Codex hardening loop is
 documented in [`docs/rest/agent-loop.md`](docs/rest/agent-loop.md).
 
+The guarded platform-and-web staging deployment loop and live verification
+suite are documented in
+[`docs/rest/staging-deployment-loop.md`](docs/rest/staging-deployment-loop.md).
+
 ## Testing
 
 Run the deterministic first-party checks with:
