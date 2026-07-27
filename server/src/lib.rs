@@ -109,7 +109,7 @@ pub async fn run() {
                 .layer(axum::middleware::from_fn(metrics_auth)),
         )
         .layer(axum::middleware::from_fn(metrics::track_metrics))
-        .layer(CorsLayer::very_permissive())
+        .layer(cors_layer())
         .layer(CookieManagerLayer::new());
 
     info!(
@@ -144,5 +144,47 @@ pub async fn run() {
         )
         .await
         .unwrap();
+    }
+}
+
+fn cors_layer() -> CorsLayer {
+    CorsLayer::very_permissive().expose_headers([rest::REQUEST_ID])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::{
+        body::Body,
+        http::{
+            header::{ACCESS_CONTROL_EXPOSE_HEADERS, ORIGIN},
+            Request,
+        },
+    };
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn cors_exposes_request_id_to_browser_clients() {
+        let app = axum::Router::new()
+            .route("/", get(|| async { "ok" }))
+            .layer(cors_layer());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/")
+                    .header(ORIGIN, "https://staging.populist.us")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(
+            response
+                .headers()
+                .get(ACCESS_CONTROL_EXPOSE_HEADERS)
+                .and_then(|value| value.to_str().ok()),
+            Some("x-request-id")
+        );
     }
 }

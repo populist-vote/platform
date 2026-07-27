@@ -21,7 +21,7 @@ use std::sync::Arc;
 pub use states::StateResource;
 
 const MAX_REQUEST_BODY_BYTES: usize = 1024 * 1024;
-const REQUEST_ID: HeaderName = HeaderName::from_static("x-request-id");
+pub(crate) const REQUEST_ID: HeaderName = HeaderName::from_static("x-request-id");
 const NOSNIFF: HeaderName = HeaderName::from_static("x-content-type-options");
 
 #[derive(Debug, Clone)]
