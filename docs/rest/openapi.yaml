@@ -1,16 +1,235 @@
 openapi: 3.1.0
 info:
-  title: Populist Ballot by Address API
-  version: 1.0.0
+  title: Populist Election Data API
+  version: 1.1.0
   description: |
-    Resolves Populist election data for a US address. Results are informational
-    and are not an official sample ballot, voter-registration check,
-    polling-place lookup, or statement of voter eligibility.
+    Resource-oriented access to Populist elections, races, candidates, reported
+    results, and ballot measures. The ballot-by-address operation remains
+    available for address-specific election coverage. Results are informational
+    and are not an official result certification, sample ballot,
+    voter-registration check, polling-place lookup, or statement of voter
+    eligibility.
 servers:
   - url: /
     description: Relative to the environment base URL supplied during onboarding
 security: []
 paths:
+  /api/v1/elections:
+    get:
+      operationId: listElections
+      summary: List elections
+      description: |
+        Discovers elections in deterministic election-date and ID order.
+        Collection filters are optional and combine with AND semantics.
+      parameters:
+        - $ref: "#/components/parameters/State"
+        - $ref: "#/components/parameters/Year"
+        - $ref: "#/components/parameters/Query"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200":
+          description: Paginated elections
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/ElectionCache"
+            X-Content-Type-Options:
+              $ref: "#/components/headers/NoSniff"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ElectionCollection"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v1/elections/{electionId}:
+    get:
+      operationId: getElection
+      summary: Get an election
+      description: Returns election metadata for a stable election UUID.
+      parameters:
+        - $ref: "#/components/parameters/ElectionId"
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200":
+          description: Election found
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/ElectionCache"
+            X-Content-Type-Options:
+              $ref: "#/components/headers/NoSniff"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ElectionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v1/elections/{electionId}/races:
+    get:
+      operationId: listElectionRaces
+      summary: List races in an election
+      description: |
+        Returns compact race directory entries with office, party, reporting
+        summary, and update time. An existing election with no matching races
+        returns an empty collection.
+      parameters:
+        - $ref: "#/components/parameters/ElectionId"
+        - $ref: "#/components/parameters/RaceType"
+        - $ref: "#/components/parameters/PoliticalScope"
+        - $ref: "#/components/parameters/ElectionScopeFilter"
+        - $ref: "#/components/parameters/DistrictTypeFilter"
+        - $ref: "#/components/parameters/State"
+        - $ref: "#/components/parameters/Query"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200":
+          description: Paginated election races
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/ElectionDataCache"
+            X-Content-Type-Options:
+              $ref: "#/components/headers/NoSniff"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RaceCollection"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v1/elections/{electionId}/races/{raceId}:
+    get:
+      operationId: getElectionRace
+      summary: Get a race in an election
+      description: |
+        Returns the complete public race resource. A race UUID that does not
+        belong to the election in the path returns 404.
+      parameters:
+        - $ref: "#/components/parameters/ElectionId"
+        - $ref: "#/components/parameters/RaceId"
+        - $ref: "#/components/parameters/EndorserId"
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200":
+          description: Race found in the election
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/ElectionDataCache"
+            X-Content-Type-Options:
+              $ref: "#/components/headers/NoSniff"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RaceResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v1/elections/{electionId}/results:
+    get:
+      operationId: listElectionResults
+      summary: List lightweight election results
+      description: |
+        Returns a paginated election-night feed optimized for repeated polling.
+        Each item identifies the race and office and includes candidates, vote
+        totals, winners, precinct reporting, and its last update time. Null vote
+        or reporting values mean data has not been reported; they do not mean
+        zero.
+      parameters:
+        - $ref: "#/components/parameters/ElectionId"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200":
+          description: Paginated lightweight results
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/ResultsCache"
+            X-Content-Type-Options:
+              $ref: "#/components/headers/NoSniff"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ElectionResultCollection"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /api/v1/elections/{electionId}/ballot-measures:
+    get:
+      operationId: listElectionBallotMeasures
+      summary: List ballot measures in an election
+      description: |
+        Returns paginated ballot-measure reporting resources for an election.
+        This election-wide collection is not filtered to a voting address.
+      parameters:
+        - $ref: "#/components/parameters/ElectionId"
+        - $ref: "#/components/parameters/ElectionScopeFilter"
+        - $ref: "#/components/parameters/State"
+        - $ref: "#/components/parameters/BallotMeasureStatus"
+        - $ref: "#/components/parameters/County"
+        - $ref: "#/components/parameters/Municipality"
+        - $ref: "#/components/parameters/SchoolDistrict"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200":
+          description: Paginated election ballot measures
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/RequestId"
+            Cache-Control:
+              $ref: "#/components/headers/ElectionDataCache"
+            X-Content-Type-Options:
+              $ref: "#/components/headers/NoSniff"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BallotMeasureCollection"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowed"
+        "500":
+          $ref: "#/components/responses/InternalError"
   /api/v1/elections/{electionId}/ballot:
     post:
       operationId: getBallotByAddress
@@ -95,6 +314,127 @@ paths:
           $ref: "#/components/responses/RequestTimeout"
 components:
   parameters:
+    ElectionId:
+      name: electionId
+      in: path
+      required: true
+      description: Stable election UUID.
+      schema:
+        type: string
+        format: uuid
+    RaceId:
+      name: raceId
+      in: path
+      required: true
+      description: Stable race UUID. It must belong to the election in the path.
+      schema:
+        type: string
+        format: uuid
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: Maximum number of resources to return.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+    Offset:
+      name: offset
+      in: query
+      required: false
+      description: Number of resources to skip in the deterministic ordering.
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    State:
+      name: state
+      in: query
+      required: false
+      description: Two-letter US state or territory code.
+      schema:
+        $ref: "#/components/schemas/StateCode"
+    Year:
+      name: year
+      in: query
+      required: false
+      description: Four-digit election year.
+      schema:
+        type: integer
+        minimum: 1788
+        maximum: 9999
+    Query:
+      name: query
+      in: query
+      required: false
+      description: Case-insensitive text search.
+      schema:
+        type: string
+    RaceType:
+      name: raceType
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [primary, general]
+    PoliticalScope:
+      name: politicalScope
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [local, state, federal]
+    ElectionScopeFilter:
+      name: electionScope
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/ElectionScope"
+    DistrictTypeFilter:
+      name: districtType
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/DistrictType"
+    BallotMeasureStatus:
+      name: status
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/BallotMeasureStatus"
+    County:
+      name: county
+      in: query
+      required: false
+      description: Exact county name, compared case-insensitively.
+      schema:
+        type: string
+    Municipality:
+      name: municipality
+      in: query
+      required: false
+      description: Exact municipality name, compared case-insensitively.
+      schema:
+        type: string
+    SchoolDistrict:
+      name: schoolDistrict
+      in: query
+      required: false
+      description: Exact school-district identifier, compared case-insensitively.
+      schema:
+        type: string
+    EndorserId:
+      name: endorserId
+      in: query
+      required: false
+      description: |
+        Organization UUID used to filter the full race detail's candidate array
+        to candidates endorsed by that organization. Results remain unfiltered.
+      schema:
+        type: string
+        format: uuid
     RequestId:
       name: X-Request-Id
       in: header
@@ -115,6 +455,27 @@ components:
       schema:
         type: string
         const: no-store
+    ElectionCache:
+      description: |
+        Election discovery metadata can be cached for five minutes and served
+        stale while it is asynchronously revalidated.
+      schema:
+        type: string
+        const: public, max-age=300, stale-while-revalidate=900
+    ElectionDataCache:
+      description: |
+        Race and ballot-measure resources can be cached for one minute and
+        served stale while they are asynchronously revalidated.
+      schema:
+        type: string
+        const: public, max-age=60, stale-while-revalidate=300
+    ResultsCache:
+      description: |
+        Results can be cached for five seconds and served briefly stale while
+        they are asynchronously revalidated.
+      schema:
+        type: string
+        const: public, max-age=5, stale-while-revalidate=25
     NoSniff:
       description: Disables MIME-type sniffing.
       schema:
@@ -149,7 +510,7 @@ components:
                 detail: The JSON request body is invalid.
                 instance: /api/v1/elections/not-a-uuid/ballot
     NotFound:
-      description: Election does not exist
+      description: Requested election or race does not exist in this resource path
       headers:
         X-Request-Id:
           $ref: "#/components/headers/RequestId"
@@ -339,6 +700,84 @@ components:
         - WV
         - WI
         - WY
+    PaginationMeta:
+      type: object
+      additionalProperties: false
+      required: [count, total, limit, offset]
+      properties:
+        count:
+          type: integer
+          minimum: 0
+          description: Number of resources in this response.
+        total:
+          type: integer
+          minimum: 0
+          description: Total resources matching the filters.
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        offset:
+          type: integer
+          minimum: 0
+    ElectionCollection:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ElectionMetadata"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    ElectionResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/ElectionMetadata"
+    RaceCollection:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/RaceSummary"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    RaceResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/RaceDetail"
+    ElectionResultCollection:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ElectionResult"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    BallotMeasureCollection:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/BallotMeasureReporting"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
     BallotRequest:
       type: object
       additionalProperties: false
@@ -463,6 +902,202 @@ components:
         electionDate:
           type: string
           format: date
+    ElectionMetadata:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - slug
+        - title
+        - description
+        - state
+        - municipality
+        - electionDate
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        title:
+          type: string
+        description:
+          type: [string, "null"]
+        state:
+          oneOf:
+            - $ref: "#/components/schemas/StateCode"
+            - type: "null"
+        municipality:
+          type: [string, "null"]
+        electionDate:
+          type: string
+          format: date
+    RaceSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - slug
+        - title
+        - electionId
+        - raceType
+        - voteType
+        - state
+        - isSpecialElection
+        - numElect
+        - office
+        - party
+        - results
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        title:
+          type: string
+        electionId:
+          type: string
+          format: uuid
+        raceType:
+          type: string
+          enum: [primary, general]
+        voteType:
+          type: string
+          enum: [plurality, rankedchoice]
+        state:
+          oneOf:
+            - $ref: "#/components/schemas/StateCode"
+            - type: "null"
+        isSpecialElection:
+          type: boolean
+        numElect:
+          type: [integer, "null"]
+          format: int32
+        office:
+          $ref: "#/components/schemas/OfficeSummary"
+        party:
+          oneOf:
+            - $ref: "#/components/schemas/PartySummary"
+            - type: "null"
+        results:
+          $ref: "#/components/schemas/ResultSummary"
+        updatedAt:
+          type: string
+          format: date-time
+    OfficeSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - title
+        - subtitle
+        - state
+        - county
+        - municipality
+        - district
+        - seat
+        - electionScope
+        - districtType
+        - politicalScope
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        subtitle:
+          type: [string, "null"]
+        state:
+          oneOf:
+            - $ref: "#/components/schemas/StateCode"
+            - type: "null"
+        county:
+          type: [string, "null"]
+        municipality:
+          type: [string, "null"]
+        district:
+          type: [string, "null"]
+        seat:
+          type: [string, "null"]
+        electionScope:
+          $ref: "#/components/schemas/ElectionScope"
+        districtType:
+          oneOf:
+            - $ref: "#/components/schemas/DistrictType"
+            - type: "null"
+        politicalScope:
+          type: string
+          enum: [local, state, federal]
+    PartySummary:
+      type: object
+      additionalProperties: false
+      required: [id, slug, name, fecCode]
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        name:
+          type: string
+        fecCode:
+          type: [string, "null"]
+    ResultSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - totalVotes
+        - numPrecinctsReporting
+        - totalPrecincts
+        - precinctReportingPercentage
+        - winners
+      properties:
+        totalVotes:
+          type: [integer, "null"]
+          format: int32
+        numPrecinctsReporting:
+          type: [integer, "null"]
+          format: int32
+        totalPrecincts:
+          type: [integer, "null"]
+          format: int32
+        precinctReportingPercentage:
+          type: [number, "null"]
+          format: double
+        winners:
+          type: array
+          items:
+            $ref: "#/components/schemas/IdReference"
+    RaceDetail:
+      description: |
+        The full Race shape with additional reporting-source and link fields.
+        These fields are present on race detail and omitted from ballot races.
+      allOf:
+        - $ref: "#/components/schemas/Race"
+        - type: object
+          required:
+            - description
+            - ballotpediaLink
+            - earlyVotingBeginsDate
+            - officialWebsite
+            - updatedAt
+          properties:
+            description:
+              type: [string, "null"]
+            ballotpediaLink:
+              type: [string, "null"]
+              format: uri
+            earlyVotingBeginsDate:
+              type: [string, "null"]
+              format: date
+            officialWebsite:
+              type: [string, "null"]
+              format: uri
+            updatedAt:
+              type: string
+              format: date-time
     Race:
       type: object
       additionalProperties: false
@@ -535,6 +1170,20 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RelatedEmbed"
+        description:
+          type: [string, "null"]
+        ballotpediaLink:
+          type: [string, "null"]
+          format: uri
+        earlyVotingBeginsDate:
+          type: [string, "null"]
+          format: date
+        officialWebsite:
+          type: [string, "null"]
+          format: uri
+        updatedAt:
+          type: string
+          format: date-time
     Office:
       type: object
       additionalProperties: false
@@ -712,6 +1361,82 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/IdReference"
+    ElectionResult:
+      type: object
+      additionalProperties: false
+      required:
+        - raceId
+        - slug
+        - title
+        - office
+        - candidates
+        - totalVotes
+        - numPrecinctsReporting
+        - totalPrecincts
+        - precinctReportingPercentage
+        - winners
+        - updatedAt
+      properties:
+        raceId:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        title:
+          type: string
+        office:
+          $ref: "#/components/schemas/OfficeSummary"
+        candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/ResultCandidate"
+        totalVotes:
+          type: [integer, "null"]
+          format: int32
+        numPrecinctsReporting:
+          type: [integer, "null"]
+          format: int32
+        totalPrecincts:
+          type: [integer, "null"]
+          format: int32
+        precinctReportingPercentage:
+          type: [number, "null"]
+          format: double
+        winners:
+          type: array
+          items:
+            $ref: "#/components/schemas/IdReference"
+        updatedAt:
+          type: string
+          format: date-time
+    ResultCandidate:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - slug
+        - fullName
+        - party
+        - votes
+        - votePercentage
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        fullName:
+          type: string
+        party:
+          oneOf:
+            - $ref: "#/components/schemas/PartySummary"
+            - type: "null"
+        votes:
+          type: [integer, "null"]
+          format: int32
+        votePercentage:
+          type: [number, "null"]
+          format: double
     CandidateVotes:
       type: object
       additionalProperties: false
@@ -817,6 +1542,98 @@ components:
           oneOf:
             - $ref: "#/components/schemas/ElectionScope"
             - type: "null"
+    BallotMeasureReporting:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - slug
+        - electionId
+        - title
+        - status
+        - state
+        - county
+        - municipality
+        - schoolDistrict
+        - ballotMeasureCode
+        - measureType
+        - definitions
+        - description
+        - officialSummary
+        - populistSummary
+        - fullTextUrl
+        - yesVotes
+        - noVotes
+        - numPrecinctsReporting
+        - totalPrecincts
+        - electionScope
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        electionId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        status:
+          $ref: "#/components/schemas/BallotMeasureStatus"
+        state:
+          $ref: "#/components/schemas/StateCode"
+        county:
+          type: [string, "null"]
+        municipality:
+          type: [string, "null"]
+        schoolDistrict:
+          type: [string, "null"]
+        ballotMeasureCode:
+          type: string
+        measureType:
+          type: [string, "null"]
+        definitions:
+          type: [string, "null"]
+        description:
+          type: [string, "null"]
+        officialSummary:
+          type: [string, "null"]
+        populistSummary:
+          type: [string, "null"]
+        fullTextUrl:
+          type: [string, "null"]
+          format: uri
+        yesVotes:
+          type: [integer, "null"]
+          format: int32
+        noVotes:
+          type: [integer, "null"]
+          format: int32
+        numPrecinctsReporting:
+          type: [integer, "null"]
+          format: int32
+        totalPrecincts:
+          type: [integer, "null"]
+          format: int32
+        electionScope:
+          oneOf:
+            - $ref: "#/components/schemas/ElectionScope"
+            - type: "null"
+        updatedAt:
+          type: string
+          format: date-time
+    BallotMeasureStatus:
+      type: string
+      enum:
+        - introduced
+        - in_consideration
+        - proposed
+        - gathering_signatures
+        - on_the_ballot
+        - became_law
+        - failed
+        - unknown
     Problem:
       type: object
       additionalProperties: false
