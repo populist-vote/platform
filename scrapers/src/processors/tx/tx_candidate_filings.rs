@@ -44,8 +44,18 @@ pub struct TxCandidateFiling {
 
 /// Source table for TX primaries. Use quoted name if the table has hyphens:
 /// r#"p6t_state_tx."tx-primaries-2026-02-09""#. Otherwise: p6t_state_tx.tx_primaries_20260209
-const TX_SOURCE_TABLE: &str = "p6t_state_tx.tx_primaries_20260212_all";
+const TX_SOURCE_TABLE: &str = "p6t_state_tx.tx_general_20260720_3rdparty";
 const ELECTION_YEAR: i32 = 2026;
+
+/// Outcome of attempting to process a single TX filing.
+enum FilingOutcome {
+    /// Status did not match the requested race type.
+    SkippedStatus,
+    /// Filing was ingested; `office_created` is true when a new staging office row was inserted.
+    Ingested { office_created: bool },
+    /// Office extraction/processing failed; filing was not ingested.
+    OfficeError { office_title: String, message: String },
+}
 
 /// Process Texas candidate filings from the existing DB table into staging tables.
 /// Run after the TX table is populated. Merge to production via mn_merge_staging_to_production
@@ -90,6 +100,9 @@ pub async fn process_tx_candidate_filings(
     println!("Found {} candidate filings to process", filings.len());
 
     let mut processed_count = 0usize;
+    let mut offices_created = 0usize;
+    let mut skipped_filings: Vec<(&str, &str)> = Vec::new();
+    let mut office_errors: Vec<(String, String)> = Vec::new();
     let mut error_count = 0usize;
 
     for (index, filing) in filings.iter().enumerate() {
@@ -97,7 +110,24 @@ pub async fn process_tx_candidate_filings(
             println!("Processing filing {}/{}...", index + 1, filings.len());
         }
         match process_and_insert_tx_filing(pool, filing, race_type).await {
-            Ok(_) => processed_count += 1,
+            Ok(FilingOutcome::Ingested { office_created }) => {
+                processed_count += 1;
+                if office_created {
+                    offices_created += 1;
+                }
+            }
+            Ok(FilingOutcome::SkippedStatus) => {
+                skipped_filings.push((
+                    filing.candidate_name.as_deref().unwrap_or("(no name)"),
+                    filing.status.as_deref().unwrap_or("(no status)"),
+                ));
+            }
+            Ok(FilingOutcome::OfficeError {
+                office_title,
+                message,
+            }) => {
+                office_errors.push((office_title, message));
+            }
             Err(e) => {
                 error_count += 1;
                 eprintln!(
@@ -111,7 +141,22 @@ pub async fn process_tx_candidate_filings(
 
     println!("\n=== Processing Complete ===");
     println!("Successfully processed: {}", processed_count);
-    println!("Errors: {}", error_count);
+    println!("Offices created in staging: {}", offices_created);
+    println!("Skipped (status mismatch): {}", skipped_filings.len());
+    if !skipped_filings.is_empty() {
+        println!("\nSkipped filings:");
+        for (name, status) in &skipped_filings {
+            println!("  - {} (status: {})", name, status);
+        }
+    }
+    println!("Office errors: {}", office_errors.len());
+    if !office_errors.is_empty() {
+        println!("\nOffice processing errors:");
+        for (office_title, message) in &office_errors {
+            println!("  - {} ({})", office_title, message);
+        }
+    }
+    println!("Other errors: {}", error_count);
     println!("\nStaging tables:");
     println!("  - ingest_staging.stg_tx_offices");
     println!("  - ingest_staging.stg_tx_politicians");
@@ -331,24 +376,44 @@ async fn create_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>> {
 }
 
 /// Process one TX filing and insert into staging tables.
-/// Only processes when filing.status is "in primary" (case-insensitive); otherwise skips and returns Ok.
+/// If race_type is "primary", only ingests filings with status "in primary".
+/// If race_type is "general", only ingests filings with status "in general".
 async fn process_and_insert_tx_filing(
     pool: &PgPool,
     filing: &TxCandidateFiling,
     race_type: &str,
-) -> Result<(), Box<dyn Error>> {
-    let status_trimmed = filing.status.as_deref().map(|s| s.trim());
-    if !status_trimmed.is_some_and(|s| s.eq_ignore_ascii_case("in primary")) {
-        return Ok(());
+) -> Result<FilingOutcome, Box<dyn Error>> {
+    let status = filing.status.as_deref().map(|s| s.trim()).unwrap_or("");
+    let should_ingest = match race_type {
+        "primary" => status.eq_ignore_ascii_case("in primary"),
+        "general" => status.eq_ignore_ascii_case("in general"),
+        _ => false,
+    };
+    if !should_ingest {
+        return Ok(FilingOutcome::SkippedStatus);
     }
 
-    let office = process_tx_office(filing)?;
+    let office = match process_tx_office(filing) {
+        Ok(office) => office,
+        Err(e) => {
+            return Ok(FilingOutcome::OfficeError {
+                office_title: filing
+                    .office_title
+                    .as_deref()
+                    .unwrap_or("(no office title)")
+                    .to_string(),
+                message: e.to_string(),
+            });
+        }
+    };
     let office_id = get_staging_office_id_by_slug(pool, &office.slug).await?;
+    let mut office_created = false;
     if office_id.is_none() {
         let state_id = filing.office_title.as_ref().map(|t| {
             generators::tx::tx_office::office_state_id("tx-sos", strip_unexpired_term(t).trim())
         });
         insert_staging_office(pool, &office, state_id.as_ref()).await?;
+        office_created = true;
     }
     let resolved_office_id = office_id.unwrap_or(office.id);
 
@@ -375,7 +440,7 @@ async fn process_and_insert_tx_filing(
     if !politician_inserted {
         let name = politician.full_name.as_deref().unwrap_or("(no name)");
         eprintln!("Politician not inserted (slug conflict, emails equal); skipping race/race_candidate: {}", name);
-        return Ok(());
+        return Ok(FilingOutcome::Ingested { office_created });
     }
 
     insert_staging_race(pool, &race).await?;
@@ -395,7 +460,7 @@ async fn process_and_insert_tx_filing(
     .generate();
     insert_staging_race_candidate(pool, race_id, &politician, &race_candidate_ref_key).await?;
 
-    Ok(())
+    Ok(FilingOutcome::Ingested { office_created })
 }
 
 /// Strips the suffix " - unexpired term" (case-insensitive) from a raw office title.
@@ -647,7 +712,7 @@ fn process_tx_race(
     party_id: Option<Uuid>,
 ) -> Result<Race, Box<dyn Error>> {
     let election_id =
-        Uuid::parse_str("0d586931-c119-4fe7-814f-f679e91282a8").unwrap_or_else(|_| Uuid::nil());
+        Uuid::parse_str("6138cc76-f273-43cf-a017-a98d1119b0c3").unwrap_or_else(|_| Uuid::nil());
 
     let is_special_election = filing
         .office_title

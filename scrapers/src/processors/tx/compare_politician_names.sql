@@ -226,6 +226,106 @@ WHERE id IN (
         AND prod.residence_address_id IS NULL
 );
 
+-- Option 2.1-MN: Same as 2.1(a) for Minnesota, but residence and campaign address matches
+-- compare stg_mn_address field values to production address (not UUID ids).
+-- A staging residence/campaign address matches if its values equal either production
+-- residence or production campaign address values.
+-- (a) SELECT: show staging and production rows that qualify
+SELECT
+    stg.id AS staging_id,
+    stg.slug AS staging_slug,
+    stg.first_name AS staging_first_name,
+    stg.middle_name AS staging_middle_name,
+    stg.last_name AS staging_last_name,
+    prod.id AS production_id,
+    prod.slug AS production_slug,
+    prod.first_name AS production_first_name,
+    prod.middle_name AS production_middle_name,
+    prod.last_name AS production_last_name
+FROM ingest_staging.stg_mn_politicians stg
+LEFT JOIN ingest_staging.stg_mn_address stg_res_addr
+    ON stg.residence_address_id = stg_res_addr.id
+LEFT JOIN ingest_staging.stg_mn_address stg_camp_addr
+    ON stg.campaign_address_id = stg_camp_addr.id
+JOIN politician prod
+    ON prod.home_state = 'MN'
+LEFT JOIN address prod_res_addr
+    ON prod.residence_address_id = prod_res_addr.id
+LEFT JOIN address prod_camp_addr
+    ON prod.campaign_address_id = prod_camp_addr.id
+WHERE
+    LOWER(stg.first_name) = LOWER(prod.first_name)
+    AND LOWER(stg.last_name) = LOWER(prod.last_name)
+    AND (
+        (COALESCE(TRIM(stg.middle_name), '') = '' AND COALESCE(TRIM(prod.middle_name), '') = '')
+        OR (COALESCE(TRIM(stg.middle_name), '') <> '' AND COALESCE(TRIM(prod.middle_name), '') <> '' AND LOWER(TRIM(stg.middle_name)) = LOWER(TRIM(prod.middle_name)))
+    )
+    AND (
+        (stg.email IS DISTINCT FROM prod.email)
+        OR (
+            (stg.email IS NULL OR TRIM(stg.email) = '')
+            AND (prod.email IS NULL OR TRIM(prod.email) = '')
+        )
+    )
+    AND (
+        (stg.phone IS DISTINCT FROM prod.phone)
+        OR (
+            (stg.phone IS NULL OR TRIM(stg.phone) = '')
+            AND (prod.phone IS NULL OR TRIM(prod.phone) = '')
+        )
+    )
+    AND (
+        -- Staging residence empty, or does not match either prod residence or campaign
+        stg.residence_address_id IS NULL
+        OR NOT (
+            stg_res_addr.id IS NOT NULL
+            AND (
+                (
+                    prod_res_addr.id IS NOT NULL
+                    AND TRIM(LOWER(stg_res_addr.line_1)) = TRIM(LOWER(prod_res_addr.line_1))
+                    AND TRIM(LOWER(stg_res_addr.city)) = TRIM(LOWER(prod_res_addr.city))
+                    AND TRIM(stg_res_addr.state) = TRIM(prod_res_addr.state::text)
+                    AND TRIM(LOWER(stg_res_addr.country)) = TRIM(LOWER(prod_res_addr.country))
+                    AND TRIM(LOWER(COALESCE(stg_res_addr.postal_code, ''))) = TRIM(LOWER(COALESCE(prod_res_addr.postal_code, '')))
+                )
+                OR (
+                    prod_camp_addr.id IS NOT NULL
+                    AND TRIM(LOWER(stg_res_addr.line_1)) = TRIM(LOWER(prod_camp_addr.line_1))
+                    AND TRIM(LOWER(stg_res_addr.city)) = TRIM(LOWER(prod_camp_addr.city))
+                    AND TRIM(stg_res_addr.state) = TRIM(prod_camp_addr.state::text)
+                    AND TRIM(LOWER(stg_res_addr.country)) = TRIM(LOWER(prod_camp_addr.country))
+                    AND TRIM(LOWER(COALESCE(stg_res_addr.postal_code, ''))) = TRIM(LOWER(COALESCE(prod_camp_addr.postal_code, '')))
+                )
+            )
+        )
+    )
+    AND (
+        -- Staging campaign empty, or does not match either prod residence or campaign
+        stg.campaign_address_id IS NULL
+        OR NOT (
+            stg_camp_addr.id IS NOT NULL
+            AND (
+                (
+                    prod_res_addr.id IS NOT NULL
+                    AND TRIM(LOWER(stg_camp_addr.line_1)) = TRIM(LOWER(prod_res_addr.line_1))
+                    AND TRIM(LOWER(stg_camp_addr.city)) = TRIM(LOWER(prod_res_addr.city))
+                    AND TRIM(stg_camp_addr.state) = TRIM(prod_res_addr.state::text)
+                    AND TRIM(LOWER(stg_camp_addr.country)) = TRIM(LOWER(prod_res_addr.country))
+                    AND TRIM(LOWER(COALESCE(stg_camp_addr.postal_code, ''))) = TRIM(LOWER(COALESCE(prod_res_addr.postal_code, '')))
+                )
+                OR (
+                    prod_camp_addr.id IS NOT NULL
+                    AND TRIM(LOWER(stg_camp_addr.line_1)) = TRIM(LOWER(prod_camp_addr.line_1))
+                    AND TRIM(LOWER(stg_camp_addr.city)) = TRIM(LOWER(prod_camp_addr.city))
+                    AND TRIM(stg_camp_addr.state) = TRIM(prod_camp_addr.state::text)
+                    AND TRIM(LOWER(stg_camp_addr.country)) = TRIM(LOWER(prod_camp_addr.country))
+                    AND TRIM(LOWER(COALESCE(stg_camp_addr.postal_code, ''))) = TRIM(LOWER(COALESCE(prod_camp_addr.postal_code, '')))
+                )
+            )
+        )
+    )
+ORDER BY stg.last_name, stg.first_name;
+
 -- Option 2.2: Exact slug match, emails distinct or both empty — set treat_exact_slug_as_same_person = true
 -- Compare when exact slug match, (emails are distinct OR emails are both empty/null), and phone/address empty.
 -- (a) SELECT: show staging and production rows that qualify

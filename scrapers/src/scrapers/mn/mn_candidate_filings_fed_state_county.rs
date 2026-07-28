@@ -144,12 +144,12 @@ pub async fn get_mn_sos_candidate_filings_fed_state_county_primaries(
 
     let pool = db::pool().await;
     sqlx::query!(
-        r#"DROP TABLE IF EXISTS p6t_state_mn.mn_candidate_filings_fed_state_county_primaries_2024 CASCADE;"#
+        r#"DROP TABLE IF EXISTS p6t_state_mn.mn_candidate_filings_fed_state_county_primaries_2026 CASCADE;"#
     )
     .execute(&pool.connection)
     .await?;
     let create_table_query = format!(
-        "CREATE TABLE p6t_state_mn.mn_candidate_filings_fed_state_county_primaries_2024 (
+        "CREATE TABLE p6t_state_mn.mn_candidate_filings_fed_state_county_primaries_2026 (
         {}
     );",
         PRIMARY_HEADER_NAMES
@@ -163,7 +163,7 @@ pub async fn get_mn_sos_candidate_filings_fed_state_county_primaries(
         .execute(&pool.connection)
         .await?;
     let mut tx = pool.connection.acquire().await?;
-    let copy_query = r#"COPY p6t_state_mn.mn_candidate_filings_fed_state_county_primaries_2024 FROM STDIN WITH CSV HEADER;"#;
+    let copy_query = r#"COPY p6t_state_mn.mn_candidate_filings_fed_state_county_primaries_2026 FROM STDIN WITH CSV HEADER;"#;
     let mut tx_copy = tx.copy_in_raw(copy_query).await?;
     tx_copy.send(csv_data_as_string.as_bytes()).await?;
     tx_copy.finish().await?;

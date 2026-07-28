@@ -27,7 +27,13 @@ pub fn extract_office_name(input: &str) -> Option<String> {
         return Some("U.S. House".to_string());
     }
 
-    // State Offices
+    // State Offices — check lieutenant/lt governor before governor (substring overlap)
+    if input_lower.contains("lieutenant governor") || input_lower.contains("lt governor") {
+        return Some("Lieutenant Governor".to_string());
+    }
+    if input_lower.contains("governor") {
+        return Some("Governor".to_string());
+    }
     if input_lower.contains("state senator") || input_lower.contains("state senate") {
         return Some("State Senate".to_string());
     }
@@ -134,7 +140,13 @@ pub fn extract_office_title(input: &str) -> Option<String> {
         return Some("U.S. Representative".to_string());
     }
 
-    // State Offices
+    // State Offices — check lieutenant/lt governor before governor (substring overlap)
+    if input_lower.contains("lieutenant governor") || input_lower.contains("lt governor") {
+        return Some("Lieutenant Governor".to_string());
+    }
+    if input_lower.contains("governor") {
+        return Some("Governor".to_string());
+    }
     if input_lower.contains("state senator") || input_lower.contains("state senate") {
         return Some("State Senator".to_string());
     }

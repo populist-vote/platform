@@ -3,6 +3,11 @@ use reqwest::Client;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
+use uuid::Uuid;
+
+/// Election whose slug is included in race_candidate ref_keys when matching SOS results.
+/// Must match the election used when processing MN candidate filings.
+const ELECTION_ID: &str = "5fa881d7-f8f3-4b90-9063-45236c85c77a";
 
 static HEADER_NAMES: [&str; 16] = [
     "State",
@@ -195,6 +200,35 @@ fn convert_text_to_csv(name: &str, text: &str) -> Result<Vec<u8>, Box<dyn Error>
 async fn update_public_schema_with_results(table_names: Vec<String>) {
     let db_pool = db::pool().await;
 
+    let election_id = match Uuid::parse_str(ELECTION_ID) {
+        Ok(id) => id,
+        Err(e) => {
+            println!("Invalid ELECTION_ID {}: {}", ELECTION_ID, e);
+            return;
+        }
+    };
+    let election_slug: String = match sqlx::query_scalar!(
+        r#"SELECT slug FROM election WHERE id = $1"#,
+        election_id
+    )
+    .fetch_optional(&db_pool.connection)
+    .await
+    {
+        Ok(Some(slug)) => slug,
+        Ok(None) => {
+            println!("No election found for id {}", ELECTION_ID);
+            return;
+        }
+        Err(e) => {
+            println!("Error looking up election slug: {}", e);
+            return;
+        }
+    };
+    println!(
+        "Matching race_candidates with election slug '{}' (id {})",
+        election_slug, ELECTION_ID
+    );
+
     // Build the source CTE dynamically from the provided table names
     let source_tables = table_names
         .iter()
@@ -203,10 +237,15 @@ async fn update_public_schema_with_results(table_names: Vec<String>) {
         .join(" UNION ALL ");
 
     // Inline slugify (no DB function / unaccent): lower, strip non-alphanumeric, spaces→hyphens, trim
-    let ref_key_from_source =
-        "TRIM(BOTH '-' FROM REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(CONCAT('mn-sos-', source.office_name, '-', source.candidate_name)), '[^a-z0-9 -]', '', 'g'), '\\s+', '-', 'g'), '-+', '-', 'g'))";
-    let ref_key_from_results =
-        "TRIM(BOTH '-' FROM REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(CONCAT('mn-sos-', results.office_name, '-', results.candidate_name)), '[^a-z0-9 -]', '', 'g'), '\\s+', '-', 'g'), '-+', '-', 'g'))";
+    // Format must match mn_candidate_filings: mn-sos-{election_slug}-{office_name}-{candidate_name}
+    let ref_key_from_source = format!(
+        "TRIM(BOTH '-' FROM REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(CONCAT('mn-sos-', '{}', '-', source.office_name, '-', source.candidate_name)), '[^a-z0-9 -]', '', 'g'), '\\s+', '-', 'g'), '-+', '-', 'g'))",
+        election_slug.replace('\'', "''")
+    );
+    let ref_key_from_results = format!(
+        "TRIM(BOTH '-' FROM REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(CONCAT('mn-sos-', '{}', '-', results.office_name, '-', results.candidate_name)), '[^a-z0-9 -]', '', 'g'), '\\s+', '-', 'g'), '-+', '-', 'g'))",
+        election_slug.replace('\'', "''")
+    );
 
     let query = format!(
         r#"

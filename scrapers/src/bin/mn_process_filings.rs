@@ -11,8 +11,8 @@ async fn main() {
     // Process the filings
     match process_mn_candidate_filings(
         &pool.connection,
-        "mn_candidate_filings_local_2025",
-        "general",
+        "mn_candidate_filings_fed_state_county_primaries_2026",
+        "primary",
     )
     .await
     {

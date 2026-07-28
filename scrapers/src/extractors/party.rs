@@ -44,10 +44,10 @@ pub fn extract_party_fec_code(abbrev: &str) -> Option<String> {
         "R" | "REPUBLICAN" => Some("REP".to_string()),
         "DFL" => Some("DFL".to_string()),
         "DEM" | "DEMOCRATIC" => Some("DEM".to_string()),
-        "LIB" => Some("LIB".to_string()),
-        "GRE" => Some("GRE".to_string()),
-        "IND" => Some("IND".to_string()),
-        "NP" => Some("N".to_string()),
+        "LIB" | "LIBERTARIAN" => Some("LIB".to_string()),
+        "GRE" | "GREEN" => Some("GRE".to_string()),
+        "IND" | "INDEPENDENT" => Some("IND".to_string()),
+        "NP" | "NONPARTISAN" => Some("N".to_string()),
         // Add more mappings as needed based on actual data
         _ => None,
     }

@@ -1,8 +1,8 @@
 -- Creates p6t_state_mn.mn_candidate_filings_fed_state_county_2025 with columns
 -- matching the general (fed/state/county) header names from the MN SoS scraper.
--- Run: psql $DATABASE_URL -f scripts/create_mn_candidate_filings_fed_state_county_2025.sql
+-- Run: psql $DATABASE_URL -f scripts/create_mn_candidate_filings_fed_state_county_2026.sql
 
-CREATE TABLE IF NOT EXISTS p6t_state_mn.mn_candidate_filings_fed_state_county_2025 (
+CREATE TABLE IF NOT EXISTS p6t_state_mn.mn_candidate_filings_fed_state_county_2026 (
     office_code text,
     candidate_name text,
     office_id text,
