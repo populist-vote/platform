@@ -23,14 +23,14 @@ async fn main() {
     // }
 
     // SCRAPE FED STATE COUNTY PRIMARY DATA FROM SOS SITE
-    // if let Err(err) = get_mn_sos_candidate_filings_fed_state_county_primaries(&driver).await {
-    //     println!("error scraping data from MN SOS candidate filings: {}", err);
-    // }
+    if let Err(err) = get_mn_sos_candidate_filings_fed_state_county_primaries(&driver).await {
+        println!("error scraping data from MN SOS candidate filings: {}", err);
+    }
 
     // SCRAPE LOCAL GENERAL DATA FROM SOS SITE
-    if let Err(err) = get_mn_sos_candidate_filings_local(&driver).await {
-        println!("error running example: {}", err);
-    }
+    // if let Err(err) = get_mn_sos_candidate_filings_local(&driver).await {
+    //     println!("error running example: {}", err);
+    // }
 
     // SCRAPE LOCAL PRIMARY DATA FROM SOS SITE
     // if let Err(err) = get_mn_sos_candidate_filings_local_primaries(&driver).await {
