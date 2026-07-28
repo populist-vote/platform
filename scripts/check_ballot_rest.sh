@@ -20,10 +20,31 @@ jq empty \
 ruby -ryaml -e '
   spec = YAML.load_file(ARGV.fetch(0))
   abort "expected OpenAPI 3.1" unless spec.fetch("openapi").start_with?("3.1.")
-  path = spec.fetch("paths").fetch("/api/v1/elections/{electionId}/ballot")
-  operation = path.fetch("post")
-  abort "missing 200 response" unless operation.fetch("responses").key?("200")
-  abort "missing ballot request schema" unless spec.fetch("components").fetch("schemas").key?("BallotRequest")
+  paths = spec.fetch("paths")
+  operations = {
+    "/api/v1/elections" => "get",
+    "/api/v1/elections/{electionId}" => "get",
+    "/api/v1/elections/{electionId}/races" => "get",
+    "/api/v1/elections/{electionId}/races/{raceId}" => "get",
+    "/api/v1/elections/{electionId}/results" => "get",
+    "/api/v1/elections/{electionId}/ballot-measures" => "get",
+    "/api/v1/elections/{electionId}/ballot" => "post",
+  }
+  operations.each do |path, method|
+    operation = paths.fetch(path).fetch(method)
+    abort "missing 200 response for #{method.upcase} #{path}" unless operation.fetch("responses").key?("200")
+  end
+  schemas = spec.fetch("components").fetch("schemas")
+  %w[
+    ElectionCollection ElectionResponse RaceCollection RaceResponse
+    ElectionResultCollection BallotMeasureCollection BallotRequest
+  ].each do |schema|
+    abort "missing #{schema} schema" unless schemas.key?(schema)
+  end
+  headers = spec.fetch("components").fetch("headers")
+  %w[ElectionCache ElectionDataCache ResultsCache NoStore].each do |header|
+    abort "missing #{header} header" unless headers.key?(header)
+  end
 ' docs/rest/openapi.yaml
 
 git diff --check

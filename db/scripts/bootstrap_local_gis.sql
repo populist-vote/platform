@@ -27,6 +27,10 @@ CREATE INDEX IF NOT EXISTS tx_vtds_2026_geom_idx
     ON p6t_state_tx.tx_vtds_2026
     USING gist (geom);
 
+CREATE INDEX IF NOT EXISTS tx_vtds_2026_set_srid_geom_idx
+    ON p6t_state_tx.tx_vtds_2026
+    USING gist (ST_SetSRID(geom, 3081));
+
 CREATE TABLE IF NOT EXISTS p6t_state_tx.tx_congressional_planc2333 (
     gid BIGSERIAL PRIMARY KEY,
     cong_dist TEXT,
@@ -36,5 +40,9 @@ CREATE TABLE IF NOT EXISTS p6t_state_tx.tx_congressional_planc2333 (
 CREATE INDEX IF NOT EXISTS tx_congressional_planc2333_geom_idx
     ON p6t_state_tx.tx_congressional_planc2333
     USING gist (geom);
+
+CREATE INDEX IF NOT EXISTS tx_congressional_planc2333_set_srid_geom_idx
+    ON p6t_state_tx.tx_congressional_planc2333
+    USING gist (ST_SetSRID(geom, 3081));
 
 \ir create_mn_candidate_filings_local_2025.sql

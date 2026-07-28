@@ -16,7 +16,7 @@ use db::{
         ballot_measure::BallotMeasure,
         enums::{BallotMeasureStatus, RaceType, State, VoteType},
     },
-    Address, AddressInput, Election, ElectionScope, Race,
+    Address, AddressExtendedMN, AddressExtendedTX, AddressInput, Election, ElectionScope, Race,
 };
 use futures::FutureExt;
 use geocodio::GeocodioProxy;
@@ -48,6 +48,18 @@ pub struct ElectionRaceFilter {
 pub struct ProcessedAddress {
     pub id: Uuid,
     pub created: bool,
+}
+
+#[derive(Clone, Debug)]
+pub struct BallotAddressContext {
+    congressional_district: Option<String>,
+    state_senate_district: Option<String>,
+    state_house_district: Option<String>,
+    state: State,
+    county: Option<String>,
+    city: String,
+    extended_mn: Option<AddressExtendedMN>,
+    extended_tx: Option<AddressExtendedTX>,
 }
 
 pub async fn process_address_with_geocodio(
@@ -229,7 +241,14 @@ pub async fn get_races_by_address_id(
     election_id: &Uuid,
     address_id: &Uuid,
 ) -> Result<Vec<Race>, Error> {
-    // 1. Fetch base address info
+    let address_context = resolve_ballot_address_context(db_pool, address_id).await?;
+    get_races_by_address_context(db_pool, election_id, &address_context).await
+}
+
+pub async fn resolve_ballot_address_context(
+    db_pool: &sqlx::PgPool,
+    address_id: &Uuid,
+) -> Result<BallotAddressContext, Error> {
     let user_address_data = sqlx::query!(
         r#"
         SELECT
@@ -237,7 +256,6 @@ pub async fn get_races_by_address_id(
             a.state_senate_district,
             a.state_house_district,
             a.state AS "state:State",
-            a.postal_code,
             a.county,
             a.city
         FROM address AS a
@@ -248,13 +266,12 @@ pub async fn get_races_by_address_id(
     .fetch_one(db_pool)
     .await?;
 
-    // 2. Fetch extended state info if applicable
-    let extended_address_mn = if user_address_data.state == State::MN {
+    let extended_mn = if user_address_data.state == State::MN {
         Address::extended_mn_by_address_id(db_pool, address_id).await?
     } else {
         None
     };
-    let extended_address_tx = if user_address_data.state == State::TX {
+    let extended_tx = if user_address_data.state == State::TX {
         let result = Address::extended_tx_by_address_id(db_pool, address_id).await?;
         if result.is_none() {
             tracing::warn!(
@@ -268,7 +285,23 @@ pub async fn get_races_by_address_id(
         None
     };
 
-    // 3. Normalize extended / fallback fields
+    Ok(BallotAddressContext {
+        congressional_district: user_address_data.congressional_district,
+        state_senate_district: user_address_data.state_senate_district,
+        state_house_district: user_address_data.state_house_district,
+        state: user_address_data.state,
+        county: user_address_data.county,
+        city: user_address_data.city,
+        extended_mn,
+        extended_tx,
+    })
+}
+
+pub async fn get_races_by_address_context(
+    db_pool: &sqlx::PgPool,
+    election_id: &Uuid,
+    address_context: &BallotAddressContext,
+) -> Result<Vec<Race>, Error> {
     // For MN, use helper methods on AddressExtendedMN
     let (
         county_commissioner_district,
@@ -280,8 +313,8 @@ pub async fn get_races_by_address_id(
         school_subdistrict,
         ward,
         city,
-    ) = match &extended_address_mn {
-        Some(ext) if user_address_data.state == State::MN => (
+    ) = match &address_context.extended_mn {
+        Some(ext) if address_context.state == State::MN => (
             ext.county_commissioner_district_norm(),
             ext.judicial_district_norm(),
             ext.parsed_soil_and_water_district(),
@@ -290,7 +323,7 @@ pub async fn get_races_by_address_id(
             ext.school_district_type_norm(),
             ext.school_subdistrict_norm(),
             ext.ward_norm(),
-            ext.city_norm(&user_address_data.city),
+            ext.city_norm(&address_context.city),
         ),
         _ => (
             None,
@@ -301,7 +334,7 @@ pub async fn get_races_by_address_id(
             None,
             None,
             None,
-            user_address_data.city.clone(),
+            address_context.city.clone(),
         ),
     };
 
@@ -317,8 +350,8 @@ pub async fn get_races_by_address_id(
         tx_state_district_courts,
         tx_court_of_appeals_districts,
         tx_board_of_education_district,
-    ) = match &extended_address_tx {
-        Some(ext) if user_address_data.state == State::TX => (
+    ) = match &address_context.extended_tx {
+        Some(ext) if address_context.state == State::TX => (
             ext.precinct.clone(),
             ext.congressional_district.clone(),
             ext.state_senate_district.clone(),
@@ -333,7 +366,6 @@ pub async fn get_races_by_address_id(
         _ => (None, None, None, None, None, None, None, None, None, None),
     };
 
-    // 4. Build query
     let mut builder: QueryBuilder<Postgres> = QueryBuilder::new(
         r#"
         SELECT
@@ -369,19 +401,19 @@ pub async fn get_races_by_address_id(
     // Always include national + state scope
     builder.push(" AND (o.election_scope = 'national'");
     builder.push(" OR (o.state = ");
-    builder.push_bind(user_address_data.state);
+    builder.push_bind(address_context.state);
     builder.push(" AND o.election_scope = 'state')");
 
     // Add Minnesota‑specific filters
-    if user_address_data.state == State::MN {
+    if address_context.state == State::MN {
         apply_mn_filters(
             &mut builder,
-            user_address_data.state,
-            user_address_data.county.as_deref(),
+            address_context.state,
+            address_context.county.as_deref(),
             city.clone(),
-            user_address_data.congressional_district.clone(),
-            user_address_data.state_senate_district.clone(),
-            user_address_data.state_house_district.clone(),
+            address_context.congressional_district.clone(),
+            address_context.state_senate_district.clone(),
+            address_context.state_house_district.clone(),
             county_commissioner_district.clone(),
             judicial_district.clone(),
             school_district.clone(),
@@ -393,10 +425,10 @@ pub async fn get_races_by_address_id(
         );
     }
 
-    if user_address_data.state == State::TX {
+    if address_context.state == State::TX {
         tracing::info!(
-            state = ?user_address_data.state,
-            county = ?user_address_data.county.as_deref(),
+            state = ?address_context.state,
+            county = ?address_context.county.as_deref(),
             tx_precinct = ?tx_precinct,
             tx_congressional_district = ?tx_congressional_district,
             tx_state_senate_district = ?tx_state_senate_district,
@@ -411,8 +443,8 @@ pub async fn get_races_by_address_id(
         );
         apply_tx_filters(
             &mut builder,
-            user_address_data.state,
-            user_address_data.county.as_deref(),
+            address_context.state,
+            address_context.county.as_deref(),
             tx_precinct.clone(),
             tx_congressional_district.clone(),
             //user_address_data.congressional_district.clone(),
@@ -429,7 +461,6 @@ pub async fn get_races_by_address_id(
 
     builder.push(") ORDER BY o.priority ASC NULLS LAST, (regexp_match(o.district, '^[0-9]+'))[1]::int ASC NULLS LAST, COALESCE(o.district, '') ASC, (regexp_match(o.seat, '^[0-9]+'))[1]::int ASC NULLS LAST, COALESCE(o.seat, '') ASC, title DESC, r.id ASC");
 
-    // 5. Run query
     let query = builder.build_query_as::<Race>();
     let records = query.fetch_all(db_pool).await?;
 
@@ -441,30 +472,26 @@ pub async fn get_ballot_measures_by_address_id(
     election_id: &Uuid,
     address_id: &Uuid,
 ) -> Result<Vec<BallotMeasure>, Error> {
-    let user_address_data = sqlx::query!(
-        r#"
-        SELECT a.state AS "state:State"
-        FROM address AS a
-        WHERE a.id = $1
-        "#,
-        address_id
-    )
-    .fetch_one(db_pool)
-    .await?;
+    let address_context = resolve_ballot_address_context(db_pool, address_id).await?;
+    get_ballot_measures_by_address_context(db_pool, election_id, &address_context).await
+}
 
-    let user_address_extended_mn = if user_address_data.state == State::MN {
-        Address::extended_mn_by_address_id(db_pool, address_id).await?
-    } else {
-        None
-    };
-    let county_fips = user_address_extended_mn
+pub async fn get_ballot_measures_by_address_context(
+    db_pool: &sqlx::PgPool,
+    election_id: &Uuid,
+    address_context: &BallotAddressContext,
+) -> Result<Vec<BallotMeasure>, Error> {
+    let county_fips = address_context
+        .extended_mn
         .as_ref()
         .and_then(|address| address.county_fips.clone());
-    let municipality_fips = user_address_extended_mn
+    let municipality_fips = address_context
+        .extended_mn
         .as_ref()
         .and_then(|address| address.municipality_fips.as_deref())
         .map(|fips| fips.trim_start_matches('0').to_string());
-    let school_district = user_address_extended_mn
+    let school_district = address_context
+        .extended_mn
         .as_ref()
         .and_then(|address| address.school_district_number.as_deref())
         .map(|district| district.trim_start_matches('0').to_string());
@@ -508,7 +535,7 @@ pub async fn get_ballot_measures_by_address_id(
         ORDER BY bm.title ASC, bm.id ASC
         "#,
         election_id,
-        user_address_data.state as State,
+        address_context.state as State,
         county_fips,
         municipality_fips,
         school_district

@@ -33,8 +33,10 @@ pub use candidate_guide::*;
 pub use committee::CommitteeResult;
 pub use conversation::ConversationResult;
 pub use election::{
-    get_ballot_measures_by_address_id, get_races_by_address_id, process_address_with_geocodio,
-    process_address_with_geocodio_status, ElectionResult, ProcessedAddress,
+    get_ballot_measures_by_address_context, get_ballot_measures_by_address_id,
+    get_races_by_address_context, get_races_by_address_id, process_address_with_geocodio,
+    process_address_with_geocodio_status, resolve_ballot_address_context, BallotAddressContext,
+    ElectionResult, ProcessedAddress,
 };
 pub use embed::*;
 pub use errors::Error;
