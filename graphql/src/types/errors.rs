@@ -13,6 +13,9 @@ pub enum Error {
     DatabaseError(#[from] db::Error),
 
     #[error(transparent)]
+    ApiKeyError(#[from] db::ApiKeyError),
+
+    #[error(transparent)]
     SqlxError(#[from] sqlx::Error),
 
     #[error("BadInput (field: {field:?}, reason: {message:?})")]
@@ -51,6 +54,9 @@ pub enum Error {
     #[error("No user authentication token was provided with request")]
     Unauthorized,
 
+    #[error("API keys must be managed from an interactive signed-in session")]
+    InteractiveAuthenticationRequired,
+
     #[error("Your email address could not be confirmed")]
     ConfirmationError,
 
@@ -77,6 +83,17 @@ impl ErrorExtensions for Error {
                 e.set("code", "BAD_USER_INPUT");
                 e.set("field", field.as_str());
                 e.set("message", message.as_str());
+            }
+            Error::ApiKeyError(
+                error @ (db::ApiKeyError::UserNotConfirmed
+                | db::ApiKeyError::ActiveKeyLimit
+                | db::ApiKeyError::DuplicateName),
+            ) => {
+                e.set("code", "BAD_USER_INPUT");
+                e.set("message", error.to_string());
+            }
+            Error::Unauthorized | Error::InteractiveAuthenticationRequired => {
+                e.set("code", "UNAUTHORIZED");
             }
             _error => {
                 e.set("code", "INTERNAL_SERVER_ERROR");

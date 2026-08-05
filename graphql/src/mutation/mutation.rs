@@ -1,4 +1,5 @@
 use super::{
+    api_key::ApiKeyMutation,
     argument::ArgumentMutation,
     auth::AuthMutation,
     ballot_measure::BallotMeasureMutation,
@@ -23,6 +24,7 @@ use async_graphql::MergedObject;
 // Hide all mutations unless the user is an admin
 #[graphql(visible = "is_admin")]
 pub struct Mutation(
+    ApiKeyMutation,
     ArgumentMutation,
     ConversationMutation,
     PoliticianMutation,

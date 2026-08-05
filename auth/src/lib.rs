@@ -1,5 +1,7 @@
+pub mod api_key;
 pub mod errors;
 pub mod jwt;
+pub use api_key::*;
 pub use errors::Error;
 pub use jwt::*;
 pub use passwords::PasswordGenerator;

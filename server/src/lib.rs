@@ -16,6 +16,7 @@ use tower_cookies::CookieManagerLayer;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
+mod authentication;
 mod cron;
 pub mod jobs;
 pub mod metrics;
@@ -109,6 +110,10 @@ pub async fn run() {
                 .layer(axum::middleware::from_fn(metrics_auth)),
         )
         .layer(axum::middleware::from_fn(metrics::track_metrics))
+        .layer(axum::middleware::from_fn_with_state(
+            pool.connection.clone(),
+            authentication::authentication_middleware,
+        ))
         .layer(cors_layer())
         .layer(CookieManagerLayer::new());
 

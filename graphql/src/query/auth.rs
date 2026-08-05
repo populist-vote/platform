@@ -77,7 +77,7 @@ impl AuthQuery {
         }
     }
 
-    /// Provides current user based on JWT found in client's access_token cookie
+    /// Provides the current user for an authenticated cookie, JWT, or API key.
     #[graphql(visible = "is_admin")]
     async fn current_user(&self, ctx: &Context<'_>) -> Result<Option<AuthTokenResult>, Error> {
         let user = ctx.data::<Option<TokenData<AccessTokenClaims>>>().unwrap();

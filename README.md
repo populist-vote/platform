@@ -60,6 +60,11 @@ To start the api server, run `cargo watch -x run` which will type check, compile
 
 To run certain mutations and queries which require staff or superuser permissions, you can add an `Authorization` token to the HTTP headers section of the playground. You can login to `https://staging.populist.us` or `https://populist.us` and grab the value from the `access_token` cookie in your browsers developer tools. Add this to the http headers like so: `"Authorization" : "Bearer <TOKEN>"`
 
+Confirmed registered users can also create durable API keys from their profile.
+The same `Authorization: Bearer pop_...` credential is resolved for GraphQL and
+REST requests. Implementation details, security properties, and the deployment
+checklist are documented in [`docs/api-keys.md`](docs/api-keys.md).
+
 ### REST API
 
 Versioned REST endpoints are available under `/api/v1`. The API index is at

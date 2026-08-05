@@ -1,5 +1,6 @@
 #![recursion_limit = "256"]
 
+mod api_key;
 pub mod cache;
 pub mod context;
 pub mod guard;

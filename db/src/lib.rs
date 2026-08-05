@@ -10,6 +10,7 @@ pub type DateTime = chrono::DateTime<chrono::Utc>;
 pub use errors::Error;
 
 pub use models::address::*;
+pub use models::api_key::*;
 pub use models::argument::*;
 pub use models::ballot_measure::*;
 pub use models::bill::*;

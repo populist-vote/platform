@@ -1,13 +1,12 @@
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql_axum::{GraphQLRequest, GraphQLResponse};
-use auth::{jwt, AccessTokenClaims};
+use auth::{jwt, AccessTokenClaims, RequestAuthentication};
 use axum::{
-    extract::{ConnectInfo, State},
-    http::HeaderMap,
+    extract::{ConnectInfo, Extension, State},
     response::{self, IntoResponse},
 };
 use graphql::{PopulistSchema, SessionData, SessionID};
-use jsonwebtoken::TokenData;
+use jsonwebtoken::{Header, TokenData};
 use std::net::SocketAddr;
 use tower_cookies::{cookie::SameSite, Cookie, Cookies};
 
@@ -77,29 +76,17 @@ async fn refresh_token_check(cookies: &Cookies) -> Option<TokenData<AccessTokenC
 pub async fn graphql_handler(
     ConnectInfo(ip): ConnectInfo<SocketAddr>,
     State(schema): State<PopulistSchema>,
-    headers: HeaderMap,
     cookies: Cookies,
+    authentication: Option<Extension<RequestAuthentication>>,
     req: GraphQLRequest,
 ) -> GraphQLResponse {
-    let mut headers = headers.clone();
-    headers.insert("Access-Control-Allow-Credentials", "true".parse().unwrap());
-
-    let bearer_token = headers
-        .get("authorization")
-        .and_then(|header| header.to_str().ok())
-        .and_then(|header| header.split_whitespace().nth(1));
-
-    let bearer_token_data = if let Some(token) = bearer_token {
-        let token_data = jwt::validate_access_token(token);
-        if let Ok(token_data) = token_data {
-            tracing::debug!("{:?}", token_data);
-            Some(token_data)
-        } else {
-            None
-        }
-    } else {
-        None
-    };
+    let bearer_authentication = authentication.map(|Extension(authentication)| authentication);
+    let bearer_token_data = bearer_authentication
+        .as_ref()
+        .map(|authentication| TokenData {
+            header: Header::default(),
+            claims: authentication.claims.clone(),
+        });
 
     let cookie_token_data = match cookies.get("access_token") {
         Some(access_cookie) => match jwt::validate_access_token(access_cookie.value()) {
@@ -136,7 +123,11 @@ pub async fn graphql_handler(
     let req = req.into_inner();
 
     schema
-        .execute(req.data(token_data).data(session_data))
+        .execute(
+            req.data(token_data)
+                .data(session_data)
+                .data(bearer_authentication.map(|authentication| authentication.kind)),
+        )
         .await
         .into()
 }

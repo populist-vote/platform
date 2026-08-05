@@ -2,6 +2,7 @@ use async_graphql::{MergedObject, Object};
 
 use super::{
     admin::AdminQuery,
+    api_key::ApiKeyQuery,
     auth::AuthQuery,
     ballot_measure::BallotMeasureQuery,
     bill::BillQuery,
@@ -34,6 +35,7 @@ impl HealthQuery {
 #[derive(MergedObject, Default)]
 pub struct Query(
     AdminQuery,
+    ApiKeyQuery,
     BallotMeasureQuery,
     BillQuery,
     CandidateGuideQuery,
