@@ -56,6 +56,9 @@ pub async fn process_tx_municipal_filings(pool: &PgPool) -> Result<(), Box<dyn E
 
     create_muni_staging_tables(pool).await?;
 
+    let election_slug = get_muni_election_slug(pool).await?;
+    println!("Election slug: {}", election_slug);
+
     let query = format!(
         r#"
         SELECT
@@ -96,7 +99,7 @@ pub async fn process_tx_municipal_filings(pool: &PgPool) -> Result<(), Box<dyn E
         if index % 100 == 0 {
             println!("Processing filing {}/{}...", index + 1, filings.len());
         }
-        match process_and_insert_tx_muni_filing(pool, filing).await {
+        match process_and_insert_tx_muni_filing(pool, filing, &election_slug).await {
             Ok(true) => processed_count += 1,
             Ok(false) => skipped_status_count += 1,
             Err(e) => {
@@ -349,6 +352,7 @@ fn should_ingest_municipal_filing_status(status: Option<&str>) -> bool {
 async fn process_and_insert_tx_muni_filing(
     pool: &PgPool,
     filing: &TxMunicipalFiling,
+    election_slug: &str,
 ) -> Result<bool, Box<dyn Error>> {
     if !should_ingest_municipal_filing_status(filing.status.as_deref()) {
         return Ok(false);
@@ -363,7 +367,8 @@ async fn process_and_insert_tx_muni_filing(
     }
     let resolved_office_id = office_id.unwrap_or(office.id);
 
-    let mut politician = process_tx_muni_politician(pool, filing, resolved_office_id).await?;
+    let mut politician =
+        process_tx_muni_politician(pool, filing, resolved_office_id, election_slug).await?;
 
     let race = process_tx_muni_race(filing, &office, office_id, None)?;
     let address: Option<TxStagingAddress> = None;
@@ -390,7 +395,7 @@ async fn process_and_insert_tx_muni_filing(
     let candidate_name = filing.candidate_name.as_deref().unwrap_or("");
     let race_candidate_ref_key = generators::politician::PoliticianRefKeyGenerator::new(
         "tx-municipal",
-        ELECTION_YEAR,
+        election_slug,
         &office_identity,
         Some(candidate_name),
     )
@@ -567,6 +572,7 @@ async fn process_tx_muni_politician(
     pool: &PgPool,
     filing: &TxMunicipalFiling,
     current_office_id: Uuid,
+    election_slug: &str,
 ) -> Result<Politician, Box<dyn Error>> {
     let candidate_name_raw = filing
         .candidate_name
@@ -577,7 +583,7 @@ async fn process_tx_muni_politician(
     let office_identity = municipal_office_identity_for_ref_key(filing);
     let ref_key = generators::politician::PoliticianRefKeyGenerator::new(
         "TX-MUNI",
-        ELECTION_YEAR,
+        election_slug,
         &office_identity,
         Some(&candidate_name),
     )
@@ -694,6 +700,18 @@ async fn process_tx_muni_politician(
         created_at: chrono::Utc::now(),
         updated_at: chrono::Utc::now(),
     })
+}
+
+async fn get_muni_election_slug(pool: &PgPool) -> Result<String, Box<dyn Error>> {
+    let election_id = Uuid::parse_str(TX_MUNI_ELECTION_ID)?;
+    let slug = sqlx::query_scalar!(
+        r#"SELECT slug FROM election WHERE id = $1"#,
+        election_id
+    )
+    .fetch_optional(pool)
+    .await?
+    .ok_or_else(|| format!("No election found for id {}", TX_MUNI_ELECTION_ID))?;
+    Ok(slug)
 }
 
 async fn get_staging_muni_office_id_by_slug(

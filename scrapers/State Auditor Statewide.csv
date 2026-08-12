@@ -1,0 +1,5 @@
+State,County ID,Precinct name,Office ID,Office name,District,Candidate order code,Candidate name,Suffix,Incumbent code,Party abbreviation,Number of precincts reporting,Total number of precincts voting for the office,Votes for candidate,Percentage of votes for candidate out of total votes for Office,Total number of votes for Office in area
+MN,,,0333,State Auditor,,0301,Nate George,,,R,1929,4105,44829,25.97,172615
+MN,,,0333,State Auditor,,0302,Scott Jensen,,,R,1929,4105,116118,67.27,172615
+MN,,,0333,State Auditor,,0303,Will Finn,,,R,1929,4105,11668,6.76,172615
+MN,,,0333,State Auditor,,0401,Zack Filipovich,,,DFL,1929,4105,209305,100.00,209305

@@ -40,12 +40,17 @@ pub struct TxCandidateFiling {
     pub occupation: Option<String>,
     pub incumbent: Option<String>,
     pub status: Option<String>,
+    pub campaign_website: Option<String>,
+    pub facebook_url: Option<String>,
+    pub instagram_url: Option<String>,
+    pub x_url: Option<String>,
 }
 
 /// Source table for TX primaries. Use quoted name if the table has hyphens:
 /// r#"p6t_state_tx."tx-primaries-2026-02-09""#. Otherwise: p6t_state_tx.tx_primaries_20260209
 const TX_SOURCE_TABLE: &str = "p6t_state_tx.tx_general_20260720_3rdparty";
 const ELECTION_YEAR: i32 = 2026;
+const ELECTION_ID: &str = "6138cc76-f273-43cf-a017-a98d1119b0c3";
 
 /// Outcome of attempting to process a single TX filing.
 enum FilingOutcome {
@@ -70,6 +75,9 @@ pub async fn process_tx_candidate_filings(
 
     create_staging_tables(pool).await?;
 
+    let election_slug = get_election_slug(pool).await?;
+    println!("Election slug: {}", election_slug);
+
     // TODO: Replace NULL::text placeholders with actual column names from
     // p6t_state_tx.tx_primaries_20260209 once column mapping is provided.
     let query = format!(
@@ -86,7 +94,11 @@ pub async fn process_tx_candidate_filings(
             state AS address_state,
             occupation AS occupation,
             incumbent AS incumbent,
-            status AS status
+            status AS status,
+            campaign_website AS campaign_website,
+            facebook_url AS facebook_url,
+            instagram_url AS instagram_url,
+            x_url AS x_url
         FROM {}
         "#,
         TX_SOURCE_TABLE
@@ -109,7 +121,7 @@ pub async fn process_tx_candidate_filings(
         if index % 100 == 0 {
             println!("Processing filing {}/{}...", index + 1, filings.len());
         }
-        match process_and_insert_tx_filing(pool, filing, race_type).await {
+        match process_and_insert_tx_filing(pool, filing, race_type, &election_slug).await {
             Ok(FilingOutcome::Ingested { office_created }) => {
                 processed_count += 1;
                 if office_created {
@@ -382,6 +394,7 @@ async fn process_and_insert_tx_filing(
     pool: &PgPool,
     filing: &TxCandidateFiling,
     race_type: &str,
+    election_slug: &str,
 ) -> Result<FilingOutcome, Box<dyn Error>> {
     let status = filing.status.as_deref().map(|s| s.trim()).unwrap_or("");
     let should_ingest = match race_type {
@@ -417,7 +430,8 @@ async fn process_and_insert_tx_filing(
     }
     let resolved_office_id = office_id.unwrap_or(office.id);
 
-    let mut politician = process_tx_politician(pool, filing, resolved_office_id).await?;
+    let mut politician =
+        process_tx_politician(pool, filing, resolved_office_id, election_slug).await?;
 
     let party_fec = filing
         .party
@@ -452,8 +466,8 @@ async fn process_and_insert_tx_filing(
     let office_title = strip_unexpired_term(raw_office_title).trim().to_string();
     let candidate_name = filing.candidate_name.as_deref().unwrap_or("");
     let race_candidate_ref_key = generators::politician::PoliticianRefKeyGenerator::new(
-        "tx-primaries",
-        ELECTION_YEAR,
+        "tx",
+        election_slug,
         &office_title,
         Some(candidate_name),
     )
@@ -572,6 +586,7 @@ async fn process_tx_politician(
     pool: &PgPool,
     filing: &TxCandidateFiling,
     current_office_id: Uuid,
+    election_slug: &str,
 ) -> Result<Politician, Box<dyn Error>> {
     let candidate_name_raw = filing
         .candidate_name
@@ -582,8 +597,8 @@ async fn process_tx_politician(
     let office_title = strip_unexpired_term(raw_office_title).trim().to_string();
 
     let ref_key = generators::politician::PoliticianRefKeyGenerator::new(
-        "TX-SOS",
-        ELECTION_YEAR,
+        "TX",
+        election_slug,
         &office_title,
         Some(&candidate_name),
     )
@@ -680,10 +695,10 @@ async fn process_tx_politician(
         assets,
         official_website_url: None,
         ballotpedia_url: None,
-        campaign_website_url: None,
-        facebook_url: None,
-        twitter_url: None,
-        instagram_url: None,
+        campaign_website_url: filing.campaign_website.clone(),
+        facebook_url: filing.facebook_url.clone(),
+        twitter_url: filing.x_url.clone(),
+        instagram_url: filing.instagram_url.clone(),
         youtube_url: None,
         linkedin_url: None,
         tiktok_url: None,
@@ -711,8 +726,7 @@ fn process_tx_race(
     race_type: &str,
     party_id: Option<Uuid>,
 ) -> Result<Race, Box<dyn Error>> {
-    let election_id =
-        Uuid::parse_str("6138cc76-f273-43cf-a017-a98d1119b0c3").unwrap_or_else(|_| Uuid::nil());
+    let election_id = Uuid::parse_str(ELECTION_ID).unwrap_or_else(|_| Uuid::nil());
 
     let is_special_election = filing
         .office_title
@@ -802,6 +816,18 @@ fn process_tx_address(filing: &TxCandidateFiling) -> Option<TxStagingAddress> {
         state,
         country,
     })
+}
+
+async fn get_election_slug(pool: &PgPool) -> Result<String, Box<dyn Error>> {
+    let election_id = Uuid::parse_str(ELECTION_ID)?;
+    let slug = sqlx::query_scalar!(
+        r#"SELECT slug FROM election WHERE id = $1"#,
+        election_id
+    )
+    .fetch_optional(pool)
+    .await?
+    .ok_or_else(|| format!("No election found for id {}", ELECTION_ID))?;
+    Ok(slug)
 }
 
 async fn get_staging_office_id_by_slug(

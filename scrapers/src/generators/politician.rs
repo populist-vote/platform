@@ -49,9 +49,11 @@ impl<'a> PoliticianSlugGenerator<'a> {
     }
 }
 
+/// Builds politician / race_candidate ref keys.
+/// Format (slugified): `{source}-{election_slug}-{office_title}-{candidate_name}`
 pub struct PoliticianRefKeyGenerator<'a> {
     source: &'a str,
-    election_year: i32,
+    election_slug: &'a str,
     office_title: &'a str,
     candidate_name: Option<&'a str>,
 }
@@ -59,33 +61,26 @@ pub struct PoliticianRefKeyGenerator<'a> {
 impl<'a> PoliticianRefKeyGenerator<'a> {
     pub fn new(
         source: &'a str,
-        election_year: i32,
+        election_slug: &'a str,
         office_title: &'a str,
         candidate_name: Option<&'a str>,
     ) -> Self {
         PoliticianRefKeyGenerator {
             source,
-            election_year,
+            election_slug,
             office_title,
             candidate_name,
         }
     }
 
     pub fn generate(&self) -> String {
-        let mut parts: Vec<String> = vec![self.source.to_string()];
-        if self.election_year != 0 {
-            parts.push(self.election_year.to_string());
-        }
-        if !self.office_title.is_empty() {
-            parts.push(self.office_title.to_string());
-        }
-        if let Some(name) = self.candidate_name {
-            if !name.is_empty() {
-                parts.push(name.to_string());
-            }
-        }
-        let combined: String = parts.join("-");
-        slugify!(&combined)
+        slugify!(&format!(
+            "{}-{}-{}-{}",
+            self.source,
+            self.election_slug,
+            self.office_title,
+            self.candidate_name.unwrap_or("")
+        ))
     }
 }
 
@@ -109,29 +104,33 @@ mod tests {
 
     #[test]
     fn politician_ref_key() {
-        // Source + candidate name only (year=0, office_title="") -> same as legacy source+slug
-        let tests: Vec<((&'static str, &'static str), &'static str)> = vec![
-            (("CO SOS", "john-smith"), "co-sos-john-smith"),
-            (("MN CSV", "john-smith"), "mn-csv-john-smith"),
-        ];
+        assert_eq!(
+            PoliticianRefKeyGenerator::new(
+                "mn-sos",
+                "2026-primary-election",
+                "Governor",
+                Some("Jane Doe")
+            )
+            .generate(),
+            "mn-sos-2026-primary-election-governor-jane-doe"
+        );
 
-        for (input, expected) in tests {
-            assert_eq!(
-                PoliticianRefKeyGenerator::new(input.0, 0, "", Some(input.1)).generate(),
-                expected
-            );
-        }
-
-        // TX primaries: source + year + office_title + candidate_name
         assert_eq!(
             PoliticianRefKeyGenerator::new(
                 "tx-primaries",
-                2026,
+                "2026-general-election",
                 "U. S. REPRESENTATIVE DISTRICT 1",
                 Some("JANE DOE")
             )
             .generate(),
-            "tx-primaries-2026-u-s-representative-district-1-jane-doe"
+            "tx-primaries-2026-general-election-u-s-representative-district-1-jane-doe"
+        );
+
+        // Empty office title still produces a valid slug
+        assert_eq!(
+            PoliticianRefKeyGenerator::new("CO-SOS", "2024-general-election", "", Some("john-smith"))
+                .generate(),
+            "co-sos-2024-general-election-john-smith"
         );
     }
 }

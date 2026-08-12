@@ -2,9 +2,10 @@ use crate::extractors;
 use crate::generators;
 use db::{Office, Politician, Race, RaceType, State, VoteType};
 use serde_json::Value as JSON;
-use slugify::slugify;
+use sqlx::FromRow;
 use sqlx::PgPool;
 use std::error::Error;
+use std::fmt;
 use std::str::FromStr;
 use uuid::Uuid;
 
@@ -18,12 +19,40 @@ pub struct MnStagingAddress {
     pub country: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MnFilingScope {
+    Local,
+    FedStateCounty,
+}
+
+impl MnFilingScope {
+    fn source_table(self) -> &'static str {
+        match self {
+            Self::Local => "p6t_state_mn.mn_candidate_filings_local_primaries_2026",
+            Self::FedStateCounty => {
+                "p6t_state_mn.mn_candidate_filings_fed_state_county_primaries_2026"
+            }
+        }
+    }
+}
+
+impl fmt::Display for MnFilingScope {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Local => write!(f, "local"),
+            Self::FedStateCounty => write!(f, "fed-state-county"),
+        }
+    }
+}
+
+#[derive(Debug, FromRow)]
 pub struct CandidateFiling {
     pub office_title: Option<String>,
     pub office_id: Option<String>,
     pub office_code: Option<String>,
     pub candidate_name: Option<String>,
     pub party_abbreviation: Option<String>,
+    pub school_district_number: Option<String>,
     pub campaign_phone: Option<String>,
     pub campaign_email: Option<String>,
     pub campaign_website: Option<String>,
@@ -45,13 +74,70 @@ pub struct CandidateFiling {
 const ELECTION_YEAR: i32 = 2026;
 const ELECTION_ID: &str = "5fa881d7-f8f3-4b90-9063-45236c85c77a";
 
+fn fetch_filings_query(scope: MnFilingScope) -> String {
+    let (party_expr, school_district_expr, running_mate_website, running_mate_email, running_mate_phone) =
+        match scope {
+            MnFilingScope::FedStateCounty => (
+                "raw.party_abbreviation",
+                "NULL::text AS school_district_number",
+                "raw.running_mate_website",
+                "raw.running_mate_email",
+                "raw.running_mate_phone",
+            ),
+            // Local filings have no party column; all local candidates are non-partisan (NP).
+            MnFilingScope::Local => (
+                "'NP'::text AS party_abbreviation",
+                "raw.school_district_number",
+                "NULL::text AS running_mate_website",
+                "NULL::text AS running_mate_email",
+                "NULL::text AS running_mate_phone",
+            ),
+        };
+
+    format!(
+        r#"
+        SELECT DISTINCT
+            raw.office_title,
+            raw.office_id,
+            raw.office_code,
+            raw.candidate_name,
+            {party_expr},
+            {school_district_expr},
+            raw.campaign_phone,
+            raw.campaign_email,
+            raw.campaign_website,
+            {running_mate_website},
+            {running_mate_email},
+            {running_mate_phone},
+            raw.county_id,
+            vd.countyname AS county_name,
+            raw.residence_street_address,
+            raw.residence_city,
+            raw.residence_state,
+            raw.residence_zip,
+            raw.campaign_address,
+            raw.campaign_city,
+            raw.campaign_state,
+            raw.campaign_zip
+        FROM {table} raw
+        LEFT JOIN (
+            SELECT DISTINCT countycode, countyname
+            FROM p6t_state_mn.bdry_votingdistricts
+        ) vd ON raw.county_id IS NOT NULL AND REGEXP_REPLACE(raw.county_id, '^0+', '') = vd.countycode
+        WHERE raw.office_title IS NOT NULL AND raw.office_title != 'U.S. President & Vice President'
+        "#,
+        table = scope.source_table()
+    )
+}
+
 pub async fn process_mn_candidate_filings(
     pool: &PgPool,
-    source_table: &str,
+    scope: MnFilingScope,
     race_type: &str,
 ) -> Result<(), Box<dyn Error>> {
     println!("Starting MN candidate filings processor...");
-    println!("Source table: {}", source_table);
+    println!("Filing scope: {}", scope);
+    println!("Source table: {}", scope.source_table());
     println!("Race type: {}", race_type);
 
     // 1. Create staging tables in ingest_staging schema
@@ -62,41 +148,10 @@ pub async fn process_mn_candidate_filings(
 
     // 2. Get raw filings from source table
     println!("Fetching raw candidate filings...");
-    let filings = sqlx::query_as!(
-        CandidateFiling,
-        r#"
-        SELECT DISTINCT
-            raw.office_title,
-            raw.office_id,
-            raw.office_code,
-            raw.candidate_name,
-            raw.party_abbreviation,
-            raw.campaign_phone,
-            raw.campaign_email,
-            raw.campaign_website,
-            raw.running_mate_website,
-            raw.running_mate_email,
-            raw.running_mate_phone,
-            raw.county_id,
-            vd.countyname as county_name,
-            raw.residence_street_address,
-            raw.residence_city,
-            raw.residence_state,
-            raw.residence_zip,
-            raw.campaign_address,
-            raw.campaign_city,
-            raw.campaign_state,
-            raw.campaign_zip
-        FROM p6t_state_mn.mn_candidate_filings_fed_state_county_primaries_2026 raw
-        LEFT JOIN (
-            SELECT DISTINCT countycode, countyname 
-            FROM p6t_state_mn.bdry_votingdistricts
-        ) vd ON raw.county_id IS NOT NULL AND REGEXP_REPLACE(raw.county_id, '^0+', '') = vd.countycode
-        WHERE raw.office_title IS NOT NULL AND raw.office_title != 'U.S. President & Vice President'
-        "#
-    )
-    .fetch_all(pool)
-    .await?;
+    let query = fetch_filings_query(scope);
+    let filings: Vec<CandidateFiling> = sqlx::query_as::<_, CandidateFiling>(&query)
+        .fetch_all(pool)
+        .await?;
 
     println!("Found {} candidate filings to process", filings.len());
 
@@ -346,7 +401,7 @@ async fn process_and_insert_filing(
         .await?
         .unwrap_or(race.id);
 
-    let mut politician = process_politician(pool, filing).await?;
+    let mut politician = process_politician(pool, filing, election_slug).await?;
 
     if let Some(addr) = process_mn_residence_address(filing) {
         let addr_id = insert_staging_address(pool, &addr, politician.id).await?;
@@ -359,7 +414,10 @@ async fn process_and_insert_filing(
 
     insert_staging_politician(pool, &politician).await?;
 
-    let race_candidate_ref_key = process_race_candidate(filing, election_slug);
+    let race_candidate_ref_key = politician
+        .ref_key
+        .clone()
+        .unwrap_or_else(|| process_race_candidate(filing, election_slug));
     insert_staging_race_candidate(pool, race_id, &politician, &race_candidate_ref_key).await?;
 
     Ok(())
@@ -407,7 +465,8 @@ async fn process_and_insert_governor_lt_governor_ticket(
         .await?
         .unwrap_or(lt_governor_race.id);
 
-    let (governor, lt_governor) = process_governor_lt_governor_politicians(pool, filing).await?;
+    let (governor, lt_governor) =
+        process_governor_lt_governor_politicians(pool, filing, election_slug).await?;
 
     // Only the Governor gets residence/campaign addresses from the filing
     let mut governor = governor;
@@ -423,22 +482,22 @@ async fn process_and_insert_governor_lt_governor_ticket(
     insert_staging_politician(pool, &governor).await?;
     insert_staging_politician(pool, &lt_governor).await?;
 
-    let governor_name = governor.full_name.as_deref().unwrap_or("");
-    let lt_name = lt_governor.full_name.as_deref().unwrap_or("");
-    insert_staging_race_candidate(
-        pool,
-        governor_race_id,
-        &governor,
-        &race_candidate_ref_key(election_slug, "Governor", governor_name),
-    )
-    .await?;
-    insert_staging_race_candidate(
-        pool,
-        lt_governor_race_id,
-        &lt_governor,
-        &race_candidate_ref_key(election_slug, "Lieutenant Governor", lt_name),
-    )
-    .await?;
+    let governor_ref_key = governor.ref_key.clone().unwrap_or_else(|| {
+        race_candidate_ref_key(
+            election_slug,
+            "Governor",
+            governor.full_name.as_deref().unwrap_or(""),
+        )
+    });
+    let lt_ref_key = lt_governor.ref_key.clone().unwrap_or_else(|| {
+        race_candidate_ref_key(
+            election_slug,
+            "Lieutenant Governor",
+            lt_governor.full_name.as_deref().unwrap_or(""),
+        )
+    });
+    insert_staging_race_candidate(pool, governor_race_id, &governor, &governor_ref_key).await?;
+    insert_staging_race_candidate(pool, lt_governor_race_id, &lt_governor, &lt_ref_key).await?;
 
     Ok(())
 }
@@ -653,10 +712,13 @@ fn process_race_candidate(filing: &CandidateFiling, election_slug: &str) -> Stri
 
 /// Format: `mn-sos-{election_slug}-{office_title}-{candidate_name}` (slugified).
 fn race_candidate_ref_key(election_slug: &str, office_title: &str, candidate_name: &str) -> String {
-    slugify!(&format!(
-        "mn-sos-{}-{}-{}",
-        election_slug, office_title, candidate_name
-    ))
+    generators::politician::PoliticianRefKeyGenerator::new(
+        "mn-sos",
+        election_slug,
+        office_title,
+        Some(candidate_name),
+    )
+    .generate()
 }
 
 fn is_governor_lt_governor_ticket(filing: &CandidateFiling) -> bool {
@@ -712,6 +774,7 @@ struct PoliticianFieldOverrides {
 async fn process_politician(
     pool: &PgPool,
     filing: &CandidateFiling,
+    election_slug: &str,
 ) -> Result<Politician, Box<dyn Error>> {
     let candidate_name = filing
         .candidate_name
@@ -722,6 +785,7 @@ async fn process_politician(
         filing,
         candidate_name,
         filing.office_title.as_deref().unwrap_or(""),
+        election_slug,
         PoliticianFieldOverrides {
             email: filing.campaign_email.clone(),
             phone: filing.campaign_phone.clone(),
@@ -735,6 +799,7 @@ async fn process_politician(
 async fn process_governor_lt_governor_politicians(
     pool: &PgPool,
     filing: &CandidateFiling,
+    election_slug: &str,
 ) -> Result<(Politician, Politician), Box<dyn Error>> {
     let combined_name = filing
         .candidate_name
@@ -757,6 +822,7 @@ async fn process_governor_lt_governor_politicians(
         filing,
         governor_name,
         "Governor",
+        election_slug,
         PoliticianFieldOverrides {
             email: filing.campaign_email.clone(),
             phone: filing.campaign_phone.clone(),
@@ -787,6 +853,7 @@ async fn process_governor_lt_governor_politicians(
         filing,
         lt_governor_name,
         "Lieutenant Governor",
+        election_slug,
         PoliticianFieldOverrides {
             email: lt_email,
             phone: lt_phone,
@@ -803,19 +870,14 @@ async fn process_politician_for_name(
     filing: &CandidateFiling,
     candidate_name: &str,
     office_title: &str,
+    election_slug: &str,
     overrides: PoliticianFieldOverrides,
 ) -> Result<Politician, Box<dyn Error>> {
     // Generate politician slug
     let slug = generators::politician::PoliticianSlugGenerator::new(candidate_name).generate();
 
-    // Generate ref key
-    let ref_key = generators::politician::PoliticianRefKeyGenerator::new(
-        "MN-SOS",
-        ELECTION_YEAR,
-        office_title,
-        Some(candidate_name),
-    )
-    .generate();
+    // Same ref_key format as race_candidates: mn-sos-{election_slug}-{office_title}-{candidate_name}
+    let ref_key = race_candidate_ref_key(election_slug, office_title, candidate_name);
 
     let party_id = resolve_party_id(pool, filing.party_abbreviation.as_deref()).await?;
     let name_parts = parse_candidate_name(candidate_name)?;
@@ -1050,8 +1112,16 @@ fn process_office_for_title(
     let district = extractors::mn::mn_office::extract_office_district(office_title);
     let seat = extractors::mn::mn_office::extract_office_seat(office_title);
 
-    // Extract school and hospital districts
-    let school_district = extractors::mn::mn_office::extract_school_district(office_title);
+    // Extract school and hospital districts (prefer SOS school_district_number for local filings)
+    let school_district = extractors::mn::mn_office::extract_school_district(office_title)
+        .or_else(|| {
+            filing
+                .school_district_number
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+        });
     let hospital_district = extractors::mn::mn_office::extract_hospital_district(office_title);
 
     // Extract municipality

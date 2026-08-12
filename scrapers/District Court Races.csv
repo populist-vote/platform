@@ -1,0 +1,4 @@
+State,County ID,Precinct name,Office ID,Office name,District,Candidate order code,Candidate name,Suffix,Incumbent code,Party abbreviation,Number of precincts reporting,Total number of precincts voting for the office,Votes for candidate,Percentage of votes for candidate out of total votes for Office,Total number of votes for Office in area
+MN,,,9237,Judge - 10th District Court 38,10,9001,Ben Lacy,,,NP,280,409,34532,36.05,95796
+MN,,,9237,Judge - 10th District Court 38,10,9002,Rebecca A. Waxse,,,NP,280,409,45830,47.84,95796
+MN,,,9237,Judge - 10th District Court 38,10,9003,Mack Guptil,,,NP,280,409,15434,16.11,95796
