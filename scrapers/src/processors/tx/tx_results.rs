@@ -24,6 +24,22 @@ use crate::generators::politician::PoliticianRefKeyGenerator;
 use crate::util::decode_csv_bytes_to_utf8;
 
 const DEFAULT_ELECTION_YEAR: i32 = 2026;
+/// Same election as TX candidate filings (`tx_candidate_filings::ELECTION_ID`).
+const TX_RESULTS_ELECTION_ID: &str = "6138cc76-f273-43cf-a017-a98d1119b0c3";
+
+async fn get_tx_election_slug(
+    pool: &PgPool,
+) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    let election_id = uuid::Uuid::parse_str(TX_RESULTS_ELECTION_ID)?;
+    let slug = sqlx::query_scalar!(
+        r#"SELECT slug FROM election WHERE id = $1"#,
+        election_id
+    )
+    .fetch_optional(pool)
+    .await?
+    .ok_or_else(|| format!("No election found for id {}", TX_RESULTS_ELECTION_ID))?;
+    Ok(slug)
+}
 
 // ---------- SOS (XML) ----------
 
@@ -143,6 +159,7 @@ fn parse_year_from_election_date(date: Option<&str>) -> Option<i32> {
 pub fn parse_tx_sos_xml(
     content: &str,
     source_file: &str,
+    election_slug: &str,
 ) -> Result<Vec<StgTxResultRow>, Box<dyn std::error::Error + Send + Sync>> {
     let doc = Document::parse(content)?;
     let root = doc.root_element();
@@ -188,8 +205,8 @@ pub fn parse_tx_sos_xml(
                 let candidate_key = c.attribute("key").map(String::from);
                 let total_voters = attr_parse_u64(c, "totalVoters").map(|u| u as i64);
                 let ref_key = PoliticianRefKeyGenerator::new(
-                    "tx-primaries",
-                    election_year.unwrap_or(0),
+                    "tx",
+                    election_slug,
                     office_name.as_deref().unwrap_or(""),
                     candidate_name.as_deref(),
                 )
@@ -266,6 +283,8 @@ pub async fn process_tx_sos_results(
             .execute(pool)
             .await?;
     }
+    let election_slug = get_tx_election_slug(pool).await?;
+
     let files = list_tx_sos_xml_files()?;
     if files.is_empty() {
         return Ok((0, 0));
@@ -279,7 +298,7 @@ pub async fn process_tx_sos_results(
             .and_then(|s| s.to_str())
             .unwrap_or("unknown")
             .to_string();
-        let rows = parse_tx_sos_xml(&content, &source_file)?;
+        let rows = parse_tx_sos_xml(&content, &source_file, &election_slug)?;
         let n = insert_sos_staging_rows(pool, &rows).await?;
         files_processed += 1;
         total_rows += n;
@@ -571,13 +590,14 @@ fn push_slug(parts: &mut Vec<String>, s: &str) {
 }
 
 /// Build ref_key for a county race row. Format varies by office and county.
+/// Prefix is always `tx-{election_slug}-...`.
 fn build_ref_key_for_county_race(
     office_name: &str,
     parsed: &ParsedContestName,
     county: Option<&str>,
     candidate_name: Option<&str>,
     party: Option<&str>,
-    year: i32,
+    election_slug: &str,
 ) -> String {
     let county = county.unwrap_or("").trim();
     let county_lower = county.to_lowercase();
@@ -593,7 +613,7 @@ fn build_ref_key_for_county_race(
         .map(|s| s.trim())
         .filter(|s| !s.is_empty());
     let party = party.map(|s| s.trim()).filter(|s| !s.is_empty());
-    let mut parts: Vec<String> = vec!["tx-primaries".to_string(), year.to_string()];
+    let mut parts: Vec<String> = vec!["tx".to_string(), election_slug.to_string()];
     match office_name {
         "Criminal District Judge" => {
             if county_lower == "tarrant" {
@@ -810,6 +830,7 @@ pub fn parse_clarity_csv(
     csv_path: &Path,
     source_file: &str,
     election_year: Option<i32>,
+    election_slug: &str,
 ) -> Result<Vec<StgTxClarityResultRow>, Box<dyn std::error::Error + Send + Sync>> {
     let year = election_year.unwrap_or(DEFAULT_ELECTION_YEAR);
     let bytes = fs::read(csv_path)?;
@@ -844,7 +865,7 @@ pub fn parse_clarity_csv(
             county_name,
             candidate_name.as_deref(),
             raw.party_name.as_deref(),
-            year,
+            election_slug,
         );
         let total_votes =
             total_votes_from_percent(raw.total_votes, raw.percent_of_votes.as_deref());
@@ -916,7 +937,8 @@ pub async fn process_clarity_csv(
     source_file: &str,
     election_year: Option<i32>,
 ) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
-    let rows = parse_clarity_csv(csv_path, source_file, election_year)?;
+    let election_slug = get_tx_election_slug(pool).await?;
+    let rows = parse_clarity_csv(csv_path, source_file, election_year, &election_slug)?;
     insert_clarity_staging_rows(pool, &rows).await
 }
 
@@ -947,6 +969,7 @@ pub fn parse_hart_csv(
     csv_path: &Path,
     source_file: &str,
     election_year: Option<i32>,
+    election_slug: &str,
 ) -> Result<Vec<StgTxHartResultRow>, Box<dyn std::error::Error + Send + Sync>> {
     let year = election_year.unwrap_or(DEFAULT_ELECTION_YEAR);
     let bytes = fs::read(csv_path)?;
@@ -1022,7 +1045,7 @@ pub fn parse_hart_csv(
             county_ref,
             candidate_name.as_deref(),
             party.as_deref(),
-            year,
+            election_slug,
         );
         rows.push(StgTxHartResultRow {
             office_name: Some(rule.populist_office_name.to_string()),
@@ -1092,7 +1115,8 @@ pub async fn process_hart_csv(
     source_file: &str,
     election_year: Option<i32>,
 ) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
-    let rows = parse_hart_csv(csv_path, source_file, election_year)?;
+    let election_slug = get_tx_election_slug(pool).await?;
+    let rows = parse_hart_csv(csv_path, source_file, election_year, &election_slug)?;
     insert_hart_staging_rows(pool, &rows).await
 }
 
@@ -1149,6 +1173,7 @@ pub fn parse_other_csv(
     csv_path: &Path,
     source_file: &str,
     election_year: Option<i32>,
+    election_slug: &str,
 ) -> Result<Vec<StgTxOtherResultRow>, Box<dyn std::error::Error + Send + Sync>> {
     let year = election_year.unwrap_or(DEFAULT_ELECTION_YEAR);
     let bytes = fs::read(csv_path)?;
@@ -1183,7 +1208,7 @@ pub fn parse_other_csv(
             county_name,
             candidate_name.as_deref(),
             raw.party_name.as_deref(),
-            year,
+            election_slug,
         );
         let total_votes = raw.total_votes.or_else(|| {
             total_votes_from_percent(raw.votes_for_candidate, raw.percent_of_votes.as_deref())
@@ -1256,6 +1281,7 @@ pub async fn process_other_csv(
     source_file: &str,
     election_year: Option<i32>,
 ) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
-    let rows = parse_other_csv(csv_path, source_file, election_year)?;
+    let election_slug = get_tx_election_slug(pool).await?;
+    let rows = parse_other_csv(csv_path, source_file, election_year, &election_slug)?;
     insert_other_staging_rows(pool, &rows).await
 }

@@ -49,7 +49,7 @@ pub async fn get_mn_sos_candidate_filings_local_primaries(
     driver: &WebDriver,
 ) -> Result<(), Box<dyn Error>> {
     driver.goto("https://candidates.sos.mn.gov").await?;
-    let link = driver.find(By::LinkText("REPLACE WITH LINK TEXT")).await?;
+    let link = driver.find(By::LinkText("Candidates in the Primary - Local Offices (Municipal and School District)")).await?;
     link.click().await?;
     let text = driver
         .find(By::XPath("/html/body/pre"))
@@ -77,12 +77,12 @@ pub async fn get_mn_sos_candidate_filings_local_primaries(
 
     let pool = db::pool().await;
     sqlx::query!(
-        r#"DROP TABLE IF EXISTS p6t_state_mn.mn_candidate_filings_local_primaries_2025 CASCADE;"#
+        r#"DROP TABLE IF EXISTS p6t_state_mn.mn_candidate_filings_local_primaries_2026 CASCADE;"#
     )
     .execute(&pool.connection)
     .await?;
     let create_table_query = format!(
-        "CREATE TABLE p6t_state_mn.mn_candidate_filings_local_primaries_2025 (
+        "CREATE TABLE p6t_state_mn.mn_candidate_filings_local_primaries_2026 (
             {}
         );",
         PRIMARY_HEADER_NAMES
@@ -96,7 +96,7 @@ pub async fn get_mn_sos_candidate_filings_local_primaries(
         .execute(&pool.connection)
         .await?;
     let mut tx = pool.connection.acquire().await?;
-    let copy_query = r#"COPY p6t_state_mn.mn_candidate_filings_local_primaries_2025 FROM STDIN WITH CSV HEADER;"#;
+    let copy_query = r#"COPY p6t_state_mn.mn_candidate_filings_local_primaries_2026 FROM STDIN WITH CSV HEADER;"#;
     let mut tx_copy = tx.copy_in_raw(copy_query).await?;
     tx_copy.send(csv_data_as_string.as_bytes()).await?;
     tx_copy.finish().await?;

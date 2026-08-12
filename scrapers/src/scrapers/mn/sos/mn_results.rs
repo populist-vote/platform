@@ -46,42 +46,59 @@ static PRECINCT_STATS_HEADER_NAMES: [&str; 12] = [
 pub async fn fetch_results() -> Result<(), Box<dyn Error>> {
     let mut results_file_paths: HashMap<&str, &str> = HashMap::new();
 
-    // results_file_paths.insert(
-    //     "U.S. Senator Statewide",
-    //     "https://electionresultsfiles.sos.state.mn.us/20241105/ussenate.txt",
-    // );
-    // results_file_paths.insert(
-    //     "U.S. Representative by District",
-    //     "https://electionresultsfiles.sos.state.mn.us/20241105/ushouse.txt",
-    // );
+    results_file_paths.insert(
+        "U.S. Senator Statewide",
+        "https://electionresultsfiles.sos.mn.gov/20260811/ussenate.txt",
+    );
+    results_file_paths.insert(
+        "U.S. Representative by District",
+        "https://electionresultsfiles.sos.mn.gov/20260811/ushouse.txt",
+    );
+    results_file_paths.insert(
+        "Governor Statewide",
+        "https://electionresultsfiles.sos.mn.gov/20260811/Governor.txt",
+    );
+    results_file_paths.insert(
+        "Secretary of State Statewide",
+        "https://electionresultsfiles.sos.mn.gov/20260811/secofstate.txt",
+    );
+    results_file_paths.insert(
+        "Attorney General Statewide",
+        "https://electionresultsfiles.sos.mn.gov/20260811/attorneygen.txt",
+    );
+    results_file_paths.insert(
+        "State Auditor Statewide",
+        "https://electionresultsfiles.sos.mn.gov/20260811/auditor.txt",
+    );
     // results_file_paths.insert(
     //     "Supreme Court and Courts of Appeals",
     //     "https://electionresultsfiles.sos.state.mn.us/20241105/judicial.txt",
     // );
-    // results_file_paths.insert(
-    //     "State Senator by District",
-    //     "https://electionresultsfiles.sos.mn.gov/20251104/stsenate.txt",
-    // );
-    // results_file_paths.insert(
-    //     "County Races",
-    //     "https://electionresultsfiles.sos.mn.gov/20251104/cntyRaces.txt",
-    // );
     results_file_paths.insert(
-        "Municipal Races and Questions",
-        "https://electionresultsfiles.sos.mn.gov/20251104/local.txt",
+        "State Senator by District",
+        "https://electionresultsfiles.sos.mn.gov/20260811/stsenate.txt",
+    );
+    results_file_paths.insert(
+        "State Representative by District",
+        "https://electionresultsfiles.sos.mn.gov/20260811/LegislativeByDistrict.txt",
+    );
+    results_file_paths.insert(
+        "District Court Races",
+        "https://electionresultsfiles.sos.mn.gov/20260811/judicialdst.txt",
+    );
+    results_file_paths.insert(
+        "County Races",
+        "https://electionresultsfiles.sos.mn.gov/20260811/cntyRaces.txt",
+    );
+    results_file_paths.insert(
+        "Municipal Races",
+        "https://electionresultsfiles.sos.mn.gov/20260811/local.txt",
     );
     results_file_paths.insert(
         "School Board Races",
-        "https://electionresultsfiles.sos.mn.gov/20251104/sdrace.txt",
+        "https://electionresultsfiles.sos.mn.gov/20260811/sdrace.txt",
     );
-    // results_file_paths.insert(
-    //     "State Representative by District",
-    //     "https://electionresultsfiles.sos.mn.gov/20250311/LegislativeByDistrict.txt",
-    // );
-    // results_file_paths.insert(
-    //     "District Court Judges",
-    //     "https://electionresultsfiles.sos.mn.gov/20241105/judicialdst.txt",
-    // );
+    
 
     let client = Client::new();
     let mut table_names = Vec::new();
@@ -236,14 +253,14 @@ async fn update_public_schema_with_results(table_names: Vec<String>) {
         .collect::<Vec<String>>()
         .join(" UNION ALL ");
 
-    // Inline slugify (no DB function / unaccent): lower, strip non-alphanumeric, spaces→hyphens, trim
+    // Inline slugify (no DB function / unaccent): lower, "."→"-", strip other non-alphanumeric, spaces→hyphens, trim
     // Format must match mn_candidate_filings: mn-sos-{election_slug}-{office_name}-{candidate_name}
     let ref_key_from_source = format!(
-        "TRIM(BOTH '-' FROM REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(CONCAT('mn-sos-', '{}', '-', source.office_name, '-', source.candidate_name)), '[^a-z0-9 -]', '', 'g'), '\\s+', '-', 'g'), '-+', '-', 'g'))",
+        "TRIM(BOTH '-' FROM REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(CONCAT('mn-sos-', '{}', '-', source.office_name, '-', source.candidate_name)), '\\.', '-', 'g'), '[^a-z0-9 -]', '', 'g'), '\\s+', '-', 'g'), '-+', '-', 'g'))",
         election_slug.replace('\'', "''")
     );
     let ref_key_from_results = format!(
-        "TRIM(BOTH '-' FROM REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(CONCAT('mn-sos-', '{}', '-', results.office_name, '-', results.candidate_name)), '[^a-z0-9 -]', '', 'g'), '\\s+', '-', 'g'), '-+', '-', 'g'))",
+        "TRIM(BOTH '-' FROM REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(LOWER(CONCAT('mn-sos-', '{}', '-', results.office_name, '-', results.candidate_name)), '\\.', '-', 'g'), '[^a-z0-9 -]', '', 'g'), '\\s+', '-', 'g'), '-+', '-', 'g'))",
         election_slug.replace('\'', "''")
     );
 
@@ -251,6 +268,52 @@ async fn update_public_schema_with_results(table_names: Vec<String>) {
         r#"
         WITH source AS (
             {}
+        ),
+        source_normalized AS (
+            SELECT
+                office_name,
+                county_id,
+                office_id,
+                candidate_name,
+                votes_for_candidate,
+                total_number_of_votes_for_office_in_area,
+                number_of_precincts_reporting,
+                total_number_of_precincts_voting_for_the_office
+            FROM
+                source
+            WHERE
+                TRIM(office_name) IS DISTINCT FROM 'Governor & Lt Governor'
+            UNION ALL
+            SELECT
+                'Governor' AS office_name,
+                county_id,
+                office_id,
+                TRIM(SPLIT_PART(candidate_name, ' and ', 1)) AS candidate_name,
+                votes_for_candidate,
+                total_number_of_votes_for_office_in_area,
+                number_of_precincts_reporting,
+                total_number_of_precincts_voting_for_the_office
+            FROM
+                source
+            WHERE
+                TRIM(office_name) = 'Governor & Lt Governor'
+                AND TRIM(SPLIT_PART(COALESCE(candidate_name, ''), ' and ', 1)) <> ''
+            UNION ALL
+            SELECT
+                'Lieutenant Governor' AS office_name,
+                county_id,
+                office_id,
+                TRIM(SPLIT_PART(candidate_name, ' and ', 2)) AS candidate_name,
+                votes_for_candidate,
+                total_number_of_votes_for_office_in_area,
+                number_of_precincts_reporting,
+                total_number_of_precincts_voting_for_the_office
+            FROM
+                source
+            WHERE
+                TRIM(office_name) = 'Governor & Lt Governor'
+                AND POSITION(' and ' IN COALESCE(candidate_name, '')) > 0
+                AND TRIM(SPLIT_PART(candidate_name, ' and ', 2)) <> ''
         ),
         results AS (
             SELECT DISTINCT ON (office_name, candidate_name)
@@ -278,7 +341,7 @@ async fn update_public_schema_with_results(table_names: Vec<String>) {
                     NULL
                 END AS total_first_choice_votes
             FROM
-                source
+                source_normalized AS source
             LEFT JOIN race_candidates rc ON rc.ref_key = {}
             LEFT JOIN race r ON r.id = rc.race_id
             ORDER BY

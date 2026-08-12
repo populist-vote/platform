@@ -96,7 +96,7 @@ impl Scraper {
                 None
             };
 
-            let politician = Self::build_politician_input(&entry, &party);
+            let politician = Self::build_politician_input(&entry, &party, &election.slug);
             let politician =
                 match db::Politician::upsert_from_source(&context.db.connection, &politician).await
                 {
@@ -289,10 +289,16 @@ impl Scraper {
     fn build_politician_input(
         entry: &CandidateEntry,
         party: &Option<db::Party>,
+        election_slug: &str,
     ) -> db::UpsertPoliticianInput {
         let slug = PoliticianSlugGenerator::new(entry.name.as_str()).generate();
-        let ref_key =
-            PoliticianRefKeyGenerator::new(SOURCE_ID, 0, "", Some(entry.name.as_str())).generate();
+        let ref_key = PoliticianRefKeyGenerator::new(
+            SOURCE_ID,
+            election_slug,
+            "",
+            Some(entry.name.as_str()),
+        )
+        .generate();
         let party_id = party.as_ref().map(|p| p.id);
         db::UpsertPoliticianInput {
             slug: Some(slug),
