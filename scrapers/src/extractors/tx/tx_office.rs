@@ -417,7 +417,7 @@ pub fn extract_office_name(input: &str, party: Option<&str>) -> Option<String> {
     }
 
     // State Executive Offices
-    if input_lower.contains("lieutenant governor") {
+    if input_lower.contains("lieutenant governor") || input_lower.contains("lt. governor") {
         return Some("Lieutenant Governor".to_string());
     }
     if input_lower.contains("governor") {
