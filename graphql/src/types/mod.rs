@@ -1,4 +1,5 @@
 mod address;
+mod api_key;
 mod argument;
 mod auth;
 mod ballot_measure;
@@ -26,6 +27,7 @@ mod voting_guide;
 
 pub use self::auth::{AuthTokenResult, CreateUserResult, LoginResult};
 pub use address::{AddressExtendedMNResult, AddressResult};
+pub use api_key::{ApiKeyResult, CreatedApiKeyResult};
 pub use argument::ArgumentResult;
 pub use ballot_measure::BallotMeasureResult;
 pub use bill::BillResult;
