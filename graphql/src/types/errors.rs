@@ -33,6 +33,11 @@ pub enum Error {
     #[error("A user already exists with this email")]
     UserExistsError,
 
+    #[error(
+        "This invitation is invalid or expired. Please ask your organization to send a new invite."
+    )]
+    InvalidInvite,
+
     #[error("Your password was incorrect")]
     PasswordError,
 
