@@ -44,8 +44,8 @@ impl EmailClient {
         let mail = Message::new(self.from.clone())
             .set_template_id(WELCOME_EMAIL_TEMPLATE_ID)
             .add_personalization(p);
-        let response = self.sender.send(&mail).await;
-        let status = response.unwrap().status();
+        let response = self.sender.send(&mail).await?;
+        let status = response.status();
         Ok(status.into())
     }
 
@@ -62,8 +62,8 @@ impl EmailClient {
         let mail = Message::new(self.from.clone())
             .set_template_id(INVITE_EMAIL_TEMPLATE_ID)
             .add_personalization(p);
-        let response = self.sender.send(&mail).await;
-        let status = response.unwrap().status();
+        let response = self.sender.send(&mail).await?;
+        let status = response.status();
         Ok(status.into())
     }
 

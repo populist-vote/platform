@@ -69,8 +69,17 @@ fn normalize_email(email: &str) -> String {
     email.trim().to_lowercase()
 }
 
+fn build_invite_url(base_url: &url::Url, token: uuid::Uuid, email: &str) -> String {
+    let mut invite_url = base_url.join("/register").expect("valid web app URL");
+    invite_url
+        .query_pairs_mut()
+        .append_pair("inviteToken", &token.to_string())
+        .append_pair("email", email);
+    invite_url.to_string()
+}
+
 async fn upsert_organization_user(
-    db_pool: &PgPool,
+    db_pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
     organization_id: uuid::Uuid,
     user_id: uuid::Uuid,
     role: OrganizationRoleType,
@@ -94,10 +103,12 @@ async fn upsert_organization_user(
 
 async fn consume_invite_token(
     db_pool: &PgPool,
+    connection: &mut sqlx::PgConnection,
     invite_token: &str,
     email: &str,
     user_id: uuid::Uuid,
 ) -> Result<(), Error> {
+    let token = uuid::Uuid::parse_str(invite_token).map_err(|_| Error::InvalidInvite)?;
     let invite = sqlx::query!(
         r#"
             UPDATE invite_token
@@ -108,16 +119,16 @@ async fn consume_invite_token(
             AND expires_at > now() AT TIME ZONE 'utc'
             RETURNING organization_id, politician_id, role AS "role:OrganizationRoleType"
         "#,
-        uuid::Uuid::parse_str(invite_token)?,
+        token,
         normalize_email(email)
     )
-    .fetch_optional(db_pool)
+    .fetch_optional(&mut *connection)
     .await?;
 
     if let Some(invite) = invite {
         if let Some(organization_id) = invite.organization_id {
             upsert_organization_user(
-                db_pool,
+                &mut *connection,
                 organization_id,
                 user_id,
                 invite.role.unwrap_or(OrganizationRoleType::Member),
@@ -147,8 +158,33 @@ async fn consume_invite_token(
                 politician_id,
                 user_id
             )
-            .execute(db_pool)
+            .execute(&mut *connection)
             .await?;
+        }
+    } else {
+        // Reopening an accepted link is safe only for its recipient while they
+        // still belong to the invited organization. Do not reapply an old role.
+        let already_accepted: bool = sqlx::query_scalar(
+            r#"SELECT EXISTS (
+                SELECT 1 FROM invite_token i
+                WHERE i.token = $1 AND LOWER(i.email) = LOWER($2)
+                  AND i.accepted_at IS NOT NULL
+                  AND EXISTS (
+                    SELECT 1 FROM organization_users ou
+                    JOIN organization o ON o.id = ou.organization_id
+                    WHERE ou.user_id = $3 AND (
+                        o.id = i.organization_id OR o.politician_id = i.politician_id
+                    )
+                  )
+            )"#,
+        )
+        .bind(token)
+        .bind(normalize_email(email))
+        .bind(user_id)
+        .fetch_one(&mut *connection)
+        .await?;
+        if !already_accepted {
+            return Err(Error::InvalidInvite);
         }
     }
 
@@ -242,11 +278,10 @@ impl AuthMutation {
                 .await?;
 
                 // Send email to user with invite token
-                let invite_url = format!(
-                    "{}/register?inviteToken={}&email={}",
-                    config::Config::default().web_app_url,
+                let invite_url = build_invite_url(
+                    &config::Config::default().web_app_url,
                     invite.token,
-                    invite.email
+                    &invite.email,
                 );
 
                 let organization = if let Some(organization_id) = input.organization_id.as_ref() {
@@ -318,6 +353,10 @@ impl AuthMutation {
         if let Some(_user) = existing_user {
             return Err(Error::UserExistsError);
         }
+
+        // Account creation and invite acceptance must either both succeed or
+        // both roll back, so a failed invite can be retried without a duplicate account.
+        let mut transaction = db_pool.begin().await?;
 
         // Create a temporary username and confirmation token
         let temp_username = create_temporary_username(normalized_email.clone());
@@ -410,7 +449,7 @@ impl AuthMutation {
                     }
                 };
 
-                Ok(User::create_with_profile(&db_pool, &new_user_input).await?)
+                Ok(User::create_with_profile(&mut *transaction, &new_user_input).await?)
             }
             None => {
                 // Handle register without address
@@ -422,7 +461,7 @@ impl AuthMutation {
                     confirmation_token: confirmation_token.clone(),
                 };
 
-                Ok(User::create(&db_pool, &new_user_input).await?)
+                Ok(User::create(&mut *transaction, &new_user_input).await?)
             }
         };
 
@@ -430,15 +469,24 @@ impl AuthMutation {
             Ok(new_user) => {
                 // Lookup invite_token and assign user to organization / politician
                 if let Some(invite_token) = input.invite_token.as_deref() {
-                    consume_invite_token(&db_pool, invite_token, &new_user.email, new_user.id)
-                        .await?;
+                    consume_invite_token(
+                        &db_pool,
+                        &mut transaction,
+                        invite_token,
+                        &new_user.email,
+                        new_user.id,
+                    )
+                    .await?;
                 }
-                let organization_roles = User::organization_roles(&db_pool, new_user.id).await?;
+                let organization_roles =
+                    User::organization_roles(&mut *transaction, new_user.id).await?;
 
                 let access_token =
                     create_access_token_for_user(new_user.clone(), organization_roles)?;
                 let refresh_token = create_refresh_token_for_user(new_user.clone())?;
-                db::User::update_refresh_token(&db_pool, new_user.id, &refresh_token).await?;
+                db::User::update_refresh_token(&mut *transaction, new_user.id, &refresh_token)
+                    .await?;
+                transaction.commit().await?;
 
                 let account_confirmation_url = format!(
                     "{}auth/confirm?token={}",
@@ -463,7 +511,7 @@ impl AuthMutation {
                     "Set-Cookie",
                     format_auth_cookie(auth::TokenType::Access, &access_token),
                 );
-                ctx.insert_http_header(
+                ctx.append_http_header(
                     "Set-Cookie",
                     format_auth_cookie(auth::TokenType::Refresh, &refresh_token),
                 );
@@ -515,7 +563,16 @@ impl AuthMutation {
 
             if password_is_valid {
                 if let Some(invite_token) = input.invite_token.as_deref() {
-                    consume_invite_token(&db_pool, invite_token, &user.email, user.id).await?;
+                    let mut transaction = db_pool.begin().await?;
+                    consume_invite_token(
+                        &db_pool,
+                        &mut transaction,
+                        invite_token,
+                        &user.email,
+                        user.id,
+                    )
+                    .await?;
+                    transaction.commit().await?;
                 }
                 let organization_roles = User::organization_roles(&db_pool, user.id).await?;
                 let access_token = create_access_token_for_user(user.clone(), organization_roles)?;
@@ -701,5 +758,22 @@ impl AuthMutation {
             ),
         );
         Ok(true)
+    }
+}
+
+#[cfg(test)]
+mod invite_url_tests {
+    use super::build_invite_url;
+
+    #[test]
+    fn invite_url_preserves_email_and_uses_single_path_separator() {
+        let token = uuid::Uuid::new_v4();
+        let base = url::Url::parse("https://www.populist.us/").unwrap();
+        let email = "invitee+organization@example.com";
+        let url = url::Url::parse(&build_invite_url(&base, token, email)).unwrap();
+        assert_eq!(url.path(), "/register");
+        let params: std::collections::HashMap<_, _> = url.query_pairs().collect();
+        assert_eq!(params["email"], email);
+        assert_eq!(params["inviteToken"], token.to_string());
     }
 }

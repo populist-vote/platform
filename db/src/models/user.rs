@@ -117,7 +117,10 @@ pub struct OrganizationRole {
 }
 
 impl User {
-    pub async fn create(db_pool: &PgPool, input: &CreateUserInput) -> Result<Self, Error> {
+    pub async fn create(
+        db_pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+        input: &CreateUserInput,
+    ) -> Result<Self, Error> {
         let hash = bcrypt::hash(&input.password).unwrap();
         let record = sqlx::query_as!(
             User,
@@ -156,7 +159,7 @@ impl User {
     }
 
     pub async fn create_with_profile(
-        db_pool: &PgPool,
+        db_pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
         input: &CreateUserWithProfileInput,
     ) -> Result<Self, Error> {
         let hash = bcrypt::hash(&input.password).unwrap();
@@ -287,7 +290,7 @@ impl User {
     }
 
     pub async fn organization_roles(
-        db_pool: &PgPool,
+        db_pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
         user_id: uuid::Uuid,
     ) -> Result<Vec<OrganizationRole>, Error> {
         let records = sqlx::query!(
@@ -328,7 +331,7 @@ impl User {
     }
 
     pub async fn update_refresh_token(
-        db_pool: &PgPool,
+        db_pool: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
         id: uuid::Uuid,
         token: &str,
     ) -> Result<Self, Error> {
