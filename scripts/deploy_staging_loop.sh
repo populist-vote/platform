@@ -45,9 +45,7 @@ heroku auth:whoami >/dev/null
 if git -C "$platform_root" diff \
   --name-only origin/main...HEAD |
   grep -Eq '(^|/)db/migrations/'; then
-  echo "platform contains migrations relative to origin/main" >&2
-  echo "apply them to staging explicitly before running this deploy loop" >&2
-  exit 2
+  echo "platform contains migrations; Heroku release phase will validate and apply them" >&2
 fi
 
 if [[ "${SKIP_PREFLIGHT:-0}" != "1" ]]; then
@@ -59,6 +57,33 @@ printf 'deploying platform %s to Heroku app %s\n' \
 git -C "$platform_root" push \
   "https://git.heroku.com/${heroku_app}.git" \
   HEAD:main
+
+# A successful build/push is not sufficient: release-phase migrations can fail.
+# Do not deploy the companion web revision until this exact API release succeeds.
+expected_commit="$(git -C "$platform_root" rev-parse --short=8 HEAD)"
+release_ready=0
+for ((check = 1; check <= 60; check++)); do
+  release_json="$(heroku releases --app "$heroku_app" --num 1 --json)"
+  release_description="$(jq -r 'max_by(.version).description' <<< "$release_json")"
+  release_status="$(jq -r 'max_by(.version).status' <<< "$release_json")"
+  if [[ "$release_description" != "Deploy $expected_commit"* ]]; then
+    echo "latest release does not match the pushed revision; inspect Heroku before deploying web" >&2
+    exit 1
+  fi
+  if [[ "$release_status" == "succeeded" ]]; then
+    release_ready=1
+    break
+  fi
+  if [[ "$release_status" == "failed" ]]; then
+    echo "API release phase failed; web deployment stopped. Inspect heroku releases:output." >&2
+    exit 1
+  fi
+  sleep 2
+done
+if [[ "$release_ready" != "1" ]]; then
+  echo "API release is still pending; web deployment stopped" >&2
+  exit 1
+fi
 
 if [[ "$web_deploy_mode" == "git" ]]; then
   if [[ "$(git -C "$web_root" branch --show-current)" != "main" ]] &&

@@ -25,12 +25,13 @@ Set `DATABASE_URL` to your local database. A fresh database can be prepared with
 
 ```bash
 sqlx database create
+sqlx migrate run --source db/migrations --target-version 20260728180003
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/scripts/bootstrap_local_gis.sql
 sqlx migrate run --source db/migrations
-psql "$DATABASE_URL" -f db/scripts/bootstrap_local_gis.sql
 ```
 
-The GIS bootstrap creates empty Texas boundary tables required by SQLx's
-compile-time validation. Load the official shapefiles separately when testing
+The GIS bootstrap creates empty Texas boundary tables before their index
+migrations and supplies tables needed by SQLx's compile-time validation. Load the official shapefiles separately when testing
 Texas address-to-district lookups.
 
 Alternatively, create a local copy of the staging database from Heroku. Once
@@ -51,11 +52,11 @@ from the root of the project. This will download the latest backup from Heroku a
 
 We can easily create SQL migration files using the sqlx-cli. From the /db directory, you can run `sqlx migrate add -r DescriptiveMigrationName` to create up and down migration files in the /migrations folder. You can write SQL in these files and use `sqlx migrate run` and `sqlx migrate revert` respectively.
 
-Migrations are [embedded into the binary] and run automatically when the API starts. Commit migration files with the code that uses them, deploy to staging, then promote the tested build to production. Do not point local migration or compile-time query preparation commands at `PRODUCTION_DATABASE_URL`. For query validation, migrate an isolated local database (see the local database setup above) and run `cargo sqlx prepare` against that database.
+Migrations are [embedded into the binary] and run by Heroku's **release phase**, before new web dynos replace the current release. The web process only validates the schema; it never applies migrations or creates migration metadata. Commit migrations with their code, deploy to staging, and promote the tested build. Never point local migration or query-preparation commands at production.
 
-The API tolerates applied migrations absent from its embedded history and logs a warning for each one. This lets an older binary restart after the database advances, including during a rollback. Checksums of known migrations, failed migration records, and errors applying pending migrations still stop startup. Never edit an already-applied migration or remove its `_sqlx_migrations` record to bypass these checks.
+The runtime accepts a strictly newer migration suffix, so a compatible older binary can restart or roll back after the database advances. It still refuses missing required migrations, changed checksums, and divergent historical migration sequences. The release command validates all history before writing, serializes migrations, and has bounded lock/statement timeouts. Pending non-transactional migrations require a separate maintenance plan.
 
-This tolerance does not make arbitrary schema changes safe. Use additive, backward-compatible migrations while older binaries can still run: add the replacement column/table, deploy code that uses it, and only remove the old schema in a later release after the old code and rollback targets are retired. Dropping or renaming a column used by the live API can still break requests immediately. Preventing direct production DDL requires separate runtime/migration database roles and restricting migration credentials to the deployment process; a check in a local script cannot protect against every database client.
+See [Database migration safety](docs/database-migrations.md) for the failure matrix, local setup, database-role separation, rollback limits, and rollout procedure.
 
 ## API Server
 
@@ -140,7 +141,7 @@ be sure to run `cargo sqlx prepare` from root of each crate affected (likely `/d
 
 To deploy the main branch to the staging environment, run `git push heroku`
 
-The API runs its embedded migrations at startup; a separate local production migration command is not required. Keep schema changes compatible with the currently running release as described under **Running Migrations**.
+The Procfile runs `./target/release/server migrate` in the release phase. A failed migration command rejects the new release. Web startup is read-only. Keep migrations backward compatible with every currently running or rollback-eligible binary; see [Database migration safety](docs/database-migrations.md).
 
 Deploys to production happen manually via the Heroku dashboard. Press the "Promote to Production" button on the staging app in the [pipeline view]. You can access logs to the production server by running `heroku logs --tail -a populist-api-production`
 

@@ -52,10 +52,11 @@ are attempted after deployment:
 The loop:
 
 1. Refuses dirty repositories unless `ALLOW_DIRTY=1` is deliberate.
-2. Stops when the platform branch contains unapplied migrations relative to
-   `origin/main`.
+2. Reports migration changes; Heroku release phase applies them.
 3. Runs `scripts/check_ballot_rest.sh`.
-4. Pushes the platform revision to the Heroku staging app.
+4. Pushes the platform revision to the Heroku staging app and waits for that
+   exact release to succeed; a failed, superseded, or pending release stops the
+   loop before any web deployment.
 5. Pushes `web/main` to trigger Vercel staging.
 6. Polls for REST and documentation readiness.
 7. Tests API discovery, health, states, ballot lookup, address non-disclosure,
