@@ -20,6 +20,7 @@ mod authentication;
 mod cron;
 pub mod jobs;
 pub mod metrics;
+mod migrations;
 mod postgres;
 pub mod rest;
 pub mod slack;
@@ -62,11 +63,9 @@ pub async fn run() {
         }
     });
 
-    // Embed migrations into binary
-    sqlx::migrate!("../db/migrations")
-        .run(&pool.connection)
+    migrations::run(&pool.connection)
         .await
-        .unwrap();
+        .expect("Database migration failed");
 
     let context = ApiContext::new(pool.clone().connection);
 
