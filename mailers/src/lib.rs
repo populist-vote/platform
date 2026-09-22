@@ -5,7 +5,7 @@ static POPULIST_FROM_EMAIL: &str = "info@populist.us";
 static WELCOME_EMAIL_TEMPLATE_ID: &str = "d-edaebe0011f441348a0f310c05813cb0";
 static FORGOT_PASSWORD_TEMPLATE_ID: &str = "d-819b5a97194e4b3e99efa5ec2d9c6e6e";
 static PASSWORD_CHANGED_TEMPLATE_ID: &str = "d-a5a79e8740864187aadfdd0bc07bbb97";
-static INVITE_EMAIL_TEMPLATE_ID: &str = "d-4a43724169e54aa7a3a12553f7163808";
+static INVITE_EMAIL_TEMPLATE_ID: &str = "d-f5047d97b8994724bd39e909e8a86ac6";
 
 pub struct EmailClient {
     from: Email,
@@ -57,7 +57,12 @@ impl EmailClient {
         politician_name: Option<String>,
     ) -> Result<u16, sendgrid::SendgridError> {
         let p = Personalization::new(Email::new(&recipient_email))
-            .add_dynamic_template_data_json(&json!({ "organization_name": &organization_name, "politician_name": &politician_name, "invite_url": &invite_url }))
+            .add_dynamic_template_data_json(&json!({
+                "organization_name": &organization_name,
+                "politician_name": &politician_name,
+                "invite_url": &invite_url,
+                "recipient_email": &recipient_email,
+            }))
             .unwrap();
         let mail = Message::new(self.from.clone())
             .set_template_id(INVITE_EMAIL_TEMPLATE_ID)

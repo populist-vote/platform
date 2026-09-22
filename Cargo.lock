@@ -2939,6 +2939,7 @@ name = "mailers"
 version = "0.1.0"
 dependencies = [
  "dotenv",
+ "handlebars",
  "sendgrid",
  "serde_json",
  "tokio",
