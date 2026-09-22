@@ -57,11 +57,18 @@ async fn history(conn: &mut PgConnection) -> Result<Vec<Applied>> {
 }
 
 fn validate(migrator: &Migrator, applied: &[Applied], purpose: Purpose) -> Result<()> {
-    let required: BTreeMap<_, _> = migrator
+    let mut required = BTreeMap::new();
+    for migration in migrator
         .iter()
         .filter(|m| !m.migration_type.is_down_migration())
-        .map(|m| (m.version, m))
-        .collect();
+    {
+        if required.insert(migration.version, migration).is_some() {
+            bail!(
+                "Duplicate embedded up migration version {}; assign unique migration versions",
+                migration.version
+            );
+        }
+    }
     let newest_required = required.keys().next_back().copied().unwrap_or(0);
     let newest_applied = applied.iter().map(|m| m.0).max().unwrap_or(0);
     let by_version: BTreeMap<_, _> = applied.iter().map(|m| (m.0, m)).collect();

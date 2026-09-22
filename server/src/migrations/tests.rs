@@ -27,6 +27,17 @@ fn manifest(migrations: &[(i64, &str)]) -> Migrator {
 const BASE: (i64, &str) = (1, "CREATE TABLE release_probe (id INTEGER PRIMARY KEY);");
 const NEXT: (i64, &str) = (2, "ALTER TABLE release_probe ADD COLUMN note TEXT;");
 
+#[test]
+fn duplicate_embedded_versions_are_rejected_before_application() {
+    let duplicate = manifest(&[BASE, BASE]);
+    for purpose in [Purpose::Startup, Purpose::Release] {
+        let error = validate(&duplicate, &[], purpose).unwrap_err();
+        assert!(error
+            .to_string()
+            .contains("Duplicate embedded up migration version 1"));
+    }
+}
+
 async fn deploy(pool: &PgPool, migrations: &[(i64, &str)]) -> Result<()> {
     apply(
         &pool.connect_options(),
