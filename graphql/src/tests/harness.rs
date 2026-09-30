@@ -17,6 +17,7 @@ pub struct TestHarness {
     pub pool: PgPool,
     database_name: String,
     admin_options: PgConnectOptions,
+    drop_database_on_cleanup: bool,
 }
 
 #[allow(dead_code)]
@@ -54,14 +55,37 @@ impl TestHarness {
             pool,
             database_name: db_name,
             admin_options,
+            drop_database_on_cleanup: true,
         };
         harness.clear_tables().await?;
 
         Ok(harness)
     }
 
+    /// Connects to `DATABASE_URL` without creating or dropping a database.
+    /// Use this when full migrations cannot run on a blank database (e.g. GIS schemas).
+    pub async fn from_existing() -> anyhow::Result<Self> {
+        dotenv::dotenv().ok();
+        let database_url = std::env::var("DATABASE_URL")
+            .unwrap_or_else(|_| "postgres://localhost/populist-platform-dev".to_string());
+        let connect_options = PgConnectOptions::from_str(&database_url)?;
+        let pool = PgPoolOptions::new()
+            .connect_with(connect_options.clone())
+            .await?;
+
+        Ok(Self {
+            pool,
+            database_name: String::new(),
+            admin_options: connect_options,
+            drop_database_on_cleanup: false,
+        })
+    }
+
     pub async fn cleanup(self) -> anyhow::Result<()> {
         self.pool.close().await;
+        if !self.drop_database_on_cleanup {
+            return Ok(());
+        }
         let admin_pool = PgPoolOptions::new()
             .max_connections(1)
             .connect_with(self.admin_options)

@@ -244,7 +244,8 @@ impl CandidateGuideMutation {
 
     // We should expand this fn to allow clients to download fine grained data for these
     // candidate guides, intakes, etc.
-    /// Download all candidate guide data as a CSV string, must be converted to CSV file by client
+    /// Download all candidate guide data as a CSV string, must be converted to CSV file by client.
+    /// Includes widget_script (once-per-page) and embed_code (per-race container) columns.
     async fn download_all_candidate_guide_data(
         &self,
         ctx: &Context<'_>,
@@ -252,6 +253,11 @@ impl CandidateGuideMutation {
         race_id: Option<ID>,
     ) -> Result<String> {
         let db_pool = ctx.data::<ApiContext>()?.pool.clone();
+        let web_app_url = config::Config::default().web_app_url;
+        let widget_script = format!(
+            r#"<script async src="{}/widget-client-v2.js"></script>"#,
+            web_app_url.as_str().trim_end_matches('/')
+        );
 
         let records = sqlx::query!(
             r#"
@@ -309,22 +315,32 @@ impl CandidateGuideMutation {
             )
             SELECT
                 r.populist_race_id AS race_id,
-                r.*, 
+                r.*,
                 p.first_name,
                 p.middle_name,
                 p.last_name,
                 p.preferred_name,
                 p.suffix,
                 p.email AS email,
-                p.id AS politician_id, 
+                p.id AS politician_id,
                 COALESCE(upt.intake_token, p.intake_token) AS intake_token,
-                ls.last_submission
+                ls.last_submission,
+                race_embed.id AS embed_id
             FROM
                 races r
                 JOIN race_candidates rc ON rc.race_id = r.populist_race_id
                 JOIN politician p ON rc.candidate_id = p.id
                 LEFT JOIN update_politician_intake_tokens upt ON upt.id = p.id
                 LEFT JOIN last_submissions ls ON p.id = ls.candidate_id
+                LEFT JOIN LATERAL (
+                    SELECT e.id
+                    FROM embed e
+                    WHERE e.embed_type = 'candidate_guide'
+                        AND (e.attributes->>'candidateGuideId')::uuid = $1
+                        AND (e.attributes->>'raceId')::uuid = r.populist_race_id
+                    ORDER BY e.created_at ASC
+                    LIMIT 1
+                ) race_embed ON true
             WHERE
                 ($2::uuid IS NULL OR r.populist_race_id = $2::uuid);
         "#,
@@ -351,6 +367,8 @@ impl CandidateGuideMutation {
                 "form_link",
                 "was_candidate_emailed",
                 "last_submission",
+                "widget_script",
+                "embed_code",
             ])?;
             for record in records {
                 let full_name = format!(
@@ -364,14 +382,15 @@ impl CandidateGuideMutation {
                 let form_link = if let Some(intake_token) = record.intake_token {
                     format!(
                         "{}/intakes/candidate-guides/{}?raceId={}&token={}",
-                        config::Config::default().web_app_url,
-                        *candidate_guide_id,
-                        record.race_id,
-                        intake_token
+                        web_app_url, *candidate_guide_id, record.race_id, intake_token
                     )
                 } else {
                     "".to_string()
                 };
+                let embed_code = record
+                    .embed_id
+                    .map(|id| format!(r#"<div class="populist-embed" data-embed-id="{id}"></div>"#))
+                    .unwrap_or_default();
                 wtr.write_record(&[
                     record.race_title,
                     record.first_name,
@@ -390,6 +409,8 @@ impl CandidateGuideMutation {
                         .last_submission
                         .map(|d| d.to_string())
                         .unwrap_or_default(),
+                    widget_script.clone(),
+                    embed_code,
                 ])?;
             }
             wtr.flush()?;
