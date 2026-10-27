@@ -368,8 +368,10 @@ impl Race {
                     AND ({office_titles} IS NULL OR o.title IN ({office_titles}))
                 ORDER BY 
                     e.election_date DESC, 
-                    o.priority ASC, 
-                    o.district ASC, 
+                    o.priority ASC NULLS LAST, 
+                    natural_sort_key(o.district) ASC NULLS LAST,
+                    natural_sort_key(o.subdistrict) ASC NULLS LAST,
+                    natural_sort_key(o.seat) ASC NULLS LAST,
                     o.title DESC
                 LIMIT 2000;
 

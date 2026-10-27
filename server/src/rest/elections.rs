@@ -108,6 +108,7 @@ pub(super) struct OfficeSummaryResource {
     pub(super) county: Option<String>,
     pub(super) municipality: Option<String>,
     pub(super) district: Option<String>,
+    pub(super) subdistrict: Option<String>,
     pub(super) seat: Option<String>,
     pub(super) election_scope: ElectionScope,
     pub(super) district_type: Option<DistrictType>,
@@ -415,7 +416,7 @@ impl ElectionDataLookup for DatabaseElectionDataLookup {
                 o.id AS office_id, o.title AS office_title, o.subtitle AS office_subtitle,
                 o.state AS office_state, o.county AS office_county,
                 o.municipality AS office_municipality, o.district AS office_district,
-                o.seat AS office_seat, o.election_scope, o.district_type,
+                o.subdistrict AS office_subdistrict, o.seat AS office_seat, o.election_scope, o.district_type,
                 o.political_scope,
                 p.id AS party_id, p.slug AS party_slug, p.name AS party_name,
                 p.fec_code AS party_fec_code
@@ -498,7 +499,8 @@ impl ElectionDataLookup for DatabaseElectionDataLookup {
                     o.id AS office_id, o.title AS office_title,
                     o.subtitle AS office_subtitle, o.state AS office_state,
                     o.county AS office_county, o.municipality AS office_municipality,
-                    o.district AS office_district, o.seat AS office_seat,
+                    o.district AS office_district, o.subdistrict AS office_subdistrict,
+                    o.seat AS office_seat,
                     o.election_scope, o.district_type, o.political_scope,
                     o.priority
                 FROM race r
@@ -506,10 +508,9 @@ impl ElectionDataLookup for DatabaseElectionDataLookup {
                 WHERE r.election_id = $1
                 ORDER BY
                     o.priority ASC NULLS LAST,
-                    (regexp_match(o.district, '^[0-9]+'))[1]::int ASC NULLS LAST,
-                    COALESCE(o.district, '') ASC,
-                    (regexp_match(o.seat, '^[0-9]+'))[1]::int ASC NULLS LAST,
-                    COALESCE(o.seat, '') ASC,
+                    natural_sort_key(o.district) ASC NULLS LAST,
+                    natural_sort_key(o.subdistrict) ASC NULLS LAST,
+                    natural_sort_key(o.seat) ASC NULLS LAST,
                     r.title DESC,
                     r.id ASC
                 LIMIT $2 OFFSET $3
@@ -520,7 +521,7 @@ impl ElectionDataLookup for DatabaseElectionDataLookup {
                 sr.winner_ids, sr.updated_at,
                 sr.office_id, sr.office_title, sr.office_subtitle, sr.office_state,
                 sr.office_county, sr.office_municipality, sr.office_district,
-                sr.office_seat, sr.election_scope, sr.district_type,
+                sr.office_subdistrict, sr.office_seat, sr.election_scope, sr.district_type,
                 sr.political_scope,
                 candidate.id AS candidate_id, candidate.slug AS candidate_slug,
                 candidate.first_name, candidate.middle_name, candidate.last_name,
@@ -534,10 +535,9 @@ impl ElectionDataLookup for DatabaseElectionDataLookup {
             LEFT JOIN party ON party.id = candidate.party_id
             ORDER BY
                 sr.priority ASC NULLS LAST,
-                (regexp_match(sr.office_district, '^[0-9]+'))[1]::int ASC NULLS LAST,
-                COALESCE(sr.office_district, '') ASC,
-                (regexp_match(sr.office_seat, '^[0-9]+'))[1]::int ASC NULLS LAST,
-                COALESCE(sr.office_seat, '') ASC,
+                natural_sort_key(sr.office_district) ASC NULLS LAST,
+                natural_sort_key(sr.office_subdistrict) ASC NULLS LAST,
+                natural_sort_key(sr.office_seat) ASC NULLS LAST,
                 sr.title DESC,
                 sr.id ASC,
                 candidate.last_name ASC NULLS LAST,
@@ -617,6 +617,7 @@ struct RaceDirectoryRow {
     office_county: Option<String>,
     office_municipality: Option<String>,
     office_district: Option<String>,
+    office_subdistrict: Option<String>,
     office_seat: Option<String>,
     election_scope: ElectionScope,
     district_type: Option<DistrictType>,
@@ -647,6 +648,7 @@ impl From<RaceDirectoryRow> for RaceSummaryResource {
                 row.office_county,
                 row.office_municipality,
                 row.office_district,
+                row.office_subdistrict,
                 row.office_seat,
                 row.election_scope,
                 row.district_type,
@@ -690,6 +692,7 @@ struct ResultsRow {
     office_county: Option<String>,
     office_municipality: Option<String>,
     office_district: Option<String>,
+    office_subdistrict: Option<String>,
     office_seat: Option<String>,
     election_scope: ElectionScope,
     district_type: Option<DistrictType>,
@@ -728,6 +731,7 @@ fn group_results(rows: Vec<ResultsRow>) -> Vec<RaceResultsFeedResource> {
                     row.office_county.clone(),
                     row.office_municipality.clone(),
                     row.office_district.clone(),
+                    row.office_subdistrict.clone(),
                     row.office_seat.clone(),
                     row.election_scope,
                     row.district_type,
@@ -852,10 +856,10 @@ fn apply_ballot_measure_filters(
 fn push_race_order(builder: &mut QueryBuilder<Postgres>) {
     builder.push(
         " ORDER BY o.priority ASC NULLS LAST, \
-         (regexp_match(o.district, '^[0-9]+'))[1]::int ASC NULLS LAST, \
-         COALESCE(o.district, '') ASC, \
-         (regexp_match(o.seat, '^[0-9]+'))[1]::int ASC NULLS LAST, \
-         COALESCE(o.seat, '') ASC, r.title DESC, r.id ASC",
+         natural_sort_key(o.district) ASC NULLS LAST, \
+         natural_sort_key(o.subdistrict) ASC NULLS LAST, \
+         natural_sort_key(o.seat) ASC NULLS LAST, \
+         r.title DESC, r.id ASC",
     );
 }
 
@@ -867,6 +871,7 @@ fn office_resource(
     county: Option<String>,
     municipality: Option<String>,
     district: Option<String>,
+    subdistrict: Option<String>,
     seat: Option<String>,
     election_scope: ElectionScope,
     district_type: Option<DistrictType>,
@@ -880,6 +885,7 @@ fn office_resource(
         county,
         municipality,
         district,
+        subdistrict,
         seat,
         election_scope,
         district_type,
