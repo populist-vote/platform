@@ -20,6 +20,7 @@ mod authentication;
 mod cron;
 pub mod jobs;
 pub mod metrics;
+pub mod migrations;
 mod postgres;
 pub mod rest;
 pub mod slack;
@@ -40,6 +41,10 @@ pub async fn run() {
 
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
+    migrations::check(&pool.connection)
+        .await
+        .expect("Database schema is incompatible with this binary");
+
     metrics::update_db_connections("main", pool);
     tokio::spawn(async move {
         let update_interval = Duration::from_secs(15);
@@ -61,12 +66,6 @@ pub async fn run() {
             eprintln!("Error in listener: {}", e);
         }
     });
-
-    // Embed migrations into binary
-    sqlx::migrate!("../db/migrations")
-        .run(&pool.connection)
-        .await
-        .unwrap();
 
     let context = ApiContext::new(pool.clone().connection);
 

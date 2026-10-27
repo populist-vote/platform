@@ -1,0 +1,61 @@
+name: Migration safety
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  migration-lifecycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_USER: migration_test
+          POSTGRES_PASSWORD: migration_test
+          POSTGRES_DB: migration_safety_compile
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U migration_test -d migration_safety_compile"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://migration_test:migration_test@127.0.0.1:5432/migration_safety_compile
+      SQLX_OFFLINE: "false"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Existing migration files are immutable
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          changed=$(git diff --no-renames --name-only --diff-filter=MD "$BASE_SHA" HEAD -- db/migrations)
+          if [ -n "$changed" ]; then
+            echo "Existing migration files must not be modified or deleted; add a new migration."
+            echo "$changed"
+            exit 1
+          fi
+      - name: Install Rust and database tools
+        run: |
+          rustup toolchain install nightly --profile minimal --component rustfmt
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client libssl-dev pkg-config
+          cargo install sqlx-cli --version 0.8.3 --locked --no-default-features --features postgres,rustls
+      - name: Prepare isolated compile database
+        run: |
+          sqlx migrate run --source db/migrations --target-version 20260728180003
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/scripts/bootstrap_local_gis.sql
+          sqlx migrate run --source db/migrations
+      - name: Check formatting and migration lifecycle
+        run: |
+          rustfmt --edition 2021 --check server/build.rs server/src/main.rs server/src/lib.rs server/src/migrations.rs server/src/migrations/tests.rs
+          cargo test --locked -p server --lib migrations::tests
+          cargo build --locked -p server --bin server
+          python3 scripts/smoke_migration_lifecycle.py target/debug/server
+          python3 scripts/tests/test_deploy_release_gate.py
