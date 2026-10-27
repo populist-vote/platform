@@ -59,7 +59,10 @@ enum FilingOutcome {
     /// Filing was ingested; `office_created` is true when a new staging office row was inserted.
     Ingested { office_created: bool },
     /// Office extraction/processing failed; filing was not ingested.
-    OfficeError { office_title: String, message: String },
+    OfficeError {
+        office_title: String,
+        message: String,
+    },
 }
 
 /// Process Texas candidate filings from the existing DB table into staging tables.
@@ -230,6 +233,7 @@ async fn create_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>> {
             municipality TEXT,
             term_length INTEGER,
             district TEXT,
+            subdistrict TEXT,
             seat TEXT,
             school_district TEXT,
             hospital_district TEXT,
@@ -497,7 +501,7 @@ fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error
     let raw_filing_title_cleaned = strip_unexpired_term(raw_filing_title);
 
     // Extract the office name, and if it fails record the error and skip this filing
-    let name = office::extract_office_name(&raw_filing_title_cleaned, filing.party.as_deref())
+    let (name, _) = office::extract_office_name(&raw_filing_title_cleaned, filing.party.as_deref())
         .ok_or("Failed to extract office name")?;
 
     let (extracted_county, office_title_stripped) =
@@ -514,9 +518,12 @@ fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error
     let chamber = office::extract_office_chamber(&name);
 
     // Extract and strip the seat from the office title (before scope, so scope can use seat for some offices)
-    let (seat, office_title_no_seat) = office::extract_office_seat(office_title);
+    let num_elect = extractors::tx::tx_race::extract_num_elect(office_title);
+    let (seat, office_title_no_seat) =
+        office::extract_office_seat(office_title, num_elect, None, Some(&name));
     // Extract the district from the office title (seat passed for Harris County Department of Education, etc.)
-    let district = office::extract_office_district(&office_title_no_seat, seat.as_deref());
+    let district =
+        office::extract_office_district(&office_title_no_seat, seat.as_deref(), None, Some(&name));
     let (political_scope, election_scope, district_type) = office::extract_office_scope(
         &name,
         county.as_deref(),
@@ -530,6 +537,7 @@ fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error
         name: &name,
         county: county.as_deref(),
         district: district.as_deref(),
+        subdistrict: None,
         seat: seat.as_deref(),
         school_district: None,
         hospital_district: None,
@@ -546,6 +554,7 @@ fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error
         district_type: district_type.as_ref(),
         county: county.as_deref(),
         district: district.as_deref(),
+        subdistrict: None,
         seat: seat.as_deref(),
         school_district: None,
         hospital_district: None,
@@ -553,8 +562,12 @@ fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error
     }
     .generate();
 
-    let priority =
-        generators::tx::tx_office::office_priority(&title, county.as_deref(), district.as_deref());
+    let priority = generators::tx::tx_office::office_priority(
+        &title,
+        county.as_deref(),
+        district.as_deref(),
+        district_type.as_ref(),
+    );
 
     Ok(Office {
         id: Uuid::new_v4(),
@@ -573,6 +586,7 @@ fn process_tx_office(filing: &TxCandidateFiling) -> Result<Office, Box<dyn Error
         municipality: None,
         term_length: None,
         district,
+        subdistrict: None,
         seat,
         school_district: None,
         hospital_district: None,
@@ -820,13 +834,10 @@ fn process_tx_address(filing: &TxCandidateFiling) -> Option<TxStagingAddress> {
 
 async fn get_election_slug(pool: &PgPool) -> Result<String, Box<dyn Error>> {
     let election_id = Uuid::parse_str(ELECTION_ID)?;
-    let slug = sqlx::query_scalar!(
-        r#"SELECT slug FROM election WHERE id = $1"#,
-        election_id
-    )
-    .fetch_optional(pool)
-    .await?
-    .ok_or_else(|| format!("No election found for id {}", ELECTION_ID))?;
+    let slug = sqlx::query_scalar!(r#"SELECT slug FROM election WHERE id = $1"#, election_id)
+        .fetch_optional(pool)
+        .await?
+        .ok_or_else(|| format!("No election found for id {}", ELECTION_ID))?;
     Ok(slug)
 }
 
@@ -864,9 +875,9 @@ async fn insert_staging_office(
         INSERT INTO ingest_staging.stg_tx_offices (
             id, slug, name, title, subtitle, subtitle_short, office_type, chamber,
             district_type, political_scope, election_scope, state, state_id, county, municipality,
-            term_length, district, seat, school_district, hospital_district, priority,
+            term_length, district, subdistrict, seat, school_district, hospital_district, priority,
             created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
         ON CONFLICT (slug) DO NOTHING
         "#,
     )
@@ -887,6 +898,7 @@ async fn insert_staging_office(
     .bind(&office.municipality)
     .bind(office.term_length)
     .bind(&office.district)
+    .bind(&office.subdistrict)
     .bind(&office.seat)
     .bind(&office.school_district)
     .bind(&office.hospital_district)

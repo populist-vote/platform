@@ -149,13 +149,9 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
     let mut addresses_inserted = 0usize;
     let mut addresses_reused = 0usize;
     for stg in &stg_politicians {
-        let (prod_id, was_existing) = resolve_or_upsert_politician(
-            pool,
-            stg,
-            &mut addresses_inserted,
-            &mut addresses_reused,
-        )
-        .await?;
+        let (prod_id, was_existing) =
+            resolve_or_upsert_politician(pool, stg, &mut addresses_inserted, &mut addresses_reused)
+                .await?;
         if was_existing {
             politicians_existing += 1;
         } else {
@@ -172,7 +168,9 @@ async fn run_merge(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
         addresses_inserted, addresses_reused
     );
     println!("  Audit tables: ingest_staging.politician_merge_dupes, politician_merge_updated,");
-    println!("                politician_merge_overwritten_data, inserted_politicians_with_same_slug");
+    println!(
+        "                politician_merge_overwritten_data, inserted_politicians_with_same_slug"
+    );
 
     // 3. Races: upsert by slug with prod office_id; build stg_race_id -> prod_race_id
     println!("Merging races...");
@@ -285,6 +283,7 @@ fn stg_office_to_upsert(stg: &StgOffice) -> UpsertOfficeInput {
         name: stg.name.clone(),
         office_type: stg.office_type.clone(),
         district: stg.district.clone(),
+        subdistrict: None,
         district_type: parse_district_type(stg.district_type.as_ref()),
         hospital_district: stg.hospital_district.clone(),
         school_district: stg.school_district.clone(),
@@ -683,9 +682,7 @@ async fn fetch_prod_address_for_audit(
         }
     }
     if let Some(id) = prod.campaign_address_id {
-        return Address::find_by_id(pool, &id)
-            .await
-            .map_err(|e| e.into());
+        return Address::find_by_id(pool, &id).await.map_err(|e| e.into());
     }
     Ok(None)
 }
@@ -947,22 +944,14 @@ async fn resolve_or_upsert_politician(
     if let Some(email) = &stg.email {
         let email = email.trim();
         if !email.is_empty() {
-            let row: Option<(uuid::Uuid,)> = sqlx::query_as(
-                "SELECT id FROM politician WHERE LOWER(TRIM(email)) = LOWER($1)",
-            )
-            .bind(email)
-            .fetch_optional(pool)
-            .await?;
+            let row: Option<(uuid::Uuid,)> =
+                sqlx::query_as("SELECT id FROM politician WHERE LOWER(TRIM(email)) = LOWER($1)")
+                    .bind(email)
+                    .fetch_optional(pool)
+                    .await?;
             if let Some((id,)) = row {
-                apply_match_and_record(
-                    pool,
-                    stg,
-                    id,
-                    "email",
-                    address_inserted,
-                    address_reused,
-                )
-                .await?;
+                apply_match_and_record(pool, stg, id, "email", address_inserted, address_reused)
+                    .await?;
                 return Ok((id, true));
             }
         }
@@ -978,15 +967,8 @@ async fn resolve_or_upsert_politician(
                     .fetch_optional(pool)
                     .await?;
             if let Some((id,)) = row {
-                apply_match_and_record(
-                    pool,
-                    stg,
-                    id,
-                    "phone",
-                    address_inserted,
-                    address_reused,
-                )
-                .await?;
+                apply_match_and_record(pool, stg, id, "phone", address_inserted, address_reused)
+                    .await?;
                 return Ok((id, true));
             }
         }
@@ -1084,23 +1066,22 @@ async fn resolve_or_upsert_politician(
 
     // Record when we inserted alongside existing same-base-slug politicians
     if !candidates.is_empty() || slug != stg.slug {
-        let (addr_line_1, addr_city, addr_state, addr_country) = match residence_address_id
-            .or(campaign_address_id)
-        {
-            Some(addr_id) => {
-                let addr = Address::find_by_id(pool, &addr_id).await?;
-                match addr {
-                    Some(a) => (
-                        Some(a.line_1.clone()),
-                        Some(a.city.clone()),
-                        Some(format!("{:?}", a.state)),
-                        Some(a.country.clone()),
-                    ),
-                    None => (None, None, None, None),
+        let (addr_line_1, addr_city, addr_state, addr_country) =
+            match residence_address_id.or(campaign_address_id) {
+                Some(addr_id) => {
+                    let addr = Address::find_by_id(pool, &addr_id).await?;
+                    match addr {
+                        Some(a) => (
+                            Some(a.line_1.clone()),
+                            Some(a.city.clone()),
+                            Some(format!("{:?}", a.state)),
+                            Some(a.country.clone()),
+                        ),
+                        None => (None, None, None, None),
+                    }
                 }
-            }
-            None => (None, None, None, None),
-        };
+                None => (None, None, None, None),
+            };
         record_inserted_politician_with_same_slug(
             pool,
             stg.id,

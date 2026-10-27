@@ -68,7 +68,9 @@ fn strip_county_suffix(input: &str) -> (Option<String>, String) {
 
 static TX_COUNTY_PREFIX_REGEX: OnceLock<Regex> = OnceLock::new();
 static TX_DISTRICT_EXTRACTORS: OnceLock<Vec<Regex>> = OnceLock::new();
-static TX_SEAT_EXTRACTORS: OnceLock<Regex> = OnceLock::new();
+static TX_SEAT_LABEL_REGEX: OnceLock<Regex> = OnceLock::new();
+static TX_AT_LARGE_REGEX: OnceLock<Regex> = OnceLock::new();
+static TX_SEAT_NUMBER_REGEX: OnceLock<Regex> = OnceLock::new();
 
 /// All 254 Texas county names (title case), for validating extracted county strings.
 const TEXAS_COUNTIES: [&str; 254] = [
@@ -405,159 +407,292 @@ fn party_to_letter(party: Option<&str>) -> Option<&'static str> {
     }
 }
 
-pub fn extract_office_name(input: &str, party: Option<&str>) -> Option<String> {
+/// Special districts that *are* the district (do not extract a numeric district from the title).
+/// Longer phrases first so "Water Control and Improvement District" wins over "Improvement District".
+const SPECIAL_DISTRICT_NO_SUBDIVISIONS: &[&str] = &[
+    "water control and improvement district",
+    "municipal management district",
+    "emergency services district",
+    "fresh water supply district",
+    "community library district",
+    "municipal utility district",
+    "special utility district",
+    "the woodlands township",
+    "improvement district",
+    "navigation district",
+];
+
+/// Special districts with electoral subdivisions. Name is the text through the phrase.
+/// `save_name_as_district` is true, and the local filing processor stores the subdivision
+/// on `subdistrict`.
+const SPECIAL_DISTRICTS: &[&str] = &[
+    "groundwater conservation district",
+    "authority",
+    "community college",
+];
+
+fn first_phrase_match<'a>(input_lower: &str, phrases: &[&'a str]) -> Option<(usize, &'a str)> {
+    for phrase in phrases {
+        if let Some(pos) = input_lower.find(phrase) {
+            return Some((pos, *phrase));
+        }
+    }
+    None
+}
+
+/// Name from `… No. <word>`: through the end of that word, with "No." removed.
+fn name_through_no_dot_word(input_lower: &str) -> Option<String> {
+    let no_pos = input_lower.find("no.")?;
+    let after_no = no_pos + 3;
+    let rest = input_lower[after_no..].trim_start();
+    let word_len = rest.find([' ', ',']).unwrap_or(rest.len());
+    if word_len == 0 {
+        return None;
+    }
+    let word_start = after_no + (input_lower[after_no..].len() - rest.len());
+    let through = input_lower[..word_start + word_len].trim();
+    let stripped = normalize_whitespace(&through.replace("no.", ""));
+    if stripped.is_empty() {
+        None
+    } else {
+        Some(stripped)
+    }
+}
+
+pub fn is_special_district_with_subdivision(name: &str) -> bool {
+    let name_lower = name.to_lowercase();
+    SPECIAL_DISTRICTS
+        .iter()
+        .any(|phrase| name_lower.contains(phrase))
+}
+
+fn title_case_district_name(s: &str) -> String {
+    title_case(s).replace(" And ", " and ").replace(" Of ", " of ")
+}
+
+fn special_district_office_name(input_lower: &str) -> Option<(String, bool)> {
+    if let Some((pos, phrase)) = first_phrase_match(input_lower, SPECIAL_DISTRICT_NO_SUBDIVISIONS) {
+        if phrase == "the woodlands township" {
+            return Some(("The Woodlands Township Board".to_string(), true));
+        }
+        let name = if input_lower.contains("no.") {
+            name_through_no_dot_word(input_lower)
+                .unwrap_or_else(|| input_lower[..pos + phrase.len()].trim().to_string())
+        } else {
+            input_lower[..pos + phrase.len()].trim().to_string()
+        };
+        if name.is_empty() {
+            return None;
+        }
+        return Some((format!("{} Board", title_case_district_name(&name)), true));
+    }
+
+    if let Some((pos, phrase)) = first_phrase_match(input_lower, SPECIAL_DISTRICTS) {
+        let through = input_lower[..pos + phrase.len()].trim();
+        if !through.is_empty() {
+            return Some((format!("{} Board", title_case_district_name(through)), true));
+        }
+    }
+
+    None
+}
+
+fn named(name: impl Into<String>) -> Option<(String, bool)> {
+    Some((name.into(), false))
+}
+
+/// Returns `(office_name, save_name_as_district)`.
+/// `save_name_as_district` defaults to false, and the district is extracted from the title.
+/// Special districts that are themselves the district (MUDs, ESDs, etc.) set it to true so
+/// the office name is stored as `district`.
+pub fn extract_office_name(input: &str, party: Option<&str>) -> Option<(String, bool)> {
     let input_lower = normalized_office_part(input);
 
     // Federal Offices
     if input_lower.contains("u.s. representative") || input_lower.contains("u. s. representative") {
-        return Some("U.S. House".to_string());
+        return named("U.S. House");
     }
     if input_lower.contains("u.s. senator") || input_lower.contains("u. s. senator") {
-        return Some("U.S. Senate".to_string());
+        return named("U.S. Senate");
     }
 
     // State Executive Offices
     if input_lower.contains("lieutenant governor") || input_lower.contains("lt. governor") {
-        return Some("Lieutenant Governor".to_string());
+        return named("Lieutenant Governor");
     }
     if input_lower.contains("governor") {
-        return Some("Governor".to_string());
+        return named("Governor");
     }
     if input_lower.contains("attorney general") {
-        return Some("Attorney General".to_string());
+        return named("Attorney General");
     }
     if input_lower.contains("state board of education") {
-        return Some("State Board of Education".to_string());
+        return named("State Board of Education");
     }
     if input_lower.contains("railroad commissioner") {
-        return Some("Railroad Commissioner".to_string());
+        return named("Railroad Commissioner");
     }
     if input_lower.contains("commissioner of agriculture") {
-        return Some("Commissioner of Agriculture".to_string());
+        return named("Commissioner of Agriculture");
     }
     if input_lower.contains("commissioner of the general land office") {
-        return Some("Commissioner of the General Land Office".to_string());
+        return named("Commissioner of the General Land Office");
     }
     if input_lower.contains("comptroller of public accounts") {
-        return Some("Comptroller of Public Accounts".to_string());
+        return named("Comptroller of Public Accounts");
     }
 
     // State Legislative Offices
     if input_lower.contains("state representative") {
-        return Some("State House".to_string());
+        return named("State House");
     }
     if input_lower.contains("state senator") {
-        return Some("State Senate".to_string());
+        return named("State Senate");
     }
 
     // State Judicial Offices
     if input_lower.contains("chief justice") && input_lower.contains("supreme court") {
-        return Some("Chief Justice - Supreme Court".to_string());
+        return named("Chief Justice - Supreme Court");
     }
     if input_lower.contains("justice")
         && input_lower.contains("supreme court")
         && !input_lower.contains("chief")
     {
-        return Some("Justice - Supreme Court".to_string());
+        return named("Justice - Supreme Court");
     }
     if input_lower.contains("chief justice") && input_lower.contains("court of appeals") {
-        return Some("Chief Justice - Court of Appeals".to_string());
+        return named("Chief Justice - Court of Appeals");
     }
     if input_lower.contains("justice")
         && input_lower.contains("court of appeals")
         && !input_lower.contains("chief")
     {
-        return Some("Justice - Court of Appeals".to_string());
+        return named("Justice - Court of Appeals");
     }
     if input_lower.contains("court of criminal appeals") {
-        return Some("Judge - Court of Criminal Appeals".to_string());
+        return named("Judge - Court of Criminal Appeals");
     }
     if input_lower.contains("district judge") && input_lower.contains("judicial district") {
-        return Some("District Judge".to_string());
+        return named("District Judge");
     }
 
     // District Attorney is for both State and County types
     if input_lower.contains("criminal district attorney") {
-        return Some("Criminal District Attorney".to_string());
+        return named("Criminal District Attorney");
     }
     if input_lower.contains("district attorney") {
-        return Some("District Attorney".to_string());
+        return named("District Attorney");
     }
 
     // County Offices
     if input_lower.contains("county commissioner") {
-        return Some("County Commissioner".to_string());
+        return named("County Commissioner");
     }
     if input_lower.contains("county judge") {
-        return Some("County Judge".to_string());
+        return named("County Judge");
     }
     if input_lower.contains("county and district clerk") {
-        return Some("County & District Clerk".to_string());
+        return named("County & District Clerk");
     }
     if input_lower.contains("county clerk") && input_lower.contains("district clerk") {
-        return Some("County & District Clerk".to_string());
+        return named("County & District Clerk");
     }
     if input_lower.contains("county clerk") {
-        return Some("County Clerk".to_string());
+        return named("County Clerk");
     }
     if input_lower.contains("district clerk") {
-        return Some("District Clerk".to_string());
+        return named("District Clerk");
     }
     if input_lower.contains("county attorney") {
-        return Some("County Attorney".to_string());
+        return named("County Attorney");
     }
     if input_lower.contains("county treasurer") {
-        return Some("County Treasurer".to_string());
+        return named("County Treasurer");
     }
     if input_lower.contains("county surveyor") {
-        return Some("County Surveyor".to_string());
+        return named("County Surveyor");
     }
     if input_lower.contains("sheriff") && input_lower.contains("county tax assessor-collector") {
-        return Some("Sheriff & County Tax Assessor-Collector".to_string());
+        return named("Sheriff & County Tax Assessor-Collector");
     }
     if input_lower.contains("county tax assessor-collector") {
-        return Some("County Tax Assessor-Collector".to_string());
+        return named("County Tax Assessor-Collector");
     }
     if input_lower.contains("county chair") {
         let name = party_to_letter(party)
             .map(|letter| format!("County Chair ({})", letter))
             .unwrap_or_else(|| "County Chair".to_string());
-        return Some(name);
+        return named(name);
     }
     if input_lower.contains("justice of the peace") {
-        return Some("Justice of the Peace".to_string());
+        return named("Justice of the Peace");
     }
     if input_lower.contains("county constable") {
-        return Some("County Constable".to_string());
+        return named("County Constable");
     }
     if input_lower.contains("sheriff") {
-        return Some("Sheriff".to_string());
+        return named("Sheriff");
     }
     if input_lower.contains("department of education") {
-        return Some("County School Trustee".to_string());
+        return named("County School Trustee");
     }
 
     // County Judicial Offices
     if input_lower.contains("1st multicounty court at law") {
-        return Some("Judge - 1st Multicounty Court at Law".to_string());
+        return named("Judge - 1st Multicounty Court at Law");
     }
     if input_lower.contains("county civil court at law") {
-        return Some("Judge - County Civil Court at Law".to_string());
+        return named("Judge - County Civil Court at Law");
     }
     if input_lower.contains("county criminal court of appeals") {
-        return Some("Judge - County Criminal Court of Appeals".to_string());
+        return named("Judge - County Criminal Court of Appeals");
     }
     if input_lower.contains("county criminal court") {
-        return Some("Judge - County Criminal Court at Law".to_string());
+        return named("Judge - County Criminal Court at Law");
     }
     if input_lower.contains("probate court") {
-        return Some("Judge - Probate Court".to_string());
+        return named("Judge - Probate Court");
     }
     if input_lower.contains("county court at law") {
-        return Some("Judge - County Court at Law".to_string());
+        return named("Judge - County Court at Law");
     }
     if input_lower.contains("criminal district judge") {
-        return Some("Criminal District Judge".to_string());
+        return named("Criminal District Judge");
+    }
+
+    // Local Offices
+    if input_lower.contains("independent school district") {
+        return named("School Board");
+    }
+    
+    if input_lower.contains("hospital district") {
+        return named("Hospital District Board");
+    }
+    
+    if let Some(special) = special_district_office_name(&input_lower) {
+        return Some(special);
+    }
+    if input_lower.contains("city council") || input_lower.contains("councilmember") || input_lower.contains("council member") || input_lower.contains("council") {
+        return named("City Council");
+    }
+    if input_lower.contains("mayor") {
+        return named("Mayor");
+    }
+    if input_lower.contains("city commissioner") {
+        return named("City Commissioner");
+    }
+    if input_lower.contains("alderman") {
+        return named("Alderman");
+    }
+    
+    if let Some(pos) = input_lower.find("appraisal district") {
+        let through = input_lower[..pos + "appraisal district".len()]
+            .trim()
+            .trim_end_matches([' ', ',', '-', ';', ':'])
+            .trim();
+        if !through.is_empty() {
+            return named(format!("{} Board", title_case(through)));
+        }
     }
 
     // VTD Precinct Chair: "Precinct Chair (D)" or "Precinct Chair (R)" when party is Democratic/Republican
@@ -565,7 +700,7 @@ pub fn extract_office_name(input: &str, party: Option<&str>) -> Option<String> {
         let name = party_to_letter(party)
             .map(|letter| format!("Precinct Chair ({})", letter))
             .unwrap_or_else(|| "Precinct Chair".to_string());
-        return Some(name);
+        return named(name);
     }
 
     eprintln!("extract_office_name: no match for input: {:?}", input);
@@ -575,12 +710,17 @@ pub fn extract_office_name(input: &str, party: Option<&str>) -> Option<String> {
 /// Returns the display title for the office from its canonical name (from extract_office_name).
 /// Only names with a different display title are matched; all others return the name unchanged.
 pub fn extract_office_title(name: &str) -> Option<String> {
+    if name.ends_with("Board") {
+        return Some(format!("{} Member", name));
+    }
     let title = match name {
         "U.S. House" => "U.S. Representative",
         "U.S. Senate" => "U.S. Senator",
         "State House" => "State Representative",
         "State Senate" => "State Senator",
         "State Board of Education" => "State Board of Education Member",
+        "City Council" => "City Council Member",
+        "Town Council" => "Town Council Member",
         _ => return Some(name.to_string()),
     };
     Some(title.to_string())
@@ -630,7 +770,7 @@ pub fn extract_office_scope(
                 })
                 .unwrap_or(false);
             if is_harris {
-                match seat {
+                match seat.and_then(seat_number) {
                     Some("7") | Some("5") | Some("3") => {
                         (PoliticalScope::Local, ElectionScope::County, None)
                     }
@@ -750,9 +890,61 @@ pub fn extract_office_scope(
             ElectionScope::District,
             Some(DistrictType::VotingPrecinct),
         ),
+        "Mayor" | "City Commissioner" => (PoliticalScope::Local, ElectionScope::City, None),
+        "City Council" | "Alderman" => {
+            if district.map(|d| !d.trim().is_empty()).unwrap_or(false) {
+                (
+                    PoliticalScope::Local,
+                    ElectionScope::District,
+                    Some(DistrictType::City),
+                )
+            } else {
+                (PoliticalScope::Local, ElectionScope::City, None)
+            }
+        }
+        "School Board" => (
+            PoliticalScope::Local,
+            ElectionScope::District,
+            Some(DistrictType::School),
+        ),
+        "Hospital District Board" => (
+            if district.map(|d| !d.trim().is_empty()).unwrap_or(false) {
+                (
+                    PoliticalScope::Local,
+                    ElectionScope::District,
+                    Some(DistrictType::County),
+                )
+            } else {
+                (PoliticalScope::Local, ElectionScope::County, None)
+            }
+        ),
+        name if name.ends_with("Appraisal District Board") => {
+            (PoliticalScope::Local, ElectionScope::County, None)
+        }
+        name if name.ends_with("College Board") => (
+            PoliticalScope::Local,
+            ElectionScope::District,
+            Some(DistrictType::TxCollege),
+        ),
+        name if is_other_special_district_board(name) => (
+            PoliticalScope::Local,
+            ElectionScope::District,
+            Some(DistrictType::TxSpecial),
+        ),
         _ => return None,
     };
     Some(out)
+}
+
+fn is_other_special_district_board(name: &str) -> bool {
+    let lower = name.to_lowercase();
+    if !lower.ends_with(" board") {
+        return false;
+    }
+    SPECIAL_DISTRICT_NO_SUBDIVISIONS
+        .iter()
+        .chain(["groundwater conservation district", "authority"].iter())
+        .any(|phrase| lower.contains(phrase))
 }
 
 // ---------- District ----------
@@ -791,12 +983,22 @@ fn normalize_precinct_district(segment: &str) -> Option<String> {
     }
 }
 
-pub fn extract_office_district(input: &str, seat: Option<&str>) -> Option<String> {
+pub fn extract_office_district(
+    input: &str,
+    seat: Option<&str>,
+    municipality: Option<&str>,
+    office_name: Option<&str>,
+) -> Option<String> {
+    if let Some(district) = district_from_office_exceptions(seat, municipality, office_name) {
+        return Some(district);
+    }
+
     let input_lower = normalized_office_part(input);
     let extractors = TX_DISTRICT_EXTRACTORS.get_or_init(|| {
         vec![
-            // [0] Generic "district N" – try last (broad; would false-match if run early)
-            Regex::new(r"(?i)district\s+([0-9]{1,3}[A-Za-z]*)").unwrap(),
+            // [0] Generic "district N" or a single-letter district ("District B"). Tried last.
+            // The letter must be a whole word so "District Board" and "District Attorney" do not match.
+            Regex::new(r"(?i)district\s+([0-9]{1,3}[A-Za-z]*|[A-Za-z])\b").unwrap(),
             // [1] Ordinal + "district" (e.g. 1st District) – must run after [3],[4] so we don't match inside "1st Court of Appeals District"
             Regex::new(r"(?i)([0-9]{1,3})(?:st|nd|rd|th)\s+district").unwrap(),
             // [2] Precinct list (e.g. "1, 2, 3", "2 & 6") or Pct N (e.g. "Pct 2")
@@ -814,9 +1016,7 @@ pub fn extract_office_district(input: &str, seat: Option<&str>) -> Option<String
             Regex::new(r"#\s*([0-9][0-9A-Za-z-]*)").unwrap(),
             // [8] "number" + number/label (e.g. COUNTY NUMBER 1)
             Regex::new(r"(?i)number\s+([0-9][0-9A-Za-z-]*)").unwrap(),
-            // [9] "Position N" (e.g. Position 5, Position 7)
-            Regex::new(r"(?i)position\s+([0-9]+)").unwrap(),
-            // [10] "Precinct Chair" + number/list/alpha (e.g. "Precinct Chair 324", "Precinct Chair, Pct 2", "Precinct Chair - 4B", "Precinct Chair, Precinct 4056"); capture is non-greedy: digits + optional letter, or list (N, M / N & M) so we don't consume trailing "precinct N"
+            // [9] "Precinct Chair" + number/list/alpha (e.g. "Precinct Chair 324", "Precinct Chair, Pct 2", "Precinct Chair - 4B", "Precinct Chair, Precinct 4056"); capture is non-greedy: digits + optional letter, or list (N, M / N & M) so we don't consume trailing "precinct N"
             Regex::new(r"(?i)precinct\s+chair\s*[,]?\s*(?:\s*-\s*)?\s*(?:pct\.?\s*)?(?:precinct\s+)?\s*([0-9]+[A-Za-z]?(?:\s*[,&]\s*[0-9]+[A-Za-z]?)*)").unwrap(),
         ]
     });
@@ -892,11 +1092,6 @@ pub fn extract_office_district(input: &str, seat: Option<&str>) -> Option<String
             return Some(m.as_str().to_string());
         }
     }
-    if let Some(caps) = extractors[9].captures(input) {
-        if let Some(m) = caps.get(1) {
-            return Some(m.as_str().to_string());
-        }
-    }
 
     // 6. Generic "district N" last
     if let Some(caps) = extractors[0].captures(input) {
@@ -905,7 +1100,7 @@ pub fn extract_office_district(input: &str, seat: Option<&str>) -> Option<String
         }
     }
 
-    // 7. "Precinct Chair" + number/list/alpha (e.g. "Precinct Chair 324", "Precinct Chair, Pct 2", "Precinct Chair - 4B", "Precinct Chair, Precinct 4056"); [10] matches directly
+    // 7. "Precinct Chair" + number/list/alpha (e.g. "Precinct Chair 324", "Precinct Chair, Pct 2", "Precinct Chair - 4B", "Precinct Chair, Precinct 4056"); [9] matches directly
     if input_lower.contains("precinct chairman") {
         if let Some(caps) = extractors[2].captures(input) {
             if let Some(m) = caps.get(1) {
@@ -919,7 +1114,7 @@ pub fn extract_office_district(input: &str, seat: Option<&str>) -> Option<String
     }
 
     if input_lower.contains("precinct chair") {
-        if let Some(caps) = extractors[10].captures(input) {
+        if let Some(caps) = extractors[9].captures(input) {
             if let Some(m) = caps.get(1) {
                 let s = m.as_str().trim();
                 if !s.is_empty() {
@@ -937,7 +1132,7 @@ pub fn extract_office_district(input: &str, seat: Option<&str>) -> Option<String
     if input_lower.contains("harris county department of education") {
         let seat_trimmed = seat.map(|s| s.trim()).filter(|s| !s.is_empty());
         if let Some(s) = seat_trimmed {
-            return Some(match s {
+            return Some(match seat_number(s).unwrap_or(s) {
                 "3" | "5" | "7" => "At Large".to_string(),
                 "1" => "2".to_string(),
                 "2" => "4".to_string(),
@@ -953,19 +1148,500 @@ pub fn extract_office_district(input: &str, seat: Option<&str>) -> Option<String
 
 // ---------- Seat ----------
 
-/// Extracts the seat number after "place" (if present) and returns (seat, input_with_seat_stripped).
-/// The stripped string has the "place N" segment removed and is trimmed, for use e.g. in district extraction.
-pub fn extract_office_seat(input: &str) -> (Option<String>, String) {
-    let re = TX_SEAT_EXTRACTORS.get_or_init(|| Regex::new(r"(?i)place\s+([0-9]{1,3})").unwrap());
-    let stripped = re
-        .replace(input, "")
+/// Numeric id from a seat string (`"Place 1"`, `"Position No. 4"`, `"3"`).
+fn seat_number(seat: &str) -> Option<&str> {
+    let re = TX_SEAT_NUMBER_REGEX.get_or_init(|| {
+        Regex::new(r"(?i)(?:place|seat|position)\s+(?:no\.?\s*)?([0-9]{1,3})").unwrap()
+    });
+    if let Some(caps) = re.captures(seat) {
+        return caps.get(1).map(|m| m.as_str());
+    }
+    let trimmed = seat.trim();
+    if !trimmed.is_empty() && trimmed.chars().all(|c| c.is_ascii_digit()) {
+        Some(trimmed)
+    } else {
+        None
+    }
+}
+
+fn names_eq(value: Option<&str>, expected: &str) -> bool {
+    value.is_some_and(|v| v.trim().eq_ignore_ascii_case(expected))
+}
+
+fn district_from_office_exceptions(
+    seat: Option<&str>,
+    municipality: Option<&str>,
+    office_name: Option<&str>,
+) -> Option<String> {
+    let n = seat.and_then(seat_number)?.parse::<u32>().ok()?;
+    if names_eq(municipality, "The Colony") && names_eq(office_name, "City Council") {
+        if (3..=6).contains(&n) {
+            return Some(n.to_string());
+        }
+        return None;
+    }
+    if names_eq(office_name, "Fort Bend School Board") {
+        return match n {
+            1..=3 => Some("West".to_string()),
+            5..=7 => Some("East".to_string()),
+            _ => None,
+        };
+    }
+    None
+}
+
+fn ensure_at_large_suffix(seat: &str) -> String {
+    let lower = seat.to_ascii_lowercase();
+    if lower.contains("at-large") || lower.contains("at large") {
+        seat.to_string()
+    } else {
+        format!("{} - At-Large", seat)
+    }
+}
+
+fn apply_seat_exceptions(
+    seat: Option<String>,
+    municipality: Option<&str>,
+    office_name: Option<&str>,
+) -> Option<String> {
+    let seat = seat?;
+    let n = seat_number(&seat);
+    if names_eq(municipality, "The Colony")
+        && names_eq(office_name, "City Council")
+        && matches!(n, Some("1") | Some("2"))
+    {
+        return Some(ensure_at_large_suffix(&seat));
+    }
+    if names_eq(office_name, "Fort Bend School Board") && n == Some("4") {
+        return Some(ensure_at_large_suffix(&seat));
+    }
+    Some(seat)
+}
+
+fn normalize_seat_label(label: &str) -> &'static str {
+    match label.to_ascii_lowercase().as_str() {
+        "place" => "Place",
+        "seat" => "Seat",
+        "position" => "Position",
+        _ => "Place",
+    }
+}
+
+fn strip_seat_artifacts(s: &str) -> String {
+    static MULTI_COMMA: OnceLock<Regex> = OnceLock::new();
+    let re = MULTI_COMMA.get_or_init(|| Regex::new(r",\s*,+").unwrap());
+    let collapsed = re.replace_all(s, ",");
+    normalize_whitespace(&collapsed)
+        .trim_matches(|c: char| c.is_whitespace() || matches!(c, ',' | ';' | ':'))
+        .trim_matches(|c: char| c.is_whitespace() || matches!(c, '-' | '–' | '—'))
         .trim()
-        .trim_end_matches(',')
-        .trim()
-        .to_string();
-    let seat = re
-        .captures(input)
-        .and_then(|caps| caps.get(1))
-        .map(|m| m.as_str().to_string());
-    (seat, stripped)
+        .to_string()
+}
+
+/// Extracts a labeled seat (`Place`, `Seat`, or `Position`) and optional At-Large suffix.
+///
+/// `num_elect` controls At-Large: if it is 2 or greater, At-Large is stripped and ignored
+/// (the race elects multiple at-large winners). Otherwise At-Large is appended, e.g.
+/// `"Place 1 - At-Large"`.
+///
+/// Optional `"No."` between the label and number is discarded (`"Place No. 1"` → `"Place 1"`).
+/// `municipality` and `office_name` apply office-specific At-Large rules (The Colony City
+/// Council seats 1–2, Fort Bend School Board seat 4).
+/// Returns `(seat, input_with_seat_stripped)` so district extraction can run on the remainder.
+pub fn extract_office_seat(
+    input: &str,
+    num_elect: Option<i32>,
+    municipality: Option<&str>,
+    office_name: Option<&str>,
+) -> (Option<String>, String) {
+    let labeled_re = TX_SEAT_LABEL_REGEX.get_or_init(|| {
+        Regex::new(r"(?i)\b(?P<label>place|seat|position)\s+(?:no\.?\s*)?(?P<number>[0-9]{1,3})\b")
+            .unwrap()
+    });
+    let at_large_re =
+        TX_AT_LARGE_REGEX.get_or_init(|| Regex::new(r"(?i)\bat[\s\-–—]+large\b").unwrap());
+
+    let labeled_caps = labeled_re.captures(input);
+    let labeled_seat = labeled_caps.as_ref().map(|caps| {
+        let label = normalize_seat_label(caps.name("label").map(|m| m.as_str()).unwrap_or("place"));
+        let number = caps.name("number").map(|m| m.as_str()).unwrap_or("");
+        format!("{} {}", label, number)
+    });
+    let at_large_match = at_large_re.find(input);
+    let ignore_at_large = num_elect.is_some_and(|n| n >= 2);
+
+    let seat = match (
+        labeled_seat.as_deref(),
+        at_large_match.is_some(),
+        ignore_at_large,
+    ) {
+        (Some(labeled), true, false) => Some(format!("{} - At-Large", labeled)),
+        (Some(labeled), _, _) => Some(labeled.to_string()),
+        (None, true, false) => Some("At-Large".to_string()),
+        (None, _, _) => None,
+    };
+    let seat = apply_seat_exceptions(seat, municipality, office_name);
+
+    let mut ranges: Vec<std::ops::Range<usize>> = Vec::new();
+    if let Some(caps) = labeled_caps.as_ref() {
+        if let Some(full) = caps.get(0) {
+            ranges.push(full.range());
+        }
+    }
+    if let Some(m) = at_large_match {
+        ranges.push(m.range());
+    }
+    ranges.sort_by_key(|r| std::cmp::Reverse(r.start));
+    let mut stripped = input.to_string();
+    for range in ranges {
+        stripped.replace_range(range, " ");
+    }
+
+    (seat, strip_seat_artifacts(&stripped))
+}
+
+#[cfg(test)]
+mod extract_office_scope_tests {
+    use super::extract_office_scope;
+    use db::{DistrictType, ElectionScope, PoliticalScope};
+
+    fn scope(
+        name: &str,
+        district: Option<&str>,
+    ) -> Option<(PoliticalScope, ElectionScope, Option<DistrictType>)> {
+        extract_office_scope(name, None, None, district)
+    }
+
+    #[test]
+    fn local_city_offices() {
+        assert_eq!(
+            scope("Mayor", None),
+            Some((PoliticalScope::Local, ElectionScope::City, None))
+        );
+        assert_eq!(
+            scope("City Commissioner", None),
+            Some((PoliticalScope::Local, ElectionScope::City, None))
+        );
+        assert_eq!(
+            scope("City Council", None),
+            Some((PoliticalScope::Local, ElectionScope::City, None))
+        );
+        assert_eq!(
+            scope("Alderman", Some("2")),
+            Some((
+                PoliticalScope::Local,
+                ElectionScope::District,
+                Some(DistrictType::City)
+            ))
+        );
+    }
+
+    #[test]
+    fn local_boards() {
+        assert_eq!(
+            scope("Somerset School Board", None),
+            Some((
+                PoliticalScope::Local,
+                ElectionScope::District,
+                Some(DistrictType::School)
+            ))
+        );
+        assert_eq!(
+            scope("Fort Bend Central Appraisal District Board", None),
+            Some((PoliticalScope::Local, ElectionScope::County, None))
+        );
+        assert_eq!(
+            scope("Austin Community College Board", None),
+            Some((
+                PoliticalScope::Local,
+                ElectionScope::District,
+                Some(DistrictType::TxCollege)
+            ))
+        );
+        assert_eq!(
+            scope("Harris County Hospital District Board", None),
+            Some((PoliticalScope::Local, ElectionScope::County, None))
+        );
+        assert_eq!(
+            scope("Harris County Hospital District Board", Some("1")),
+            Some((
+                PoliticalScope::Local,
+                ElectionScope::District,
+                Some(DistrictType::County)
+            ))
+        );
+        assert_eq!(
+            scope("The Woodlands Township Board", None),
+            Some((
+                PoliticalScope::Local,
+                ElectionScope::District,
+                Some(DistrictType::TxSpecial)
+            ))
+        );
+        assert_eq!(
+            scope("Fort Bend County Municipal Utility District 50 Board", None),
+            Some((
+                PoliticalScope::Local,
+                ElectionScope::District,
+                Some(DistrictType::TxSpecial)
+            ))
+        );
+    }
+}
+
+#[cfg(test)]
+mod extract_office_name_tests {
+    use super::{extract_office_name, extract_office_title};
+
+    fn name_of(input: &str) -> Option<String> {
+        extract_office_name(input, None).map(|(n, _)| n)
+    }
+
+    #[test]
+    fn independent_school_district_becomes_school_board() {
+        assert_eq!(
+            extract_office_name("Somerset Independent School District, District 3", None),
+            Some(("Somerset School Board".to_string(), true))
+        );
+        assert_eq!(
+            extract_office_name("Santa Fe Independent School District, Position 5", None),
+            Some(("Santa Fe School Board".to_string(), true))
+        );
+        assert_eq!(
+            extract_office_name("Reagan County Independent School District, District 1", None),
+            Some(("Reagan County School Board".to_string(), true))
+        );
+    }
+
+    #[test]
+    fn appraisal_district_becomes_appraisal_district_board() {
+        assert_eq!(
+            name_of("Fort Bend Central Appraisal District, At-Large Position No. 1").as_deref(),
+            Some("Fort Bend Central Appraisal District Board")
+        );
+        assert_eq!(
+            name_of("Collin County Appraisal District, Place 3").as_deref(),
+            Some("Collin County Appraisal District Board")
+        );
+        assert_eq!(
+            name_of("Harris Central Appraisal District, Board of Directors, At-Large, Place 2")
+                .as_deref(),
+            Some("Harris Central Appraisal District Board")
+        );
+    }
+
+    #[test]
+    fn special_districts_with_subdivisions_include_matched_phrase() {
+        assert_eq!(
+            extract_office_name(
+                "Hays Trinity Groundwater Conservation District Board Director for Single Member District #2",
+                None
+            ),
+            Some(("Hays Trinity Groundwater Conservation District Board".to_string(), true))
+        );
+        assert_eq!(
+            extract_office_name("Harris County Hospital District, District 1", None),
+            Some(("Harris County Hospital District Board".to_string(), false))
+        );
+        assert_eq!(
+            extract_office_name(
+                "Medina County Hospital District, Board of Directors, At-Large, Place 5",
+                None
+            ),
+            Some(("Medina County Hospital District Board".to_string(), false))
+        );
+    }
+
+    #[test]
+    fn special_district_names_skip_district_extraction() {
+        assert_eq!(
+            extract_office_name(
+                "Fort Bend County Municipal Utility District No. 50 Position 3",
+                None
+            ),
+            Some((
+                "Fort Bend County Municipal Utility District 50 Board".to_string(),
+                true
+            ))
+        );
+        assert_eq!(
+            extract_office_name("Harris County Emergency Services District No. 12, Place 1", None),
+            Some((
+                "Harris County Emergency Services District 12 Board".to_string(),
+                true
+            ))
+        );
+        assert_eq!(
+            extract_office_name("Collin County Municipal Utility District Place 1", None),
+            Some((
+                "Collin County Municipal Utility District Board".to_string(),
+                true
+            ))
+        );
+        assert_eq!(
+            extract_office_name("The Woodlands Township Position 2", None),
+            Some(("The Woodlands Township Board".to_string(), true))
+        );
+        assert_eq!(
+            extract_office_name(
+                "Harris County Water Control and Improvement District No. 1",
+                None
+            ),
+            Some((
+                "Harris County Water Control and Improvement District 1 Board".to_string(),
+                true
+            ))
+        );
+    }
+
+    #[test]
+    fn board_title_appends_member() {
+        assert_eq!(
+            extract_office_title("Somerset School Board").as_deref(),
+            Some("Somerset School Board Member")
+        );
+        assert_eq!(
+            extract_office_title("Fort Bend School Board").as_deref(),
+            Some("Fort Bend School Board Member")
+        );
+        assert_eq!(
+            extract_office_title("Fort Bend County Municipal Utility District 50 Board")
+                .as_deref(),
+            Some("Fort Bend County Municipal Utility District 50 Board Member")
+        );
+    }
+}
+
+#[cfg(test)]
+mod extract_office_seat_tests {
+    use super::{extract_office_district, extract_office_seat};
+
+    #[test]
+    fn single_letter_district_is_extracted() {
+        assert_eq!(
+            extract_office_district(
+                "City of Buda, City Council, Single Member District B",
+                None,
+                Some("Buda"),
+                Some("City Council"),
+            ),
+            Some("B".to_string())
+        );
+        assert_eq!(
+            extract_office_district("Judge, 83rd District", None, None, None),
+            Some("83".to_string())
+        );
+        assert_eq!(
+            extract_office_district("District 4B", None, None, None),
+            Some("4B".to_string())
+        );
+        assert_eq!(
+            extract_office_district("District Attorney", None, None, None),
+            None
+        );
+        assert_eq!(
+            extract_office_district("Harris County Hospital District Board", None, None, None),
+            None
+        );
+    }
+
+    #[test]
+    fn position_is_a_seat_not_a_district() {
+        let input = "Fort Bend Independent School District, Position 4";
+        let (seat, stripped) = extract_office_seat(input, None, None, None);
+        assert_eq!(seat.as_deref(), Some("Position 4"));
+        assert_eq!(stripped, "Fort Bend Independent School District");
+        assert_eq!(
+            extract_office_district(&stripped, seat.as_deref(), None, None),
+            None
+        );
+    }
+
+    #[test]
+    fn place_seat_and_no_dot() {
+        let (seat, stripped) = extract_office_seat("City Council, Place No. 1", None, None, None);
+        assert_eq!(seat.as_deref(), Some("Place 1"));
+        assert_eq!(stripped, "City Council");
+
+        let (seat, stripped) = extract_office_seat("City Council Seat 2", None, None, None);
+        assert_eq!(seat.as_deref(), Some("Seat 2"));
+        assert_eq!(stripped, "City Council");
+    }
+
+    #[test]
+    fn at_large_appended_unless_multi_elect() {
+        let (seat, stripped) =
+            extract_office_seat("City Council Place 1 At-Large", None, None, None);
+        assert_eq!(seat.as_deref(), Some("Place 1 - At-Large"));
+        assert_eq!(stripped, "City Council");
+
+        let (seat, stripped) =
+            extract_office_seat("City Council Place 1 At-Large", Some(3), None, None);
+        assert_eq!(seat.as_deref(), Some("Place 1"));
+        assert_eq!(stripped, "City Council");
+
+        let (seat, stripped) = extract_office_seat("City Council At-Large", None, None, None);
+        assert_eq!(seat.as_deref(), Some("At-Large"));
+        assert_eq!(stripped, "City Council");
+
+        let (seat, stripped) = extract_office_seat("City Council At-Large", Some(2), None, None);
+        assert_eq!(seat, None);
+        assert_eq!(stripped, "City Council");
+    }
+
+    #[test]
+    fn the_colony_city_council_seat_and_district() {
+        let muni = Some("The Colony");
+        let office = Some("City Council");
+
+        let (seat, _) = extract_office_seat("City Council Place 1", None, muni, office);
+        assert_eq!(seat.as_deref(), Some("Place 1 - At-Large"));
+        assert_eq!(
+            extract_office_district("City Council", seat.as_deref(), muni, office),
+            None
+        );
+
+        let (seat, _) = extract_office_seat("City Council Place 2", None, muni, office);
+        assert_eq!(seat.as_deref(), Some("Place 2 - At-Large"));
+
+        let (seat, _) = extract_office_seat("City Council Place 3", None, muni, office);
+        assert_eq!(seat.as_deref(), Some("Place 3"));
+        assert_eq!(
+            extract_office_district("City Council", seat.as_deref(), muni, office),
+            Some("3".to_string())
+        );
+
+        let (seat, _) = extract_office_seat("City Council Place 6", None, muni, office);
+        assert_eq!(seat.as_deref(), Some("Place 6"));
+        assert_eq!(
+            extract_office_district("City Council", seat.as_deref(), muni, office),
+            Some("6".to_string())
+        );
+    }
+
+    #[test]
+    fn fort_bend_school_board_seat_and_district() {
+        let office = Some("Fort Bend School Board");
+
+        let (seat, _) = extract_office_seat("Fort Bend School Board Position 2", None, None, office);
+        assert_eq!(seat.as_deref(), Some("Position 2"));
+        assert_eq!(
+            extract_office_district("Fort Bend School Board", seat.as_deref(), None, office),
+            Some("West".to_string())
+        );
+
+        let (seat, _) = extract_office_seat("Fort Bend School Board Position 4", None, None, office);
+        assert_eq!(seat.as_deref(), Some("Position 4 - At-Large"));
+        assert_eq!(
+            extract_office_district("Fort Bend School Board", seat.as_deref(), None, office),
+            None
+        );
+
+        let (seat, _) = extract_office_seat("Fort Bend School Board Position 7", None, None, office);
+        assert_eq!(seat.as_deref(), Some("Position 7"));
+        assert_eq!(
+            extract_office_district("Fort Bend School Board", seat.as_deref(), None, office),
+            Some("East".to_string())
+        );
+    }
 }

@@ -295,6 +295,7 @@ mod tests {
             county: Some("Hennepin".to_string()),
             municipality: Some("Minneapolis".to_string()),
             district: None,
+            subdistrict: None,
             seat: None,
             election_scope: db::ElectionScope::City,
             district_type: Some(db::DistrictType::City),

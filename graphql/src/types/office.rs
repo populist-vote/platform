@@ -23,6 +23,8 @@ pub struct OfficeResult {
     office_type: Option<String>,
     /// The district name, e.g. "2, 3B, Ward 5"
     district: Option<String>,
+    /// Single-member subdivision / subdistrict, if exists.
+    subdistrict: Option<String>,
     /// The type of district, used to determine which field is referenced for the district
     district_type: Option<DistrictType>,
     hospital_district: Option<String>,
@@ -119,17 +121,17 @@ fn compute_office_subtitle(office: &Office, use_short: bool) -> Option<String> {
             }
         }
         (ElectionScope::District, PoliticalScope::Local, Some(DistrictType::School)) => {
-            if let (Some(school_district), Some(state), Some(district)) =
-                (&office.school_district, &office.state, &office.district)
+            if let (Some(district), Some(state), Some(subdistrict)) =
+                (&office.district, &office.state, &office.subdistrict)
             {
-                Some(format!(
-                    "{} - {} - District {}",
-                    state, school_district, district
-                ))
-            } else if let (Some(school_district), Some(state)) =
-                (&office.school_district, &office.state)
-            {
-                Some(format!("{} - {}", state, school_district))
+                let subdistrict_label = if subdistrict.chars().all(|c| c.is_ascii_digit()) {
+                    format!("District {subdistrict}")
+                } else {
+                    subdistrict.clone()
+                };
+                Some(format!("{state} - {district} - {subdistrict_label}"))
+            } else if let (Some(district), Some(state)) = (&office.district, &office.state) {
+                Some(format!("{} - {}", state, district))
             } else {
                 None
             }
@@ -189,6 +191,7 @@ impl From<Office> for OfficeResult {
             name: o.name,
             office_type: o.office_type,
             district: o.district,
+            subdistrict: o.subdistrict,
             district_type: o.district_type,
             hospital_district: o.hospital_district,
             school_district: o.school_district,
@@ -221,6 +224,7 @@ mod tests {
             name: None,
             office_type: None,
             district: Some("1".to_string()),
+            subdistrict: None,
             district_type: Some(DistrictType::StateSenate),
             hospital_district: None,
             school_district: None,
@@ -255,6 +259,7 @@ mod tests {
             name: None,
             office_type: None,
             district: Some("Ward 3".to_string()),
+            subdistrict: None,
             district_type: Some(DistrictType::City),
             hospital_district: None,
             school_district: None,

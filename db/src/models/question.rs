@@ -339,7 +339,7 @@ impl QuestionSubmission {
                 JOIN politician p ON qs.candidate_id = p.id
                 JOIN race_candidates rc ON rc.candidate_id = p.id AND rc.race_id = r.id,
                 to_tsvector(
-                    r.title || o.title || ' ' || o.name || ' ' || COALESCE(o.subtitle, '') || ' ' || COALESCE(o.office_type, '') || ' ' || COALESCE(o.district, '') || ' ' || COALESCE(o.hospital_district, '') || ' ' || COALESCE(o.school_district, '') || ' ' || COALESCE(o.state::text, '') || ' ' || COALESCE(o.county, '') || ' ' || COALESCE(o.municipality, '') || ' ' || COALESCE(p.full_name, '')
+                    r.title || o.title || ' ' || o.name || ' ' || COALESCE(o.subtitle, '') || ' ' || COALESCE(o.office_type, '') || ' ' || COALESCE(o.district, '') || ' ' || COALESCE(o.subdistrict, '') || ' ' || COALESCE(o.hospital_district, '') || ' ' || COALESCE(o.school_district, '') || ' ' || COALESCE(o.state::text, '') || ' ' || COALESCE(o.county, '') || ' ' || COALESCE(o.municipality, '') || ' ' || COALESCE(p.full_name, '')
                   ) document,
                 websearch_to_tsquery($2) AS query
                 WHERE cg.organization_id = $1::uuid

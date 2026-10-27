@@ -311,6 +311,7 @@ pub async fn get_races_by_address_context(
         school_district,
         school_district_type,
         school_subdistrict,
+        school_subdistrict_name,
         ward,
         city,
     ) = match &address_context.extended_mn {
@@ -322,10 +323,12 @@ pub async fn get_races_by_address_context(
             ext.school_district_norm(),
             ext.school_district_type_norm(),
             ext.school_subdistrict_norm(),
+            ext.school_subdistrict_name_norm(),
             ext.ward_norm(),
             ext.city_norm(&address_context.city),
         ),
         _ => (
+            None,
             None,
             None,
             None,
@@ -350,6 +353,11 @@ pub async fn get_races_by_address_context(
         tx_state_district_courts,
         tx_court_of_appeals_districts,
         tx_board_of_education_district,
+        tx_school_district,
+        tx_school_subdistrict,
+        tx_college_district,
+        tx_municipality,
+        tx_municipality_subdistrict,
     ) = match &address_context.extended_tx {
         Some(ext) if address_context.state == State::TX => (
             ext.precinct.clone(),
@@ -362,8 +370,16 @@ pub async fn get_races_by_address_context(
             Some(ext.state_district_courts()),
             Some(ext.court_of_appeals_districts()),
             ext.board_of_education_district.clone(),
+            ext.school_district_name_norm(),
+            ext.school_subdistrict_norm(),
+            ext.college_district_name_norm(),
+            ext.municipality_name_norm(),
+            ext.municipality_subdistrict_norm(),
         ),
-        _ => (None, None, None, None, None, None, None, None, None, None),
+        _ => (
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None,
+        ),
     };
 
     let mut builder: QueryBuilder<Postgres> = QueryBuilder::new(
@@ -419,6 +435,7 @@ pub async fn get_races_by_address_context(
             school_district.clone(),
             school_district_type.clone(),
             school_subdistrict.clone(),
+            school_subdistrict_name.clone(),
             ward.clone(),
             parsed_soil_and_water_district.clone(),
             hospital_district.clone(),
@@ -439,6 +456,11 @@ pub async fn get_races_by_address_context(
             tx_state_district_courts = ?tx_state_district_courts,
             tx_court_of_appeals_districts = ?tx_court_of_appeals_districts,
             tx_board_of_education_district = ?tx_board_of_education_district,
+            tx_school_district = ?tx_school_district,
+            tx_school_subdistrict = ?tx_school_subdistrict,
+            tx_college_district = ?tx_college_district,
+            tx_municipality = ?tx_municipality,
+            tx_municipality_subdistrict = ?tx_municipality_subdistrict,
             "apply_tx_filters inputs"
         );
         apply_tx_filters(
@@ -456,10 +478,15 @@ pub async fn get_races_by_address_context(
             tx_state_district_courts.clone(),
             tx_court_of_appeals_districts.clone(),
             tx_board_of_education_district.clone(),
+            tx_school_district.clone(),
+            tx_school_subdistrict.clone(),
+            tx_college_district.clone(),
+            tx_municipality.clone(),
+            tx_municipality_subdistrict.clone(),
         );
     }
 
-    builder.push(") ORDER BY o.priority ASC NULLS LAST, (regexp_match(o.district, '^[0-9]+'))[1]::int ASC NULLS LAST, COALESCE(o.district, '') ASC, (regexp_match(o.seat, '^[0-9]+'))[1]::int ASC NULLS LAST, COALESCE(o.seat, '') ASC, title DESC, r.id ASC");
+    builder.push(") ORDER BY o.priority ASC NULLS LAST, natural_sort_key(o.district) ASC NULLS LAST, natural_sort_key(o.subdistrict) ASC NULLS LAST, natural_sort_key(o.seat) ASC NULLS LAST, title DESC, r.id ASC");
 
     let query = builder.build_query_as::<Race>();
     let records = query.fetch_all(db_pool).await?;
@@ -642,7 +669,7 @@ impl ElectionResult {
         WHERE r.election_id = $1
           AND ($2::state IS NULL OR r.state = $2)
           AND ($3::TEXT IS NULL OR LOWER(r.title) LIKE $3)
-        ORDER BY o.priority ASC NULLS LAST, (regexp_match(o.district, '^[0-9]+'))[1]::int ASC NULLS LAST, COALESCE(o.district, '') ASC, (regexp_match(o.seat, '^[0-9]+'))[1]::int ASC NULLS LAST, COALESCE(o.seat, '') ASC, r.title DESC, r.id ASC
+        ORDER BY o.priority ASC NULLS LAST, natural_sort_key(o.district) ASC NULLS LAST, natural_sort_key(o.subdistrict) ASC NULLS LAST, natural_sort_key(o.seat) ASC NULLS LAST, r.title DESC, r.id ASC
         LIMIT $4 OFFSET $5
         "#,
             uuid::Uuid::parse_str(&self.id)?,
@@ -750,10 +777,9 @@ impl ElectionResult {
                 r.created_at,
                 r.updated_at,
                 o.priority,
-                o.district,
-                o.seat,
-                (regexp_match(o.district, '^[0-9]+'))[1]::int AS district_num,
-                (regexp_match(o.seat, '^[0-9]+'))[1]::int AS seat_num
+                natural_sort_key(o.district) AS district_sort,
+                natural_sort_key(o.subdistrict) AS subdistrict_sort,
+                natural_sort_key(o.seat) AS seat_sort
             FROM
                 race r
             JOIN office o ON o.id = r.office_id
@@ -763,7 +789,7 @@ impl ElectionResult {
                 r.election_id = $1 AND
                 vgc.voting_guide_id = $2 AND 
                 (vgc.is_endorsement = true OR vgc.note IS NOT NULL)
-            ORDER BY o.priority ASC NULLS LAST, district_num ASC NULLS LAST, o.district ASC NULLS LAST, seat_num ASC NULLS LAST, o.seat ASC NULLS LAST, r.title DESC
+            ORDER BY o.priority ASC NULLS LAST, district_sort ASC NULLS LAST, subdistrict_sort ASC NULLS LAST, seat_sort ASC NULLS LAST, r.title DESC
             "#,
             uuid::Uuid::parse_str(&self.id).unwrap(),
             uuid::Uuid::parse_str(&voting_guide_id).unwrap()

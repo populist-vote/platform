@@ -481,6 +481,7 @@ struct OfficeResource {
     county: Option<String>,
     municipality: Option<String>,
     district: Option<String>,
+    subdistrict: Option<String>,
     seat: Option<String>,
     election_scope: ElectionScope,
     district_type: Option<DistrictType>,
@@ -510,6 +511,7 @@ impl OfficeResource {
             county: office.county.clone(),
             municipality: office.municipality.clone(),
             district: office.district.clone(),
+            subdistrict: office.subdistrict.clone(),
             seat: office.seat.clone(),
             election_scope: office.election_scope,
             district_type: office.district_type,
@@ -853,6 +855,7 @@ async fn offices_by_ids(pool: &PgPool, office_ids: &[Uuid]) -> Result<Vec<Office
             name,
             office_type,
             district,
+            subdistrict,
             district_type,
             hospital_district,
             school_district,
@@ -1263,9 +1266,12 @@ fn computed_office_subtitle(office: &Office, short: bool) -> Option<String> {
             ))
         }
         (ElectionScope::District, PoliticalScope::Local, Some(DistrictType::School)) => {
-            let base = format!("{} - {}", office.state?, office.school_district.as_deref()?);
-            Some(match office.district.as_deref() {
-                Some(district) => format!("{base} - District {district}"),
+            let base = format!("{} - {}", office.state?, office.district.as_deref()?);
+            Some(match office.subdistrict.as_deref() {
+                Some(subdistrict) if subdistrict.chars().all(|c| c.is_ascii_digit()) => {
+                    format!("{base} - District {subdistrict}")
+                }
+                Some(subdistrict) => format!("{base} - {subdistrict}"),
                 None => base,
             })
         }
@@ -1319,6 +1325,7 @@ pub(super) fn test_ballot_data(election_id: Uuid) -> BallotData {
                 county: Some("Hennepin".to_string()),
                 municipality: Some("Minneapolis".to_string()),
                 district: None,
+                subdistrict: None,
                 seat: None,
                 election_scope: ElectionScope::City,
                 district_type: None,

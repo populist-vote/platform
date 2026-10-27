@@ -17,6 +17,8 @@ pub struct Office {
     pub name: Option<String>,
     pub office_type: Option<String>,
     pub district: Option<String>,
+    /// Single-member subdivision of a school or hospital district.
+    pub subdistrict: Option<String>,
     pub district_type: Option<DistrictType>,
     pub hospital_district: Option<String>,
     pub school_district: Option<String>,
@@ -44,6 +46,7 @@ pub struct UpsertOfficeInput {
     pub name: Option<String>,
     pub office_type: Option<String>,
     pub district: Option<String>,
+    pub subdistrict: Option<String>,
     pub district_type: Option<DistrictType>,
     pub hospital_district: Option<String>,
     pub school_district: Option<String>,
@@ -109,6 +112,8 @@ pub enum DistrictType {
     JusticeOfThePeace,
     Constable,
     VotingPrecinct,
+    TxCollege,
+    TxSpecial,
 }
 
 #[derive(
@@ -131,6 +136,30 @@ pub struct OfficeFilter {
     query: Option<String>,
     state: Option<State>,
     political_scope: Option<PoliticalScope>,
+}
+
+/// Maps a school or hospital parent plus an optional subdivision onto `district` and `subdistrict`.
+/// A caller that already stored the subdivision in `subdistrict` is left unchanged.
+fn stored_districts(input: &UpsertOfficeInput) -> (Option<String>, Option<String>) {
+    let cleaned = |value: &Option<String>| {
+        value
+            .as_ref()
+            .map(|text| text.trim().to_string())
+            .filter(|text| !text.is_empty())
+    };
+    let district = cleaned(&input.district);
+    let parent = cleaned(&input.school_district).or_else(|| cleaned(&input.hospital_district));
+    let subdistrict = cleaned(&input.subdistrict);
+
+    if subdistrict.is_some() {
+        return (district, subdistrict);
+    }
+    match parent {
+        Some(parent) if district.as_ref() == Some(&parent) => (Some(parent), None),
+        Some(parent) if district.is_some() => (Some(parent), district),
+        Some(parent) => (Some(parent), None),
+        None => (district, None),
+    }
 }
 
 impl Office {
@@ -160,11 +189,13 @@ impl Office {
             slug = format!("{}-{}", r.slug, rando);
         }
 
+        let (district, subdistrict) = stored_districts(input);
+
         let record = sqlx::query_as!(
             Office,
             r#"
-                INSERT INTO office (id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type, hospital_district, school_district, chamber, political_scope, election_scope, state, county, municipality, term_length, seat, priority)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+                INSERT INTO office (id, slug, title, subtitle, subtitle_short, name, office_type, district, subdistrict, district_type, hospital_district, school_district, chamber, political_scope, election_scope, state, county, municipality, term_length, seat, priority)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
                 ON CONFLICT (id) DO UPDATE
                 SET
                     slug = COALESCE($2, office.slug),
@@ -174,19 +205,20 @@ impl Office {
                     name = COALESCE($6, office.name),
                     office_type = COALESCE($7, office.office_type),
                     district = COALESCE($8, office.district),
-                    district_type = COALESCE($9, office.district_type),
-                    hospital_district = COALESCE($10, office.hospital_district),
-                    school_district = COALESCE($11, office.school_district),
-                    chamber = COALESCE($12, office.chamber),
-                    political_scope = COALESCE($13, office.political_scope),
-                    election_scope = COALESCE($14, office.election_scope),
-                    state = COALESCE($15, office.state),
-                    county = COALESCE($16, office.county),
-                    municipality = COALESCE($17, office.municipality),
-                    term_length = COALESCE($18, office.term_length),
-                    seat = COALESCE($19, office.seat),
-                    priority = COALESCE($20, office.priority)
-                RETURNING id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:DistrictType", hospital_district, school_district, chamber AS "chamber:Chamber", political_scope AS "political_scope:PoliticalScope", election_scope as "election_scope:ElectionScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at
+                    subdistrict = COALESCE($9, office.subdistrict),
+                    district_type = COALESCE($10, office.district_type),
+                    hospital_district = COALESCE($11, office.hospital_district),
+                    school_district = COALESCE($12, office.school_district),
+                    chamber = COALESCE($13, office.chamber),
+                    political_scope = COALESCE($14, office.political_scope),
+                    election_scope = COALESCE($15, office.election_scope),
+                    state = COALESCE($16, office.state),
+                    county = COALESCE($17, office.county),
+                    municipality = COALESCE($18, office.municipality),
+                    term_length = COALESCE($19, office.term_length),
+                    seat = COALESCE($20, office.seat),
+                    priority = COALESCE($21, office.priority)
+                RETURNING id, slug, title, subtitle, subtitle_short, name, office_type, district, subdistrict, district_type AS "district_type:DistrictType", hospital_district, school_district, chamber AS "chamber:Chamber", political_scope AS "political_scope:PoliticalScope", election_scope as "election_scope:ElectionScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at
             "#,
             id,
             slug,
@@ -195,7 +227,8 @@ impl Office {
             input.subtitle_short,
             input.name,
             input.office_type,
-            input.district,
+            district,
+            subdistrict,
             input.district_type as Option<DistrictType>,
             input.hospital_district,
             input.school_district,
@@ -225,11 +258,13 @@ impl Office {
             .ok_or("slug is required")
             .map_err(|err| sqlx::Error::AnyDriverError(err.into()))?;
 
+        let (district, subdistrict) = stored_districts(input);
+
         sqlx::query_as!(
             Office,
             r#"
-                INSERT INTO office (slug, title, subtitle, subtitle_short, name, office_type, district, district_type, hospital_district, school_district, chamber, political_scope, election_scope, state, county, municipality, term_length, seat, priority)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+                INSERT INTO office (slug, title, subtitle, subtitle_short, name, office_type, district, subdistrict, district_type, hospital_district, school_district, chamber, political_scope, election_scope, state, county, municipality, term_length, seat, priority)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
                 ON CONFLICT (slug) DO UPDATE
                 SET
                     title = COALESCE($2, office.title),
@@ -238,19 +273,20 @@ impl Office {
                     name = COALESCE($5, office.name),
                     office_type = COALESCE($6, office.office_type),
                     district = COALESCE($7, office.district),
-                    district_type = COALESCE($8, office.district_type),
-                    hospital_district = COALESCE($9, office.hospital_district),
-                    school_district = COALESCE($10, office.school_district),
-                    chamber = COALESCE($11, office.chamber),
-                    political_scope = COALESCE($12, office.political_scope),
-                    election_scope = COALESCE($13, office.election_scope),
-                    state = COALESCE($14, office.state),
-                    county = COALESCE($15, office.county),
-                    municipality = COALESCE($16, office.municipality),
-                    term_length = COALESCE($17, office.term_length),
-                    seat = COALESCE($18, office.seat),
-                    priority = COALESCE($19, office.priority)
-                RETURNING id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:DistrictType", hospital_district, school_district, chamber AS "chamber:Chamber", political_scope AS "political_scope:PoliticalScope", election_scope as "election_scope:ElectionScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at
+                    subdistrict = COALESCE($8, office.subdistrict),
+                    district_type = COALESCE($9, office.district_type),
+                    hospital_district = COALESCE($10, office.hospital_district),
+                    school_district = COALESCE($11, office.school_district),
+                    chamber = COALESCE($12, office.chamber),
+                    political_scope = COALESCE($13, office.political_scope),
+                    election_scope = COALESCE($14, office.election_scope),
+                    state = COALESCE($15, office.state),
+                    county = COALESCE($16, office.county),
+                    municipality = COALESCE($17, office.municipality),
+                    term_length = COALESCE($18, office.term_length),
+                    seat = COALESCE($19, office.seat),
+                    priority = COALESCE($20, office.priority)
+                RETURNING id, slug, title, subtitle, subtitle_short, name, office_type, district, subdistrict, district_type AS "district_type:DistrictType", hospital_district, school_district, chamber AS "chamber:Chamber", political_scope AS "political_scope:PoliticalScope", election_scope as "election_scope:ElectionScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at
             "#,
             input.slug,
             input.title,
@@ -258,7 +294,8 @@ impl Office {
             input.subtitle_short,
             input.name,
             input.office_type,
-            input.district,
+            district,
+            subdistrict,
             input.district_type as Option<DistrictType>,
             input.hospital_district,
             input.school_district,
@@ -287,7 +324,7 @@ impl Office {
         let record = sqlx::query_as!(
             Office,
             r#"
-                SELECT id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:DistrictType", hospital_district, school_district, chamber AS "chamber:Chamber", election_scope as "election_scope:ElectionScope", political_scope AS "political_scope:PoliticalScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at FROM office
+                SELECT id, slug, title, subtitle, subtitle_short, name, office_type, district, subdistrict, district_type AS "district_type:DistrictType", hospital_district, school_district, chamber AS "chamber:Chamber", election_scope as "election_scope:ElectionScope", political_scope AS "political_scope:PoliticalScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at FROM office
                 WHERE id = $1
             "#,
             id
@@ -302,7 +339,7 @@ impl Office {
         let record = sqlx::query_as!(
             Office,
             r#"
-                SELECT id, slug, title, subtitle, subtitle_short, name, office_type, district, district_type AS "district_type:DistrictType", hospital_district, school_district, chamber AS "chamber:Chamber", election_scope as "election_scope:ElectionScope", political_scope AS "political_scope:PoliticalScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at FROM office
+                SELECT id, slug, title, subtitle, subtitle_short, name, office_type, district, subdistrict, district_type AS "district_type:DistrictType", hospital_district, school_district, chamber AS "chamber:Chamber", election_scope as "election_scope:ElectionScope", political_scope AS "political_scope:PoliticalScope", state AS "state:State", county, municipality, term_length, seat, priority, created_at, updated_at FROM office
                 WHERE slug = $1
             "#,
             slug
@@ -328,6 +365,7 @@ impl Office {
                 name,
                 office_type,
                 district,
+                subdistrict,
                 district_type AS "district_type:DistrictType",
                 hospital_district,
                 school_district,
@@ -344,7 +382,7 @@ impl Office {
                 updated_at
             FROM office,
             to_tsvector(
-                title || ' ' || name || ' ' || COALESCE(subtitle, '') || ' ' || COALESCE(office_type, '') || ' ' || COALESCE(district, '') || ' ' || COALESCE(hospital_district, '') || ' ' || COALESCE(school_district, '') || ' ' || COALESCE(state::text, '') || ' ' || COALESCE(county, '') || ' ' || COALESCE(municipality, '')
+                title || ' ' || name || ' ' || COALESCE(subtitle, '') || ' ' || COALESCE(office_type, '') || ' ' || COALESCE(district, '') || ' ' || COALESCE(subdistrict, '') || ' ' || COALESCE(hospital_district, '') || ' ' || COALESCE(school_district, '') || ' ' || COALESCE(state::text, '') || ' ' || COALESCE(county, '') || ' ' || COALESCE(municipality, '')
             ) document,
             websearch_to_tsquery($1) query
             WHERE (($1::text = '') IS NOT FALSE OR query @@ document)
@@ -361,5 +399,84 @@ impl Office {
         .await?;
 
         Ok(records)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn input(
+        district: Option<&str>,
+        subdistrict: Option<&str>,
+        school: Option<&str>,
+        hospital: Option<&str>,
+    ) -> UpsertOfficeInput {
+        UpsertOfficeInput {
+            district: district.map(str::to_string),
+            subdistrict: subdistrict.map(str::to_string),
+            school_district: school.map(str::to_string),
+            hospital_district: hospital.map(str::to_string),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn stores_a_subdivision_separately_from_its_parent() {
+        let (district, subdistrict) =
+            stored_districts(&input(Some("1"), None, None, Some("Cook County")));
+        assert_eq!(district.as_deref(), Some("Cook County"));
+        assert_eq!(subdistrict.as_deref(), Some("1"));
+    }
+
+    #[test]
+    fn stores_a_parent_with_no_subdivision() {
+        let (district, subdistrict) =
+            stored_districts(&input(None, None, Some("Alamo Heights ISD"), None));
+        assert_eq!(district.as_deref(), Some("Alamo Heights ISD"));
+        assert_eq!(subdistrict, None);
+    }
+
+    #[test]
+    fn prefers_the_school_parent_when_both_parents_are_set() {
+        let (district, subdistrict) = stored_districts(&input(
+            Some("2"),
+            None,
+            Some("Austin ISD"),
+            Some("Cook County"),
+        ));
+        assert_eq!(district.as_deref(), Some("Austin ISD"));
+        assert_eq!(subdistrict.as_deref(), Some("2"));
+    }
+
+    #[test]
+    fn leaves_a_parent_that_is_already_stored_as_the_district() {
+        let (district, subdistrict) = stored_districts(&input(
+            Some("Alamo Heights ISD"),
+            None,
+            Some("Alamo Heights ISD"),
+            None,
+        ));
+        assert_eq!(district.as_deref(), Some("Alamo Heights ISD"));
+        assert_eq!(subdistrict, None);
+    }
+
+    #[test]
+    fn keeps_an_explicit_subdistrict() {
+        let (district, subdistrict) = stored_districts(&input(
+            Some("Austin ISD"),
+            Some("4"),
+            Some("Austin ISD"),
+            None,
+        ));
+        assert_eq!(district.as_deref(), Some("Austin ISD"));
+        assert_eq!(subdistrict.as_deref(), Some("4"));
+    }
+
+    #[test]
+    fn leaves_legislative_districts_unchanged() {
+        let (district, subdistrict) = stored_districts(&input(Some("12"), None, None, None));
+        assert_eq!(district.as_deref(), Some("12"));
+        assert_eq!(subdistrict, None);
     }
 }

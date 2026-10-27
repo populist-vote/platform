@@ -301,6 +301,7 @@ fn stg_office_to_upsert(stg: &StgOffice) -> UpsertOfficeInput {
         name: stg.name.clone(),
         office_type: stg.office_type.clone(),
         district: stg.district.clone(),
+        subdistrict: None,
         district_type: parse_district_type(stg.district_type.as_ref()),
         hospital_district: stg.hospital_district.clone(),
         school_district: stg.school_district.clone(),

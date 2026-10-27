@@ -1,6 +1,32 @@
 use crate::State;
 use sqlx::{Postgres, QueryBuilder};
 
+/// A school subdistrict selects that seat. Seats with no subdistrict stay district-wide.
+/// ISD 2902 stores names such as "Russell District", matched to the lookup name "Russell".
+fn push_school_subdistrict(
+    builder: &mut QueryBuilder<Postgres>,
+    school_district_number: &str,
+    school_subdistrict: Option<String>,
+    school_subdistrict_name: Option<String>,
+) {
+    if school_district_number == "2902" {
+        if let Some(name) = school_subdistrict_name {
+            builder.push(
+                " AND (o.subdistrict IS NULL OR LOWER(regexp_replace(o.subdistrict, ' District$', '')) = LOWER(",
+            );
+            builder.push_bind(name);
+            builder.push("))");
+        }
+        return;
+    }
+
+    if let Some(subdistrict) = school_subdistrict {
+        builder.push(" AND (o.subdistrict IS NULL OR o.subdistrict = ");
+        builder.push_bind(subdistrict);
+        builder.push(")");
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn apply_mn_filters(
     builder: &mut QueryBuilder<Postgres>,
@@ -14,7 +40,8 @@ pub fn apply_mn_filters(
     judicial_district: Option<String>,
     school_district: Option<String>,
     school_district_type: Option<String>,
-    _school_subdistrict: Option<String>,
+    school_subdistrict: Option<String>,
+    school_subdistrict_name: Option<String>,
     ward: Option<String>,
     soil_and_water_district: Option<String>,
     hospital_district: Option<String>,
@@ -111,21 +138,23 @@ pub fn apply_mn_filters(
         if let Some(clean) = county_cleaned.clone() {
             match hosp.as_str() {
                 "Cook County" => {
-                    builder.push(
-                        " OR (o.election_scope = 'district' \
-                                  AND o.district_type = 'hospital' \
-                                  AND o.hospital_district = ",
-                    );
-                    builder.push_bind(hosp.clone());
-                    builder.push(" AND o.county = ");
-                    builder.push_bind(clean);
-                    builder.push(")");
+                    if let Some(commissioner) = county_commissioner_district.clone() {
+                        builder.push(
+                            " OR (o.election_scope = 'district' \
+                                      AND o.district_type = 'hospital' \
+                                      AND o.district = ",
+                        );
+                        builder.push_bind(hosp.clone());
+                        builder.push(" AND o.subdistrict = ");
+                        builder.push_bind(commissioner);
+                        builder.push(")");
+                    }
                 }
                 "Northern Itasca" => {
                     builder.push(
                         " OR (o.election_scope = 'district' \
                                   AND o.district_type = 'hospital' \
-                                  AND o.hospital_district = ",
+                                  AND o.district = ",
                     );
                     builder.push_bind(hosp.clone());
                     builder.push(" AND o.county = ");
@@ -136,7 +165,7 @@ pub fn apply_mn_filters(
                     builder.push(
                         " OR (o.election_scope = 'district' \
                                   AND o.district_type = 'hospital' \
-                                  AND o.hospital_district = ",
+                                  AND o.district = ",
                     );
                     builder.push_bind(hosp);
                     builder.push(")");
@@ -177,18 +206,32 @@ pub fn apply_mn_filters(
                 builder.push(
                     " OR (o.election_scope = 'district' \
                               AND o.district_type = 'school' \
-                              AND REPLACE(o.school_district, 'ISD #', '') = ",
+                              AND REPLACE(o.district, 'ISD #', '') = ",
                 );
+                let district_number = sd_num.clone();
                 builder.push_bind(sd_num);
+                push_school_subdistrict(
+                    builder,
+                    &district_number,
+                    school_subdistrict.clone(),
+                    school_subdistrict_name.clone(),
+                );
                 builder.push(")");
             }
             "03" => {
                 builder.push(
                     " OR (o.election_scope = 'district' \
                               AND o.district_type = 'school' \
-                              AND REPLACE(o.school_district, 'SSD #', '') = ",
+                              AND REPLACE(o.district, 'SSD #', '') = ",
                 );
+                let district_number = sd_num.clone();
                 builder.push_bind(sd_num);
+                push_school_subdistrict(
+                    builder,
+                    &district_number,
+                    school_subdistrict.clone(),
+                    school_subdistrict_name.clone(),
+                );
                 builder.push(")");
             }
             _ => {}

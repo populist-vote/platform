@@ -124,6 +124,11 @@ pub struct AddressExtendedTX {
     pub county_commissioner_district: Option<String>,
     pub justice_of_the_peace_district: Option<String>,
     pub constable_district: Option<String>,
+    pub school_district_name: Option<String>,
+    pub school_subdistrict: Option<String>,
+    pub college_district_name: Option<String>,
+    pub municipality_name: Option<String>,
+    pub municipality_subdistrict: Option<String>,
 }
 
 pub enum SchoolDistrictTypeMN {
@@ -709,9 +714,32 @@ impl Address {
                 (SELECT cd.cong_dist
                  FROM p6t_state_tx.tx_congressional_planc2333 AS cd
                  WHERE ST_Contains(ST_SetSRID(cd.geom, 3081), ST_Transform(a.geom, 3081))
-                 LIMIT 1) AS congressional_district
+                 LIMIT 1) AS congressional_district,
+                sd.name AS school_district_name,
+                sd.subdist AS school_subdistrict,
+                college.name AS college_district_name,
+                muni.name AS municipality_name,
+                muni.subdist AS municipality_subdistrict
             FROM p6t_state_tx.tx_vtds_2026 AS vd
             JOIN address a ON a.id = $1
+            LEFT JOIN LATERAL (
+                SELECT name, subdist
+                FROM p6t_state_tx.tx_map_sd_v1 AS school
+                WHERE ST_Contains(ST_SetSRID(school.geom, 3081), ST_Transform(a.geom, 3081))
+                LIMIT 1
+            ) sd ON true
+            LEFT JOIN LATERAL (
+                SELECT name
+                FROM p6t_state_tx.tx_map_college_v1 AS college_boundary
+                WHERE ST_Contains(ST_SetSRID(college_boundary.geom, 3081), ST_Transform(a.geom, 3081))
+                LIMIT 1
+            ) college ON true
+            LEFT JOIN LATERAL (
+                SELECT "NAME" AS name, subdist
+                FROM p6t_state_tx."tx_map_muni_v1-1" AS municipality
+                WHERE ST_Contains(ST_SetSRID(municipality.geom, 3081), ST_Transform(a.geom, 3081))
+                LIMIT 1
+            ) muni ON true
             WHERE ST_Contains(ST_SetSRID(vd.geom, 3081), ST_Transform(a.geom, 3081))
             "#,
             address_id,
@@ -764,6 +792,17 @@ impl AddressExtendedMN {
             .map(|d| d.trim_start_matches('0').to_string())
     }
 
+    pub fn school_subdistrict_name_norm(&self) -> Option<String> {
+        self.school_subdistrict_name.as_ref().and_then(|name| {
+            let trimmed = name.trim();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed.to_string())
+            }
+        })
+    }
+
     pub fn ward_norm(&self) -> Option<String> {
         self.ward.as_ref().map(|d| {
             if let Some(pos) = d.find('-') {
@@ -795,6 +834,65 @@ impl AddressExtendedTX {
                     .collect()
             })
             .unwrap_or_default()
+    }
+
+    pub fn school_district_name_norm(&self) -> Option<String> {
+        self.school_district_name.as_ref().and_then(|name| {
+            let trimmed = name.trim();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed.to_string())
+            }
+        })
+    }
+
+    pub fn college_district_name_norm(&self) -> Option<String> {
+        self.college_district_name.as_ref().and_then(|name| {
+            let trimmed = name.trim();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed.to_string())
+            }
+        })
+    }
+
+    pub fn municipality_name_norm(&self) -> Option<String> {
+        self.municipality_name.as_ref().and_then(|name| {
+            let trimmed = name.trim();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed.to_string())
+            }
+        })
+    }
+
+    /// `"District 10"` → `"10"`. Compared with the numeric part of `office.district`.
+    pub fn municipality_subdistrict_norm(&self) -> Option<String> {
+        self.municipality_subdistrict.as_ref().and_then(|district| {
+            let digits = district
+                .trim()
+                .trim_start_matches(|c: char| !c.is_ascii_digit());
+            let trimmed = digits.trim_start_matches('0');
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed.to_string())
+            }
+        })
+    }
+
+    pub fn school_subdistrict_norm(&self) -> Option<String> {
+        self.school_subdistrict.as_ref().and_then(|district| {
+            let trimmed = district.trim().trim_start_matches('0');
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed.to_string())
+            }
+        })
     }
 
     /// Splits the state district courts value by comma and returns a vec of trimmed strings.

@@ -1,6 +1,6 @@
-//! Texas **municipal** candidate filings processor.
+//! Texas **local** candidate filings processor.
 //!
-//! Reads `p6t_state_tx.tx_2026_municipal_filings` into `ingest_staging.stg_tx_muni_*` tables.
+//! Reads `p6t_state_tx.tx_2026_local_filings_nov3` into `ingest_staging.stg_tx_local_*` tables.
 //! Merge to production is **not** wired to `tx_merge_filings` yet (that binary reads `stg_tx_*`).
 
 use crate::extractors;
@@ -12,7 +12,7 @@ use sqlx::PgPool;
 use std::error::Error;
 use uuid::Uuid;
 
-/// Staging address built from a filing; inserted into `stg_tx_muni_addresses` only when the politician is inserted.
+/// Staging address built from a filing; inserted into `stg_tx_local_addresses` only when the politician is inserted.
 #[derive(Debug, Clone)]
 pub struct TxStagingAddress {
     pub line_1: String,
@@ -21,17 +21,14 @@ pub struct TxStagingAddress {
     pub country: String,
 }
 
-/// One row from `p6t_state_tx.tx_2026_municipal_filings`.
+/// One row from `p6t_state_tx.tx_2026_local_filings_nov3`.
 #[derive(Debug, FromRow)]
-pub struct TxMunicipalFiling {
+pub struct TxLocalFiling {
     pub county: Option<String>,
     pub municipality: Option<String>,
     pub office_name: Option<String>,
     pub district_type: Option<String>,
-    pub district: Option<String>,
     pub school_district: Option<String>,
-    pub seat_label: Option<String>,
-    pub seat: Option<String>,
     pub candidate_name: Option<String>,
     pub incumbent: Option<String>,
     pub is_special_election: Option<bool>,
@@ -41,55 +38,50 @@ pub struct TxMunicipalFiling {
     pub campaign_website: Option<String>,
     pub place_fips: Option<String>,
     pub state: Option<String>,
+    pub num_elect: Option<i32>,
 }
 
-const TX_MUNI_SOURCE_TABLE: &str = "p6t_state_tx.tx_2026_municipal_filings";
+const TX_LOCAL_SOURCE_TABLE: &str = "p6t_state_tx.tx_2026_local_filings_nov3";
 const ELECTION_YEAR: i32 = 2026;
 
-/// 2026 TX municipal election (replace if your ingest targets a different election).
-pub const TX_MUNI_ELECTION_ID: &str = "dce8e1a4-dcdb-4f3e-9cfa-11f96ae86007";
+/// 2026 TX local election (replace if your ingest targets a different election).
+pub const TX_LOCAL_ELECTION_ID: &str = "6138cc76-f273-43cf-a017-a98d1119b0c3";
 
-/// Process municipal filings into `stg_tx_muni_*` staging tables.
-pub async fn process_tx_municipal_filings(pool: &PgPool) -> Result<(), Box<dyn Error>> {
-    println!("Starting TX municipal candidate filings processor...");
-    println!("Source table: {}", TX_MUNI_SOURCE_TABLE);
+/// Process local filings into `stg_tx_local_*` staging tables.
+pub async fn process_tx_local_filings(pool: &PgPool) -> Result<(), Box<dyn Error>> {
+    println!("Starting TX local candidate filings processor...");
+    println!("Source table: {}", TX_LOCAL_SOURCE_TABLE);
 
-    create_muni_staging_tables(pool).await?;
+    create_local_staging_tables(pool).await?;
 
-    let election_slug = get_muni_election_slug(pool).await?;
+    let election_slug = get_local_election_slug(pool).await?;
     println!("Election slug: {}", election_slug);
 
+    let present_columns = source_table_columns(pool).await?;
+    let missing_columns: Vec<&str> = SOURCE_FILING_COLUMNS
+        .iter()
+        .filter(|column| !present_columns.contains(column.name))
+        .map(|column| column.name)
+        .collect();
+    if !missing_columns.is_empty() {
+        println!(
+            "Source table is missing columns; selecting NULL for: {}",
+            missing_columns.join(", ")
+        );
+    }
+
     let query = format!(
-        r#"
-        SELECT
-            county,
-            municipality,
-            office_name,
-            district_type,
-            district,
-            school_district,
-            seat_label,
-            seat,
-            candidate_name,
-            incumbent,
-            is_special_election,
-            status,
-            email,
-            phone,
-            campaign_website,
-            place_fips,
-            state
-        FROM {}
-        "#,
-        TX_MUNI_SOURCE_TABLE
+        "SELECT\n            {}\n        FROM {}",
+        source_filing_select_list(&present_columns),
+        TX_LOCAL_SOURCE_TABLE
     );
 
-    println!("Fetching municipal filings...");
-    let filings: Vec<TxMunicipalFiling> = sqlx::query_as::<_, TxMunicipalFiling>(&query)
+    println!("Fetching local filings...");
+    let filings: Vec<TxLocalFiling> = sqlx::query_as::<_, TxLocalFiling>(&query)
         .fetch_all(pool)
         .await?;
 
-    println!("Found {} municipal filings to process", filings.len());
+    println!("Found {} local filings to process", filings.len());
 
     let mut processed_count = 0usize;
     let mut skipped_status_count = 0usize;
@@ -99,7 +91,7 @@ pub async fn process_tx_municipal_filings(pool: &PgPool) -> Result<(), Box<dyn E
         if index % 100 == 0 {
             println!("Processing filing {}/{}...", index + 1, filings.len());
         }
-        match process_and_insert_tx_muni_filing(pool, filing, &election_slug).await {
+        match process_and_insert_tx_local_filing(pool, filing, &election_slug).await {
             Ok(true) => processed_count += 1,
             Ok(false) => skipped_status_count += 1,
             Err(e) => {
@@ -113,7 +105,7 @@ pub async fn process_tx_municipal_filings(pool: &PgPool) -> Result<(), Box<dyn E
         }
     }
 
-    println!("\n=== TX municipal processing complete ===");
+    println!("\n=== TX local processing complete ===");
     println!("Successfully processed: {}", processed_count);
     println!(
         "Skipped (status not Active/Unopposed): {}",
@@ -121,51 +113,53 @@ pub async fn process_tx_municipal_filings(pool: &PgPool) -> Result<(), Box<dyn E
     );
     println!("Errors: {}", error_count);
     println!("\nStaging tables (merge not in tx_merge_filings yet):");
-    println!("  - ingest_staging.stg_tx_muni_offices");
-    println!("  - ingest_staging.stg_tx_muni_politicians");
-    println!("  - ingest_staging.stg_tx_muni_politician_process_dupes");
-    println!("  - ingest_staging.stg_tx_muni_addresses");
-    println!("  - ingest_staging.stg_tx_muni_races");
-    println!("  - ingest_staging.stg_tx_muni_race_candidates");
-    println!("  - ingest_staging.stg_tx_muni_race_candidates_process_dupes");
+    println!("  - ingest_staging.stg_tx_local_offices");
+    println!("  - ingest_staging.stg_tx_local_politicians");
+    println!("  - ingest_staging.stg_tx_local_politician_process_dupes");
+    println!("  - ingest_staging.stg_tx_local_addresses");
+    println!("  - ingest_staging.stg_tx_local_races");
+    println!("  - ingest_staging.stg_tx_local_race_candidates");
+    println!("  - ingest_staging.stg_tx_local_race_candidates_process_dupes");
 
     Ok(())
 }
 
-async fn create_muni_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>> {
-    println!("Creating ingest_staging.stg_tx_muni_* tables...");
+async fn create_local_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>> {
+    println!("Creating ingest_staging.stg_tx_local_* tables...");
 
     sqlx::query("CREATE SCHEMA IF NOT EXISTS ingest_staging")
         .execute(pool)
         .await?;
 
     sqlx::query(
-        "DROP TABLE IF EXISTS ingest_staging.stg_tx_muni_race_candidates_process_dupes CASCADE",
+        "DROP TABLE IF EXISTS ingest_staging.stg_tx_local_race_candidates_process_dupes CASCADE",
     )
     .execute(pool)
     .await?;
-    sqlx::query("DROP TABLE IF EXISTS ingest_staging.stg_tx_muni_race_candidates CASCADE")
+    sqlx::query("DROP TABLE IF EXISTS ingest_staging.stg_tx_local_race_candidates CASCADE")
         .execute(pool)
         .await?;
-    sqlx::query("DROP TABLE IF EXISTS ingest_staging.stg_tx_muni_races CASCADE")
+    sqlx::query("DROP TABLE IF EXISTS ingest_staging.stg_tx_local_races CASCADE")
         .execute(pool)
         .await?;
-    sqlx::query("DROP TABLE IF EXISTS ingest_staging.stg_tx_muni_addresses CASCADE")
+    sqlx::query("DROP TABLE IF EXISTS ingest_staging.stg_tx_local_addresses CASCADE")
         .execute(pool)
         .await?;
-    sqlx::query("DROP TABLE IF EXISTS ingest_staging.stg_tx_muni_politician_process_dupes CASCADE")
+    sqlx::query(
+        "DROP TABLE IF EXISTS ingest_staging.stg_tx_local_politician_process_dupes CASCADE",
+    )
+    .execute(pool)
+    .await?;
+    sqlx::query("DROP TABLE IF EXISTS ingest_staging.stg_tx_local_politicians CASCADE")
         .execute(pool)
         .await?;
-    sqlx::query("DROP TABLE IF EXISTS ingest_staging.stg_tx_muni_politicians CASCADE")
-        .execute(pool)
-        .await?;
-    sqlx::query("DROP TABLE IF EXISTS ingest_staging.stg_tx_muni_offices CASCADE")
+    sqlx::query("DROP TABLE IF EXISTS ingest_staging.stg_tx_local_offices CASCADE")
         .execute(pool)
         .await?;
 
     sqlx::query(
         r#"
-        CREATE TABLE ingest_staging.stg_tx_muni_offices (
+        CREATE TABLE ingest_staging.stg_tx_local_offices (
             id UUID PRIMARY KEY,
             slug TEXT NOT NULL UNIQUE,
             name TEXT,
@@ -183,6 +177,7 @@ async fn create_muni_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>>
             municipality TEXT,
             term_length INTEGER,
             district TEXT,
+            subdistrict TEXT,
             seat TEXT,
             school_district TEXT,
             hospital_district TEXT,
@@ -197,7 +192,7 @@ async fn create_muni_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>>
 
     sqlx::query(
         r#"
-        CREATE TABLE ingest_staging.stg_tx_muni_politicians (
+        CREATE TABLE ingest_staging.stg_tx_local_politicians (
             id UUID PRIMARY KEY,
             slug TEXT NOT NULL UNIQUE,
             ref_key TEXT,
@@ -246,7 +241,7 @@ async fn create_muni_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>>
 
     sqlx::query(
         r#"
-        CREATE TABLE ingest_staging.stg_tx_muni_addresses (
+        CREATE TABLE ingest_staging.stg_tx_local_addresses (
             id UUID PRIMARY KEY,
             line_1 TEXT NOT NULL,
             city TEXT NOT NULL,
@@ -261,7 +256,7 @@ async fn create_muni_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>>
 
     sqlx::query(
         r#"
-        CREATE TABLE ingest_staging.stg_tx_muni_politician_process_dupes (
+        CREATE TABLE ingest_staging.stg_tx_local_politician_process_dupes (
             existing_id UUID NOT NULL,
             existing_slug TEXT NOT NULL,
             existing_email TEXT,
@@ -280,7 +275,7 @@ async fn create_muni_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>>
 
     sqlx::query(
         r#"
-        CREATE TABLE ingest_staging.stg_tx_muni_races (
+        CREATE TABLE ingest_staging.stg_tx_local_races (
             id UUID PRIMARY KEY,
             title TEXT NOT NULL,
             slug TEXT NOT NULL UNIQUE,
@@ -310,7 +305,7 @@ async fn create_muni_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>>
 
     sqlx::query(
         r#"
-        CREATE TABLE ingest_staging.stg_tx_muni_race_candidates (
+        CREATE TABLE ingest_staging.stg_tx_local_race_candidates (
             race_id UUID NOT NULL,
             candidate_id UUID NOT NULL,
             ref_key TEXT,
@@ -323,7 +318,7 @@ async fn create_muni_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>>
 
     sqlx::query(
         r#"
-        CREATE TABLE ingest_staging.stg_tx_muni_race_candidates_process_dupes (
+        CREATE TABLE ingest_staging.stg_tx_local_race_candidates_process_dupes (
             ref_key TEXT NOT NULL,
             existing_race_id UUID NOT NULL,
             existing_candidate_id UUID NOT NULL,
@@ -336,46 +331,155 @@ async fn create_muni_staging_tables(pool: &PgPool) -> Result<(), Box<dyn Error>>
     .execute(pool)
     .await?;
 
-    println!("Municipal staging tables created.");
+    println!("Local staging tables created.");
     Ok(())
 }
 
 /// Ingest only rows whose `status` is **Active** or **Unopposed** (trimmed; case-insensitive).
-fn should_ingest_municipal_filing_status(status: Option<&str>) -> bool {
+fn should_ingest_local_filing_status(status: Option<&str>) -> bool {
     status
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .is_some_and(|s| s.eq_ignore_ascii_case("Active") || s.eq_ignore_ascii_case("Unopposed"))
 }
 
-/// Returns `Ok(false)` if the row is skipped because `status` is not Active or Unopposed.
-async fn process_and_insert_tx_muni_filing(
+struct SourceFilingColumn {
+    name: &'static str,
+    sql_type: &'static str,
+}
+
+const SOURCE_FILING_COLUMNS: &[SourceFilingColumn] = &[
+    SourceFilingColumn {
+        name: "county",
+        sql_type: "text",
+    },
+    SourceFilingColumn {
+        name: "municipality",
+        sql_type: "text",
+    },
+    SourceFilingColumn {
+        name: "office_name",
+        sql_type: "text",
+    },
+    SourceFilingColumn {
+        name: "district_type",
+        sql_type: "text",
+    },
+    SourceFilingColumn {
+        name: "school_district",
+        sql_type: "text",
+    },
+    SourceFilingColumn {
+        name: "candidate_name",
+        sql_type: "text",
+    },
+    SourceFilingColumn {
+        name: "incumbent",
+        sql_type: "text",
+    },
+    SourceFilingColumn {
+        name: "is_special_election",
+        sql_type: "boolean",
+    },
+    SourceFilingColumn {
+        name: "status",
+        sql_type: "text",
+    },
+    SourceFilingColumn {
+        name: "email",
+        sql_type: "text",
+    },
+    SourceFilingColumn {
+        name: "phone",
+        sql_type: "text",
+    },
+    SourceFilingColumn {
+        name: "campaign_website",
+        sql_type: "text",
+    },
+    SourceFilingColumn {
+        name: "place_fips",
+        sql_type: "text",
+    },
+    SourceFilingColumn {
+        name: "state",
+        sql_type: "text",
+    },
+    SourceFilingColumn {
+        name: "num_elect",
+        sql_type: "integer",
+    },
+];
+
+async fn source_table_columns(
     pool: &PgPool,
-    filing: &TxMunicipalFiling,
+) -> Result<std::collections::HashSet<String>, Box<dyn Error>> {
+    let (schema, table) = TX_LOCAL_SOURCE_TABLE
+        .split_once('.')
+        .ok_or("TX local source table must be schema-qualified")?;
+    let columns = sqlx::query_scalar::<_, String>(
+        r#"
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = $1 AND table_name = $2
+        "#,
+    )
+    .bind(schema)
+    .bind(table)
+    .fetch_all(pool)
+    .await?;
+    Ok(columns.into_iter().collect())
+}
+
+/// Selects each filing column that exists. A missing column is `NULL` of the expected type.
+fn source_filing_select_list(present: &std::collections::HashSet<String>) -> String {
+    SOURCE_FILING_COLUMNS
+        .iter()
+        .map(|column| {
+            if present.contains(column.name) {
+                column.name.to_string()
+            } else {
+                format!("NULL::{} AS {}", column.sql_type, column.name)
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(",\n            ")
+}
+
+/// Returns `Ok(false)` if the row is skipped because `status` is not Active or Unopposed.
+async fn process_and_insert_tx_local_filing(
+    pool: &PgPool,
+    filing: &TxLocalFiling,
     election_slug: &str,
 ) -> Result<bool, Box<dyn Error>> {
-    if !should_ingest_municipal_filing_status(filing.status.as_deref()) {
+    if !should_ingest_local_filing_status(filing.status.as_deref()) {
         return Ok(false);
     }
 
-    let office = process_tx_muni_office(filing)?;
-    let office_id = get_staging_muni_office_id_by_slug(pool, &office.slug).await?;
+    let office = process_tx_local_office(filing)?;
+    let office_id = get_staging_local_office_id_by_slug(pool, &office.slug).await?;
     if office_id.is_none() {
-        // TODO(custom): derive `state_id` for municipal offices if needed (primary uses SOS office title).
+        // TODO(custom): derive `state_id` for local offices if needed (primary uses SOS office title).
         let state_id: Option<String> = None;
-        insert_staging_muni_office(pool, &office, state_id.as_ref()).await?;
+        insert_staging_local_office(pool, &office, state_id.as_ref()).await?;
     }
     let resolved_office_id = office_id.unwrap_or(office.id);
+    let race = process_tx_local_race(filing, &office, office_id, None)?;
 
-    let mut politician =
-        process_tx_muni_politician(pool, filing, resolved_office_id, election_slug).await?;
-
-    let race = process_tx_muni_race(filing, &office, office_id, None)?;
+    let mut politician = process_tx_local_politician(
+        pool,
+        filing,
+        resolved_office_id,
+        election_slug,
+        &office,
+        &race,
+    )
+    .await?;
     let address: Option<TxStagingAddress> = None;
     // TODO(custom): derive address from `place_fips` or other columns if desired.
 
     let politician_inserted =
-        insert_staging_muni_politician(pool, &mut politician, address).await?;
+        insert_staging_local_politician(pool, &mut politician, address).await?;
 
     if !politician_inserted {
         let name = politician.full_name.as_deref().unwrap_or("(no name)");
@@ -386,44 +490,141 @@ async fn process_and_insert_tx_muni_filing(
         return Ok(true);
     }
 
-    insert_staging_muni_race(pool, &race).await?;
+    insert_staging_local_race(pool, &race).await?;
 
-    let race_id = get_staging_muni_race_id_by_slug(pool, &race.slug)
+    let race_id = get_staging_local_race_id_by_slug(pool, &race.slug)
         .await?
         .unwrap_or(race.id);
-    let office_identity = municipal_office_identity_for_ref_key(filing);
+    let office_identity = local_office_identity_for_ref_key(&office, &race);
     let candidate_name = filing.candidate_name.as_deref().unwrap_or("");
     let race_candidate_ref_key = generators::politician::PoliticianRefKeyGenerator::new(
-        "tx-municipal",
+        "tx-local",
         election_slug,
         &office_identity,
         Some(candidate_name),
     )
     .generate();
-    insert_staging_muni_race_candidate(pool, race_id, &politician, &race_candidate_ref_key).await?;
+    insert_staging_local_race_candidate(pool, race_id, &politician, &race_candidate_ref_key)
+        .await?;
 
     Ok(true)
 }
 
-/// Maps municipal filing columns to [`Office`] using the same TX office extractors as primary
-/// filings, with raw title from [`TxMunicipalFiling::office_name`]. There is no party on municipal
+/// Strip a leading `"City of"` from a filing municipality (`"City of Austin"` → `"Austin"`).
+fn normalize_municipality(municipality: &str) -> String {
+    let trimmed = municipality.trim();
+    let rest = trimmed
+        .get(.."city of".len())
+        .filter(|prefix| prefix.eq_ignore_ascii_case("city of"))
+        .map(|_| trimmed["city of".len()..].trim_start())
+        .unwrap_or(trimmed);
+    rest.trim().to_string()
+}
+
+/// Filing counties are separated by `;`. Stored `office.county` uses `,`.
+fn normalize_filing_counties(county: &str) -> Option<String> {
+    let counties: Vec<&str> = county
+        .split(';')
+        .map(str::trim)
+        .filter(|county| !county.is_empty())
+        .collect();
+    if counties.is_empty() {
+        None
+    } else {
+        Some(counties.join(", "))
+    }
+}
+
+/// Title-case a filing school district and shorten the district-type phrases.
+/// `"Austin Independent School District"` → `"Austin ISD"`.
+/// `"Example Common School District"` → `"Example CSD"`.
+fn normalize_school_district(school_district: &str) -> String {
+    extractors::politician::title_case(school_district.trim())
+        .replace("Independent School District", "ISD")
+        .replace("Common School District", "CSD")
+}
+
+/// Maps local filing columns to [`Office`] using the same TX office extractors as primary
+/// filings, with raw title from [`TxLocalFiling::office_name`]. There is no party on local
 /// rows, so [`extract_office_name`](crate::extractors::tx::tx_office::extract_office_name) is
-/// called with `party: None`. County is taken only from [`TxMunicipalFiling::county`], not parsed
-/// from the office title. Seat and district come from [`TxMunicipalFiling::seat`] and
-/// [`TxMunicipalFiling::district`]. Chamber is left unset (not applicable to municipal offices).
-fn process_tx_muni_office(filing: &TxMunicipalFiling) -> Result<Office, Box<dyn Error>> {
+/// called with `party: None`. County is taken only from [`TxLocalFiling::county`], not parsed
+/// from the office title. Counties separated by `;` are stored separated by `,`. Seat is parsed
+/// from `office_name`. When `save_name_as_district` is true, the office name is stored as
+/// the district (with a trailing `" Board"` removed). A school board or special district
+/// also stores the extracted subdivision on `subdistrict`. Otherwise the district is parsed
+/// from `office_name`. A filing `school_district` replaces that district. Chamber is left
+/// unset (not applicable to local offices).
+fn process_tx_local_office(filing: &TxLocalFiling) -> Result<Office, Box<dyn Error>> {
     use crate::extractors::tx::tx_office as office;
 
     let raw_filing_title = filing.office_name.as_ref().ok_or("Missing office name")?;
 
-    let name = office::extract_office_name(raw_filing_title, None)
+    let (name, save_name_as_district) = office::extract_office_name(raw_filing_title, None)
         .ok_or("Failed to extract office name")?;
 
-    let county = filing.county.clone().filter(|c| !c.trim().is_empty());
+    let county = filing.county.as_deref().and_then(normalize_filing_counties);
 
-    let seat = filing.seat.clone().filter(|s| !s.trim().is_empty());
+    let municipality = filing
+        .municipality
+        .as_deref()
+        .map(normalize_municipality)
+        .filter(|m| !m.is_empty())
+        .map(|m| extractors::politician::title_case(&m));
 
-    let district = filing.district.clone().filter(|d| !d.trim().is_empty());
+    let (seat, office_title_no_seat) = office::extract_office_seat(
+        raw_filing_title,
+        filing.num_elect,
+        municipality.as_deref(),
+        Some(&name),
+    );
+    
+    //This code sets the district equal to the office name - right now this only applies
+    //to school boards and special districts. We then extract the subdistrict, if it exists.
+    let mut district = None;
+    let mut subdistrict = None;
+    let is_school_board = name.contains("School Board");
+    if save_name_as_district {
+        district = Some(
+            name.strip_suffix(" Board")
+                .unwrap_or(&name)
+                .to_string(),
+        );
+        if office::is_special_district_with_subdivision(&name)
+        {
+            subdistrict = office::extract_office_district(
+                &office_title_no_seat,
+                seat.as_deref(),
+                municipality.as_deref(),
+                Some(&name),
+            );
+        }
+    } else {
+        if is_school_board {
+            subdistrict = office::extract_office_district(
+                &office_title_no_seat,
+                seat.as_deref(),
+                municipality.as_deref(),
+                Some(&name),
+            );
+        } else {
+        district = office::extract_office_district(
+            &office_title_no_seat,
+            seat.as_deref(),
+            municipality.as_deref(),
+            Some(&name),
+        );
+        }
+    }
+
+    let school_district = filing
+        .school_district
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(normalize_school_district);
+    if let Some(school_district) = &school_district {
+        district = Some(school_district.clone());
+    }
 
     let title = office::extract_office_title(&name).unwrap_or_default();
 
@@ -435,23 +636,12 @@ fn process_tx_muni_office(filing: &TxMunicipalFiling) -> Result<Office, Box<dyn 
     )
     .ok_or("Failed to extract office scope")?;
 
-    let municipality = filing
-        .municipality
-        .clone()
-        .filter(|m| !m.trim().is_empty())
-        .map(|m| extractors::politician::title_case(&m));
-
-    let school_district = filing
-        .school_district
-        .clone()
-        .filter(|s| !s.trim().is_empty())
-        .map(|s| extractors::politician::title_case(&s));
-
     let slug = generators::tx::tx_office::OfficeSlugGenerator {
         state: &State::TX,
         name: &name,
         county: county.as_deref(),
         district: district.as_deref(),
+        subdistrict: subdistrict.as_deref(),
         seat: seat.as_deref(),
         school_district: school_district.as_deref(),
         hospital_district: None,
@@ -468,6 +658,7 @@ fn process_tx_muni_office(filing: &TxMunicipalFiling) -> Result<Office, Box<dyn 
         district_type: district_type.as_ref(),
         county: county.as_deref(),
         district: district.as_deref(),
+        subdistrict: subdistrict.as_deref(),
         seat: seat.as_deref(),
         school_district: school_district.as_deref(),
         hospital_district: None,
@@ -475,8 +666,12 @@ fn process_tx_muni_office(filing: &TxMunicipalFiling) -> Result<Office, Box<dyn 
     }
     .generate();
 
-    let priority =
-        generators::tx::tx_office::office_priority(&title, county.as_deref(), district.as_deref());
+    let priority = generators::tx::tx_office::office_priority(
+        &title,
+        county.as_deref(),
+        district.as_deref(),
+        district_type.as_ref(),
+    );
 
     Ok(Office {
         id: Uuid::new_v4(),
@@ -495,6 +690,7 @@ fn process_tx_muni_office(filing: &TxMunicipalFiling) -> Result<Office, Box<dyn 
         municipality,
         term_length: None,
         district,
+        subdistrict,
         seat,
         school_district,
         hospital_district: None,
@@ -504,18 +700,16 @@ fn process_tx_muni_office(filing: &TxMunicipalFiling) -> Result<Office, Box<dyn 
     })
 }
 
-fn process_tx_muni_race(
-    filing: &TxMunicipalFiling,
+fn process_tx_local_race(
+    filing: &TxLocalFiling,
     office: &Office,
     office_id: Option<Uuid>,
     party_id: Option<Uuid>,
 ) -> Result<Race, Box<dyn Error>> {
-    let election_id = Uuid::parse_str(TX_MUNI_ELECTION_ID).map_err(|e| e.to_string())?;
+    let election_id = Uuid::parse_str(TX_LOCAL_ELECTION_ID).map_err(|e| e.to_string())?;
 
     let is_special_election = filing.is_special_election.unwrap_or(false);
-
-    // TODO(custom): derive `num_elect` from municipal data when available.
-    let num_elect: Option<i32> = None;
+    let num_elect = filing.num_elect;
 
     let race_type = RaceType::General;
     let party_fec: Option<&str> = None;
@@ -555,24 +749,25 @@ fn process_tx_muni_race(
     })
 }
 
-/// **TODO(custom):** Replace with a normalized, stable composite for deduplication across runs.
-fn municipal_office_identity_for_ref_key(filing: &TxMunicipalFiling) -> String {
-    [
-        filing.municipality.as_deref().unwrap_or(""),
-        filing.office_name.as_deref().unwrap_or(""),
-        filing.district.as_deref().unwrap_or(""),
-        filing.seat.as_deref().unwrap_or(""),
-        filing.school_district.as_deref().unwrap_or(""),
-        filing.place_fips.as_deref().unwrap_or(""),
-    ]
-    .join("|")
+fn local_office_identity_for_ref_key(office: &Office, race: &Race) -> String {
+    let mut identity = format!(
+        "{}|{}",
+        office.name.as_deref().unwrap_or(""),
+        office.subtitle.as_deref().unwrap_or(""),
+    );
+    if race.is_special_election {
+        identity.push_str("|Special Election");
+    }
+    identity
 }
 
-async fn process_tx_muni_politician(
+async fn process_tx_local_politician(
     pool: &PgPool,
-    filing: &TxMunicipalFiling,
+    filing: &TxLocalFiling,
     current_office_id: Uuid,
     election_slug: &str,
+    office: &Office,
+    race: &Race,
 ) -> Result<Politician, Box<dyn Error>> {
     let candidate_name_raw = filing
         .candidate_name
@@ -580,16 +775,16 @@ async fn process_tx_muni_politician(
         .ok_or("Missing candidate name")?;
     let candidate_name = extractors::politician::normalize_name(candidate_name_raw);
 
-    let office_identity = municipal_office_identity_for_ref_key(filing);
+    let office_identity = local_office_identity_for_ref_key(office, race);
     let ref_key = generators::politician::PoliticianRefKeyGenerator::new(
-        "TX-MUNI",
+        "TX-LOCAL",
         election_slug,
         &office_identity,
         Some(&candidate_name),
     )
     .generate();
 
-    let fec_code = "UN";
+    let fec_code = "N";
     let party_id = sqlx::query_scalar!(r#"SELECT id FROM party WHERE fec_code = $1"#, fec_code)
         .fetch_optional(pool)
         .await?;
@@ -702,55 +897,52 @@ async fn process_tx_muni_politician(
     })
 }
 
-async fn get_muni_election_slug(pool: &PgPool) -> Result<String, Box<dyn Error>> {
-    let election_id = Uuid::parse_str(TX_MUNI_ELECTION_ID)?;
-    let slug = sqlx::query_scalar!(
-        r#"SELECT slug FROM election WHERE id = $1"#,
-        election_id
-    )
-    .fetch_optional(pool)
-    .await?
-    .ok_or_else(|| format!("No election found for id {}", TX_MUNI_ELECTION_ID))?;
+async fn get_local_election_slug(pool: &PgPool) -> Result<String, Box<dyn Error>> {
+    let election_id = Uuid::parse_str(TX_LOCAL_ELECTION_ID)?;
+    let slug = sqlx::query_scalar!(r#"SELECT slug FROM election WHERE id = $1"#, election_id)
+        .fetch_optional(pool)
+        .await?
+        .ok_or_else(|| format!("No election found for id {}", TX_LOCAL_ELECTION_ID))?;
     Ok(slug)
 }
 
-async fn get_staging_muni_office_id_by_slug(
+async fn get_staging_local_office_id_by_slug(
     pool: &PgPool,
     slug: &str,
 ) -> Result<Option<Uuid>, Box<dyn Error>> {
     let row: Option<(Uuid,)> =
-        sqlx::query_as("SELECT id FROM ingest_staging.stg_tx_muni_offices WHERE slug = $1")
+        sqlx::query_as("SELECT id FROM ingest_staging.stg_tx_local_offices WHERE slug = $1")
             .bind(slug)
             .fetch_optional(pool)
             .await?;
     Ok(row.map(|(id,)| id))
 }
 
-async fn get_staging_muni_race_id_by_slug(
+async fn get_staging_local_race_id_by_slug(
     pool: &PgPool,
     slug: &str,
 ) -> Result<Option<Uuid>, Box<dyn Error>> {
     let row: Option<(Uuid,)> =
-        sqlx::query_as("SELECT id FROM ingest_staging.stg_tx_muni_races WHERE slug = $1")
+        sqlx::query_as("SELECT id FROM ingest_staging.stg_tx_local_races WHERE slug = $1")
             .bind(slug)
             .fetch_optional(pool)
             .await?;
     Ok(row.map(|(id,)| id))
 }
 
-async fn insert_staging_muni_office(
+async fn insert_staging_local_office(
     pool: &PgPool,
     office: &Office,
     state_id: Option<&String>,
 ) -> Result<(), Box<dyn Error>> {
     sqlx::query(
         r#"
-        INSERT INTO ingest_staging.stg_tx_muni_offices (
+        INSERT INTO ingest_staging.stg_tx_local_offices (
             id, slug, name, title, subtitle, subtitle_short, office_type, chamber,
             district_type, political_scope, election_scope, state, state_id, county, municipality,
-            term_length, district, seat, school_district, hospital_district, priority,
+            term_length, district, subdistrict, seat, school_district, hospital_district, priority,
             created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
         ON CONFLICT (slug) DO NOTHING
         "#,
     )
@@ -771,6 +963,7 @@ async fn insert_staging_muni_office(
     .bind(&office.municipality)
     .bind(office.term_length)
     .bind(&office.district)
+    .bind(&office.subdistrict)
     .bind(&office.seat)
     .bind(&office.school_district)
     .bind(&office.hospital_district)
@@ -782,13 +975,13 @@ async fn insert_staging_muni_office(
     Ok(())
 }
 
-async fn execute_staging_muni_politician_insert(
+async fn execute_staging_local_politician_insert(
     pool: &PgPool,
     politician: &Politician,
 ) -> Result<u64, sqlx::Error> {
     let result = sqlx::query(
         r#"
-        INSERT INTO ingest_staging.stg_tx_muni_politicians (
+        INSERT INTO ingest_staging.stg_tx_local_politicians (
             id, slug, ref_key, first_name, middle_name, last_name, suffix, preferred_name,
             full_name, biography, biography_source, home_state, party_id, date_of_birth,
             office_id, upcoming_race_id, thumbnail_image_url, assets, official_website_url,
@@ -887,7 +1080,7 @@ fn is_same_person_from_emails_and_addresses(
     (same_person, emails_equal_not_both_empty)
 }
 
-async fn record_politician_muni_dupe(
+async fn record_politician_local_dupe(
     pool: &PgPool,
     existing_id: Uuid,
     existing_slug: &str,
@@ -901,7 +1094,7 @@ async fn record_politician_muni_dupe(
 ) -> Result<(), Box<dyn Error>> {
     sqlx::query(
         r#"
-        INSERT INTO ingest_staging.stg_tx_muni_politician_process_dupes
+        INSERT INTO ingest_staging.stg_tx_local_politician_process_dupes
             (existing_id, existing_slug, existing_email, existing_ref_key, incoming_id, incoming_slug, incoming_email, incoming_ref_key, incoming_inserted)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         "#,
@@ -920,7 +1113,7 @@ async fn record_politician_muni_dupe(
     Ok(())
 }
 
-async fn insert_staging_muni_address_for_politician(
+async fn insert_staging_local_address_for_politician(
     pool: &PgPool,
     addr: &TxStagingAddress,
     politician_id: Uuid,
@@ -929,7 +1122,7 @@ async fn insert_staging_muni_address_for_politician(
     let stg_address_id = Uuid::new_v4();
     sqlx::query(
         r#"
-        INSERT INTO ingest_staging.stg_tx_muni_addresses (id, line_1, city, state, country, politician_id)
+        INSERT INTO ingest_staging.stg_tx_local_addresses (id, line_1, city, state, country, politician_id)
         VALUES ($1, $2, $3, $4, $5, $6)
         "#,
     )
@@ -943,7 +1136,7 @@ async fn insert_staging_muni_address_for_politician(
     .await?;
     if update_politician_row {
         sqlx::query(
-            r#"UPDATE ingest_staging.stg_tx_muni_politicians SET residence_address_id = $1 WHERE id = $2"#,
+            r#"UPDATE ingest_staging.stg_tx_local_politicians SET residence_address_id = $1 WHERE id = $2"#,
         )
         .bind(stg_address_id)
         .bind(politician_id)
@@ -953,7 +1146,7 @@ async fn insert_staging_muni_address_for_politician(
     Ok(stg_address_id)
 }
 
-async fn apply_same_person_updates_and_dupes_muni(
+async fn apply_same_person_updates_and_dupes_local(
     pool: &PgPool,
     existing_id: uuid::Uuid,
     existing_slug: &str,
@@ -967,7 +1160,7 @@ async fn apply_same_person_updates_and_dupes_muni(
 ) -> Result<(), Box<dyn Error>> {
     if emails_equal_not_both_empty && existing_residence_address_id.is_none() {
         if let Some(addr) = incoming_address {
-            insert_staging_muni_address_for_politician(pool, addr, existing_id, true).await?;
+            insert_staging_local_address_for_politician(pool, addr, existing_id, true).await?;
         }
     }
     if let Some(incoming_trimmed) = politician
@@ -977,14 +1170,14 @@ async fn apply_same_person_updates_and_dupes_muni(
         .filter(|e| !e.is_empty())
     {
         sqlx::query(
-            r#"UPDATE ingest_staging.stg_tx_muni_politicians SET email = $1 WHERE id = $2"#,
+            r#"UPDATE ingest_staging.stg_tx_local_politicians SET email = $1 WHERE id = $2"#,
         )
         .bind(incoming_trimmed)
         .bind(existing_id)
         .execute(pool)
         .await?;
     }
-    record_politician_muni_dupe(
+    record_politician_local_dupe(
         pool,
         existing_id,
         existing_slug,
@@ -1000,17 +1193,18 @@ async fn apply_same_person_updates_and_dupes_muni(
     Ok(())
 }
 
-async fn insert_staging_muni_politician(
+async fn insert_staging_local_politician(
     pool: &PgPool,
     politician: &mut Politician,
     address: Option<TxStagingAddress>,
 ) -> Result<bool, Box<dyn Error>> {
-    let mut rows_affected = execute_staging_muni_politician_insert(pool, politician).await?;
+    let mut rows_affected = execute_staging_local_politician_insert(pool, politician).await?;
 
     if rows_affected > 0 {
         if let Some(addr) = &address {
             let stg_address_id =
-                insert_staging_muni_address_for_politician(pool, addr, politician.id, true).await?;
+                insert_staging_local_address_for_politician(pool, addr, politician.id, true)
+                    .await?;
             politician.residence_address_id = Some(stg_address_id);
         }
         return Ok(true);
@@ -1025,7 +1219,7 @@ async fn insert_staging_muni_politician(
     ) = sqlx::query_as(
         r#"
         SELECT id, slug, email, ref_key, residence_address_id
-        FROM ingest_staging.stg_tx_muni_politicians
+        FROM ingest_staging.stg_tx_local_politicians
         WHERE slug = $1
         "#,
     )
@@ -1051,7 +1245,7 @@ async fn insert_staging_muni_politician(
         .map(|e| e.trim())
         .filter(|e| !e.is_empty());
 
-    let existing_address = fetch_staging_muni_address(pool, existing_residence_address_id).await?;
+    let existing_address = fetch_staging_local_address(pool, existing_residence_address_id).await?;
     let incoming_address = address.as_ref();
 
     let (same_person, emails_equal_not_both_empty) = is_same_person_from_emails_and_addresses(
@@ -1062,7 +1256,7 @@ async fn insert_staging_muni_politician(
     );
 
     if same_person {
-        apply_same_person_updates_and_dupes_muni(
+        apply_same_person_updates_and_dupes_local(
             pool,
             existing_id,
             &existing_slug,
@@ -1092,7 +1286,7 @@ async fn insert_staging_muni_politician(
         )> = sqlx::query_as(
             r#"
             SELECT id, slug, email, ref_key, residence_address_id
-            FROM ingest_staging.stg_tx_muni_politicians
+            FROM ingest_staging.stg_tx_local_politicians
             WHERE slug = $1
             "#,
         )
@@ -1110,7 +1304,7 @@ async fn insert_staging_muni_politician(
                     .as_deref()
                     .map(|e| e.trim())
                     .filter(|e| !e.is_empty());
-                let e_address = fetch_staging_muni_address(pool, eaddr_id).await?;
+                let e_address = fetch_staging_local_address(pool, eaddr_id).await?;
                 let (same, emails_eq) = is_same_person_from_emails_and_addresses(
                     e_email_trimmed,
                     e_address.as_ref(),
@@ -1118,7 +1312,7 @@ async fn insert_staging_muni_politician(
                     incoming_address,
                 );
                 if same {
-                    apply_same_person_updates_and_dupes_muni(
+                    apply_same_person_updates_and_dupes_local(
                         pool,
                         eid,
                         &eslug,
@@ -1142,15 +1336,15 @@ async fn insert_staging_muni_politician(
 
     if let Some(addr) = &address {
         let stg_address_id =
-            insert_staging_muni_address_for_politician(pool, addr, politician.id, false).await?;
+            insert_staging_local_address_for_politician(pool, addr, politician.id, false).await?;
         incoming_with_new_slug.residence_address_id = Some(stg_address_id);
         politician.residence_address_id = Some(stg_address_id);
     }
     incoming_with_new_slug.slug = final_incoming_slug.clone();
-    rows_affected = execute_staging_muni_politician_insert(pool, &incoming_with_new_slug).await?;
+    rows_affected = execute_staging_local_politician_insert(pool, &incoming_with_new_slug).await?;
 
     let incoming_inserted = rows_affected > 0;
-    record_politician_muni_dupe(
+    record_politician_local_dupe(
         pool,
         existing_id,
         &existing_slug,
@@ -1167,7 +1361,7 @@ async fn insert_staging_muni_politician(
     Ok(rows_affected > 0)
 }
 
-async fn fetch_staging_muni_address(
+async fn fetch_staging_local_address(
     pool: &PgPool,
     residence_address_id: Option<uuid::Uuid>,
 ) -> Result<Option<TxStagingAddress>, Box<dyn Error>> {
@@ -1176,7 +1370,7 @@ async fn fetch_staging_muni_address(
         None => return Ok(None),
     };
     let row: Option<(String, String, String, String)> = sqlx::query_as(
-        r#"SELECT line_1, city, state, country FROM ingest_staging.stg_tx_muni_addresses WHERE id = $1"#,
+        r#"SELECT line_1, city, state, country FROM ingest_staging.stg_tx_local_addresses WHERE id = $1"#,
     )
     .bind(addr_id)
     .fetch_optional(pool)
@@ -1189,10 +1383,10 @@ async fn fetch_staging_muni_address(
     }))
 }
 
-async fn insert_staging_muni_race(pool: &PgPool, race: &Race) -> Result<(), Box<dyn Error>> {
+async fn insert_staging_local_race(pool: &PgPool, race: &Race) -> Result<(), Box<dyn Error>> {
     sqlx::query(
         r#"
-        INSERT INTO ingest_staging.stg_tx_muni_races (
+        INSERT INTO ingest_staging.stg_tx_local_races (
             id, title, slug, office_id, state, race_type, vote_type, party_id,
             description, ballotpedia_link, early_voting_begins_date, official_website,
             election_id, winner_ids, total_votes, num_precincts_reporting, total_precincts,
@@ -1227,7 +1421,7 @@ async fn insert_staging_muni_race(pool: &PgPool, race: &Race) -> Result<(), Box<
     Ok(())
 }
 
-async fn insert_staging_muni_race_candidate(
+async fn insert_staging_local_race_candidate(
     pool: &PgPool,
     race_id: Uuid,
     politician: &Politician,
@@ -1242,7 +1436,7 @@ async fn insert_staging_muni_race_candidate(
     let existing: Option<ExistingRow> = sqlx::query_as(
         r#"
         SELECT race_id, candidate_id
-        FROM ingest_staging.stg_tx_muni_race_candidates
+        FROM ingest_staging.stg_tx_local_race_candidates
         WHERE ref_key = $1
         "#,
     )
@@ -1253,7 +1447,7 @@ async fn insert_staging_muni_race_candidate(
     if let Some(row) = existing {
         sqlx::query(
             r#"
-            INSERT INTO ingest_staging.stg_tx_muni_race_candidates_process_dupes
+            INSERT INTO ingest_staging.stg_tx_local_race_candidates_process_dupes
                 (ref_key, existing_race_id, existing_candidate_id, incoming_race_id, incoming_candidate_id)
             VALUES ($1, $2, $3, $4, $5)
             "#,
@@ -1270,7 +1464,7 @@ async fn insert_staging_muni_race_candidate(
 
     sqlx::query(
         r#"
-        INSERT INTO ingest_staging.stg_tx_muni_race_candidates (race_id, candidate_id, ref_key)
+        INSERT INTO ingest_staging.stg_tx_local_race_candidates (race_id, candidate_id, ref_key)
         VALUES ($1, $2, $3)
         ON CONFLICT (race_id, candidate_id) DO UPDATE SET ref_key = EXCLUDED.ref_key
         "#,
@@ -1280,5 +1474,64 @@ async fn insert_staging_muni_race_candidate(
     .bind(ref_key)
     .execute(pool)
     .await?;
+
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{process_tx_local_office, normalize_filing_counties, TxLocalFiling};
+
+    #[test]
+    fn school_district_replaces_office_district() {
+        let filing = TxLocalFiling {
+            county: Some("Bexar".to_string()),
+            municipality: None,
+            office_name: Some(
+                "Somerset Independent School District, District 3".to_string(),
+            ),
+            district_type: None,
+            school_district: Some("Austin Independent School District".to_string()),
+            candidate_name: None,
+            incumbent: None,
+            is_special_election: None,
+            status: Some("Active".to_string()),
+            email: None,
+            phone: None,
+            campaign_website: None,
+            place_fips: None,
+            state: None,
+            num_elect: Some(1),
+        };
+        let office = process_tx_local_office(&filing).unwrap();
+        assert_eq!(office.district.as_deref(), Some("Austin ISD"));
+        assert_eq!(office.school_district.as_deref(), Some("Austin ISD"));
+    }
+
+    #[test]
+    fn missing_source_columns_are_selected_as_null() {
+        let present = ["county", "office_name", "num_elect"]
+            .into_iter()
+            .map(str::to_string)
+            .collect();
+        let select_list = super::source_filing_select_list(&present);
+        assert!(select_list.contains("county"));
+        assert!(select_list.contains("NULL::text AS district_type"));
+        assert!(select_list.contains("NULL::text AS incumbent"));
+        assert!(select_list.contains("NULL::boolean AS is_special_election"));
+        assert!(select_list.contains("\n            num_elect"));
+    }
+
+    #[test]
+    fn filing_counties_separated_by_semicolons_are_stored_with_commas() {
+        assert_eq!(
+            normalize_filing_counties("Harris; Fort Bend").as_deref(),
+            Some("Harris, Fort Bend")
+        );
+        assert_eq!(
+            normalize_filing_counties("  Collin  ").as_deref(),
+            Some("Collin")
+        );
+        assert_eq!(normalize_filing_counties(" ; "), None);
+    }
 }
