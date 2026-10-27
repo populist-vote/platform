@@ -725,7 +725,7 @@ impl Address {
             LEFT JOIN LATERAL (
                 SELECT name, subdist
                 FROM p6t_state_tx.tx_map_sd_v1 AS school
-                WHERE ST_Contains(ST_SetSRID(school.geom, 4326), ST_Transform(a.geom, 4326))
+                WHERE ST_Contains(ST_SetSRID(school.geom, 26915), ST_Transform(a.geom, 26915))
                 LIMIT 1
             ) sd ON true
             LEFT JOIN LATERAL (
