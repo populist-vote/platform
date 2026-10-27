@@ -31,13 +31,10 @@ async fn get_tx_election_slug(
     pool: &PgPool,
 ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let election_id = uuid::Uuid::parse_str(TX_RESULTS_ELECTION_ID)?;
-    let slug = sqlx::query_scalar!(
-        r#"SELECT slug FROM election WHERE id = $1"#,
-        election_id
-    )
-    .fetch_optional(pool)
-    .await?
-    .ok_or_else(|| format!("No election found for id {}", TX_RESULTS_ELECTION_ID))?;
+    let slug = sqlx::query_scalar!(r#"SELECT slug FROM election WHERE id = $1"#, election_id)
+        .fetch_optional(pool)
+        .await?
+        .ok_or_else(|| format!("No election found for id {}", TX_RESULTS_ELECTION_ID))?;
     Ok(slug)
 }
 
@@ -574,8 +571,13 @@ struct ParsedContestName {
 }
 
 fn parse_contest_name_for_office(contest_name: &str) -> ParsedContestName {
-    let (seat, stripped) = extract_office_seat(contest_name);
-    let district = extract_office_district(&stripped, None);
+    let (seat, stripped) = extract_office_seat(
+        contest_name,
+        crate::extractors::tx::tx_race::extract_num_elect(contest_name),
+        None,
+        None,
+    );
+    let district = extract_office_district(&stripped, None, None, None);
     ParsedContestName { district, seat }
 }
 

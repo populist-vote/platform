@@ -49,7 +49,11 @@ pub async fn get_mn_sos_candidate_filings_local_primaries(
     driver: &WebDriver,
 ) -> Result<(), Box<dyn Error>> {
     driver.goto("https://candidates.sos.mn.gov").await?;
-    let link = driver.find(By::LinkText("Candidates in the Primary - Local Offices (Municipal and School District)")).await?;
+    let link = driver
+        .find(By::LinkText(
+            "Candidates in the Primary - Local Offices (Municipal and School District)",
+        ))
+        .await?;
     link.click().await?;
     let text = driver
         .find(By::XPath("/html/body/pre"))

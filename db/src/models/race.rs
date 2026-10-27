@@ -356,6 +356,7 @@ impl Race {
                             COALESCE(o.county, '') || ' ' ||
                             COALESCE(o.municipality, '') || ' ' ||
                             COALESCE(o.district, '') || ' ' ||
+                            COALESCE(o.subdistrict, '') || ' ' ||
                             COALESCE(o.school_district, '') || ' ' ||
                             COALESCE(o.hospital_district, '')
                         ))

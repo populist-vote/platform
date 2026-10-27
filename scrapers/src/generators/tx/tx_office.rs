@@ -14,8 +14,13 @@ pub fn office_priority(
     office_title: &str,
     _county: Option<&str>,
     district: Option<&str>,
+    district_type: Option<&db::DistrictType>,
 ) -> Option<i32> {
     let priority = match office_title.trim() {
+        title if title.contains("Appraisal District") => 70,
+        title if title.contains("College Board") => 71,
+        _ if district_type == Some(&db::DistrictType::TxSpecial) => 75,
+
         // Federal Offices
         "U.S. President" => 1,
         "U.S. Vice President" => 2,
@@ -81,12 +86,19 @@ pub fn office_priority(
         "Justice of the Peace" => 51,
         "County Constable" => 52,
 
-        "County Chair (D)" => 55,
-        "County Chair (R)" => 55,
         "Precinct Chair (D)" | "Precinct Chair (R)" => 56,
 
         "Mayor" => 60,
-        "City Council" => 61,
+        "City Council Member" => 61,
+        "Town Council Member" => 61,
+        "Alderman" => 61,
+        "City Commissioner" => 62,
+        "School Board Member" => 63,
+        "Municipal Judge" => 64,
+        "Hospital District Board Member" => 72,
+
+        "County Chair (D)" => 90,
+        "County Chair (R)" => 91,
 
         _ => return None,
     };
@@ -120,13 +132,45 @@ fn format_district_subtitle(district: &str, label: &str) -> (String, String) {
     }
 }
 
-/// Returns (long, short) seat suffix. If seat is "at large" (case insensitive), omits the label (Seat/Place).
+/// Short-subtitle seat text: the numeric value, plus At-Large when present.
+fn strip_seat_label(seat: &str) -> String {
+    let trimmed = seat.trim();
+    let number = trimmed.find(|c: char| c.is_ascii_digit()).map(|start| {
+        let rest = &trimmed[start..];
+        &rest[..rest.find(|c: char| !c.is_ascii_digit()).unwrap_or(rest.len())]
+    });
+    let at_large = trimmed.as_bytes().windows(8).any(|w| {
+        w[..2].eq_ignore_ascii_case(b"at")
+            && matches!(w[2], b'-' | b' ')
+            && w[3..].eq_ignore_ascii_case(b"large")
+    });
+
+    match (number, at_large) {
+        (Some(n), true) => format!("{} - At-Large", n),
+        (Some(n), false) => n.to_string(),
+        (None, true) => "At-Large".to_string(),
+        (None, false) => trimmed.to_string(),
+    }
+}
+
+/// Returns (long, short) seat suffix.
+/// Long keeps Place/Seat/Position when the seat is already labeled; otherwise it
+/// prefixes `label`. Short is the seat number (`"Place 1"` → `" - 1"`), plus At-Large.
 fn format_seat_subtitle(seat: &str, label: &str) -> (String, String) {
-    let short = format!(" - {}", seat);
-    if seat.trim().eq_ignore_ascii_case("at large") {
-        (short.clone(), short)
+    let trimmed = seat.trim();
+    let short = format!(" - {}", strip_seat_label(trimmed));
+    let already_labeled = trimmed.eq_ignore_ascii_case("at large")
+        || trimmed.eq_ignore_ascii_case("at-large")
+        || trimmed.split_whitespace().next().is_some_and(|word| {
+            matches!(
+                word.to_ascii_lowercase().as_str(),
+                "place" | "seat" | "position"
+            )
+        });
+    if already_labeled {
+        (format!(" - {}", trimmed), short)
     } else {
-        (format!(" - {} {}", label, seat), short)
+        (format!(" - {} {}", label, trimmed), short)
     }
 }
 
@@ -137,6 +181,7 @@ pub struct OfficeSubtitleGenerator<'a> {
     pub district_type: Option<&'a db::DistrictType>,
     pub county: Option<&'a str>,
     pub district: Option<&'a str>,
+    pub subdistrict: Option<&'a str>,
     pub seat: Option<&'a str>,
     pub school_district: Option<&'a str>,
     pub hospital_district: Option<&'a str>,
@@ -197,7 +242,15 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                     .as_ref()
                     .map(|s| format_seat_subtitle(s, "Seat"))
                     .unwrap_or_default();
-                if let Some(county) = self.county {
+                let is_appraisal_district = self
+                    .office_name
+                    .is_some_and(|name| name.contains("Appraisal District"));
+                if is_appraisal_district {
+                    (
+                        seat_long.trim_start_matches(" - ").to_string(),
+                        seat_short.trim_start_matches(" - ").to_string(),
+                    )
+                } else if let Some(county) = self.county {
                     if let Some(district) = self.district {
                         let is_court = self
                             .office_name
@@ -291,6 +344,24 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                         ("TX".to_string(), "TX".to_string())
                     }
                 }
+                Some(DistrictType::City) => {
+                    if let Some(municipality) = self.municipality {
+                        let (district_long, district_short) = self
+                            .district
+                            .map(|d| format_district_subtitle(d, "District"))
+                            .unwrap_or_default();
+                        let (seat_long, seat_short) = self
+                            .seat
+                            .map(|seat| format_seat_subtitle(seat, "Place"))
+                            .unwrap_or_default();
+                        (
+                            format!("{}, TX{}{}", municipality, district_long,seat_long),
+                            format!("{}, TX{}{}", municipality, district_short, seat_short),
+                        )
+                    } else {
+                        ("TX".to_string(), "TX".to_string())
+                    }
+                }
                 Some(DistrictType::Judicial) => {
                     let (district_long, district_short) = self
                         .district
@@ -313,7 +384,7 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                         ("TX".to_string(), "TX".to_string())
                     }
                 }
-                Some(DistrictType::School) | Some(DistrictType::BoardOfEducation) => {
+                Some(DistrictType::BoardOfEducation) => {
                     let (district_long, district_short) = self
                         .district
                         .map(|d| format_district_subtitle(d, "District"))
@@ -331,6 +402,25 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                     } else {
                         ("TX".to_string(), "TX".to_string())
                     }
+                }
+                Some(DistrictType::School) => {
+                    let district_part = self
+                        .district
+                        .map(|d| format!(" - {}", format_district_list(d)))
+                        .unwrap_or_default();
+                    let (subdistrict_long, subdistrict_short) = self
+                        .subdistrict
+                        .map(|d| format_district_subtitle(d, "District"))
+                        .unwrap_or_default();
+                    let (seat_long, seat_short) = self
+                        .seat
+                        .as_ref()
+                        .map(|s| format_seat_subtitle(s, "Place"))
+                        .unwrap_or_default();
+                    (
+                        format!("TX{}{}{}", district_part, subdistrict_long, seat_long),
+                        format!("TX{}{}{}", district_part, subdistrict_short, seat_short),
+                    )
                 }
                 Some(DistrictType::CourtOfAppeals) => {
                     let (district_long, district_short) = self
@@ -376,20 +466,20 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                         ("TX".to_string(), "TX".to_string())
                     }
                 }
+                Some(DistrictType::TxSpecial) => ("".to_string(), "".to_string()),
                 _ => ("TX".to_string(), "TX".to_string()),
             },
 
             ElectionScope::National => ("".to_string(), "".to_string()),
             ElectionScope::City => {
                 if let Some(municipality) = self.municipality {
-                    let seat_suffix = self
+                    let (seat_long, seat_short) = self
                         .seat
-                        .as_ref()
-                        .map(|s| format!(" - {}", s))
+                        .map(|seat| format_seat_subtitle(seat, "Place"))
                         .unwrap_or_default();
                     (
-                        format!("{}, TX{}", municipality, seat_suffix),
-                        format!("{}, TX{}", municipality, seat_suffix),
+                        format!("{}, TX{}", municipality, seat_long),
+                        format!("{}, TX{}", municipality, seat_short),
                     )
                 } else {
                     ("TX".to_string(), "TX".to_string())
@@ -404,6 +494,7 @@ pub struct OfficeSlugGenerator<'a> {
     pub name: &'a str,
     pub county: Option<&'a str>,
     pub district: Option<&'a str>,
+    pub subdistrict: Option<&'a str>,
     pub seat: Option<&'a str>,
     pub school_district: Option<&'a str>,
     pub hospital_district: Option<&'a str>,
@@ -417,6 +508,10 @@ impl<'a> OfficeSlugGenerator<'a> {
         use db::{DistrictType, ElectionScope};
 
         let cleaned_name = self.name.replace(".", "").replace("&", "and");
+        let municipality_cleaned = self
+                            .municipality
+                            .map(|m| m.replace("Township", "Twp"))
+                            .unwrap_or_default();
 
         if self.name == "Judge - 1st Multicounty Court at Law" {
             return slugify!(&format!("tx-{}", cleaned_name));
@@ -452,12 +547,35 @@ impl<'a> OfficeSlugGenerator<'a> {
             }
 
             Some(ElectionScope::County) => {
+                if self.name.contains("Appraisal District") {
+                    format!(
+                        "{} {} {}",
+                        self.state.as_ref(),
+                        cleaned_name,
+                        self.seat.unwrap_or(""),
+                    )
+                } else {
+                    format!(
+                        "{} {} {} {} {}",
+                        self.state.as_ref(),
+                        cleaned_name,
+                        county_with_label,
+                        self.district.unwrap_or(""),
+                        self.seat.unwrap_or(""),
+                    )
+                }
+            }
+
+            // City scope: tx + name + municipality + county + "county" + district + subdistrict + seat
+            Some(ElectionScope::City) => {
                 format!(
-                    "{} {} {} {} {}",
+                    "{} {} {} {} {} {} {}",
                     self.state.as_ref(),
                     cleaned_name,
+                    municipality_cleaned,
                     county_with_label,
                     self.district.unwrap_or(""),
+                    self.subdistrict.unwrap_or(""),
                     self.seat.unwrap_or(""),
                 )
             }
@@ -485,13 +603,34 @@ impl<'a> OfficeSlugGenerator<'a> {
                         self.seat.unwrap_or(""),
                     )
                 }
+                Some(DistrictType::City) => {
+                        format!(
+                            "{} {} {} {} {} {} {}",
+                            self.state.as_ref(),
+                            cleaned_name,
+                            municipality_cleaned,
+                            county_with_label,
+                            self.district.unwrap_or(""),
+                            self.subdistrict.unwrap_or(""),
+                            self.seat.unwrap_or(""),
+                        )
+                    }
                 Some(DistrictType::School) => {
                     format!(
                         "{} {} {} {} {}",
                         self.state.as_ref(),
                         cleaned_name,
-                        self.school_district.unwrap_or(""),
                         self.district.unwrap_or(""),
+                        self.subdistrict.unwrap_or(""),
+                        self.seat.unwrap_or(""),
+                    )
+                }
+                Some(DistrictType::TxCollege) => {
+                    format!(
+                        "{} {} {} {}",
+                        self.state.as_ref(),
+                        cleaned_name,
+                        self.subdistrict.unwrap_or(""),
                         self.seat.unwrap_or(""),
                     )
                 }
@@ -501,6 +640,15 @@ impl<'a> OfficeSlugGenerator<'a> {
                         self.state.as_ref(),
                         cleaned_name,
                         self.district.unwrap_or(""),
+                        self.seat.unwrap_or(""),
+                    )
+                }
+                Some(DistrictType::TxSpecial) => {
+                    format!(
+                        "{} {} {} {}",
+                        self.state.as_ref(),
+                        self.district.unwrap_or(""),
+                        self.subdistrict.unwrap_or(""),
                         self.seat.unwrap_or(""),
                     )
                 }
@@ -529,5 +677,173 @@ impl<'a> OfficeSlugGenerator<'a> {
 
         let slug_text = slug_text.split_whitespace().collect::<Vec<_>>().join(" ");
         slugify!(&slug_text)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        format_seat_subtitle, office_priority, OfficeSlugGenerator, OfficeSubtitleGenerator,
+    };
+    use db::{DistrictType, ElectionScope, State};
+
+    #[test]
+    fn office_priority_ranks_appraisal_college_and_special_districts() {
+        assert_eq!(
+            office_priority(
+                "Harris Central Appraisal District Board Member",
+                None,
+                None,
+                None,
+            ),
+            Some(70)
+        );
+        assert_eq!(
+            office_priority("Austin Community College Board Member", None, None, None),
+            Some(71)
+        );
+        assert_eq!(
+            office_priority(
+                "The Woodlands Township Board Member",
+                None,
+                None,
+                Some(&DistrictType::TxSpecial),
+            ),
+            Some(75)
+        );
+    }
+
+    #[test]
+    fn school_subtitle_uses_district_subdistrict_and_seat() {
+        let state = State::TX;
+        let election_scope = ElectionScope::District;
+        let district_type = DistrictType::School;
+        let (long, short) = OfficeSubtitleGenerator {
+            state: &state,
+            office_name: Some("School Board"),
+            election_scope: &election_scope,
+            district_type: Some(&district_type),
+            county: None,
+            district: Some("Austin ISD"),
+            subdistrict: Some("3"),
+            seat: Some("Place 1"),
+            school_district: None,
+            hospital_district: None,
+            municipality: None,
+        }
+        .generate();
+        assert_eq!(long, "TX - Austin ISD - District 3 - Place 1");
+        assert_eq!(short, "TX - Austin ISD - 3 - 1");
+    }
+
+    #[test]
+    fn city_short_subtitle_drops_the_seat_label() {
+        let state = State::TX;
+        let election_scope = ElectionScope::City;
+        let (long, short) = OfficeSubtitleGenerator {
+            state: &state,
+            office_name: Some("City Council"),
+            election_scope: &election_scope,
+            district_type: None,
+            county: None,
+            district: None,
+            subdistrict: None,
+            seat: Some("Place 1"),
+            school_district: None,
+            hospital_district: None,
+            municipality: Some("Austin"),
+        }
+        .generate();
+        assert_eq!(long, "Austin, TX - Place 1");
+        assert_eq!(short, "Austin, TX - 1");
+    }
+
+    #[test]
+    fn appraisal_district_county_subtitle_omits_the_county() {
+        let state = State::TX;
+        let election_scope = ElectionScope::County;
+        let (long, short) = OfficeSubtitleGenerator {
+            state: &state,
+            office_name: Some("Fort Bend Central Appraisal District Board"),
+            election_scope: &election_scope,
+            district_type: None,
+            county: Some("Fort Bend"),
+            district: None,
+            subdistrict: None,
+            seat: Some("Place 2"),
+            school_district: None,
+            hospital_district: None,
+            municipality: None,
+        }
+        .generate();
+        assert_eq!(long, "Place 2");
+        assert_eq!(short, "2");
+    }
+
+    #[test]
+    fn appraisal_district_slug_omits_the_county() {
+        let state = State::TX;
+        let election_scope = ElectionScope::County;
+        let slug = OfficeSlugGenerator {
+            state: &state,
+            name: "Fort Bend Central Appraisal District Board",
+            county: Some("Fort Bend"),
+            district: None,
+            subdistrict: None,
+            seat: Some("Place 2"),
+            school_district: None,
+            hospital_district: None,
+            municipality: None,
+            election_scope: Some(&election_scope),
+            district_type: None,
+        }
+        .generate();
+        assert_eq!(
+            slug,
+            "tx-fort-bend-central-appraisal-district-board-place-2"
+        );
+    }
+
+    #[test]
+    fn unlabeled_seat_gets_label_on_long_and_number_on_short() {
+        assert_eq!(
+            format_seat_subtitle("2", "Seat"),
+            (" - Seat 2".to_string(), " - 2".to_string())
+        );
+        assert_eq!(
+            format_seat_subtitle("1", "Place"),
+            (" - Place 1".to_string(), " - 1".to_string())
+        );
+    }
+
+    #[test]
+    fn labeled_seat_keeps_label_on_long_and_strips_it_on_short() {
+        assert_eq!(
+            format_seat_subtitle("Place 1", "Place"),
+            (" - Place 1".to_string(), " - 1".to_string())
+        );
+        assert_eq!(
+            format_seat_subtitle("Position 4", "Position"),
+            (" - Position 4".to_string(), " - 4".to_string())
+        );
+        assert_eq!(
+            format_seat_subtitle("Seat No. 2", "Seat"),
+            (" - Seat No. 2".to_string(), " - 2".to_string())
+        );
+        assert_eq!(
+            format_seat_subtitle("Position 4 - At-Large", "Position"),
+            (
+                " - Position 4 - At-Large".to_string(),
+                " - 4 - At-Large".to_string()
+            )
+        );
+    }
+
+    #[test]
+    fn at_large_is_kept_on_both() {
+        assert_eq!(
+            format_seat_subtitle("At-Large", "Seat"),
+            (" - At-Large".to_string(), " - At-Large".to_string())
+        );
     }
 }

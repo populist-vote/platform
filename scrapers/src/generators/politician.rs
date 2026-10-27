@@ -128,8 +128,13 @@ mod tests {
 
         // Empty office title still produces a valid slug
         assert_eq!(
-            PoliticianRefKeyGenerator::new("CO-SOS", "2024-general-election", "", Some("john-smith"))
-                .generate(),
+            PoliticianRefKeyGenerator::new(
+                "CO-SOS",
+                "2024-general-election",
+                "",
+                Some("john-smith")
+            )
+            .generate(),
             "co-sos-2024-general-election-john-smith"
         );
     }

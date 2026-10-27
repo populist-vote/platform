@@ -75,24 +75,29 @@ const ELECTION_YEAR: i32 = 2026;
 const ELECTION_ID: &str = "5fa881d7-f8f3-4b90-9063-45236c85c77a";
 
 fn fetch_filings_query(scope: MnFilingScope) -> String {
-    let (party_expr, school_district_expr, running_mate_website, running_mate_email, running_mate_phone) =
-        match scope {
-            MnFilingScope::FedStateCounty => (
-                "raw.party_abbreviation",
-                "NULL::text AS school_district_number",
-                "raw.running_mate_website",
-                "raw.running_mate_email",
-                "raw.running_mate_phone",
-            ),
-            // Local filings have no party column; all local candidates are non-partisan (NP).
-            MnFilingScope::Local => (
-                "'NP'::text AS party_abbreviation",
-                "raw.school_district_number",
-                "NULL::text AS running_mate_website",
-                "NULL::text AS running_mate_email",
-                "NULL::text AS running_mate_phone",
-            ),
-        };
+    let (
+        party_expr,
+        school_district_expr,
+        running_mate_website,
+        running_mate_email,
+        running_mate_phone,
+    ) = match scope {
+        MnFilingScope::FedStateCounty => (
+            "raw.party_abbreviation",
+            "NULL::text AS school_district_number",
+            "raw.running_mate_website",
+            "raw.running_mate_email",
+            "raw.running_mate_phone",
+        ),
+        // Local filings have no party column; all local candidates are non-partisan (NP).
+        MnFilingScope::Local => (
+            "'NP'::text AS party_abbreviation",
+            "raw.school_district_number",
+            "NULL::text AS running_mate_website",
+            "NULL::text AS running_mate_email",
+            "NULL::text AS running_mate_phone",
+        ),
+    };
 
     format!(
         r#"
@@ -375,8 +380,13 @@ async fn process_and_insert_filing(
     election_slug: &str,
 ) -> Result<(), Box<dyn Error>> {
     if is_governor_lt_governor_ticket(filing) {
-        return process_and_insert_governor_lt_governor_ticket(pool, filing, race_type, election_slug)
-            .await;
+        return process_and_insert_governor_lt_governor_ticket(
+            pool,
+            filing,
+            race_type,
+            election_slug,
+        )
+        .await;
     }
 
     // Process office data
@@ -434,7 +444,8 @@ async fn process_and_insert_governor_lt_governor_ticket(
     let governor_office = process_office_for_title(filing, "Governor")?;
     let lt_governor_office = process_office_for_title(filing, "Lieutenant Governor")?;
 
-    let governor_office_id = upsert_staging_office(pool, &governor_office, filing.office_code.as_ref()).await?;
+    let governor_office_id =
+        upsert_staging_office(pool, &governor_office, filing.office_code.as_ref()).await?;
     let lt_governor_office_id =
         upsert_staging_office(pool, &lt_governor_office, filing.office_code.as_ref()).await?;
 
@@ -694,13 +705,10 @@ async fn get_staging_race_id_by_slug(
 
 async fn get_election_slug(pool: &PgPool) -> Result<String, Box<dyn Error>> {
     let election_id = Uuid::parse_str(ELECTION_ID)?;
-    let slug = sqlx::query_scalar!(
-        r#"SELECT slug FROM election WHERE id = $1"#,
-        election_id
-    )
-    .fetch_optional(pool)
-    .await?
-    .ok_or_else(|| format!("No election found for id {}", ELECTION_ID))?;
+    let slug = sqlx::query_scalar!(r#"SELECT slug FROM election WHERE id = $1"#, election_id)
+        .fetch_optional(pool)
+        .await?
+        .ok_or_else(|| format!("No election found for id {}", ELECTION_ID))?;
     Ok(slug)
 }
 
@@ -741,7 +749,9 @@ fn contact_values_equal(a: Option<&str>, b: Option<&str>) -> bool {
 }
 
 /// Parse a candidate name with the extractor, falling back to a simple whitespace split.
-fn parse_candidate_name(candidate_name: &str) -> Result<extractors::politician::PoliticianName, Box<dyn Error>> {
+fn parse_candidate_name(
+    candidate_name: &str,
+) -> Result<extractors::politician::PoliticianName, Box<dyn Error>> {
     extractors::politician::extract_politician_name(candidate_name)
         .or_else(|| {
             let parts: Vec<&str> = candidate_name.split_whitespace().collect();
@@ -1113,8 +1123,8 @@ fn process_office_for_title(
     let seat = extractors::mn::mn_office::extract_office_seat(office_title);
 
     // Extract school and hospital districts (prefer SOS school_district_number for local filings)
-    let school_district = extractors::mn::mn_office::extract_school_district(office_title)
-        .or_else(|| {
+    let school_district =
+        extractors::mn::mn_office::extract_school_district(office_title).or_else(|| {
             filing
                 .school_district_number
                 .as_deref()
@@ -1178,6 +1188,7 @@ fn process_office_for_title(
         municipality,
         term_length: None,
         district,
+        subdistrict: None,
         seat,
         school_district,
         hospital_district,

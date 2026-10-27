@@ -853,6 +853,7 @@ async fn offices_by_ids(pool: &PgPool, office_ids: &[Uuid]) -> Result<Vec<Office
             name,
             office_type,
             district,
+            subdistrict,
             district_type,
             hospital_district,
             school_district,
@@ -1263,9 +1264,12 @@ fn computed_office_subtitle(office: &Office, short: bool) -> Option<String> {
             ))
         }
         (ElectionScope::District, PoliticalScope::Local, Some(DistrictType::School)) => {
-            let base = format!("{} - {}", office.state?, office.school_district.as_deref()?);
-            Some(match office.district.as_deref() {
-                Some(district) => format!("{base} - District {district}"),
+            let base = format!("{} - {}", office.state?, office.district.as_deref()?);
+            Some(match office.subdistrict.as_deref() {
+                Some(subdistrict) if subdistrict.chars().all(|c| c.is_ascii_digit()) => {
+                    format!("{base} - District {subdistrict}")
+                }
+                Some(subdistrict) => format!("{base} - {subdistrict}"),
                 None => base,
             })
         }

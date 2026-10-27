@@ -415,7 +415,10 @@ async fn capture_visible_race_offices(
 }
 
 /// Parse collected table_rows (each row = [race_name, td0, td1, ...]) into ResultRows with total_votes applied.
-fn parse_table_rows_to_result_rows(table_rows: &[Vec<String>], election_slug: &str) -> Vec<ResultRow> {
+fn parse_table_rows_to_result_rows(
+    table_rows: &[Vec<String>],
+    election_slug: &str,
+) -> Vec<ResultRow> {
     let mut race_totals: std::collections::HashMap<String, u64> = std::collections::HashMap::new();
     let mut rows = Vec::new();
     for row in table_rows {
@@ -749,13 +752,11 @@ pub async fn scrape_civix_one_election(
     const ELECTION_ID: &str = "6138cc76-f273-43cf-a017-a98d1119b0c3";
     let election_id = uuid::Uuid::parse_str(ELECTION_ID)?;
     let pool = db::pool().await;
-    let election_slug: String = sqlx::query_scalar!(
-        r#"SELECT slug FROM election WHERE id = $1"#,
-        election_id
-    )
-    .fetch_optional(&pool.connection)
-    .await?
-    .ok_or_else(|| format!("No election found for id {}", ELECTION_ID))?;
+    let election_slug: String =
+        sqlx::query_scalar!(r#"SELECT slug FROM election WHERE id = $1"#, election_id)
+            .fetch_optional(&pool.connection)
+            .await?
+            .ok_or_else(|| format!("No election found for id {}", ELECTION_ID))?;
     let rows = parse_table_rows_to_result_rows(&table_rows, &election_slug);
     debug(&format!("{} rows parsed: {}", election_name, rows.len()));
     Ok(rows)

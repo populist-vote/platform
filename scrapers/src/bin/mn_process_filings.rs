@@ -4,9 +4,7 @@
 //!   cargo run --bin mn_process_filings -- --local
 //!   cargo run --bin mn_process_filings -- --fed-state-county
 
-use scrapers::processors::mn::mn_candidate_filings::{
-    process_mn_candidate_filings, MnFilingScope,
-};
+use scrapers::processors::mn::mn_candidate_filings::{process_mn_candidate_filings, MnFilingScope};
 
 fn parse_filing_scope(args: &[String]) -> Result<MnFilingScope, String> {
     let want_local = args.iter().any(|a| a == "--local");

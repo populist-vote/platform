@@ -292,13 +292,9 @@ impl Scraper {
         election_slug: &str,
     ) -> db::UpsertPoliticianInput {
         let slug = PoliticianSlugGenerator::new(entry.name.as_str()).generate();
-        let ref_key = PoliticianRefKeyGenerator::new(
-            SOURCE_ID,
-            election_slug,
-            "",
-            Some(entry.name.as_str()),
-        )
-        .generate();
+        let ref_key =
+            PoliticianRefKeyGenerator::new(SOURCE_ID, election_slug, "", Some(entry.name.as_str()))
+                .generate();
         let party_id = party.as_ref().map(|p| p.id);
         db::UpsertPoliticianInput {
             slug: Some(slug),

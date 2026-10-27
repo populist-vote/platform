@@ -311,6 +311,7 @@ pub async fn get_races_by_address_context(
         school_district,
         school_district_type,
         school_subdistrict,
+        school_subdistrict_name,
         ward,
         city,
     ) = match &address_context.extended_mn {
@@ -322,10 +323,12 @@ pub async fn get_races_by_address_context(
             ext.school_district_norm(),
             ext.school_district_type_norm(),
             ext.school_subdistrict_norm(),
+            ext.school_subdistrict_name_norm(),
             ext.ward_norm(),
             ext.city_norm(&address_context.city),
         ),
         _ => (
+            None,
             None,
             None,
             None,
@@ -350,6 +353,11 @@ pub async fn get_races_by_address_context(
         tx_state_district_courts,
         tx_court_of_appeals_districts,
         tx_board_of_education_district,
+        tx_school_district,
+        tx_school_subdistrict,
+        tx_college_district,
+        tx_municipality,
+        tx_municipality_subdistrict,
     ) = match &address_context.extended_tx {
         Some(ext) if address_context.state == State::TX => (
             ext.precinct.clone(),
@@ -362,8 +370,16 @@ pub async fn get_races_by_address_context(
             Some(ext.state_district_courts()),
             Some(ext.court_of_appeals_districts()),
             ext.board_of_education_district.clone(),
+            ext.school_district_name_norm(),
+            ext.school_subdistrict_norm(),
+            ext.college_district_name_norm(),
+            ext.municipality_name_norm(),
+            ext.municipality_subdistrict_norm(),
         ),
-        _ => (None, None, None, None, None, None, None, None, None, None),
+        _ => (
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None,
+        ),
     };
 
     let mut builder: QueryBuilder<Postgres> = QueryBuilder::new(
@@ -419,6 +435,7 @@ pub async fn get_races_by_address_context(
             school_district.clone(),
             school_district_type.clone(),
             school_subdistrict.clone(),
+            school_subdistrict_name.clone(),
             ward.clone(),
             parsed_soil_and_water_district.clone(),
             hospital_district.clone(),
@@ -439,6 +456,11 @@ pub async fn get_races_by_address_context(
             tx_state_district_courts = ?tx_state_district_courts,
             tx_court_of_appeals_districts = ?tx_court_of_appeals_districts,
             tx_board_of_education_district = ?tx_board_of_education_district,
+            tx_school_district = ?tx_school_district,
+            tx_school_subdistrict = ?tx_school_subdistrict,
+            tx_college_district = ?tx_college_district,
+            tx_municipality = ?tx_municipality,
+            tx_municipality_subdistrict = ?tx_municipality_subdistrict,
             "apply_tx_filters inputs"
         );
         apply_tx_filters(
@@ -456,6 +478,11 @@ pub async fn get_races_by_address_context(
             tx_state_district_courts.clone(),
             tx_court_of_appeals_districts.clone(),
             tx_board_of_education_district.clone(),
+            tx_school_district.clone(),
+            tx_school_subdistrict.clone(),
+            tx_college_district.clone(),
+            tx_municipality.clone(),
+            tx_municipality_subdistrict.clone(),
         );
     }
 

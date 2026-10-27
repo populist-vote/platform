@@ -1,0 +1,3 @@
+-- PostgreSQL does not support removing enum values; leave as no-op.
+-- If needed, a future migration could recreate the type without these values
+-- after updating or nulling affected office rows.
