@@ -725,19 +725,19 @@ impl Address {
             LEFT JOIN LATERAL (
                 SELECT name, subdist
                 FROM p6t_state_tx.tx_map_sd_v1 AS school
-                WHERE ST_Contains(ST_SetSRID(school.geom, 3081), ST_Transform(a.geom, 3081))
+                WHERE ST_Contains(ST_SetSRID(school.geom, 4326), ST_Transform(a.geom, 4326))
                 LIMIT 1
             ) sd ON true
             LEFT JOIN LATERAL (
                 SELECT name
                 FROM p6t_state_tx.tx_map_college_v1 AS college_boundary
-                WHERE ST_Contains(ST_SetSRID(college_boundary.geom, 3081), ST_Transform(a.geom, 3081))
+                WHERE ST_Contains(ST_SetSRID(college_boundary.geom, 4326), ST_Transform(a.geom, 4326))
                 LIMIT 1
             ) college ON true
             LEFT JOIN LATERAL (
                 SELECT "NAME" AS name, subdist
                 FROM p6t_state_tx."tx_map_muni_v1-1" AS municipality
-                WHERE ST_Contains(ST_SetSRID(municipality.geom, 3081), ST_Transform(a.geom, 3081))
+                WHERE ST_Contains(ST_SetSRID(municipality.geom, 4326), ST_Transform(a.geom, 4326))
                 LIMIT 1
             ) muni ON true
             WHERE ST_Contains(ST_SetSRID(vd.geom, 3081), ST_Transform(a.geom, 3081))
