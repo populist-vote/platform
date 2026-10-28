@@ -16,6 +16,29 @@ fn parenthetical_county(name: &str) -> Option<String> {
     }
 }
 
+/// School-district name used to match `office.district`. A trailing county
+/// disambiguator is removed: `"Wylie ISD (Taylor)"` → `"Wylie ISD"`.
+fn school_district_match_name(name: &str) -> String {
+    let Some(start) = name.rfind('(') else {
+        return name.trim().to_string();
+    };
+    let Some(end) = name.rfind(')') else {
+        return name.trim().to_string();
+    };
+    if end <= start || name[start + 1..end].trim().is_empty() {
+        return name.trim().to_string();
+    }
+    let mut stripped = String::new();
+    stripped.push_str(name[..start].trim_end());
+    stripped.push_str(name[end + 1..].trim_start());
+    let stripped = stripped.trim();
+    if stripped.is_empty() {
+        name.trim().to_string()
+    } else {
+        stripped.to_string()
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn apply_tx_filters(
     builder: &mut QueryBuilder<Postgres>,
@@ -177,18 +200,19 @@ pub fn apply_tx_filters(
     }
 
     // School district. `name` from tx_map_sd_v1 matches office.district.
-    // A name like "Wylie ISD (Taylor)" also requires that county to be one of the
-    // comma-separated values in office.county.
+    // A name like "Wylie ISD (Taylor)" is matched as "Wylie ISD", and also requires
+    // that county to be one of the comma-separated values in office.county.
     // A subdistrict narrows single-member seats; at-large seats leave office.subdistrict null.
     // Districts with no subdistrict polygon match every seat in that school district.
     if let Some(school_district) = school_district.clone() {
         let county_name = parenthetical_county(&school_district);
+        let district_name = school_district_match_name(&school_district);
         builder.push(
             " OR (o.election_scope = 'district' \
                       AND o.district_type = 'school' \
                       AND o.district = ",
         );
-        builder.push_bind(school_district);
+        builder.push_bind(district_name);
         if let Some(county_name) = county_name {
             builder.push(
                 " AND EXISTS ( \
@@ -256,7 +280,7 @@ pub fn apply_tx_filters(
 
 #[cfg(test)]
 mod tests {
-    use super::parenthetical_county;
+    use super::{parenthetical_county, school_district_match_name};
 
     #[test]
     fn reads_a_county_disambiguator() {
@@ -269,5 +293,21 @@ mod tests {
             Some("Collin")
         );
         assert_eq!(parenthetical_county("Alamo Heights ISD"), None);
+    }
+
+    #[test]
+    fn strips_a_parenthetical_county_before_district_match() {
+        assert_eq!(
+            school_district_match_name("Wylie ISD (Taylor)"),
+            "Wylie ISD"
+        );
+        assert_eq!(
+            school_district_match_name("Wylie ISD (Collin)"),
+            "Wylie ISD"
+        );
+        assert_eq!(
+            school_district_match_name("Alamo Heights ISD"),
+            "Alamo Heights ISD"
+        );
     }
 }
