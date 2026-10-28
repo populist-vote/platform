@@ -11,10 +11,12 @@ use crate::extractors::politician::title_case;
 
 /// Strip "COUNTY_NAME - " prefix from raw title; returns (county_name_if_any, rest).
 /// Only accepts the prefix when it matches a valid Texas county (TEXAS_COUNTIES), same as strip_county_suffix.
+/// The separator is a hyphen with whitespace on both sides (" - "). A tight hyphen is part of
+/// the name, so "Williamson-Travis" stays together.
 /// Example: "KLEBERG - COUNTY COMMISSIONER PRECINCT 4" -> (Some("Kleberg"), "COUNTY COMMISSIONER PRECINCT 4")
 fn strip_county_prefix(input: &str) -> (Option<String>, &str) {
     let prefix_re = TX_COUNTY_PREFIX_REGEX
-        .get_or_init(|| Regex::new(r"^\s*([A-Z][A-Za-z\s]+?)\s*-\s*(.*)$").unwrap());
+        .get_or_init(|| Regex::new(r"^\s*([A-Z][A-Za-z\s]+?)\s+-\s+(.*)$").unwrap());
     if let Some(caps) = prefix_re.captures(input) {
         if let (Some(county), Some(rest)) = (caps.get(1), caps.get(2)) {
             let county_str = county.as_str().trim();
@@ -471,6 +473,8 @@ fn title_case_district_name(s: &str) -> String {
 }
 
 fn special_district_office_name(input_lower: &str) -> Option<(String, bool)> {
+    // `input_lower` keeps tight-hyphenated words such as "Williamson-Travis". A spaced
+    // hyphen (" - ") is a county prefix separator and is already removed.
     if let Some((pos, phrase)) = first_phrase_match(input_lower, SPECIAL_DISTRICT_NO_SUBDIVISIONS) {
         if phrase == "the woodlands township" {
             return Some(("The Woodlands Township Board".to_string(), true));
@@ -1489,6 +1493,26 @@ mod extract_office_name_tests {
             ),
             Some((
                 "Harris County Water Control and Improvement District 1 Board".to_string(),
+                true
+            ))
+        );
+        assert_eq!(
+            extract_office_name(
+                "Williamson-Travis Counties Municipal Utility District No. 1 Directors",
+                None
+            ),
+            Some((
+                "Williamson-Travis Counties Municipal Utility District 1 Board".to_string(),
+                true
+            ))
+        );
+        assert_eq!(
+            extract_office_name(
+                "Harris - Williamson-Travis Counties Municipal Utility District No. 1 Directors",
+                None
+            ),
+            Some((
+                "Williamson-Travis Counties Municipal Utility District 1 Board".to_string(),
                 true
             ))
         );
