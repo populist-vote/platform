@@ -413,15 +413,16 @@ fn party_to_letter(party: Option<&str>) -> Option<&'static str> {
 /// Longer phrases first so "Water Control and Improvement District" wins over "Improvement District".
 const SPECIAL_DISTRICT_NO_SUBDIVISIONS: &[&str] = &[
     "water control and improvement district",
-    "municipal management district",
+    "management district",
     "emergency services district",
     "fresh water supply district",
     "community library district",
-    "municipal utility district",
-    "special utility district",
+    "utility district",
     "the woodlands township",
     "improvement district",
     "navigation district",
+    "county assistance district",
+    "development district",
 ];
 
 /// Special districts with electoral subdivisions. Name is the text through the phrase.
@@ -442,22 +443,38 @@ fn first_phrase_match<'a>(input_lower: &str, phrases: &[&'a str]) -> Option<(usi
     None
 }
 
-/// Name from `… No. <word>`: through the end of that word, with "No." removed.
-fn name_through_no_dot_word(input_lower: &str) -> Option<String> {
-    let no_pos = input_lower.find("no.")?;
-    let after_no = no_pos + 3;
-    let rest = input_lower[after_no..].trim_start();
-    let word_len = rest.find([' ', ',']).unwrap_or(rest.len());
-    if word_len == 0 {
+/// Number immediately after a special-district phrase.
+/// `" No. 1-A"`, `" 255A"`, and `" 7"` match. `" Place 1"` does not.
+fn district_number_after_phrase(after_phrase: &str) -> Option<String> {
+    let rest = after_phrase.trim_start();
+    let rest = rest
+        .strip_prefix("no.")
+        .map(str::trim_start)
+        .unwrap_or(rest);
+    if rest.is_empty() {
         return None;
     }
-    let word_start = after_no + (input_lower[after_no..].len() - rest.len());
-    let through = input_lower[..word_start + word_len].trim();
-    let stripped = normalize_whitespace(&through.replace("no.", ""));
-    if stripped.is_empty() {
-        None
+    let token_len = rest
+        .find(|c: char| c.is_whitespace() || c == ',')
+        .unwrap_or(rest.len());
+    let token = &rest[..token_len];
+    if token.starts_with(|c: char| c.is_ascii_digit())
+        && token.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+    {
+        Some(
+            token
+                .chars()
+                .map(|c| {
+                    if c.is_ascii_alphabetic() {
+                        c.to_ascii_uppercase()
+                    } else {
+                        c
+                    }
+                })
+                .collect(),
+        )
     } else {
-        Some(stripped)
+        None
     }
 }
 
@@ -479,16 +496,16 @@ fn special_district_office_name(input_lower: &str) -> Option<(String, bool)> {
         if phrase == "the woodlands township" {
             return Some(("The Woodlands Township Board".to_string(), true));
         }
-        let name = if input_lower.contains("no.") {
-            name_through_no_dot_word(input_lower)
-                .unwrap_or_else(|| input_lower[..pos + phrase.len()].trim().to_string())
-        } else {
-            input_lower[..pos + phrase.len()].trim().to_string()
-        };
-        if name.is_empty() {
+        let base = input_lower[..pos + phrase.len()].trim();
+        if base.is_empty() {
             return None;
         }
-        return Some((format!("{} Board", title_case_district_name(&name)), true));
+        let titled = title_case_district_name(base);
+        let name = match district_number_after_phrase(&input_lower[pos + phrase.len()..]) {
+            Some(number) => format!("{titled} {number}"),
+            None => titled,
+        };
+        return Some((format!("{name} Board"), true));
     }
 
     if let Some((pos, phrase)) = first_phrase_match(input_lower, SPECIAL_DISTRICTS) {
@@ -1481,6 +1498,22 @@ mod extract_office_name_tests {
                 "Collin County Municipal Utility District Board".to_string(),
                 true
             ))
+        );
+        assert_eq!(
+            extract_office_name("Emergency Services District 7", None),
+            Some(("Emergency Services District 7 Board".to_string(), true))
+        );
+        assert_eq!(
+            extract_office_name("Emergency Services District 1-A", None),
+            Some(("Emergency Services District 1-A Board".to_string(), true))
+        );
+        assert_eq!(
+            extract_office_name("Emergency Services District 255A", None),
+            Some(("Emergency Services District 255A Board".to_string(), true))
+        );
+        assert_eq!(
+            extract_office_name("Emergency Services District No. 1-A", None),
+            Some(("Emergency Services District 1-A Board".to_string(), true))
         );
         assert_eq!(
             extract_office_name("The Woodlands Township Position 2", None),

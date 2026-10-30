@@ -30,7 +30,7 @@ pub struct TxLocalFiling {
     pub district_type: Option<String>,
     pub school_district: Option<String>,
     pub candidate_name: Option<String>,
-    pub incumbent: Option<String>,
+    pub incumbent: Option<bool>,
     pub is_special_election: Option<bool>,
     pub status: Option<String>,
     pub email: Option<String>,
@@ -41,7 +41,7 @@ pub struct TxLocalFiling {
     pub num_elect: Option<i32>,
 }
 
-const TX_LOCAL_SOURCE_TABLE: &str = "p6t_state_tx.tx_2026_local_filings_nov3";
+const TX_LOCAL_SOURCE_TABLE: &str = "p6t_state_tx.tx_2026_nov3_local_filings_unopposed";
 const ELECTION_YEAR: i32 = 2026;
 
 /// 2026 TX local election (replace if your ingest targets a different election).
@@ -375,7 +375,7 @@ const SOURCE_FILING_COLUMNS: &[SourceFilingColumn] = &[
     },
     SourceFilingColumn {
         name: "incumbent",
-        sql_type: "text",
+        sql_type: "boolean",
     },
     SourceFilingColumn {
         name: "is_special_election",
@@ -826,11 +826,7 @@ async fn process_tx_local_politician(
         .with_state("TX")
         .generate();
 
-    let is_incumbent = filing
-        .incumbent
-        .as_deref()
-        .map(|s| s.trim().eq_ignore_ascii_case("YES"))
-        .unwrap_or(false);
+    let is_incumbent = filing.incumbent.unwrap_or(false);
     let office_id = if is_incumbent {
         Some(current_office_id)
     } else {
@@ -1517,7 +1513,7 @@ mod tests {
         let select_list = super::source_filing_select_list(&present);
         assert!(select_list.contains("county"));
         assert!(select_list.contains("NULL::text AS district_type"));
-        assert!(select_list.contains("NULL::text AS incumbent"));
+        assert!(select_list.contains("NULL::boolean AS incumbent"));
         assert!(select_list.contains("NULL::boolean AS is_special_election"));
         assert!(select_list.contains("\n            num_elect"));
     }

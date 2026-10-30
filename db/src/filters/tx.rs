@@ -39,9 +39,19 @@ fn school_district_match_name(name: &str) -> String {
     }
 }
 
+/// Which table the Texas location clauses are written against.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TxFilterSubject {
+    /// Race query: alias `o`, wrapped as `OR (o.state = $state AND ( … ))`.
+    Office,
+    /// Ballot-measure query: alias `bm`, each clause joined with `OR`.
+    BallotMeasure,
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn apply_tx_filters(
     builder: &mut QueryBuilder<Postgres>,
+    subject: TxFilterSubject,
     state: State,
     county: Option<&str>,
     precinct: Option<String>,
@@ -60,60 +70,73 @@ pub fn apply_tx_filters(
     municipality: Option<String>,
     municipality_subdistrict: Option<String>,
 ) {
+    let (alias, prefix_county_with_or) = match subject {
+        TxFilterSubject::Office => {
+            builder.push(" OR (o.state = ");
+            builder.push_bind(state);
+            builder.push(" AND (");
+            ("o", false)
+        }
+        TxFilterSubject::BallotMeasure => ("bm", true),
+    };
+
     // Normalize county → owned String
     let county_cleaned = county.map(|c| c.replace(" County", ""));
 
-    builder.push(" OR (o.state = ");
-    builder.push_bind(state);
-    builder.push(" AND (");
-
     // County
     if let Some(clean) = county_cleaned.clone() {
-        builder.push(" (o.election_scope = 'county' AND o.county = ");
+        if prefix_county_with_or {
+            builder.push(" OR ");
+        } else {
+            builder.push(" ");
+        }
+        builder.push(format!(
+            "({alias}.election_scope = 'county' AND {alias}.county = "
+        ));
         builder.push_bind(clean);
         builder.push(")");
     }
 
     // Congressional
     if let Some(cd) = congressional_district.clone() {
-        builder.push(
-            " OR (o.election_scope = 'district' \
-                      AND o.district_type = 'us_congressional' \
-                      AND o.district = ",
-        );
+        builder.push(format!(
+            " OR ({alias}.election_scope = 'district' \
+                      AND {alias}.district_type = 'us_congressional' \
+                      AND {alias}.district = "
+        ));
         builder.push_bind(cd);
         builder.push(")");
     }
 
     // State senate
     if let Some(sd) = state_senate_district.clone() {
-        builder.push(
-            " OR (o.election_scope = 'district' \
-                      AND o.district_type = 'state_senate' \
-                      AND o.district = ",
-        );
+        builder.push(format!(
+            " OR ({alias}.election_scope = 'district' \
+                      AND {alias}.district_type = 'state_senate' \
+                      AND {alias}.district = "
+        ));
         builder.push_bind(sd);
         builder.push(")");
     }
 
     // State house
     if let Some(hd) = state_house_district.clone() {
-        builder.push(
-            " OR (o.election_scope = 'district' \
-                      AND o.district_type = 'state_house' \
-                      AND o.district = ",
-        );
+        builder.push(format!(
+            " OR ({alias}.election_scope = 'district' \
+                      AND {alias}.district_type = 'state_house' \
+                      AND {alias}.district = "
+        ));
         builder.push_bind(hd);
         builder.push(")");
     }
 
     // Board of education
     if let Some(boe) = board_of_education_district.clone() {
-        builder.push(
-            " OR (o.election_scope = 'district' \
-                      AND o.district_type = 'board_of_education' \
-                      AND o.district = ",
-        );
+        builder.push(format!(
+            " OR ({alias}.election_scope = 'district' \
+                      AND {alias}.district_type = 'board_of_education' \
+                      AND {alias}.district = "
+        ));
         builder.push_bind(boe);
         builder.push(")");
     }
@@ -121,60 +144,64 @@ pub fn apply_tx_filters(
     // County commissioner
     if let (Some(cc), Some(clean)) = (county_commissioner_district.clone(), county_cleaned.clone())
     {
-        builder.push(
-            " OR (o.election_scope = 'district' \
-                      AND o.district_type = 'county' \
-                      AND o.county = ",
-        );
+        builder.push(format!(
+            " OR ({alias}.election_scope = 'district' \
+                      AND {alias}.district_type = 'county' \
+                      AND {alias}.county = "
+        ));
         builder.push_bind(clean);
-        builder.push(" AND o.district = ");
+        builder.push(format!(" AND {alias}.district = "));
         builder.push_bind(cc);
         builder.push(")");
     }
 
-    // Justice of the peace (o.district can be comma-separated; check jp is in that list)
+    // Justice of the peace (district can be comma-separated; check jp is in that list)
     if let (Some(jp), Some(clean)) = (
         justice_of_the_peace_district.clone(),
         county_cleaned.clone(),
     ) {
-        builder.push(
-            " OR (o.election_scope = 'district' \
-                      AND o.district_type = 'justice_of_the_peace' \
-                      AND o.county = ",
-        );
+        builder.push(format!(
+            " OR ({alias}.election_scope = 'district' \
+                      AND {alias}.district_type = 'justice_of_the_peace' \
+                      AND {alias}.county = "
+        ));
         builder.push_bind(clean);
         builder.push(" AND ");
         builder.push_bind(jp);
-        builder.push(" = ANY(string_to_array(replace(o.district, ' ', ''), ','))");
+        builder.push(format!(
+            " = ANY(string_to_array(replace({alias}.district, ' ', ''), ','))"
+        ));
         builder.push(")");
     }
 
     // Constable
     if let (Some(constable), Some(clean)) = (constable_district.clone(), county_cleaned.clone()) {
-        builder.push(
-            " OR (o.election_scope = 'district' \
-                      AND o.district_type = 'constable' \
-                      AND o.county = ",
-        );
+        builder.push(format!(
+            " OR ({alias}.election_scope = 'district' \
+                      AND {alias}.district_type = 'constable' \
+                      AND {alias}.county = "
+        ));
         builder.push_bind(clean);
         builder.push(" AND ");
         builder.push_bind(constable);
-        builder.push(" = ANY(string_to_array(replace(o.district, ' ', ''), ','))");
+        builder.push(format!(
+            " = ANY(string_to_array(replace({alias}.district, ' ', ''), ','))"
+        ));
         builder.push(")");
     }
 
     // State district courts (one OR per value in the vector)
     if let Some(courts) = state_district_courts.clone() {
         if !courts.is_empty() {
-            builder.push(
-                " OR (o.election_scope = 'district' \
-                          AND o.district_type = 'judicial' AND (",
-            );
+            builder.push(format!(
+                " OR ({alias}.election_scope = 'district' \
+                          AND {alias}.district_type = 'judicial' AND ("
+            ));
             for (i, district) in courts.iter().enumerate() {
                 if i > 0 {
                     builder.push(" OR ");
                 }
-                builder.push("o.district = ");
+                builder.push(format!("{alias}.district = "));
                 builder.push_bind(district.clone());
             }
             builder.push("))");
@@ -184,98 +211,106 @@ pub fn apply_tx_filters(
     // Court of appeals (one OR per value in the vector)
     if let Some(court_of_appeals) = court_of_appeals_districts.clone() {
         if !court_of_appeals.is_empty() {
-            builder.push(
-                " OR (o.election_scope = 'district' \
-                          AND o.district_type = 'court_of_appeals' AND (",
-            );
+            builder.push(format!(
+                " OR ({alias}.election_scope = 'district' \
+                          AND {alias}.district_type = 'court_of_appeals' AND ("
+            ));
             for (i, district) in court_of_appeals.iter().enumerate() {
                 if i > 0 {
                     builder.push(" OR ");
                 }
-                builder.push("o.district = ");
+                builder.push(format!("{alias}.district = "));
                 builder.push_bind(district.clone());
             }
             builder.push("))");
         }
     }
 
-    // School district. `name` from tx_map_sd_v1 matches office.district.
+    // School district. `name` from tx_map_sd_v1 matches district.
     // A name like "Wylie ISD (Taylor)" is matched as "Wylie ISD", and also requires
-    // that county to be one of the comma-separated values in office.county.
-    // A subdistrict narrows single-member seats; at-large seats leave office.subdistrict null.
+    // that county to be one of the comma-separated values in county.
+    // A subdistrict narrows single-member seats; at-large seats leave subdistrict null.
     // Districts with no subdistrict polygon match every seat in that school district.
     if let Some(school_district) = school_district.clone() {
         let county_name = parenthetical_county(&school_district);
         let district_name = school_district_match_name(&school_district);
-        builder.push(
-            " OR (o.election_scope = 'district' \
-                      AND o.district_type = 'school' \
-                      AND o.district = ",
-        );
+        builder.push(format!(
+            " OR ({alias}.election_scope = 'district' \
+                      AND {alias}.district_type = 'school' \
+                      AND {alias}.district = "
+        ));
         builder.push_bind(district_name);
         if let Some(county_name) = county_name {
-            builder.push(
+            builder.push(format!(
                 " AND EXISTS ( \
                       SELECT 1 \
-                      FROM unnest(string_to_array(o.county, ',')) AS county_name \
-                      WHERE btrim(county_name) ILIKE ",
-            );
+                      FROM unnest(string_to_array({alias}.county, ',')) AS county_name \
+                      WHERE btrim(county_name) ILIKE "
+            ));
             builder.push_bind(county_name);
             builder.push(")");
         }
         if let Some(subdistrict) = school_subdistrict.clone() {
-            builder.push(" AND (o.subdistrict IS NULL OR o.subdistrict = ");
+            builder.push(format!(
+                " AND ({alias}.subdistrict IS NULL OR {alias}.subdistrict = "
+            ));
             builder.push_bind(subdistrict);
             builder.push(")");
         }
         builder.push(")");
     }
 
-    // College district. `name` from tx_map_college_v1 matches office.district.
+    // College district. `name` from tx_map_college_v1 matches district.
     if let Some(college_district) = college_district.clone() {
-        builder.push(
-            " OR (o.election_scope = 'district' \
-                      AND o.district_type = 'tx_college' \
-                      AND o.district = ",
-        );
+        builder.push(format!(
+            " OR ({alias}.election_scope = 'district' \
+                      AND {alias}.district_type = 'tx_college' \
+                      AND {alias}.district = "
+        ));
         builder.push_bind(college_district);
         builder.push(")");
     }
 
-    // City, matching Minnesota: the whole municipality, plus a ward when the
+    // City: the whole municipality, plus a ward when the
     // polygon has a subdistrict. Subdistrict "District 10" is compared as "10".
     if let Some(municipality) = municipality.clone() {
         if let Some(subdistrict) = municipality_subdistrict.clone() {
-            builder.push(
-                " OR (o.election_scope = 'district' \
-                          AND o.district_type = 'city' \
-                          AND o.municipality ILIKE ",
-            );
+            builder.push(format!(
+                " OR ({alias}.election_scope = 'district' \
+                          AND {alias}.district_type = 'city' \
+                          AND {alias}.municipality ILIKE "
+            ));
             builder.push_bind(municipality.clone());
-            builder.push(" AND REGEXP_REPLACE(o.district, '^[^0-9]*', '') = ");
+            builder.push(format!(
+                " AND REGEXP_REPLACE({alias}.district, '^[^0-9]*', '') = "
+            ));
             builder.push_bind(subdistrict);
             builder.push(")");
         }
 
-        builder.push(" OR (o.election_scope = 'city' AND o.municipality ILIKE ");
+        builder.push(format!(
+            " OR ({alias}.election_scope = 'city' AND {alias}.municipality ILIKE "
+        ));
         builder.push_bind(municipality);
         builder.push(")");
     }
 
     // Precinct Chairs
     if let (Some(precinct), Some(clean)) = (precinct.clone(), county_cleaned.clone()) {
-        builder.push(
-            " OR (o.election_scope = 'district' \
-                      AND o.district_type = 'voting_precinct' \
-                      AND o.county = ",
-        );
+        builder.push(format!(
+            " OR ({alias}.election_scope = 'district' \
+                      AND {alias}.district_type = 'voting_precinct' \
+                      AND {alias}.county = "
+        ));
         builder.push_bind(clean);
-        builder.push(" AND o.district = ");
+        builder.push(format!(" AND {alias}.district = "));
         builder.push_bind(precinct);
         builder.push(")");
     }
 
-    builder.push("))");
+    if subject == TxFilterSubject::Office {
+        builder.push("))");
+    }
 }
 
 #[cfg(test)]
