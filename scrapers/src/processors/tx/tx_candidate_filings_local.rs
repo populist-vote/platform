@@ -41,7 +41,7 @@ pub struct TxLocalFiling {
     pub num_elect: Option<i32>,
 }
 
-const TX_LOCAL_SOURCE_TABLE: &str = "p6t_state_tx.tx_2026_nov3_local_filings_unopposed";
+const TX_LOCAL_SOURCE_TABLE: &str = "p6t_state_tx.tx_2026_nov3_local_filings";
 const ELECTION_YEAR: i32 = 2026;
 
 /// 2026 TX local election (replace if your ingest targets a different election).

@@ -1,6 +1,20 @@
 //! Merges local staging data from ingest_staging.stg_tx_local_* into production tables (office, politician, race, race_candidates).
 //! Run after tx_process_filings_local. Resolves by slug for offices/races and by ref_key/slug/email/phone for politicians.
-//! Copies office.subdistrict. Audit tables are separate from the statewide merge.
+//! Copies office.subdistrict. Politician audit tables are written to ingest_merge_records
+//! with a UTC timestamp suffix so each merge is kept.
+//!
+//! `--ignore-politicians`: do not insert or update politicians. Map each incoming
+//! staging politician to an existing production row, then update offices by slug,
+//! delete this election's races (and cascaded race_candidates) for those offices,
+//! and re-insert incoming races/race_candidates.
+//! Matching order: last-run `ingest_staging.audit_local_politician_merge_dupes`
+//! (incoming full_name → stg_full_name → prod_slug), then
+//! `ingest_staging.audit_local_inserted_politicians_with_same_slug`
+//! (incoming full_name → full_name → slug), then incoming slug = production slug.
+//! Caveat: full_name matching does not distinguish two incoming politicians with
+//! the same exact name (none in this first run). Audit tables use the same
+//! `ingest_merge_records` names as a normal merge, with `-ip` appended.
+//! Names stay within Postgres's 63-character identifier limit.
 
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
 
@@ -9,13 +23,23 @@ use db::{
     Politician, Race, RaceCandidate, RaceType, State, UpdatePoliticianInput, UpsertOfficeInput,
     UpsertPoliticianInput, UpsertRaceCandidateInput, UpsertRaceInput, VoteType,
 };
+use scrapers::processors::tx::tx_candidate_filings_local::TX_LOCAL_ELECTION_ID;
 use serde_json::Value as JSON;
 use slugify::slugify;
 use sqlx::PgPool;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 
 const ELECTION_YEAR: i32 = 2026;
+const MERGE_RECORDS_SCHEMA: &str = "ingest_merge_records";
+
+/// Timestamped politician audit tables for one local-merge run.
+struct LocalMergeAuditTables {
+    matched: String,
+    overwritten: String,
+    updated: String,
+    inserted_same_slug: String,
+}
 
 #[derive(sqlx::FromRow, Debug)]
 struct StgOffice {
@@ -106,19 +130,39 @@ enum PoliticianOutcome {
 async fn main() {
     let args: Vec<String> = std::env::args().collect();
     let overwrite_race_candidates = args.iter().any(|a| a == "--overwrite-rcs");
+    let ignore_politicians = args.iter().any(|a| a == "--ignore-politicians");
 
     db::init_pool().await.unwrap();
     let pool = db::pool().await;
     let db = &pool.connection;
 
     println!("=== Merge TX local staging → production ===\n");
-    if overwrite_race_candidates {
+    if ignore_politicians {
+        println!("(--ignore-politicians: skip politician insert/update)");
+        println!(
+            "  Map incoming politicians via last-merge audit full_name, then production slug."
+        );
+        println!(
+            "  Caveat: full_name matching does not distinguish incoming politicians with the same exact name."
+        );
+        if overwrite_race_candidates {
+            println!(
+                "  (--overwrite-rcs is unused with --ignore-politicians; this-election races for matched offices are deleted and rebuilt)"
+            );
+        }
+        println!();
+    } else if overwrite_race_candidates {
         println!(
             "(--overwrite-rcs: existing race_candidates with same ref_key will be replaced)\n"
         );
     }
 
-    if let Err(e) = run_merge(db, overwrite_race_candidates).await {
+    let result = if ignore_politicians {
+        run_merge_ignore_politicians(db).await
+    } else {
+        run_merge(db, overwrite_race_candidates).await
+    };
+    if let Err(e) = result {
         eprintln!("Merge failed: {}", e);
         std::process::exit(1);
     }
@@ -165,7 +209,12 @@ async fn run_merge(
     .fetch_all(pool)
     .await?;
 
-    create_merge_tables(pool).await?;
+    let audit_tables = create_merge_tables(pool, None).await?;
+    println!("  Audit tables (ingest_merge_records):");
+    println!("    {}", audit_tables.matched);
+    println!("    {}", audit_tables.overwritten);
+    println!("    {}", audit_tables.updated);
+    println!("    {}", audit_tables.inserted_same_slug);
 
     let mut stg_to_prod_politician: HashMap<uuid::Uuid, uuid::Uuid> = HashMap::new();
     let mut exact_match_count = 0usize;
@@ -177,6 +226,7 @@ async fn run_merge(
             pool,
             stg,
             &stg_to_prod_office,
+            &audit_tables,
             &mut addresses_inserted,
             &mut addresses_reused,
         )
@@ -303,6 +353,429 @@ async fn run_merge(
     }
 
     Ok(())
+}
+
+/// Skip politician insert/update. Map incoming staging politicians to existing
+/// production ids, update offices by slug, delete this election's races for those
+/// offices (`race_candidates` cascade on race delete), then insert incoming races
+/// and race_candidates.
+///
+/// Politician matching, in order:
+/// 1. `ingest_staging.audit_local_politician_merge_dupes`: incoming `full_name` =
+///    `stg_full_name` → production via `prod_slug`
+/// 2. `ingest_staging.audit_local_inserted_politicians_with_same_slug`: incoming
+///    `full_name` = `full_name` → production via `slug`
+/// 3. incoming `slug` = production `politician.slug`
+///
+/// Caveat: steps 1–2 do not distinguish two incoming politicians with the same
+/// exact `full_name`. There is no such case in this first run.
+async fn run_merge_ignore_politicians(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
+    let election_id = uuid::Uuid::parse_str(TX_LOCAL_ELECTION_ID)?;
+
+    println!("Mapping incoming politicians to existing production rows...");
+    println!(
+        "  (does not insert or update politician rows; same-name incoming people are not disambiguated)"
+    );
+    let audit_tables = create_merge_tables(pool, Some("-ip")).await?;
+    println!("  Audit tables (ingest_merge_records):");
+    println!("    {}", audit_tables.matched);
+    println!("    {}", audit_tables.overwritten);
+    println!("    {}", audit_tables.updated);
+    println!("    {}", audit_tables.inserted_same_slug);
+    let stg_to_prod_politician = map_politicians_from_last_merge_audit(pool, &audit_tables).await?;
+
+    println!("Merging offices...");
+    let stg_offices: Vec<StgOffice> = sqlx::query_as(
+        "SELECT id, slug, name, title, subtitle, subtitle_short, office_type, chamber, district_type, political_scope, election_scope, state, county, municipality, term_length, district, subdistrict, seat, school_district, hospital_district, priority FROM ingest_staging.stg_tx_local_offices",
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let mut stg_to_prod_office: HashMap<uuid::Uuid, uuid::Uuid> = HashMap::new();
+    let mut offices_existing = 0usize;
+    let mut offices_new = 0usize;
+    for stg in &stg_offices {
+        let existed = office_slug_exists(pool, &stg.slug).await?;
+        if existed {
+            offices_existing += 1;
+        } else {
+            offices_new += 1;
+        }
+        let prod = Office::upsert_from_source(pool, &stg_office_to_upsert(stg)).await?;
+        stg_to_prod_office.insert(stg.id, prod.id);
+    }
+    println!(
+        "  Offices: {} existing (matched by slug), {} new",
+        offices_existing, offices_new
+    );
+
+    let prod_office_ids: Vec<uuid::Uuid> = stg_to_prod_office.values().copied().collect();
+    println!("Deleting this-election races for matched offices...");
+    println!(
+        "  election_id {} (TX_LOCAL_ELECTION_ID); race_candidates cascade on race delete",
+        election_id
+    );
+    let (races_deleted, rcs_cascaded) =
+        delete_election_races_for_offices(pool, election_id, &prod_office_ids).await?;
+    println!(
+        "  Races deleted: {}; race_candidates removed by cascade: {}",
+        races_deleted, rcs_cascaded
+    );
+
+    println!("Merging races...");
+    let stg_races: Vec<StgRace> = sqlx::query_as(
+        "SELECT id, slug, title, office_id, state, race_type, vote_type, party_id, election_id, is_special_election, num_elect FROM ingest_staging.stg_tx_local_races",
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let mut stg_to_prod_race: HashMap<uuid::Uuid, uuid::Uuid> = HashMap::new();
+    for stg in &stg_races {
+        let prod_office_id = stg_to_prod_office
+            .get(&stg.office_id)
+            .copied()
+            .ok_or_else(|| {
+                format!(
+                    "Staging race {} references unknown office {}",
+                    stg.slug, stg.office_id
+                )
+            })?;
+        let prod = Race::upsert_from_source(pool, &stg_race_to_upsert(stg, prod_office_id)).await?;
+        stg_to_prod_race.insert(stg.id, prod.id);
+    }
+    println!("  Races: {} merged", stg_to_prod_race.len());
+
+    println!("Merging race_candidates...");
+    let stg_rcs: Vec<StgRaceCandidate> = sqlx::query_as(
+        "SELECT race_id, candidate_id, ref_key FROM ingest_staging.stg_tx_local_race_candidates",
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let mut inserted = 0usize;
+    let mut skipped_unmapped = 0usize;
+    for rc in &stg_rcs {
+        let Some(prod_race_id) = stg_to_prod_race.get(&rc.race_id).copied() else {
+            skipped_unmapped += 1;
+            continue;
+        };
+        let Some(prod_candidate_id) = stg_to_prod_politician.get(&rc.candidate_id).copied() else {
+            skipped_unmapped += 1;
+            continue;
+        };
+        let input = UpsertRaceCandidateInput {
+            race_id: prod_race_id,
+            candidate_id: prod_candidate_id,
+            ref_key: rc.ref_key.clone(),
+            is_running: None,
+        };
+        if RaceCandidate::upsert_from_source(pool, &input)
+            .await?
+            .is_some()
+        {
+            inserted += 1;
+        }
+    }
+    println!("  Race_candidates: {} new links", inserted);
+    if skipped_unmapped > 0 {
+        println!(
+            "  Race_candidates skipped (unmapped race or politician): {}",
+            skipped_unmapped
+        );
+    }
+
+    Ok(())
+}
+
+#[derive(sqlx::FromRow, Debug)]
+struct AuditDupeNameSlug {
+    stg_full_name: Option<String>,
+    prod_slug: String,
+}
+
+#[derive(sqlx::FromRow, Debug)]
+struct AuditInsertedNameSlug {
+    full_name: Option<String>,
+    slug: String,
+}
+
+fn trimmed_name(name: Option<&str>) -> Option<String> {
+    name.map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+}
+
+fn insert_name_slug_map(
+    map: &mut HashMap<String, String>,
+    name: Option<&str>,
+    slug: &str,
+    table: &str,
+    duplicate_names: &mut HashSet<String>,
+) {
+    let Some(key) = trimmed_name(name) else {
+        return;
+    };
+    if map.contains_key(&key) {
+        duplicate_names.insert(key.clone());
+        eprintln!(
+            "  warning: duplicate full_name in {}: {:?} (using first slug {})",
+            table, key, map[&key]
+        );
+        return;
+    }
+    map.insert(key, slug.to_string());
+}
+
+async fn map_politicians_from_last_merge_audit(
+    pool: &PgPool,
+    audit_tables: &LocalMergeAuditTables,
+) -> Result<HashMap<uuid::Uuid, uuid::Uuid>, Box<dyn std::error::Error>> {
+    let stg_politicians: Vec<StgPolitician> = sqlx::query_as(
+        "SELECT id, slug, ref_key, first_name, middle_name, last_name, suffix, preferred_name, full_name, home_state, party_id, office_id, assets, email, phone, campaign_website_url, residence_address_id, treat_exact_slug_as_same_person FROM ingest_staging.stg_tx_local_politicians",
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let mut incoming_name_counts: HashMap<String, usize> = HashMap::new();
+    for stg in &stg_politicians {
+        if let Some(name) = trimmed_name(stg.full_name.as_deref()) {
+            *incoming_name_counts.entry(name).or_insert(0) += 1;
+        }
+    }
+    let duplicate_incoming: Vec<&String> = incoming_name_counts
+        .iter()
+        .filter(|(_, n)| **n > 1)
+        .map(|(name, _)| name)
+        .collect();
+    if !duplicate_incoming.is_empty() {
+        eprintln!(
+            "  warning: {} incoming full_name(s) appear more than once; --ignore-politicians cannot disambiguate them:",
+            duplicate_incoming.len()
+        );
+        for name in &duplicate_incoming {
+            eprintln!("    {}", name);
+        }
+    }
+
+    let dupes: Vec<AuditDupeNameSlug> = sqlx::query_as(
+        "SELECT stg_full_name, prod_slug FROM ingest_staging.audit_local_politician_merge_dupes",
+    )
+    .fetch_all(pool)
+    .await?;
+    let inserted: Vec<AuditInsertedNameSlug> = sqlx::query_as(
+        "SELECT full_name, slug FROM ingest_staging.audit_local_inserted_politicians_with_same_slug",
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let mut dupes_by_name: HashMap<String, String> = HashMap::new();
+    let mut inserted_by_name: HashMap<String, String> = HashMap::new();
+    let mut audit_dup_names = HashSet::new();
+    for row in &dupes {
+        insert_name_slug_map(
+            &mut dupes_by_name,
+            row.stg_full_name.as_deref(),
+            &row.prod_slug,
+            "audit_local_politician_merge_dupes",
+            &mut audit_dup_names,
+        );
+    }
+    for row in &inserted {
+        insert_name_slug_map(
+            &mut inserted_by_name,
+            row.full_name.as_deref(),
+            &row.slug,
+            "audit_local_inserted_politicians_with_same_slug",
+            &mut audit_dup_names,
+        );
+    }
+
+    let incoming_names: HashSet<String> = incoming_name_counts.keys().cloned().collect();
+    let unmatched_dupes_rows: Vec<String> = dupes
+        .iter()
+        .filter_map(|row| trimmed_name(row.stg_full_name.as_deref()))
+        .filter(|name| !incoming_names.contains(name))
+        .collect();
+    if unmatched_dupes_rows.is_empty() {
+        println!("  audit_local_politician_merge_dupes: every row matched an incoming full_name");
+    } else {
+        println!(
+            "  audit_local_politician_merge_dupes: {} row(s) did not match an incoming politician:",
+            unmatched_dupes_rows.len()
+        );
+        for name in &unmatched_dupes_rows {
+            println!("    {}", name);
+        }
+    }
+
+    let mut stg_to_prod: HashMap<uuid::Uuid, uuid::Uuid> = HashMap::new();
+    let mut from_dupes = 0usize;
+    let mut from_inserted = 0usize;
+    let mut from_slug = 0usize;
+    let mut unmatched: Vec<String> = Vec::new();
+    let mut missed_dupes: Vec<String> = Vec::new();
+
+    for stg in &stg_politicians {
+        let name = trimmed_name(stg.full_name.as_deref());
+        let (prod_slug, source) = if let Some(name) = name.as_deref() {
+            if let Some(slug) = dupes_by_name.get(name) {
+                (slug.clone(), "audit dupes full_name")
+            } else {
+                missed_dupes.push(name.to_string());
+                if let Some(slug) = inserted_by_name.get(name) {
+                    (slug.clone(), "audit inserted-same-slug full_name")
+                } else {
+                    (stg.slug.clone(), "production slug")
+                }
+            }
+        } else {
+            missed_dupes.push(
+                stg.full_name
+                    .as_deref()
+                    .unwrap_or("(no full_name)")
+                    .to_string(),
+            );
+            (stg.slug.clone(), "production slug")
+        };
+
+        match politician_id_by_slug(pool, &prod_slug).await? {
+            Some(prod_id) => {
+                stg_to_prod.insert(stg.id, prod_id);
+                match source {
+                    "audit dupes full_name" => {
+                        from_dupes += 1;
+                        record_merge_dupe(
+                            pool,
+                            audit_tables,
+                            stg,
+                            prod_id,
+                            source,
+                            None,
+                            None,
+                            None,
+                        )
+                        .await?;
+                    }
+                    "audit inserted-same-slug full_name" => {
+                        from_inserted += 1;
+                        record_inserted_politician_with_same_slug(
+                            pool,
+                            audit_tables,
+                            stg.id,
+                            prod_id,
+                            stg.full_name.as_deref(),
+                            &prod_slug,
+                            stg.email.as_deref(),
+                            stg.phone.as_deref(),
+                            None,
+                            None,
+                            None,
+                            None,
+                        )
+                        .await?;
+                    }
+                    _ => {
+                        from_slug += 1;
+                        record_merge_dupe(
+                            pool,
+                            audit_tables,
+                            stg,
+                            prod_id,
+                            source,
+                            None,
+                            None,
+                            None,
+                        )
+                        .await?;
+                    }
+                }
+            }
+            None => unmatched.push(format!(
+                "{} (stg slug {}, lookup slug {}, via {})",
+                stg.full_name.as_deref().unwrap_or("(no full_name)"),
+                stg.slug,
+                prod_slug,
+                source
+            )),
+        }
+    }
+
+    if missed_dupes.is_empty() {
+        println!("  audit_local_politician_merge_dupes: every incoming politician matched a row");
+    } else {
+        println!(
+            "  audit_local_politician_merge_dupes: {} incoming politician(s) did not match a row:",
+            missed_dupes.len()
+        );
+        for name in &missed_dupes {
+            println!("    {}", name);
+        }
+    }
+
+    println!(
+        "  Mapped from audit_local_politician_merge_dupes: {}",
+        from_dupes
+    );
+    println!(
+        "  Mapped from audit_local_inserted_politicians_with_same_slug: {}",
+        from_inserted
+    );
+    println!("  Mapped by incoming slug = production slug: {}", from_slug);
+
+    if !unmatched.is_empty() {
+        return Err(format!(
+            "--ignore-politicians: {} incoming politician(s) could not be matched to production:\n  {}",
+            unmatched.len(),
+            unmatched.join("\n  ")
+        )
+        .into());
+    }
+
+    Ok(stg_to_prod)
+}
+
+async fn politician_id_by_slug(
+    pool: &PgPool,
+    slug: &str,
+) -> Result<Option<uuid::Uuid>, Box<dyn std::error::Error>> {
+    let row: Option<(uuid::Uuid,)> = sqlx::query_as("SELECT id FROM politician WHERE slug = $1")
+        .bind(slug)
+        .fetch_optional(pool)
+        .await?;
+    Ok(row.map(|(id,)| id))
+}
+
+/// `race_candidates.race_id` references `race(id) ON DELETE CASCADE`, so deleting
+/// races also removes their race_candidates. Count both, then delete races only.
+async fn delete_election_races_for_offices(
+    pool: &PgPool,
+    election_id: uuid::Uuid,
+    prod_office_ids: &[uuid::Uuid],
+) -> Result<(u64, i64), Box<dyn std::error::Error>> {
+    if prod_office_ids.is_empty() {
+        return Ok((0, 0));
+    }
+    let rc_count: i64 = sqlx::query_scalar(
+        r#"
+        SELECT COUNT(*)::bigint
+        FROM race_candidates
+        WHERE race_id IN (
+            SELECT id FROM race WHERE election_id = $1 AND office_id = ANY($2)
+        )
+        "#,
+    )
+    .bind(election_id)
+    .bind(prod_office_ids)
+    .fetch_one(pool)
+    .await?;
+
+    let deleted = sqlx::query("DELETE FROM race WHERE election_id = $1 AND office_id = ANY($2)")
+        .bind(election_id)
+        .bind(prod_office_ids)
+        .execute(pool)
+        .await?;
+
+    Ok((deleted.rows_affected(), rc_count))
 }
 
 fn parse_state(s: Option<&String>) -> Option<State> {
@@ -512,29 +985,56 @@ async fn do_addresses_match(
     Ok((same, Some(stg_addr), Some(prod_addr)))
 }
 
-/// Create or recreate the local-merge politician audit tables in ingest_staging.
-/// Drops tables if they exist, then creates them. Call once before merging politicians.
-async fn create_merge_tables(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>> {
-    sqlx::query("CREATE SCHEMA IF NOT EXISTS ingest_staging")
-        .execute(pool)
-        .await?;
+/// Create timestamped local-merge politician audit tables in ingest_merge_records.
+/// Tables are not dropped; each run gets a UTC `YYYYMMDD_HHMMSS` suffix.
+/// `extra_suffix` is appended as-is (e.g. `-ip`).
+/// Base names are kept short so `{base}_{timestamp}{extra}` fits in Postgres's
+/// 63-character identifier limit (the previous inserted-same-slug name truncated
+/// before the time, so same-day runs collided).
+async fn create_merge_tables(
+    pool: &PgPool,
+    extra_suffix: Option<&str>,
+) -> Result<LocalMergeAuditTables, Box<dyn std::error::Error>> {
+    sqlx::query(&format!(
+        "CREATE SCHEMA IF NOT EXISTS {}",
+        MERGE_RECORDS_SCHEMA
+    ))
+    .execute(pool)
+    .await?;
 
-    sqlx::query("DROP TABLE IF EXISTS ingest_staging.audit_local_politician_merge_overwritten_data CASCADE")
-        .execute(pool)
-        .await?;
-    sqlx::query("DROP TABLE IF EXISTS ingest_staging.audit_local_inserted_politicians_with_same_slug CASCADE")
-        .execute(pool)
-        .await?;
-    sqlx::query("DROP TABLE IF EXISTS ingest_staging.audit_local_politician_merge_updated CASCADE")
-        .execute(pool)
-        .await?;
-    sqlx::query("DROP TABLE IF EXISTS ingest_staging.audit_local_politician_merge_dupes CASCADE")
-        .execute(pool)
-        .await?;
+    let mut suffix = chrono::Utc::now().format("%Y%m%d_%H%M%S").to_string();
+    if let Some(extra) = extra_suffix {
+        suffix.push_str(extra);
+    }
+    let ident = |bare: &str| -> Result<String, Box<dyn std::error::Error>> {
+        if bare.len() > 63 {
+            return Err(format!(
+                "audit table name exceeds Postgres 63-char identifier limit ({}): {}",
+                bare.len(),
+                bare
+            )
+            .into());
+        }
+        if bare.contains('-') {
+            Ok(format!(
+                "{}.\"{}\"",
+                MERGE_RECORDS_SCHEMA,
+                bare.replace('"', "\"\"")
+            ))
+        } else {
+            Ok(format!("{}.{}", MERGE_RECORDS_SCHEMA, bare))
+        }
+    };
+    let tables = LocalMergeAuditTables {
+        matched: ident(&format!("audit_local_matched_{}", suffix))?,
+        overwritten: ident(&format!("audit_local_overwritten_{}", suffix))?,
+        updated: ident(&format!("audit_local_updated_{}", suffix))?,
+        inserted_same_slug: ident(&format!("audit_local_same_slug_inserted_{}", suffix))?,
+    };
 
-    sqlx::query(
+    sqlx::query(&format!(
         r#"
-        CREATE TABLE ingest_staging.audit_local_politician_merge_dupes (
+        CREATE TABLE {} (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             stg_first_name TEXT NOT NULL,
             stg_middle_name TEXT,
@@ -567,13 +1067,14 @@ async fn create_merge_tables(pool: &PgPool) -> Result<(), Box<dyn std::error::Er
             match_type TEXT NOT NULL
         )
         "#,
-    )
+        tables.matched
+    ))
     .execute(pool)
     .await?;
 
-    sqlx::query(
+    sqlx::query(&format!(
         r#"
-        CREATE TABLE ingest_staging.audit_local_politician_merge_updated (
+        CREATE TABLE {} (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             stg_politician_id UUID NOT NULL,
             prod_politician_id UUID NOT NULL,
@@ -583,13 +1084,14 @@ async fn create_merge_tables(pool: &PgPool) -> Result<(), Box<dyn std::error::Er
             created_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
         "#,
-    )
+        tables.updated
+    ))
     .execute(pool)
     .await?;
 
-    sqlx::query(
+    sqlx::query(&format!(
         r#"
-        CREATE TABLE ingest_staging.audit_local_inserted_politicians_with_same_slug (
+        CREATE TABLE {} (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             stg_politician_id UUID NOT NULL,
             prod_politician_id UUID NOT NULL,
@@ -604,13 +1106,14 @@ async fn create_merge_tables(pool: &PgPool) -> Result<(), Box<dyn std::error::Er
             created_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
         "#,
-    )
+        tables.inserted_same_slug
+    ))
     .execute(pool)
     .await?;
 
-    sqlx::query(
+    sqlx::query(&format!(
         r#"
-        CREATE TABLE ingest_staging.audit_local_politician_merge_overwritten_data (
+        CREATE TABLE {} (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             prod_politician_id UUID NOT NULL,
             stg_politician_id UUID NOT NULL,
@@ -620,15 +1123,17 @@ async fn create_merge_tables(pool: &PgPool) -> Result<(), Box<dyn std::error::Er
             created_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
         "#,
-    )
+        tables.overwritten
+    ))
     .execute(pool)
     .await?;
 
-    Ok(())
+    Ok(tables)
 }
 
 async fn record_overwritten_politician(
     pool: &PgPool,
+    tables: &LocalMergeAuditTables,
     prod_id: uuid::Uuid,
     stg_id: uuid::Uuid,
     match_type: &'static str,
@@ -640,13 +1145,14 @@ async fn record_overwritten_politician(
         None
     };
     let prod = pre_fetched_prod.unwrap_or_else(|| prod_owned.as_ref().unwrap());
-    sqlx::query(
+    sqlx::query(&format!(
         r#"
-        INSERT INTO ingest_staging.audit_local_politician_merge_overwritten_data (
+        INSERT INTO {} (
             prod_politician_id, stg_politician_id, match_type, prod_slug, prod_full_name
         ) VALUES ($1, $2, $3, $4, $5)
         "#,
-    )
+        tables.overwritten
+    ))
     .bind(prod_id)
     .bind(stg_id)
     .bind(match_type)
@@ -659,6 +1165,7 @@ async fn record_overwritten_politician(
 
 async fn record_updated_politician(
     pool: &PgPool,
+    tables: &LocalMergeAuditTables,
     stg_id: uuid::Uuid,
     stg_full_name: Option<&str>,
     prod_id: uuid::Uuid,
@@ -669,13 +1176,14 @@ async fn record_updated_politician(
         Some(name) => Some(name.to_string()),
         None => Politician::find_by_id(pool, prod_id).await?.full_name,
     };
-    sqlx::query(
+    sqlx::query(&format!(
         r#"
-        INSERT INTO ingest_staging.audit_local_politician_merge_updated (
+        INSERT INTO {} (
             stg_politician_id, prod_politician_id, stg_full_name, prod_full_name, match_type
         ) VALUES ($1, $2, $3, $4, $5)
         "#,
-    )
+        tables.updated
+    ))
     .bind(stg_id)
     .bind(prod_id)
     .bind(stg_full_name)
@@ -688,6 +1196,7 @@ async fn record_updated_politician(
 
 async fn record_inserted_politician_with_same_slug(
     pool: &PgPool,
+    tables: &LocalMergeAuditTables,
     stg_id: uuid::Uuid,
     prod_id: uuid::Uuid,
     full_name: Option<&str>,
@@ -699,14 +1208,15 @@ async fn record_inserted_politician_with_same_slug(
     address_state: Option<&str>,
     address_country: Option<&str>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    sqlx::query(
+    sqlx::query(&format!(
         r#"
-        INSERT INTO ingest_staging.audit_local_inserted_politicians_with_same_slug (
+        INSERT INTO {} (
             stg_politician_id, prod_politician_id, full_name, slug, email, phone,
             address_line_1, address_city, address_state, address_country
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         "#,
-    )
+        tables.inserted_same_slug
+    ))
     .bind(stg_id)
     .bind(prod_id)
     .bind(full_name)
@@ -726,6 +1236,7 @@ async fn record_inserted_politician_with_same_slug(
 /// to avoid re-fetching; pass None for any not yet loaded and they will be fetched here.
 async fn record_merge_dupe(
     pool: &PgPool,
+    tables: &LocalMergeAuditTables,
     stg: &StgPolitician,
     prod_id: uuid::Uuid,
     match_type: &'static str,
@@ -760,9 +1271,9 @@ async fn record_merge_dupe(
         None => (None, None),
     };
     let prod_home_state_text = prod.home_state.as_ref().map(|s| s.to_string());
-    sqlx::query(
+    sqlx::query(&format!(
         r#"
-        INSERT INTO ingest_staging.audit_local_politician_merge_dupes (
+        INSERT INTO {} (
             stg_first_name, stg_middle_name, stg_last_name, stg_suffix,
             prod_first_name, prod_middle_name, prod_last_name, prod_suffix,
             stg_id, prod_id, stg_ref_key, prod_ref_key,
@@ -775,7 +1286,8 @@ async fn record_merge_dupe(
             $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29
         )
         "#,
-    )
+        tables.matched
+    ))
     .bind(&stg.first_name)
     .bind(&stg.middle_name)
     .bind(&stg.last_name)
@@ -881,6 +1393,7 @@ async fn apply_match_and_record(
     pre_fetched_stg_address: Option<StgAddress>,
     pre_fetched_prod_address: Option<Address>,
     stg_to_prod_office: &HashMap<uuid::Uuid, uuid::Uuid>,
+    audit_tables: &LocalMergeAuditTables,
     address_inserted: &mut usize,
     address_reused: &mut usize,
     updated: &mut Vec<(uuid::Uuid, &'static str)>,
@@ -888,6 +1401,7 @@ async fn apply_match_and_record(
     let prod = Politician::find_by_id(pool, prod_id).await?;
     record_merge_dupe(
         pool,
+        audit_tables,
         stg,
         prod_id,
         match_type,
@@ -896,7 +1410,8 @@ async fn apply_match_and_record(
         pre_fetched_prod_address,
     )
     .await?;
-    record_overwritten_politician(pool, prod_id, stg.id, match_type, Some(&prod)).await?;
+    record_overwritten_politician(pool, audit_tables, prod_id, stg.id, match_type, Some(&prod))
+        .await?;
     update_matched_politician_from_staging(
         pool,
         prod_id,
@@ -909,6 +1424,7 @@ async fn apply_match_and_record(
     .await?;
     record_updated_politician(
         pool,
+        audit_tables,
         stg.id,
         stg.full_name.as_deref(),
         prod_id,
@@ -925,13 +1441,14 @@ async fn resolve_or_upsert_politician(
     pool: &PgPool,
     stg: &StgPolitician,
     stg_to_prod_office: &HashMap<uuid::Uuid, uuid::Uuid>,
+    audit_tables: &LocalMergeAuditTables,
     address_inserted: &mut usize,
     address_reused: &mut usize,
 ) -> Result<Vec<(Option<uuid::Uuid>, PoliticianOutcome)>, Box<dyn std::error::Error>> {
     // Find ALL prod politicians with matching slug or slug increment;
     // for each test email, phone, address;
     // if any match → update existing politician and record to helper tables
-    // else insert (and record to audit_local_inserted_politicians_with_same_slug only when we had slug candidates)
+    // else insert (and record to audit_local_merge_inserted_politicians_with_same_slug only when we had slug candidates)
     let base_slug: String =
         base_slug_if_increment(&stg.slug).unwrap_or_else(|| stg.slug.to_string());
     let candidates: Vec<(uuid::Uuid, String, Option<State>, Option<uuid::Uuid>, Option<String>, Option<String>)> = sqlx::query_as(
@@ -969,6 +1486,7 @@ async fn resolve_or_upsert_politician(
                 None,
                 None,
                 stg_to_prod_office,
+                audit_tables,
                 address_inserted,
                 address_reused,
                 &mut updated,
@@ -998,6 +1516,7 @@ async fn resolve_or_upsert_politician(
                 None,
                 None,
                 stg_to_prod_office,
+                audit_tables,
                 address_inserted,
                 address_reused,
                 &mut updated,
@@ -1015,6 +1534,7 @@ async fn resolve_or_upsert_politician(
                 None,
                 None,
                 stg_to_prod_office,
+                audit_tables,
                 address_inserted,
                 address_reused,
                 &mut updated,
@@ -1036,6 +1556,7 @@ async fn resolve_or_upsert_politician(
                     stg_addr_opt,
                     prod_addr_opt,
                     stg_to_prod_office,
+                    audit_tables,
                     address_inserted,
                     address_reused,
                     &mut updated,
@@ -1052,7 +1573,7 @@ async fn resolve_or_upsert_politician(
             .collect());
     }
 
-    // No email/phone/address match for any candidate where a matching slug was found → insert incoming politician (with resolved slug) and record to audit_local_inserted_politicians_with_same_slug
+    // No email/phone/address match for any candidate where a matching slug was found → insert incoming politician (with resolved slug) and record to audit_local_merge_inserted_politicians_with_same_slug
 
     // 4. Insert via upsert_from_source — new politician
 
@@ -1160,6 +1681,7 @@ async fn resolve_or_upsert_politician(
         };
         record_inserted_politician_with_same_slug(
             pool,
+            audit_tables,
             stg.id,
             prod.id,
             stg.full_name.as_deref(),
