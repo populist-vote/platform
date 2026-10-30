@@ -121,14 +121,25 @@ fn format_district_list(district: &str) -> String {
     }
 }
 
+/// Prefix for subtitle pieces. `no_base` omits the leading `" - "` when this piece starts the subtitle.
+fn subtitle_prefix(no_base: bool) -> &'static str {
+    if no_base {
+        ""
+    } else {
+        " - "
+    }
+}
+
 /// Returns (long, short) district suffix. If district is "at large" (case insensitive), omits the label.
-fn format_district_subtitle(district: &str, label: &str) -> (String, String) {
+/// When `no_base` is true, the leading `" - "` is omitted.
+fn format_district_subtitle(district: &str, label: &str, no_base: bool) -> (String, String) {
     let formatted = format_district_list(district);
-    let short = format!(" - {}", formatted);
+    let prefix = subtitle_prefix(no_base);
+    let short = format!("{}{}", prefix, formatted);
     if district.trim().eq_ignore_ascii_case("at large") {
         (short.clone(), short)
     } else {
-        (format!(" - {} {}", label, formatted), short)
+        (format!("{}{} {}", prefix, label, formatted), short)
     }
 }
 
@@ -156,9 +167,11 @@ fn strip_seat_label(seat: &str) -> String {
 /// Returns (long, short) seat suffix.
 /// Long keeps Place/Seat/Position when the seat is already labeled; otherwise it
 /// prefixes `label`. Short is the seat number (`"Place 1"` → `" - 1"`), plus At-Large.
-fn format_seat_subtitle(seat: &str, label: &str) -> (String, String) {
+/// When `no_base` is true, the leading `" - "` is omitted.
+fn format_seat_subtitle(seat: &str, label: &str, no_base: bool) -> (String, String) {
     let trimmed = seat.trim();
-    let short = format!(" - {}", strip_seat_label(trimmed));
+    let prefix = subtitle_prefix(no_base);
+    let short = format!("{}{}", prefix, strip_seat_label(trimmed));
     let already_labeled = trimmed.eq_ignore_ascii_case("at large")
         || trimmed.eq_ignore_ascii_case("at-large")
         || trimmed.split_whitespace().next().is_some_and(|word| {
@@ -168,9 +181,9 @@ fn format_seat_subtitle(seat: &str, label: &str) -> (String, String) {
             )
         });
     if already_labeled {
-        (format!(" - {}", trimmed), short)
+        (format!("{}{}", prefix, trimmed), short)
     } else {
-        (format!(" - {} {}", label, trimmed), short)
+        (format!("{}{} {}", prefix, label, trimmed), short)
     }
 }
 
@@ -192,17 +205,40 @@ impl<'a> OfficeSubtitleGenerator<'a> {
     pub fn generate(&self) -> (String, String) {
         use db::{DistrictType, ElectionScope};
 
+        if matches!(
+            self.district_type,
+            Some(DistrictType::TxSpecial) | Some(DistrictType::TxCollege)
+        ) {
+            if let Some(subdistrict) = self.subdistrict.filter(|s| !s.trim().is_empty()) {
+                let (district_long, district_short) =
+                    format_district_subtitle(subdistrict, "District", true);
+                let (seat_long, seat_short) = self
+                    .seat
+                    .filter(|s| !s.trim().is_empty())
+                    .map(|s| format_seat_subtitle(s, "Place", false))
+                    .unwrap_or_default();
+                return (
+                    format!("{}{}", district_long, seat_long),
+                    format!("{}{}", district_short, seat_short),
+                );
+            }
+            if let Some(seat) = self.seat.filter(|s| !s.trim().is_empty()) {
+                return format_seat_subtitle(seat, "Place", true);
+            }
+            return (String::new(), String::new());
+        }
+
         // County School Trustee: county + " County, TX" + format_seat_subtitle(seat, "Position") + district (before election_scope match)
         if self.office_name == Some("County School Trustee") {
             if let Some(county) = self.county {
                 let (seat_long, seat_short) = self
                     .seat
                     .as_ref()
-                    .map(|s| format_seat_subtitle(s, "Position"))
+                    .map(|s| format_seat_subtitle(s, "Position", false))
                     .unwrap_or_default();
                 let (district_long, district_short) = self
                     .district
-                    .map(|d| format_district_subtitle(d, "Precinct"))
+                    .map(|d| format_district_subtitle(d, "Precinct", false))
                     .unwrap_or_default();
                 let long = format!("{} County, TX{}{}", county, seat_long, district_long)
                     .trim_end()
@@ -222,14 +258,14 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                     ("Texas".to_string(), "TX".to_string())
                 } else if let (Some(district), Some(seat)) = (self.district, self.seat) {
                     let (district_long, district_short) =
-                        format_district_subtitle(district, "District");
-                    let (seat_long, seat_short) = format_seat_subtitle(seat, "Seat");
+                        format_district_subtitle(district, "District", false);
+                    let (seat_long, seat_short) = format_seat_subtitle(seat, "Seat", false);
                     (
                         format!("TX{}{}", district_long, seat_long),
                         format!("TX{}{}", district_short, seat_short),
                     )
                 } else if let Some(seat) = self.seat {
-                    let (long, short) = format_seat_subtitle(seat, "Seat");
+                    let (long, short) = format_seat_subtitle(seat, "Seat", false);
                     (format!("TX{}", long), format!("TX{}", short))
                 } else {
                     ("Texas".to_string(), "TX".to_string())
@@ -237,19 +273,16 @@ impl<'a> OfficeSubtitleGenerator<'a> {
             }
 
             ElectionScope::County => {
-                let (seat_long, seat_short) = self
-                    .seat
-                    .as_ref()
-                    .map(|s| format_seat_subtitle(s, "Seat"))
-                    .unwrap_or_default();
                 let is_appraisal_district = self
                     .office_name
                     .is_some_and(|name| name.contains("Appraisal District"));
+                let (seat_long, seat_short) = self
+                    .seat
+                    .as_ref()
+                    .map(|s| format_seat_subtitle(s, "Seat", is_appraisal_district))
+                    .unwrap_or_default();
                 if is_appraisal_district {
-                    (
-                        seat_long.trim_start_matches(" - ").to_string(),
-                        seat_short.trim_start_matches(" - ").to_string(),
-                    )
+                    (seat_long, seat_short)
                 } else if let Some(county) = self.county {
                     if let Some(district) = self.district {
                         let is_court = self
@@ -259,6 +292,7 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                         let (district_long, district_short) = format_district_subtitle(
                             district,
                             if is_court { "Court" } else { "District" },
+                            false,
                         );
                         (
                             format!("{} County, TX{}{}", county, district_long, seat_long),
@@ -279,7 +313,7 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                 Some(DistrictType::UsCongressional) => {
                     let (district_long, district_short) = self
                         .district
-                        .map(|d| format_district_subtitle(d, "District"))
+                        .map(|d| format_district_subtitle(d, "District", false))
                         .unwrap_or_default();
                     if self.district.is_some() {
                         (
@@ -293,7 +327,7 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                 Some(DistrictType::StateHouse) => {
                     let (district_long, district_short) = self
                         .district
-                        .map(|d| format_district_subtitle(d, "House District"))
+                        .map(|d| format_district_subtitle(d, "House District", false))
                         .unwrap_or_default();
                     if self.district.is_some() {
                         (
@@ -307,7 +341,7 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                 Some(DistrictType::StateSenate) => {
                     let (district_long, district_short) = self
                         .district
-                        .map(|d| format_district_subtitle(d, "Senate District"))
+                        .map(|d| format_district_subtitle(d, "Senate District", false))
                         .unwrap_or_default();
                     if self.district.is_some() {
                         (
@@ -322,12 +356,12 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                     if let Some(county) = self.county {
                         let (district_long, district_short) = self
                             .district
-                            .map(|d| format_district_subtitle(d, "Precinct"))
+                            .map(|d| format_district_subtitle(d, "Precinct", false))
                             .unwrap_or_default();
                         let (seat_long, seat_short) = self
                             .seat
                             .as_ref()
-                            .map(|s| format_seat_subtitle(s, "Place"))
+                            .map(|s| format_seat_subtitle(s, "Place", false))
                             .unwrap_or_default();
                         if self.district.is_some() {
                             (
@@ -348,11 +382,11 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                     if let Some(municipality) = self.municipality {
                         let (district_long, district_short) = self
                             .district
-                            .map(|d| format_district_subtitle(d, "District"))
+                            .map(|d| format_district_subtitle(d, "District", false))
                             .unwrap_or_default();
                         let (seat_long, seat_short) = self
                             .seat
-                            .map(|seat| format_seat_subtitle(seat, "Place"))
+                            .map(|seat| format_seat_subtitle(seat, "Place", false))
                             .unwrap_or_default();
                         (
                             format!("{}, TX{}{}", municipality, district_long,seat_long),
@@ -365,20 +399,20 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                 Some(DistrictType::Judicial) => {
                     let (district_long, district_short) = self
                         .district
-                        .map(|d| format_district_subtitle(d, "District"))
+                        .map(|d| format_district_subtitle(d, "District", false))
                         .unwrap_or_default();
                     if self.district.is_some() {
                         let (seat_long, seat_short) = self
                             .seat
                             .as_ref()
-                            .map(|s| format_seat_subtitle(s, "Seat"))
+                            .map(|s| format_seat_subtitle(s, "Seat", false))
                             .unwrap_or_else(|| (String::new(), String::new()));
                         (
                             format!("TX{}{}", district_long, seat_long),
                             format!("TX{}{}", district_short, seat_short),
                         )
                     } else if let Some(seat) = self.seat {
-                        let (long, short) = format_seat_subtitle(seat, "Seat");
+                        let (long, short) = format_seat_subtitle(seat, "Seat", false);
                         (format!("TX{}", long), format!("TX{}", short))
                     } else {
                         ("TX".to_string(), "TX".to_string())
@@ -387,13 +421,13 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                 Some(DistrictType::BoardOfEducation) => {
                     let (district_long, district_short) = self
                         .district
-                        .map(|d| format_district_subtitle(d, "District"))
+                        .map(|d| format_district_subtitle(d, "District", false))
                         .unwrap_or_default();
                     if self.district.is_some() {
                         let (seat_long, seat_short) = self
                             .seat
                             .as_ref()
-                            .map(|s| format_seat_subtitle(s, "Place"))
+                            .map(|s| format_seat_subtitle(s, "Place", false))
                             .unwrap_or_default();
                         (
                             format!("TX{}{}", district_long, seat_long),
@@ -410,12 +444,12 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                         .unwrap_or_default();
                     let (subdistrict_long, subdistrict_short) = self
                         .subdistrict
-                        .map(|d| format_district_subtitle(d, "District"))
+                        .map(|d| format_district_subtitle(d, "District", false))
                         .unwrap_or_default();
                     let (seat_long, seat_short) = self
                         .seat
                         .as_ref()
-                        .map(|s| format_seat_subtitle(s, "Place"))
+                        .map(|s| format_seat_subtitle(s, "Place", false))
                         .unwrap_or_default();
                     (
                         format!("TX{}{}{}", district_part, subdistrict_long, seat_long),
@@ -425,20 +459,20 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                 Some(DistrictType::CourtOfAppeals) => {
                     let (district_long, district_short) = self
                         .district
-                        .map(|d| format_district_subtitle(d, "District"))
+                        .map(|d| format_district_subtitle(d, "District", false))
                         .unwrap_or_default();
                     if self.district.is_some() {
                         let (seat_long, seat_short) = self
                             .seat
                             .as_ref()
-                            .map(|s| format_seat_subtitle(s, "Seat"))
+                            .map(|s| format_seat_subtitle(s, "Seat", false))
                             .unwrap_or_else(|| (String::new(), String::new()));
                         (
                             format!("TX{}{}", district_long, seat_long),
                             format!("TX{}{}", district_short, seat_short),
                         )
                     } else if let Some(seat) = self.seat {
-                        let (long, short) = format_seat_subtitle(seat, "Seat");
+                        let (long, short) = format_seat_subtitle(seat, "Seat", false);
                         (format!("TX{}", long), format!("TX{}", short))
                     } else {
                         ("TX".to_string(), "TX".to_string())
@@ -451,12 +485,12 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                         let base = format!("{} County, TX", county);
                         let (district_long, district_short) = self
                             .district
-                            .map(|d| format_district_subtitle(d, "Precinct"))
+                            .map(|d| format_district_subtitle(d, "Precinct", false))
                             .unwrap_or_default();
                         let (seat_long, seat_short) = self
                             .seat
                             .as_ref()
-                            .map(|s| format_seat_subtitle(s, "Place"))
+                            .map(|s| format_seat_subtitle(s, "Place", false))
                             .unwrap_or_default();
                         (
                             format!("{}{}{}", base, district_long, seat_long),
@@ -466,7 +500,6 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                         ("TX".to_string(), "TX".to_string())
                     }
                 }
-                Some(DistrictType::TxSpecial) => ("".to_string(), "".to_string()),
                 _ => ("TX".to_string(), "TX".to_string()),
             },
 
@@ -475,7 +508,7 @@ impl<'a> OfficeSubtitleGenerator<'a> {
                 if let Some(municipality) = self.municipality {
                     let (seat_long, seat_short) = self
                         .seat
-                        .map(|seat| format_seat_subtitle(seat, "Place"))
+                        .map(|seat| format_seat_subtitle(seat, "Place", false))
                         .unwrap_or_default();
                     (
                         format!("{}, TX{}", municipality, seat_long),
@@ -804,14 +837,59 @@ mod tests {
         );
     }
 
+    fn special_or_college_subtitle(
+        district_type: DistrictType,
+        subdistrict: Option<&str>,
+        seat: Option<&str>,
+    ) -> (String, String) {
+        let state = State::TX;
+        let election_scope = ElectionScope::District;
+        OfficeSubtitleGenerator {
+            state: &state,
+            office_name: Some("Fort Bend County Municipal Utility District 50 Board"),
+            election_scope: &election_scope,
+            district_type: Some(&district_type),
+            county: None,
+            district: Some("Fort Bend County Municipal Utility District 50"),
+            subdistrict,
+            seat,
+            school_district: None,
+            hospital_district: None,
+            municipality: None,
+        }
+        .generate()
+    }
+
+    #[test]
+    fn tx_special_subtitle_uses_subdistrict_then_seat() {
+        let (long, short) =
+            special_or_college_subtitle(DistrictType::TxSpecial, Some("2"), Some("Place 1"));
+        assert_eq!(long, "District 2 - Place 1");
+        assert_eq!(short, "2 - 1");
+    }
+
+    #[test]
+    fn tx_special_subtitle_seat_only_omits_leading_dash() {
+        let (long, short) = special_or_college_subtitle(DistrictType::TxSpecial, None, Some("3"));
+        assert_eq!(long, "Place 3");
+        assert_eq!(short, "3");
+    }
+
+    #[test]
+    fn tx_college_subtitle_subdistrict_only_omits_leading_dash() {
+        let (long, short) = special_or_college_subtitle(DistrictType::TxCollege, Some("4"), None);
+        assert_eq!(long, "District 4");
+        assert_eq!(short, "4");
+    }
+
     #[test]
     fn unlabeled_seat_gets_label_on_long_and_number_on_short() {
         assert_eq!(
-            format_seat_subtitle("2", "Seat"),
+            format_seat_subtitle("2", "Seat", false),
             (" - Seat 2".to_string(), " - 2".to_string())
         );
         assert_eq!(
-            format_seat_subtitle("1", "Place"),
+            format_seat_subtitle("1", "Place", false),
             (" - Place 1".to_string(), " - 1".to_string())
         );
     }
@@ -819,19 +897,19 @@ mod tests {
     #[test]
     fn labeled_seat_keeps_label_on_long_and_strips_it_on_short() {
         assert_eq!(
-            format_seat_subtitle("Place 1", "Place"),
+            format_seat_subtitle("Place 1", "Place", false),
             (" - Place 1".to_string(), " - 1".to_string())
         );
         assert_eq!(
-            format_seat_subtitle("Position 4", "Position"),
+            format_seat_subtitle("Position 4", "Position", false),
             (" - Position 4".to_string(), " - 4".to_string())
         );
         assert_eq!(
-            format_seat_subtitle("Seat No. 2", "Seat"),
+            format_seat_subtitle("Seat No. 2", "Seat", false),
             (" - Seat No. 2".to_string(), " - 2".to_string())
         );
         assert_eq!(
-            format_seat_subtitle("Position 4 - At-Large", "Position"),
+            format_seat_subtitle("Position 4 - At-Large", "Position", false),
             (
                 " - Position 4 - At-Large".to_string(),
                 " - 4 - At-Large".to_string()
@@ -842,7 +920,7 @@ mod tests {
     #[test]
     fn at_large_is_kept_on_both() {
         assert_eq!(
-            format_seat_subtitle("At-Large", "Seat"),
+            format_seat_subtitle("At-Large", "Seat", false),
             (" - At-Large".to_string(), " - At-Large".to_string())
         );
     }
