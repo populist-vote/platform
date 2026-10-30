@@ -11,12 +11,13 @@ use async_graphql::{
 use auth::AccessTokenClaims;
 use db::{
     filters::mn::apply_mn_filters,
-    filters::tx::apply_tx_filters,
+    filters::tx::{apply_tx_filters, TxFilterSubject},
     models::{
         ballot_measure::BallotMeasure,
         enums::{BallotMeasureStatus, RaceType, State, VoteType},
     },
-    Address, AddressExtendedMN, AddressExtendedTX, AddressInput, Election, ElectionScope, Race,
+    Address, AddressExtendedMN, AddressExtendedTX, AddressInput, DistrictType, Election,
+    ElectionScope, Race,
 };
 use futures::FutureExt;
 use geocodio::GeocodioProxy;
@@ -465,6 +466,7 @@ pub async fn get_races_by_address_context(
         );
         apply_tx_filters(
             &mut builder,
+            TxFilterSubject::Office,
             address_context.state,
             address_context.county.as_deref(),
             tx_precinct.clone(),
@@ -508,6 +510,10 @@ pub async fn get_ballot_measures_by_address_context(
     election_id: &Uuid,
     address_context: &BallotAddressContext,
 ) -> Result<Vec<BallotMeasure>, Error> {
+    if address_context.state == State::TX {
+        return ballot_measures_for_texas(db_pool, election_id, address_context).await;
+    }
+
     let county_fips = address_context
         .extended_mn
         .as_ref()
@@ -550,6 +556,9 @@ pub async fn get_ballot_measures_by_address_context(
             bm.num_precincts_reporting,
             bm.total_precincts,
             bm.election_scope AS "election_scope:ElectionScope",
+            bm.district_type AS "district_type:DistrictType",
+            bm.district,
+            bm.subdistrict,
             bm.created_at,
             bm.updated_at
         FROM ballot_measure bm
@@ -559,7 +568,24 @@ pub async fn get_ballot_measures_by_address_context(
             AND (bm.county_fips IS NULL OR bm.county_fips = $3)
             AND (bm.municipality_fips IS NULL OR bm.municipality_fips = $4)
             AND (bm.school_district IS NULL OR bm.school_district = $5)
-        ORDER BY bm.title ASC, bm.id ASC
+        ORDER BY
+            CASE
+                WHEN bm.election_scope = 'county' THEN 0
+                WHEN bm.election_scope = 'city'
+                    OR (bm.election_scope = 'district' AND bm.district_type = 'city') THEN 1
+                WHEN bm.election_scope = 'district' AND bm.district_type = 'school' THEN 2
+                WHEN bm.election_scope = 'district' AND bm.district_type = 'tx_special' THEN 3
+                ELSE 4
+            END,
+            CASE
+                WHEN bm.election_scope = 'county'
+                    OR bm.election_scope = 'city'
+                    OR (bm.election_scope = 'district' AND bm.district_type = 'city') THEN NULL
+                ELSE natural_sort_key(bm.district)
+            END ASC NULLS LAST,
+            natural_sort_key(bm.title) ASC NULLS LAST,
+            natural_sort_key(bm.slug) ASC NULLS LAST,
+            bm.id ASC
         "#,
         election_id,
         address_context.state as State,
@@ -570,6 +596,141 @@ pub async fn get_ballot_measures_by_address_context(
     .fetch_all(db_pool)
     .await?;
 
+    Ok(records)
+}
+
+async fn ballot_measures_for_texas(
+    db_pool: &sqlx::PgPool,
+    election_id: &Uuid,
+    address_context: &BallotAddressContext,
+) -> Result<Vec<BallotMeasure>, Error> {
+    let (
+        tx_precinct,
+        tx_congressional_district,
+        tx_state_senate_district,
+        tx_state_house_district,
+        tx_county_commissioner_district,
+        tx_justice_of_the_peace_district,
+        tx_constable_district,
+        tx_state_district_courts,
+        tx_court_of_appeals_districts,
+        tx_board_of_education_district,
+        tx_school_district,
+        tx_school_subdistrict,
+        tx_college_district,
+        tx_municipality,
+        tx_municipality_subdistrict,
+    ) = match &address_context.extended_tx {
+        Some(ext) => (
+            ext.precinct.clone(),
+            ext.congressional_district.clone(),
+            ext.state_senate_district.clone(),
+            ext.state_house_district.clone(),
+            ext.county_commissioner_district.clone(),
+            ext.justice_of_the_peace_district.clone(),
+            ext.constable_district.clone(),
+            Some(ext.state_district_courts()),
+            Some(ext.court_of_appeals_districts()),
+            ext.board_of_education_district.clone(),
+            ext.school_district_name_norm(),
+            ext.school_subdistrict_norm(),
+            ext.college_district_name_norm(),
+            ext.municipality_name_norm(),
+            ext.municipality_subdistrict_norm(),
+        ),
+        None => (
+            None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None,
+        ),
+    };
+
+    let mut builder: QueryBuilder<Postgres> = QueryBuilder::new(
+        r#"
+        SELECT
+            bm.id,
+            bm.slug,
+            bm.title,
+            bm.description,
+            bm.status,
+            bm.ballot_measure_code,
+            bm.measure_type,
+            bm.definitions,
+            bm.official_summary,
+            bm.populist_summary,
+            bm.full_text_url,
+            bm.election_id,
+            bm.state,
+            bm.county,
+            bm.municipality,
+            bm.school_district,
+            bm.county_fips,
+            bm.municipality_fips,
+            bm.yes_votes,
+            bm.no_votes,
+            bm.num_precincts_reporting,
+            bm.total_precincts,
+            bm.election_scope,
+            bm.district_type,
+            bm.district,
+            bm.subdistrict,
+            bm.created_at,
+            bm.updated_at
+        FROM ballot_measure bm
+        WHERE bm.election_id =
+        "#,
+    );
+    builder.push_bind(election_id);
+    builder.push(" AND bm.state = ");
+    builder.push_bind(address_context.state);
+    builder.push(
+        " AND (bm.election_scope IS NULL OR bm.election_scope = 'national' OR bm.election_scope = 'state'",
+    );
+    apply_tx_filters(
+        &mut builder,
+        TxFilterSubject::BallotMeasure,
+        address_context.state,
+        address_context.county.as_deref(),
+        tx_precinct,
+        tx_congressional_district,
+        tx_state_senate_district,
+        tx_state_house_district,
+        tx_county_commissioner_district,
+        tx_justice_of_the_peace_district,
+        tx_constable_district,
+        tx_state_district_courts,
+        tx_court_of_appeals_districts,
+        tx_board_of_education_district,
+        tx_school_district,
+        tx_school_subdistrict,
+        tx_college_district,
+        tx_municipality,
+        tx_municipality_subdistrict,
+    );
+    builder.push(
+        ") ORDER BY \
+            CASE \
+                WHEN bm.election_scope = 'county' THEN 0 \
+                WHEN bm.election_scope = 'city' \
+                    OR (bm.election_scope = 'district' AND bm.district_type = 'city') THEN 1 \
+                WHEN bm.election_scope = 'district' AND bm.district_type = 'school' THEN 2 \
+                WHEN bm.election_scope = 'district' AND bm.district_type = 'tx_special' THEN 3 \
+                ELSE 4 \
+            END, \
+            CASE \
+                WHEN bm.election_scope = 'county' \
+                    OR bm.election_scope = 'city' \
+                    OR (bm.election_scope = 'district' AND bm.district_type = 'city') THEN NULL \
+                ELSE natural_sort_key(bm.district) \
+            END ASC NULLS LAST, \
+            natural_sort_key(bm.title) ASC NULLS LAST, \
+            natural_sort_key(bm.slug) ASC NULLS LAST, \
+            bm.id ASC",
+    );
+
+    let records = builder
+        .build_query_as::<BallotMeasure>()
+        .fetch_all(db_pool)
+        .await?;
     Ok(records)
 }
 

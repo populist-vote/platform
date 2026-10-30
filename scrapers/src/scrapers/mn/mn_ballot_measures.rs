@@ -205,6 +205,9 @@ impl Scraper {
                 county_fips,
                 municipality_fips,
                 election_scope: Some(election_scope),
+                district_type: None,
+                district: None,
+                subdistrict: None,
             };
 
             let _ballot_measure =

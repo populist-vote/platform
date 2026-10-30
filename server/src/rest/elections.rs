@@ -220,6 +220,9 @@ pub(super) struct BallotMeasureResource {
     pub(super) num_precincts_reporting: Option<i32>,
     pub(super) total_precincts: Option<i32>,
     pub(super) election_scope: Option<ElectionScope>,
+    pub(super) district_type: Option<DistrictType>,
+    pub(super) district: Option<String>,
+    pub(super) subdistrict: Option<String>,
     pub(super) updated_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -247,6 +250,9 @@ impl From<BallotMeasure> for BallotMeasureResource {
             num_precincts_reporting: measure.num_precincts_reporting,
             total_precincts: measure.total_precincts,
             election_scope: measure.election_scope,
+            district_type: measure.district_type,
+            district: measure.district,
+            subdistrict: measure.subdistrict,
             updated_at: measure.updated_at,
         }
     }

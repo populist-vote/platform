@@ -606,6 +606,9 @@ struct BallotMeasureResource {
     num_precincts_reporting: Option<i32>,
     total_precincts: Option<i32>,
     election_scope: Option<ElectionScope>,
+    district_type: Option<DistrictType>,
+    district: Option<String>,
+    subdistrict: Option<String>,
 }
 
 impl From<BallotMeasure> for BallotMeasureResource {
@@ -621,6 +624,9 @@ impl From<BallotMeasure> for BallotMeasureResource {
             num_precincts_reporting: measure.num_precincts_reporting,
             total_precincts: measure.total_precincts,
             election_scope: measure.election_scope,
+            district_type: measure.district_type,
+            district: measure.district,
+            subdistrict: measure.subdistrict,
         }
     }
 }
@@ -1352,6 +1358,9 @@ pub(super) fn test_ballot_data(election_id: Uuid) -> BallotData {
             num_precincts_reporting: None,
             total_precincts: None,
             election_scope: Some(ElectionScope::City),
+            district_type: None,
+            district: None,
+            subdistrict: None,
         }],
         coverage: CoverageResource::for_state(UsState::MN),
     }
