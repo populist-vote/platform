@@ -36,6 +36,7 @@ pub struct BallotMeasureResult {
     district_type: Option<DistrictType>,
     district: Option<String>,
     subdistrict: Option<String>,
+    county: Option<String>,
 }
 
 #[ComplexObject]
@@ -111,6 +112,7 @@ impl From<BallotMeasure> for BallotMeasureResult {
             district_type: b.district_type,
             district: b.district,
             subdistrict: b.subdistrict,
+            county: b.county,
         }
     }
 }

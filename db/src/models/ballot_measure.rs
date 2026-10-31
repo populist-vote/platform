@@ -1,6 +1,6 @@
 use super::enums::{BallotMeasureStatus, State};
 use crate::{DateTime, DistrictType, ElectionScope, IssueTag, PoliticalScope, PopularitySort};
-use async_graphql::InputObject;
+use async_graphql::{Enum, InputObject};
 use sqlx::postgres::PgPool;
 use sqlx::FromRow;
 use uuid::Uuid;
@@ -63,6 +63,15 @@ pub struct UpsertBallotMeasureInput {
     pub subdistrict: Option<String>,
 }
 
+#[derive(Enum, Copy, Clone, Eq, PartialEq, Debug)]
+pub enum BallotMeasureJurisdiction {
+    State,
+    County,
+    City,
+    SchoolDistrict,
+    SpecialDistrict,
+}
+
 #[derive(InputObject, Default, Debug)]
 pub struct BallotMeasureFilter {
     query: Option<String>,
@@ -71,6 +80,8 @@ pub struct BallotMeasureFilter {
     year: Option<i32>,
     status: Option<BallotMeasureStatus>,
     issue_tag: Option<String>,
+    jurisdiction: Option<BallotMeasureJurisdiction>,
+    election_id: Option<Uuid>,
 }
 
 #[derive(InputObject, Default, Debug)]
@@ -263,6 +274,14 @@ impl BallotMeasure {
         filter: &BallotMeasureFilter,
         sort: &BallotMeasureSort,
     ) -> Result<Vec<Self>, sqlx::Error> {
+        let jurisdiction = filter.jurisdiction.map(|jurisdiction| match jurisdiction {
+            BallotMeasureJurisdiction::State => "state",
+            BallotMeasureJurisdiction::County => "county",
+            BallotMeasureJurisdiction::City => "city",
+            BallotMeasureJurisdiction::SchoolDistrict => "school_district",
+            BallotMeasureJurisdiction::SpecialDistrict => "special_district",
+        });
+
         let query = format!(
             r#"
                 SELECT 
@@ -284,7 +303,7 @@ impl BallotMeasure {
                     num_precincts_reporting, 
                     total_precincts,
                     county,
-                    municipality,
+                    ballot_measure.municipality,
                     school_district,
                     county_fips,
                     municipality_fips,
@@ -309,7 +328,7 @@ impl BallotMeasure {
                         bit.ballot_measure_id = ballot_measure.id
                     ) AS tag_array
                 ) t,
-                to_tsvector(ballot_measure.title || ' ' || ballot_measure_code || ' ' || COALESCE(ballot_measure.description, '')) document,
+                to_tsvector(ballot_measure.title || ' ' || ballot_measure_code || ' ' || COALESCE(ballot_measure.description, '') || ' ' || COALESCE(ballot_measure.county, '')) document,
                 websearch_to_tsquery ($1::text) query,
                 NULLIF(ts_rank(to_tsvector(ballot_measure_code), query), 0) rank_ballot_measure_code,
                 NULLIF(ts_rank(to_tsvector(ballot_measure.title), query), 0) rank_title,
@@ -322,6 +341,29 @@ impl BallotMeasure {
                 )
                 AND ($4::integer IS NULL OR EXTRACT(YEAR FROM e.election_date) = $4)
                 AND ($5::text IS NULL OR $5::text = ANY(t.tag_array))
+                AND (
+                    $6::text IS NULL
+                    OR ($6 = 'state' AND ballot_measure.election_scope = 'state')
+                    OR ($6 = 'county' AND ballot_measure.election_scope = 'county')
+                    OR ($6 = 'city' AND (
+                        ballot_measure.election_scope = 'city'
+                        OR (
+                            ballot_measure.election_scope = 'district'
+                            AND ballot_measure.district_type = 'city'
+                        )
+                    ))
+                    OR (
+                        $6 = 'school_district'
+                        AND ballot_measure.election_scope = 'district'
+                        AND ballot_measure.district_type = 'school'
+                    )
+                    OR (
+                        $6 = 'special_district'
+                        AND ballot_measure.election_scope = 'district'
+                        AND ballot_measure.district_type = 'tx_special'
+                    )
+                )
+                AND ($7::uuid IS NULL OR ballot_measure.election_id = $7)
                 GROUP BY
                 (
                     ballot_measure.id,
@@ -331,7 +373,7 @@ impl BallotMeasure {
                     t.tag_array
                 )
                 ORDER BY {order_by}
-                LIMIT 20
+                LIMIT 100
                 
             "#,
             order_by = match sort.popularity {
@@ -350,6 +392,8 @@ impl BallotMeasure {
             .bind(filter.state)
             .bind(filter.year)
             .bind(filter.issue_tag.to_owned())
+            .bind(jurisdiction)
+            .bind(filter.election_id)
             .fetch_all(db_pool)
             .await?;
         Ok(records)

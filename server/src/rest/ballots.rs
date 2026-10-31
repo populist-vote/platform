@@ -1203,6 +1203,7 @@ fn embed_type_name(embed_type: db::EmbedType) -> &'static str {
     match embed_type {
         db::EmbedType::Legislation => "legislation",
         db::EmbedType::LegislationTracker => "legislation_tracker",
+        db::EmbedType::BallotMeasure => "ballot_measure",
         db::EmbedType::Politician => "politician",
         db::EmbedType::Question => "question",
         db::EmbedType::Poll => "poll",
