@@ -8,6 +8,7 @@ use strum_macros::Display;
 pub enum EmbedType {
     Legislation,
     LegislationTracker,
+    BallotMeasure,
     Politician,
     Question,
     Poll,
