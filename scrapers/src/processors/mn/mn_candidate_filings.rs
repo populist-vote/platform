@@ -720,7 +720,7 @@ fn process_race_candidate(filing: &CandidateFiling, election_slug: &str) -> Stri
 
 /// Format: `mn-sos-{election_slug}-{office_title}-{candidate_name}` (slugified).
 fn race_candidate_ref_key(election_slug: &str, office_title: &str, candidate_name: &str) -> String {
-    generators::politician::PoliticianRefKeyGenerator::new(
+    generators::politician::PoliticianRefKeyGenerator::from_office_title(
         "mn-sos",
         election_slug,
         office_title,

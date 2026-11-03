@@ -472,7 +472,6 @@ async fn process_and_insert_tx_local_filing(
         resolved_office_id,
         election_slug,
         &office,
-        &race,
     )
     .await?;
     let address: Option<TxStagingAddress> = None;
@@ -495,12 +494,11 @@ async fn process_and_insert_tx_local_filing(
     let race_id = get_staging_local_race_id_by_slug(pool, &race.slug)
         .await?
         .unwrap_or(race.id);
-    let office_identity = local_office_identity_for_ref_key(&office, &race);
     let candidate_name = filing.candidate_name.as_deref().unwrap_or("");
     let race_candidate_ref_key = generators::politician::PoliticianRefKeyGenerator::new(
-        "tx-local",
+        "tx",
         election_slug,
-        &office_identity,
+        &office,
         Some(candidate_name),
     )
     .generate();
@@ -749,25 +747,12 @@ fn process_tx_local_race(
     })
 }
 
-fn local_office_identity_for_ref_key(office: &Office, race: &Race) -> String {
-    let mut identity = format!(
-        "{}|{}",
-        office.name.as_deref().unwrap_or(""),
-        office.subtitle.as_deref().unwrap_or(""),
-    );
-    if race.is_special_election {
-        identity.push_str("|Special Election");
-    }
-    identity
-}
-
 async fn process_tx_local_politician(
     pool: &PgPool,
     filing: &TxLocalFiling,
     current_office_id: Uuid,
     election_slug: &str,
     office: &Office,
-    race: &Race,
 ) -> Result<Politician, Box<dyn Error>> {
     let candidate_name_raw = filing
         .candidate_name
@@ -775,11 +760,10 @@ async fn process_tx_local_politician(
         .ok_or("Missing candidate name")?;
     let candidate_name = extractors::politician::normalize_name(candidate_name_raw);
 
-    let office_identity = local_office_identity_for_ref_key(office, race);
     let ref_key = generators::politician::PoliticianRefKeyGenerator::new(
-        "TX-LOCAL",
+        "tx",
         election_slug,
-        &office_identity,
+        office,
         Some(&candidate_name),
     )
     .generate();

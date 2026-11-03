@@ -17,7 +17,7 @@ Start ChromeDriver, then run the scraper:
 chromedriver --port=9515
 
 # Terminal 2, from platform/scrapers
-cargo run --bin tx_scrape_civix_fed_rep
+cargo run --bin tx_scrape_civix_sos
 ```
 
 Output: `data/tx/sos/sos-results-fed-rep.csv`

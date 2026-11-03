@@ -201,7 +201,7 @@ pub fn parse_tx_sos_xml(
                 let candidate_name = c.attribute("name").and_then(normalize_candidate_name);
                 let candidate_key = c.attribute("key").map(String::from);
                 let total_voters = attr_parse_u64(c, "totalVoters").map(|u| u as i64);
-                let ref_key = PoliticianRefKeyGenerator::new(
+                let ref_key = PoliticianRefKeyGenerator::from_office_title(
                     "tx",
                     election_slug,
                     office_name.as_deref().unwrap_or(""),

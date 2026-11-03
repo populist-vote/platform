@@ -266,7 +266,7 @@ fn result_ref_key_candidates(
     candidate_name: &str,
 ) -> Vec<String> {
     let generate = |name: &str| {
-        PoliticianRefKeyGenerator::new("mn-sos", election_slug, office_name, Some(name)).generate()
+        PoliticianRefKeyGenerator::from_office_title("mn-sos", election_slug, office_name, Some(name)).generate()
     };
 
     let mut name_candidates = vec![candidate_name.to_string()];
