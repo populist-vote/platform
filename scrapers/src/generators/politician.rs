@@ -1,3 +1,4 @@
+use db::Office;
 use serde_json::{Map, Value as JsonValue};
 use slugify::slugify;
 
@@ -49,17 +50,41 @@ impl<'a> PoliticianSlugGenerator<'a> {
     }
 }
 
+/// `{name}|{subtitle}` used as the office component of a politician / race_candidate ref key.
+pub fn office_identity_for_ref_key(office: &Office) -> String {
+    format!(
+        "{}|{}",
+        office.name.as_deref().unwrap_or(""),
+        office.subtitle.as_deref().unwrap_or(""),
+    )
+}
+
 /// Builds politician / race_candidate ref keys.
-/// Format (slugified): `{source}-{election_slug}-{office_title}-{candidate_name}`
+/// Format (slugified): `{source}-{election_slug}-{office_identity}-{candidate_name}`
 pub struct PoliticianRefKeyGenerator<'a> {
     source: &'a str,
     election_slug: &'a str,
-    office_title: &'a str,
+    office_identity: String,
     candidate_name: Option<&'a str>,
 }
 
 impl<'a> PoliticianRefKeyGenerator<'a> {
     pub fn new(
+        source: &'a str,
+        election_slug: &'a str,
+        office: &Office,
+        candidate_name: Option<&'a str>,
+    ) -> Self {
+        PoliticianRefKeyGenerator {
+            source,
+            election_slug,
+            office_identity: office_identity_for_ref_key(office),
+            candidate_name,
+        }
+    }
+
+    /// String identity path used by scrapers that do not have an `Office` (MN, CO, results).
+    pub fn from_office_title(
         source: &'a str,
         election_slug: &'a str,
         office_title: &'a str,
@@ -68,7 +93,7 @@ impl<'a> PoliticianRefKeyGenerator<'a> {
         PoliticianRefKeyGenerator {
             source,
             election_slug,
-            office_title,
+            office_identity: office_title.to_string(),
             candidate_name,
         }
     }
@@ -78,7 +103,7 @@ impl<'a> PoliticianRefKeyGenerator<'a> {
             "{}-{}-{}-{}",
             self.source,
             self.election_slug,
-            self.office_title,
+            self.office_identity,
             self.candidate_name.unwrap_or("")
         ))
     }
@@ -102,33 +127,63 @@ mod tests {
         );
     }
 
+    fn office_for_test(name: &str, subtitle: Option<&str>) -> Office {
+        Office {
+            id: uuid::Uuid::nil(),
+            slug: String::new(),
+            title: String::new(),
+            subtitle: subtitle.map(str::to_string),
+            subtitle_short: None,
+            name: Some(name.to_string()),
+            office_type: None,
+            district: None,
+            subdistrict: None,
+            district_type: None,
+            hospital_district: None,
+            school_district: None,
+            chamber: None,
+            political_scope: db::PoliticalScope::Federal,
+            election_scope: db::ElectionScope::National,
+            state: None,
+            county: None,
+            municipality: None,
+            term_length: None,
+            seat: None,
+            priority: None,
+            created_at: chrono::Utc::now(),
+            updated_at: chrono::Utc::now(),
+        }
+    }
+
     #[test]
     fn politician_ref_key() {
+        let office = office_for_test("Governor", Some("TX"));
         assert_eq!(
             PoliticianRefKeyGenerator::new(
                 "mn-sos",
                 "2026-primary-election",
-                "Governor",
+                &office,
                 Some("Jane Doe")
             )
             .generate(),
-            "mn-sos-2026-primary-election-governor-jane-doe"
+            "mn-sos-2026-primary-election-governor-tx-jane-doe"
         );
 
+        let office = office_for_test("U. S. REPRESENTATIVE DISTRICT 1", Some("TX"));
         assert_eq!(
             PoliticianRefKeyGenerator::new(
                 "tx-primaries",
                 "2026-general-election",
-                "U. S. REPRESENTATIVE DISTRICT 1",
+                &office,
                 Some("JANE DOE")
             )
             .generate(),
-            "tx-primaries-2026-general-election-u-s-representative-district-1-jane-doe"
+            "tx-primaries-2026-general-election-u-s-representative-district-1-tx-jane-doe"
         );
 
         // Empty office title still produces a valid slug
         assert_eq!(
-            PoliticianRefKeyGenerator::new(
+            PoliticianRefKeyGenerator::from_office_title(
                 "CO-SOS",
                 "2024-general-election",
                 "",
@@ -136,6 +191,15 @@ mod tests {
             )
             .generate(),
             "co-sos-2024-general-election-john-smith"
+        );
+    }
+
+    #[test]
+    fn office_identity_uses_name_and_subtitle() {
+        let office = office_for_test("School Board", Some("Austin ISD, TX"));
+        assert_eq!(
+            office_identity_for_ref_key(&office),
+            "School Board|Austin ISD, TX"
         );
     }
 }

@@ -928,7 +928,7 @@ pub fn extract_office_scope(
             ElectionScope::District,
             Some(DistrictType::School),
         ),
-        "Hospital District Board" => (
+        "Hospital District Board" => {
             if district.map(|d| !d.trim().is_empty()).unwrap_or(false) {
                 (
                     PoliticalScope::Local,
@@ -938,7 +938,7 @@ pub fn extract_office_scope(
             } else {
                 (PoliticalScope::Local, ElectionScope::County, None)
             }
-        ),
+        }
         name if name.ends_with("Appraisal District Board") => {
             (PoliticalScope::Local, ElectionScope::County, None)
         }

@@ -1,7 +1,9 @@
-//! Scrape Texas Republican and Democratic primary race results from the Civix Election Night Results page.
+//! Scrape Texas SOS Civix Election Night Results (primaries and/or November general).
 //!
-//! Flow: one driver session per election. Session 1: load page → modal → select Republican → scrape all tabs.
-//! Session 2 (new driver): load page → modal → select Democratic → scrape all tabs (default Federal Offices tab).
+//! `--primary`: one driver session per party. Session 1: load page → modal → Republican → all tabs.
+//! Session 2 (new driver): load page → modal → Democratic → all tabs (default Federal Offices tab).
+//! `--general`: one session, select "2026 November General Election", scrape Federal / Statewide /
+//! District tabs (no Statewide Propositions). Federal Offices is the default tab; do not extra-click it.
 //! Requires chromedriver running (e.g. `chromedriver --port=9515`). Writes rows to
 //! `ingest_staging.stg_tx_results_sos_civix` (Race, Choice, Party, early_votes, votes_for_candidate, total_votes, vote_pct).
 
@@ -356,16 +358,61 @@ const ELECTION_REPUBLICAN_PRIMARY: &str = "2026 Republican Primary Election";
 /// Election option for the Democratic primary (selected after switching from Republican).
 const ELECTION_DEMOCRATIC_PRIMARY: &str = "2026 Democratic Primary Election";
 
+/// Election option for the November general.
+const ELECTION_NOVEMBER_GENERAL: &str = "2026 November General Election";
+
 /// Text used to find the election dropdown in the modal: first time it shows the placeholder/label.
 const DROPDOWN_IDENTIFIER_FIRST: &str = "Select Election";
 
-/// Tab labels to scrape in order (Federal Offices is default after load).
-const TAB_LABELS: &[&str] = &[
+/// Tab labels for primaries (Federal Offices is default after load).
+const TAB_LABELS_PRIMARY: &[&str] = &[
     "Federal Offices",
     "Statewide Offices",
     "District Offices",
     "Statewide Propositions",
 ];
+
+/// Tab labels for the November general (no Statewide Propositions).
+const TAB_LABELS_GENERAL: &[&str] = &["Federal Offices", "Statewide Offices", "District Offices"];
+
+/// Which Civix "Select Election" option to scrape, and how to walk its tabs.
+#[derive(Clone, Copy, Debug)]
+pub enum CivixElection {
+    RepublicanPrimary,
+    DemocraticPrimary,
+    NovemberGeneral,
+}
+
+impl CivixElection {
+    fn label(self) -> &'static str {
+        match self {
+            Self::RepublicanPrimary => "Republican primary",
+            Self::DemocraticPrimary => "Democratic primary",
+            Self::NovemberGeneral => "November general",
+        }
+    }
+
+    fn option_text(self) -> &'static str {
+        match self {
+            Self::RepublicanPrimary => ELECTION_REPUBLICAN_PRIMARY,
+            Self::DemocraticPrimary => ELECTION_DEMOCRATIC_PRIMARY,
+            Self::NovemberGeneral => ELECTION_NOVEMBER_GENERAL,
+        }
+    }
+
+    fn tab_labels(self) -> &'static [&'static str] {
+        match self {
+            Self::RepublicanPrimary | Self::DemocraticPrimary => TAB_LABELS_PRIMARY,
+            Self::NovemberGeneral => TAB_LABELS_GENERAL,
+        }
+    }
+
+    /// Republican primary needed an extra Federal Offices click after the modal.
+    /// Democratic primary and November general already land on that default tab.
+    fn click_federal_tab_first(self) -> bool {
+        matches!(self, Self::RepublicanPrimary)
+    }
+}
 
 /// Capture visible app-race-office elements into table_rows with deduplication by (race, choice).
 async fn capture_visible_race_offices(
@@ -445,7 +492,7 @@ fn parse_table_rows_to_result_rows(
         let early_votes = parse_votes(row.get(3).unwrap_or(&String::new()));
         let votes_for_candidate = parse_votes(row.get(4).unwrap_or(&String::new()));
         let vote_pct = row.get(5).map(|s| s.trim().to_string()).unwrap_or_default();
-        let ref_key = PoliticianRefKeyGenerator::new(
+        let ref_key = PoliticianRefKeyGenerator::from_office_title(
             "tx",
             election_slug,
             &race,
@@ -594,21 +641,15 @@ async fn click_tab_by_label(
     Ok(false)
 }
 
-/// Scrape one election (Republican or Democratic) from a fresh page load.
-/// Call with a new WebDriver session so the initial modal appears; then select the given election and scrape all tabs.
-///
-/// - `is_republican`: if true, select Republican primary and click "Federal Offices" tab first; if false, select Democratic and rely on default Federal Offices tab.
+/// Scrape one Civix election from a fresh page load.
+/// Call with a new WebDriver session so the initial modal appears; then select the given election and scrape its tabs.
 pub async fn scrape_civix_one_election(
     driver: &WebDriver,
-    is_republican: bool,
+    election: CivixElection,
 ) -> Result<Vec<ResultRow>, Box<dyn std::error::Error + Send + Sync>> {
-    let election_name = if is_republican {
-        "Republican"
-    } else {
-        "Democratic"
-    };
+    let election_name = election.label();
     debug(&format!(
-        "scrape_civix_one_election: {} primary (fresh session)",
+        "scrape_civix_one_election: {} (fresh session)",
         election_name
     ));
 
@@ -618,23 +659,19 @@ pub async fn scrape_civix_one_election(
         .await?;
     tokio::time::sleep(Duration::from_secs(3)).await;
 
-    let option = if is_republican {
-        ELECTION_REPUBLICAN_PRIMARY
-    } else {
-        ELECTION_DEMOCRATIC_PRIMARY
-    };
+    let option = election.option_text();
     debug(&format!("selecting election in modal: {}", option));
     select_election_in_modal(driver, DROPDOWN_IDENTIFIER_FIRST, option).await?;
 
     debug("waiting for results to load...");
     tokio::time::sleep(Duration::from_secs(3)).await;
-    if is_republican {
+    if election.click_federal_tab_first() {
         if click_tab_by_label(driver, "Federal Offices").await? {
             debug("clicked Federal Offices tab to start scraping");
         }
         tokio::time::sleep(Duration::from_millis(500)).await;
     } else {
-        debug("Dem: relying on default Federal Offices tab, skipping tab click");
+        debug("relying on default Federal Offices tab, skipping extra tab click");
     }
 
     let mut table_rows: Vec<Vec<String>> = Vec::with_capacity(2048);
@@ -654,8 +691,8 @@ pub async fn scrape_civix_one_election(
         return { scrollHeight: el.scrollHeight, clientHeight: el.clientHeight, scrollTop: el.scrollTop };
     "#;
 
-    for (i, tab_label) in TAB_LABELS.iter().enumerate() {
-        let should_click_tab = is_republican || i > 0;
+    for (i, tab_label) in election.tab_labels().iter().enumerate() {
+        let should_click_tab = election.click_federal_tab_first() || i > 0;
         if should_click_tab {
             if click_tab_by_label(driver, tab_label).await? {
                 debug(&format!("clicked tab ({}): {}", election_name, tab_label));
@@ -760,13 +797,6 @@ pub async fn scrape_civix_one_election(
     let rows = parse_table_rows_to_result_rows(&table_rows, &election_slug);
     debug(&format!("{} rows parsed: {}", election_name, rows.len()));
     Ok(rows)
-}
-
-/// Scrape Republican primary only (single driver session). For Rep + Dem, create two drivers and call `scrape_civix_one_election` twice.
-pub async fn scrape_civix_fed_rep_results(
-    driver: &WebDriver,
-) -> Result<Vec<ResultRow>, Box<dyn std::error::Error + Send + Sync>> {
-    scrape_civix_one_election(driver, true).await
 }
 
 pub fn write_results_csv(

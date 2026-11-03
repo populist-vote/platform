@@ -435,7 +435,7 @@ async fn process_and_insert_tx_filing(
     let resolved_office_id = office_id.unwrap_or(office.id);
 
     let mut politician =
-        process_tx_politician(pool, filing, resolved_office_id, election_slug).await?;
+        process_tx_politician(pool, filing, resolved_office_id, election_slug, &office).await?;
 
     let party_fec = filing
         .party
@@ -466,13 +466,11 @@ async fn process_and_insert_tx_filing(
     let race_id = get_staging_race_id_by_slug(pool, &race.slug)
         .await?
         .unwrap_or(race.id);
-    let raw_office_title = filing.office_title.as_deref().unwrap_or("");
-    let office_title = strip_unexpired_term(raw_office_title).trim().to_string();
     let candidate_name = filing.candidate_name.as_deref().unwrap_or("");
     let race_candidate_ref_key = generators::politician::PoliticianRefKeyGenerator::new(
         "tx",
         election_slug,
-        &office_title,
+        &office,
         Some(candidate_name),
     )
     .generate();
@@ -601,19 +599,18 @@ async fn process_tx_politician(
     filing: &TxCandidateFiling,
     current_office_id: Uuid,
     election_slug: &str,
+    office: &Office,
 ) -> Result<Politician, Box<dyn Error>> {
     let candidate_name_raw = filing
         .candidate_name
         .as_ref()
         .ok_or("Missing candidate name")?;
     let candidate_name = extractors::politician::normalize_name(candidate_name_raw);
-    let raw_office_title = filing.office_title.as_deref().unwrap_or("");
-    let office_title = strip_unexpired_term(raw_office_title).trim().to_string();
 
     let ref_key = generators::politician::PoliticianRefKeyGenerator::new(
         "TX",
         election_slug,
-        &office_title,
+        office,
         Some(&candidate_name),
     )
     .generate();
